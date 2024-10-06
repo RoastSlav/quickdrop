@@ -3,7 +3,6 @@ package org.rostislav.quickdrop.controller;
 import jakarta.servlet.http.HttpServletRequest;
 import org.rostislav.quickdrop.model.FileEntity;
 import org.rostislav.quickdrop.service.FileService;
-import org.rostislav.quickdrop.util.FileUtils;
 import org.springframework.core.io.Resource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -15,7 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 
 import java.util.List;
 
-import static org.rostislav.quickdrop.util.FileUtils.getDownloadLink;
+import static org.rostislav.quickdrop.util.FileUtils.populateModelAttributes;
 
 @Controller
 @RequestMapping("/file")
@@ -41,9 +40,7 @@ public class FileViewController {
     @GetMapping("/{uuid}")
     public String filePage(@PathVariable String uuid, Model model, HttpServletRequest request) {
         FileEntity fileEntity = fileService.getFile(uuid);
-        model.addAttribute("file", fileEntity);
-        model.addAttribute("downloadLink", getDownloadLink(request, fileEntity));
-        model.addAttribute("fileSize", FileUtils.formatFileSize(fileEntity.size));
+        populateModelAttributes(fileEntity, model, request);
 
         return "fileView";
     }
@@ -51,9 +48,7 @@ public class FileViewController {
     @GetMapping("/uploaded/{uuid}")
     public String uploadedFile(@PathVariable String uuid, Model model, HttpServletRequest request) {
         FileEntity fileEntity = fileService.getFile(uuid);
-        model.addAttribute("file", fileEntity);
-        model.addAttribute("fileSize", FileUtils.formatFileSize(fileEntity.size));
-        model.addAttribute("downloadLink", getDownloadLink(request, fileEntity));
+        populateModelAttributes(fileEntity, model, request);
 
         return "fileUploaded";
     }
@@ -64,10 +59,11 @@ public class FileViewController {
     }
 
     @PostMapping("/extend/{id}")
-    public String extendFile(@PathVariable Long id, Model model) {
+    public String extendFile(@PathVariable Long id, Model model, HttpServletRequest request) {
         fileService.extendFile(id);
 
-        model.addAttribute("file", fileService.getFile(id));
+        FileEntity fileEntity = fileService.getFile(id);
+        populateModelAttributes(fileEntity, model, request);
         return "fileView";
     }
 }

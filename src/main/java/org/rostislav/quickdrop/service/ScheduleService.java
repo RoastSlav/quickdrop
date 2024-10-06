@@ -24,7 +24,7 @@ public class ScheduleService {
         this.fileService = fileService;
     }
 
-    @Scheduled(cron = "0 0 2 * * *")
+    @Scheduled(cron = "${file.deletion.cron}")
     public void deleteOldFiles() {
         logger.info("Deleting old files");
         LocalDate thresholdDate = LocalDate.now().minusDays(maxFileAge);

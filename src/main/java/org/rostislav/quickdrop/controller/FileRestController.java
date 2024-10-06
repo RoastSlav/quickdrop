@@ -20,7 +20,8 @@ public class FileRestController {
     }
 
     @PostMapping("/upload")
-    public ResponseEntity<FileEntity> saveFile(@RequestParam("file") MultipartFile file, FileUploadRequest fileUploadRequest) {
+    public ResponseEntity<FileEntity> saveFile(@RequestParam("file") MultipartFile file,
+                                               FileUploadRequest fileUploadRequest) {
         FileEntity fileEntity = fileService.saveFile(file, fileUploadRequest);
         if (fileEntity != null) {
             return ResponseEntity.ok(fileEntity);

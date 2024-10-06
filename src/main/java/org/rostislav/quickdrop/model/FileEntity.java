@@ -11,7 +11,7 @@ public class FileEntity {
     public Long id;
 
     public String name;
-    public String UUID;
+    public String uuid;
     public String description;
     public long size;
     public boolean keepIndefinitely;

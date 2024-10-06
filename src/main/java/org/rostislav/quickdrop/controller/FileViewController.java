@@ -1,5 +1,6 @@
 package org.rostislav.quickdrop.controller;
 
+import jakarta.servlet.http.HttpServletRequest;
 import org.rostislav.quickdrop.model.FileEntity;
 import org.rostislav.quickdrop.model.FileUploadRequest;
 import org.rostislav.quickdrop.service.FileService;
@@ -30,16 +31,13 @@ public class FileViewController {
     public String saveFile(@RequestParam("file") MultipartFile file,
                            @RequestParam("description") String description,
                            @RequestParam(value = "keepIndefinitely", defaultValue = "false") boolean keepIndefinitely,
-                           Model model) {
+                           Model model, HttpServletRequest request) {
         FileUploadRequest fileUploadRequest = new FileUploadRequest(description, keepIndefinitely);
-
         FileEntity fileEntity = fileService.saveFile(file, fileUploadRequest);
-        if (fileEntity != null) {
-            model.addAttribute("message", "File uploaded successfully");
-        } else {
-            model.addAttribute("message", "File upload failed");
-        }
 
+        if (fileEntity != null) {
+            return filePage(fileEntity.uuid, model, request);
+        }
         return "upload";
     }
 
@@ -48,6 +46,16 @@ public class FileViewController {
         List<FileEntity> files = fileService.getFiles();
         model.addAttribute("files", files);
         return "listFiles";
+    }
+
+    @GetMapping("/{UUID}")
+    public String filePage(@PathVariable String UUID, Model model, HttpServletRequest request) {
+        FileEntity file = fileService.getFile(UUID);
+        model.addAttribute("file", file);
+        String downloadLink = request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort() + "/file/" + file.uuid;
+        model.addAttribute("downloadLink", downloadLink);
+
+        return "fileUploaded";
     }
 
     @GetMapping("/download/{id}")

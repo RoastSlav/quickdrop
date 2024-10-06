@@ -23,7 +23,7 @@
         <td th:text="${file.uploadDate}"></td>
         <td th:text="${file.keepIndefinitely} ? 'Yes' : 'No'"></td>
         <td>
-            <a th:href="@{/file/download/{id}(id=${file.id})}">Download</a>
+            <a th:href="@{/file/{UUID}(UUID=${file.UUID})}">Go to file page</a>
         </td>
     </tr>
     </tbody>

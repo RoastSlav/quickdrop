@@ -14,6 +14,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
+import static org.rostislav.quickdrop.util.FileUtils.getDownloadLink;
+
 @Controller
 @RequestMapping("/file")
 public class FileViewController {
@@ -21,11 +23,6 @@ public class FileViewController {
 
     public FileViewController(FileService fileService) {
         this.fileService = fileService;
-    }
-
-    @GetMapping("/upload")
-    public String showUploadFile() {
-        return "upload";
     }
 
     @PostMapping("/upload")
@@ -37,7 +34,9 @@ public class FileViewController {
         FileEntity fileEntity = fileService.saveFile(file, fileUploadRequest);
 
         if (fileEntity != null) {
-            return filePage(fileEntity.uuid, model, request);
+            model.addAttribute("downloadLink", getDownloadLink(request, fileEntity));
+            model.addAttribute("file", fileEntity);
+            return "fileUploaded";
         }
         return "upload";
     }
@@ -51,17 +50,22 @@ public class FileViewController {
 
     @GetMapping("/{uuid}")
     public String filePage(@PathVariable String uuid, Model model, HttpServletRequest request) {
-        FileEntity file = fileService.getFile(uuid);
-        model.addAttribute("file", file);
-        String downloadLink = request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort() + "/file/" + file.uuid;
-        model.addAttribute("downloadLink", downloadLink);
-        model.addAttribute("fileSize", FileUtils.formatFileSize(file.size));
+        FileEntity fileEntity = fileService.getFile(uuid);
+        model.addAttribute("file", fileEntity);
+        model.addAttribute("downloadLink", getDownloadLink(request, fileEntity));
+        model.addAttribute("fileSize", FileUtils.formatFileSize(fileEntity.size));
 
-        return "fileUploaded";
+        return "fileView";
     }
 
     @GetMapping("/download/{id}")
     public ResponseEntity<Resource> downloadFile(@PathVariable Long id) {
         return fileService.downloadFile(id);
+    }
+
+    @PostMapping("/extend/{id}")
+    public String extendFile(@PathVariable Long id) {
+        fileService.extendFile(id);
+        return "redirect:/file/list";
     }
 }

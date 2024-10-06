@@ -16,6 +16,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -84,5 +85,16 @@ public class FileService {
 
     public FileEntity getFile(String uuid) {
         return fileRepository.findByUUID(uuid).orElse(null);
+    }
+
+    public void extendFile(Long id) {
+        Optional<FileEntity> referenceById = fileRepository.findById(id);
+        if (referenceById.isEmpty()) {
+            return;
+        }
+
+        FileEntity fileEntity = referenceById.get();
+        fileEntity.uploadDate = LocalDate.now();
+        fileRepository.save(fileEntity);
     }
 }

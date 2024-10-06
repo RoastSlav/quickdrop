@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Upload File</title>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body class="container mt-5">
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
@@ -21,24 +21,24 @@
 </nav>
 
 <h1 class="text-center mb-4">Upload a File</h1>
-<form id="uploadForm" enctype="multipart/form-data" method="post" th:action="@{/file/upload}" class="card p-4">
+<form class="card p-4" enctype="multipart/form-data" id="uploadForm" method="post" th:action="@{/file/upload}">
     <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden"/>
     <div class="form-group">
         <label for="file">Select a file:</label>
-        <input id="file" name="file" required type="file" class="form-control"/>
+        <input class="form-control" id="file" name="file" required type="file"/>
     </div>
     <div class="form-group">
         <label for="description">Description:</label>
-        <input id="description" name="description" type="text" class="form-control"/>
+        <input class="form-control" id="description" name="description" type="text"/>
     </div>
     <div class="form-group form-check">
-        <input id="keepIndefinitely" name="keepIndefinitely" type="checkbox" class="form-check-input"/>
-        <label for="keepIndefinitely" class="form-check-label">Keep indefinitely</label>
+        <input class="form-check-input" id="keepIndefinitely" name="keepIndefinitely" type="checkbox"/>
+        <label class="form-check-label" for="keepIndefinitely">Keep indefinitely</label>
     </div>
-    <button type="submit" class="btn btn-primary">Upload</button>
+    <button class="btn btn-primary" type="submit">Upload</button>
 </form>
 
-<div id="uploadIndicator" class="mt-3 text-info" style="display: none;">Upload started...</div>
+<div class="mt-3 text-info" id="uploadIndicator" style="display: none;">Upload started...</div>
 
 <script src="/js/upload.js"></script>
 </body>

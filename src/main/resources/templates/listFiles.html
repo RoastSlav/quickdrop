@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>All files</title>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
     <a class="navbar-brand" href="/">QuickDrop</a>
@@ -38,7 +38,7 @@
         <td th:text="${file.uploadDate}"></td>
         <td th:text="${file.keepIndefinitely} ? 'Yes' : 'No'"></td>
         <td>
-            <a th:href="@{/file/{UUID}(UUID=${file.uuid})}" class="btn btn-primary">Go to file page</a>
+            <a class="btn btn-primary" th:href="@{/file/{UUID}(UUID=${file.uuid})}">Go to file page</a>
         </td>
     </tr>
     </tbody>

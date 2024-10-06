@@ -3,29 +3,47 @@
 <head>
     <meta charset="UTF-8">
     <title>File has been uploaded</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
 </head>
-<body>
-<h1>File has been uploaded</h1>
-<div>
+<body class="container mt-5">
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+    <a class="navbar-brand" href="/">QuickDrop</a>
+    <div class="collapse navbar-collapse">
+        <ul class="navbar-nav ml-auto">
+            <li class="nav-item">
+                <a class="nav-link" href="/file/list">View Files</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/file/upload">Upload File</a>
+            </li>
+        </ul>
+    </div>
+</nav>
+
+<h1 class="text-center mb-4">File has been uploaded</h1>
+<div class="card p-4">
     <h3>File Name</h3>
     <p th:text="${file.name}"></p>
+
     <h3>File description</h3>
     <p th:text="${file.description}"></p>
+
     <h3>Uploaded At</h3>
     <p th:text="${file.uploadDate}"></p>
+
     <h3>Keep Indefinitely</h3>
     <p th:text="${file.keepIndefinitely} ? 'Yes' : 'No'"></p>
+
     <h3>File Size</h3>
-    <p th:text="${file.size}"></p>
-    <h3>Link: </h3>
+    <p th:text="${fileSize}"></p>
+
+    <h3>Link</h3>
     <p th:text="${downloadLink}"></p>
+
     <h3>Download</h3>
     <p>
-        <a th:href="@{/file/download/{id}(id=${file.id})}">Download</a>
+        <a th:href="@{/file/download/{id}(id=${file.id})}" class="btn btn-success">Download</a>
     </p>
 </div>
-<p>
-    <a href="/file/list">View all files</a>
-</p>
 </body>
 </html>

@@ -25,6 +25,11 @@ public class FileViewController {
         this.fileService = fileService;
     }
 
+    @GetMapping("/upload")
+    public String showUploadFile() {
+        return "upload";
+    }
+
     @PostMapping("/upload")
     public String saveFile(@RequestParam("file") MultipartFile file,
                            @RequestParam("description") String description,
@@ -64,8 +69,10 @@ public class FileViewController {
     }
 
     @PostMapping("/extend/{id}")
-    public String extendFile(@PathVariable Long id) {
+    public String extendFile(@PathVariable Long id, Model model) {
         fileService.extendFile(id);
-        return "redirect:/file/list";
+
+        model.addAttribute("file", fileService.getFile(id));
+        return "fileView";
     }
 }

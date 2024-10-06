@@ -21,4 +21,17 @@ public class FileEntity {
     public void prePersist() {
         uploadDate = LocalDate.now();
     }
+
+    @Override
+    public String toString() {
+        return "FileEntity{" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                ", uuid='" + uuid + '\'' +
+                ", description='" + description + '\'' +
+                ", size=" + size +
+                ", keepIndefinitely=" + keepIndefinitely +
+                ", uploadDate=" + uploadDate +
+                '}';
+    }
 }

@@ -97,4 +97,15 @@ public class FileService {
         fileEntity.uploadDate = LocalDate.now();
         fileRepository.save(fileEntity);
     }
+
+    public boolean deleteFile(String uuid) {
+        Path path = Path.of(fileSavePath, uuid);
+        try {
+            Files.delete(path);
+            logger.info("File deleted: {}", path);
+        } catch (Exception e) {
+            return false;
+        }
+        return true;
+    }
 }

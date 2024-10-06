@@ -38,14 +38,8 @@
     <h3>File Size</h3>
     <p th:text="${fileSize}"></p>
 
-    <h3>Renew file lifetime</h3>
-    <form method="post" th:action="@{/file/extend/{id}(id=${file.id})}">
-        <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden"/>
-        <button class="btn btn-primary" type="submit">Extend</button>
-    </form>
-
     <h3>Link</h3>
-    <p th:text="${downloadLink}"></p>
+    <a th:href="@{${downloadLink}}"><p th:text="${downloadLink}"></p></a>
 
     <h3>Download</h3>
     <p>

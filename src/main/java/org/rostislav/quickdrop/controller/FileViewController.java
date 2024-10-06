@@ -2,15 +2,16 @@ package org.rostislav.quickdrop.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
 import org.rostislav.quickdrop.model.FileEntity;
-import org.rostislav.quickdrop.model.FileUploadRequest;
 import org.rostislav.quickdrop.service.FileService;
 import org.rostislav.quickdrop.util.FileUtils;
 import org.springframework.core.io.Resource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 
 import java.util.List;
 
@@ -30,22 +31,6 @@ public class FileViewController {
         return "upload";
     }
 
-    @PostMapping("/upload")
-    public String saveFile(@RequestParam("file") MultipartFile file,
-                           @RequestParam("description") String description,
-                           @RequestParam(value = "keepIndefinitely", defaultValue = "false") boolean keepIndefinitely,
-                           Model model, HttpServletRequest request) {
-        FileUploadRequest fileUploadRequest = new FileUploadRequest(description, keepIndefinitely);
-        FileEntity fileEntity = fileService.saveFile(file, fileUploadRequest);
-
-        if (fileEntity != null) {
-            model.addAttribute("downloadLink", getDownloadLink(request, fileEntity));
-            model.addAttribute("file", fileEntity);
-            return "fileUploaded";
-        }
-        return "upload";
-    }
-
     @GetMapping("/list")
     public String listFiles(Model model) {
         List<FileEntity> files = fileService.getFiles();
@@ -61,6 +46,16 @@ public class FileViewController {
         model.addAttribute("fileSize", FileUtils.formatFileSize(fileEntity.size));
 
         return "fileView";
+    }
+
+    @GetMapping("/uploaded/{uuid}")
+    public String uploadedFile(@PathVariable String uuid, Model model, HttpServletRequest request) {
+        FileEntity fileEntity = fileService.getFile(uuid);
+        model.addAttribute("file", fileEntity);
+        model.addAttribute("fileSize", FileUtils.formatFileSize(fileEntity.size));
+        model.addAttribute("downloadLink", getDownloadLink(request, fileEntity));
+
+        return "fileUploaded";
     }
 
     @GetMapping("/download/{id}")

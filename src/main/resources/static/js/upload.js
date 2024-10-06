@@ -9,7 +9,7 @@ document.getElementById("uploadForm").addEventListener("submit", function (event
 
     // Create an AJAX request
     const xhr = new XMLHttpRequest();
-    xhr.open("POST", "/api/file/upload", true);  // Updated to use the new API endpoint
+    xhr.open("POST", "/api/file/upload", true);
 
     // Add CSRF token if required
     const csrfTokenElement = document.querySelector('input[name="_csrf"]');
@@ -23,7 +23,7 @@ document.getElementById("uploadForm").addEventListener("submit", function (event
             const response = JSON.parse(xhr.responseText);
             if (response.uuid) {
                 // Redirect to the view page using the UUID from the JSON response
-                window.location.href = "/file/" + response.uuid;
+                window.location.href = "/file/uploaded/" + response.uuid;
             } else {
                 alert("Unexpected response. Please try again.");
                 document.getElementById("uploadIndicator").style.display = "none";

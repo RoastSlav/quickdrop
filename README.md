@@ -12,6 +12,7 @@ protection.
 - **File list**: Users can view a list of uploaded files.
 - **File Download**: Users can download files from the file list.
 - **Download Links**: Generate download links for easy sharing.
+- **File Management**: Manage file availability with options to keep files indefinitely or delete them.
 
 ## Features
 
@@ -20,13 +21,23 @@ protection.
 - **File Management**: Manage file availability with options to keep files indefinitely or delete them.
 - **Malware Scanning**: Built-in malware scanning to ensure file safety.
 - **Password Protection**: Optionally protect files with a password.
+- **File Encryption**: Encrypt files to ensure privacy.
+- **Whole app password protection**: Optionally protect the entire app with a password.
+- **User Accounts**: Create user accounts to manage files and settings.
+- **Per user file management**: Manage files uploaded by the user.
+- **File Sharing**: Share files with other users.
 
 ## Technologies Used
 
 - **Java**
+- **Spring Framework**
+- **Spring Security**
+- **Spring Data JPA (Hibernate)**
+- **Spring Web**
 - **Spring Boot**
 - **Maven**
 - **Thymeleaf**
+- **Bootstrap**
 - **SQLite**
 
 ## Getting Started
@@ -39,32 +50,7 @@ protection.
 
 ### Installation
 
-1. Clone the repository:
-    ```sh
-    git clone https://github.com/RoastSlav/quickdrop.git
-    cd quickdrop
-    ```
-
-2. Configure the file save path in `src/main/resources/application.properties`:
-    ```ini
-    file.save.path=/path/to/save/files
-    ```
-
-3. Build the project using Maven:
-    ```sh
-    mvn clean install
-    ```
-
-4. Run the application:
-    ```sh
-    mvn spring-boot:run
-    ```
-
-### Usage
-
-- Access the application at `http://localhost:8080`.
-- Use the upload page to upload files.
-- Manage files and generate download links from the file list page.
+- Instructions coming soon when the project is ready for deployment.
 
 ## Contributing
 

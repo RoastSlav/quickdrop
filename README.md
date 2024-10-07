@@ -1,6 +1,6 @@
 # QuickDrop
 
-QuickDrop is a secure, easy-to-use file sharing application that allows users to upload files without an account,
+QuickDrop is an easy-to-use file sharing application that allows users to upload files without an account,
 generate download links, and manage file availability, all with built-in malware scanning and optional password
 protection.
 

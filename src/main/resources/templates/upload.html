@@ -21,7 +21,8 @@
 </nav>
 
 <h1 class="text-center mb-4">Upload a File</h1>
-<p class="text-center mb-4">Max file size 1GB</p>
+<p class="text-center mb-2">Max file size 1GB</p>
+<p class="text-center mb-4">Files are deleted after 30 days if the option for indefinite upload is not selected</p>
 <form class="card p-4" enctype="multipart/form-data" id="uploadForm" method="post" th:action="@{/file/upload}">
     <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden"/>
     <div class="form-group">

@@ -49,7 +49,7 @@ pipeline {
                             -p 8083:8080 \
                             -v /var/lib/quickdrop/db:/app/db \
                             -v /var/log/quickdrop:/app/log \
-                            -v /srv/quickdrop/files:/files \
+                            -v /srv/quickdrop/files:/app/files \
                             ${DOCKER_IMAGE}
                             """
                         }

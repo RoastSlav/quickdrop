@@ -43,7 +43,6 @@ pipeline {
         stage('Run New Container') {
                     steps {
                         script {
-                            // Updated volume mappings with standard directories
                             sh """
                             docker run -d --name ${CONTAINER_NAME} \
                             -p 8083:8080 \
@@ -55,14 +54,5 @@ pipeline {
                         }
                     }
                 }
-    }
-
-    post {
-        success {
-            echo 'Deployment was successful!'
-        }
-        failure {
-            echo 'Deployment failed, please check the logs.'
-        }
     }
 }

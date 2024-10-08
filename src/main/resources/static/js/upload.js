@@ -30,6 +30,7 @@ document.getElementById("uploadForm").addEventListener("submit", function (event
             }
         } else {
             alert("Upload failed. Please try again.");
+            console.log(xhr.responseText);
             document.getElementById("uploadIndicator").style.display = "none";
         }
     };

@@ -33,6 +33,8 @@ public class FileService {
     }
 
     public FileEntity saveFile(MultipartFile file, FileUploadRequest fileUploadRequest) {
+        logger.info("File received: {}", file.getOriginalFilename());
+
         String uuid = UUID.randomUUID().toString();
         Path path = Path.of(fileSavePath, uuid);
         try {
@@ -40,6 +42,7 @@ public class FileService {
             Files.write(path, file.getBytes());
             logger.info("File saved: {}", path);
         } catch (Exception e) {
+            logger.error("Error saving file: {}", e.getMessage());
             return null;
         }
 

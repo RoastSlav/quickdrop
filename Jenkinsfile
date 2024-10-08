@@ -41,14 +41,20 @@ pipeline {
         }
 
         stage('Run New Container') {
-            steps {
-                script {
-                    sh """
-                    docker run -d --name ${CONTAINER_NAME} -p 8083:8080 ${DOCKER_IMAGE}
-                    """
+                    steps {
+                        script {
+                            // Updated volume mappings with standard directories
+                            sh """
+                            docker run -d --name ${CONTAINER_NAME} \
+                            -p 8083:8080 \
+                            -v /var/lib/quickdrop/db:/app/db \
+                            -v /var/log/quickdrop:/app/log \
+                            -v /srv/quickdrop/files:/files \
+                            ${DOCKER_IMAGE}
+                            """
+                        }
+                    }
                 }
-            }
-        }
     }
 
     post {

@@ -1,3 +1,4 @@
+![Build Status](https://jenkins.tyron.rocks/buildStatus/icon?job=quickdrop)
 # QuickDrop
 
 QuickDrop is an easy-to-use file sharing application that allows users to upload files without an account,

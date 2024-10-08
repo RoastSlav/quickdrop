@@ -23,9 +23,6 @@ protection.
 - **Password Protection**: Optionally protect files with a password.
 - **File Encryption**: Encrypt files to ensure privacy.
 - **Whole app password protection**: Optionally protect the entire app with a password.
-- **User Accounts**: Create user accounts to manage files and settings.
-- **Per user file management**: Manage files uploaded by the user.
-- **File Sharing**: Share files with other users.
 
 ## Technologies Used
 

@@ -18,7 +18,7 @@ public class FileUtils {
     }
 
     public static String getDownloadLink(HttpServletRequest request, FileEntity fileEntity) {
-        return request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort() + "/file/" + fileEntity.uuid;
+        return request.getScheme() + "://" + request.getServerName() + "/file/" + fileEntity.uuid;
     }
 
     public static void populateModelAttributes(FileEntity fileEntity, Model model, HttpServletRequest request) {

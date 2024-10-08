@@ -23,6 +23,7 @@ pipeline {
         stage('Docker Build') {
             steps {
                 sh """
+                ls -al ${WORKSPACE}/target/
                 docker build -t ${DOCKER_IMAGE} .
                 """
             }

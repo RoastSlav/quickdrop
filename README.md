@@ -13,7 +13,6 @@ protection.
 - **File Upload**: Users can upload files without needing to create an account.
 - **Download Links**: Generate download links for easy sharing.
 - **File Management**: Manage file availability with options to keep files indefinitely or delete them.
-- **Malware Scanning**: Built-in malware scanning to ensure file safety.
 - **Password Protection**: Optionally protect files with a password.
 - **File Encryption**: Encrypt files to ensure privacy.
 - **Whole app password protection**: Optionally protect the entire app with a password.
@@ -63,10 +62,10 @@ java -jar target/quickdrop-0.0.1-SNAPSHOT.jar
 ```
 
 4. Using an external application.properties file:
-   - Create an **application.properties** file in the same directory as the JAR file or specify its location in the
-     start command.
+    - Create an **application.properties** file in the same directory as the JAR file or specify its location in the
+      start command.
 
-   - Add your custom settings, for example (Listed below are the default values):
+    - Add your custom settings, for example (Listed below are the default values):
 
 ```
 spring.servlet.multipart.max-file-size=1024MB

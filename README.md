@@ -75,6 +75,8 @@ file.save.path=files
 file.max.age=30 (In days)
 logging.file.name=log/quickdrop.log
 file.deletion.cron=0 0 2 * * *
+app.basic.password=test
+app.enable.password=false
 ```
 
 - Run the application with the external configuration:

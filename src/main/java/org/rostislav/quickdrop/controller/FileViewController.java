@@ -46,17 +46,12 @@ public class FileViewController {
         if (fileEntity.passwordHash != null &&
                 (password == null || !fileService.checkPassword(uuid, password))) {
             model.addAttribute("uuid", uuid);
-            return "password";
+            return "filePassword";
         }
 
         populateModelAttributes(fileEntity, model, request);
 
         return "fileView";
-    }
-
-    @GetMapping("/password")
-    public String passwordPage(Model model) {
-        return "password";
     }
 
     @PostMapping("/password")
@@ -66,7 +61,7 @@ public class FileViewController {
             return "redirect:/file/" + uuid;
         } else {
             model.addAttribute("uuid", uuid);
-            return "password";
+            return "filePassword";
         }
     }
 

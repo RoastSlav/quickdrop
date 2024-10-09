@@ -15,12 +15,16 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+
+import static org.rostislav.quickdrop.util.FileEncryptionUtils.decryptFile;
+import static org.rostislav.quickdrop.util.FileEncryptionUtils.encryptFile;
 
 @Service
 public class FileService {
@@ -40,13 +44,15 @@ public class FileService {
 
         String uuid = UUID.randomUUID().toString();
         Path path = Path.of(fileSavePath, uuid);
-        try {
-            Files.createFile(path);
-            Files.write(path, file.getBytes());
-            logger.info("File saved: {}", path);
-        } catch (Exception e) {
-            logger.error("Error saving file: {}", e.getMessage());
-            return null;
+
+        if (fileUploadRequest.password == null) {
+            if (!saveUnencryptedFile(file, path)) {
+                return null;
+            }
+        } else {
+            if (!saveEncryptedFile(path, file, fileUploadRequest)) {
+                return null;
+            }
         }
 
         FileEntity fileEntity = new FileEntity();
@@ -64,27 +70,78 @@ public class FileService {
         return fileRepository.save(fileEntity);
     }
 
+    private boolean saveUnencryptedFile(MultipartFile file, Path path) {
+        try {
+            Files.createFile(path);
+            Files.write(path, file.getBytes());
+            logger.info("File saved: {}", path);
+        } catch (Exception e) {
+            logger.error("Error saving file: {}", e.getMessage());
+            return false;
+        }
+        return true;
+    }
+
+    public boolean saveEncryptedFile(Path savePath, MultipartFile file, FileUploadRequest fileUploadRequest) {
+        Path tempFile;
+        try {
+            tempFile = Files.createTempFile("Unencrypted", "tmp");
+            Files.write(tempFile, file.getBytes());
+            logger.info("Unencrypted temp file saved: {}", tempFile);
+        } catch (Exception e) {
+            logger.error("Error saving unencrypted temp file: {}", e.getMessage());
+            return false;
+        }
+
+        try {
+            Path encryptedFile = Files.createFile(savePath);
+            encryptFile(tempFile.toFile(), encryptedFile.toFile(), fileUploadRequest.password);
+        } catch (Exception e) {
+            logger.error("Error encrypting file: {}", e.getMessage());
+            return false;
+        }
+
+        try {
+            Files.delete(tempFile);
+        } catch (Exception e) {
+            logger.error("Error deleting temp file: {}", e.getMessage());
+            return false;
+        }
+
+        return true;
+    }
+
     public List<FileEntity> getFiles() {
         return fileRepository.findAll();
     }
 
-    public void deleteFile(Long id) {
-        fileRepository.deleteById(id);
-    }
-
-    public ResponseEntity<Resource> downloadFile(Long id) {
-        Optional<FileEntity> referenceById = fileRepository.findById(id);
-        if (referenceById.isEmpty()) {
+    public ResponseEntity<Resource> downloadFile(Long id, String password) {
+        FileEntity fileEntity = fileRepository.findById(id).orElse(null);
+        if (fileEntity == null) {
             return ResponseEntity.notFound().build();
         }
 
-        Path path = Path.of(fileSavePath, referenceById.get().uuid);
+        Path pathOfFile = Path.of(fileSavePath, fileEntity.uuid);
+        Path outputFile = null;
+        if (fileEntity.passwordHash != null) {
+            try {
+                outputFile = File.createTempFile("Decrypted", "tmp").toPath();
+                decryptFile(pathOfFile.toFile(), outputFile.toFile(), password);
+            } catch (Exception e) {
+                logger.error("Error decrypting file: {}", e.getMessage());
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            }
+        } else {
+            outputFile = pathOfFile;
+        }
+
         try {
-            Resource resource = new UrlResource(path.toUri());
+            Resource resource = new UrlResource(outputFile.toUri());
             return ResponseEntity.ok()
-                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + referenceById.get().name + "\"")
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileEntity.name + "\"")
                     .body(resource);
         } catch (Exception e) {
+            logger.error("Error reading file: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }

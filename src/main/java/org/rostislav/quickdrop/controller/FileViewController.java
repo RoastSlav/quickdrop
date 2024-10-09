@@ -81,7 +81,8 @@ public class FileViewController {
             }
         }
 
-        return fileService.downloadFile(id);
+        String password = (String) request.getSession().getAttribute("password");
+        return fileService.downloadFile(id, password);
     }
 
     @PostMapping("/extend/{id}")

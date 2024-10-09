@@ -11,6 +11,7 @@ import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -25,11 +26,13 @@ import java.util.UUID;
 public class FileService {
     private static final Logger logger = LoggerFactory.getLogger(FileService.class);
     private final FileRepository fileRepository;
+    private final PasswordEncoder passwordEncoder;
     @Value("${file.save.path}")
     private String fileSavePath;
 
-    public FileService(FileRepository fileRepository) {
+    public FileService(FileRepository fileRepository, PasswordEncoder passwordEncoder) {
         this.fileRepository = fileRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     public FileEntity saveFile(MultipartFile file, FileUploadRequest fileUploadRequest) {
@@ -52,6 +55,10 @@ public class FileService {
         fileEntity.description = fileUploadRequest.description;
         fileEntity.size = file.getSize();
         fileEntity.keepIndefinitely = fileUploadRequest.keepIndefinitely;
+
+        if (fileUploadRequest.password != null) {
+            fileEntity.passwordHash = passwordEncoder.encode(fileUploadRequest.password);
+        }
 
         logger.info("FileEntity saved: {}", fileEntity);
         return fileRepository.save(fileEntity);
@@ -110,5 +117,15 @@ public class FileService {
             return false;
         }
         return true;
+    }
+
+    public boolean checkPassword(String uuid, String password) {
+        Optional<FileEntity> referenceByUUID = fileRepository.findByUUID(uuid);
+        if (referenceByUUID.isEmpty()) {
+            return false;
+        }
+
+        FileEntity fileEntity = referenceByUUID.get();
+        return passwordEncoder.matches(password, fileEntity.passwordHash);
     }
 }

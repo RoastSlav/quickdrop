@@ -16,6 +16,7 @@ public class FileEntity {
     public long size;
     public boolean keepIndefinitely;
     public LocalDate uploadDate;
+    public String passwordHash;
 
     @PrePersist
     public void prePersist() {
@@ -32,6 +33,7 @@ public class FileEntity {
                 ", size=" + size +
                 ", keepIndefinitely=" + keepIndefinitely +
                 ", uploadDate=" + uploadDate +
+                ", passwordHash='" + passwordHash + '\'' +
                 '}';
     }
 }

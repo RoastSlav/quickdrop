@@ -23,7 +23,7 @@ document.getElementById("uploadForm").addEventListener("submit", function (event
             const response = JSON.parse(xhr.responseText);
             if (response.uuid) {
                 // Redirect to the view page using the UUID from the JSON response
-                window.location.href = "/file/uploaded/" + response.uuid;
+                window.location.href = "/file/" + response.uuid;
             } else {
                 alert("Unexpected response. Please try again.");
                 document.getElementById("uploadIndicator").style.display = "none";

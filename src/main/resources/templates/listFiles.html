@@ -28,6 +28,7 @@
         <th>Description</th>
         <th>Uploaded At</th>
         <th>Keep Indefinitely</th>
+        <th>Password Protected</th>
         <th>Download</th>
     </tr>
     </thead>
@@ -37,6 +38,7 @@
         <td th:text="${file.description}"></td>
         <td th:text="${file.uploadDate}"></td>
         <td th:text="${file.keepIndefinitely} ? 'Yes' : 'No'"></td>
+        <td th:text="${file.passwordHash != null} ? 'Yes' : 'No'"></td>
         <td>
             <a class="btn btn-primary" th:href="@{/file/{UUID}(UUID=${file.uuid})}">Go to file page</a>
         </td>

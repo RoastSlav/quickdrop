@@ -4,6 +4,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.rostislav.quickdrop.model.FileEntity;
 import org.rostislav.quickdrop.service.FileService;
 import org.springframework.core.io.Resource;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -40,21 +41,46 @@ public class FileViewController {
     @GetMapping("/{uuid}")
     public String filePage(@PathVariable String uuid, Model model, HttpServletRequest request) {
         FileEntity fileEntity = fileService.getFile(uuid);
+
+        String password = (String) request.getSession().getAttribute("password");
+        if (fileEntity.passwordHash != null &&
+                (password == null || !fileService.checkPassword(uuid, password))) {
+            model.addAttribute("uuid", uuid);
+            return "password";
+        }
+
         populateModelAttributes(fileEntity, model, request);
 
         return "fileView";
     }
 
-    @GetMapping("/uploaded/{uuid}")
-    public String uploadedFile(@PathVariable String uuid, Model model, HttpServletRequest request) {
-        FileEntity fileEntity = fileService.getFile(uuid);
-        populateModelAttributes(fileEntity, model, request);
+    @GetMapping("/password")
+    public String passwordPage(Model model) {
+        return "password";
+    }
 
-        return "fileUploaded";
+    @PostMapping("/password")
+    public String checkPassword(String uuid, String password, HttpServletRequest request, Model model) {
+        if (fileService.checkPassword(uuid, password)) {
+            request.getSession().setAttribute("password", password);
+            return "redirect:/file/" + uuid;
+        } else {
+            model.addAttribute("uuid", uuid);
+            return "password";
+        }
     }
 
     @GetMapping("/download/{id}")
-    public ResponseEntity<Resource> downloadFile(@PathVariable Long id) {
+    public ResponseEntity<Resource> downloadFile(@PathVariable Long id, HttpServletRequest request) {
+        FileEntity fileEntity = fileService.getFile(id);
+
+        if (fileEntity.passwordHash != null) {
+            String password = (String) request.getSession().getAttribute("password");
+            if (password == null || !fileService.checkPassword(fileEntity.uuid, password)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            }
+        }
+
         return fileService.downloadFile(id);
     }
 

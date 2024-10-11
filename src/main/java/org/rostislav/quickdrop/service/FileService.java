@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import static org.rostislav.quickdrop.util.DataValidator.validateObjects;
 import static org.rostislav.quickdrop.util.FileEncryptionUtils.decryptFile;
 import static org.rostislav.quickdrop.util.FileEncryptionUtils.encryptFile;
 
@@ -40,6 +41,10 @@ public class FileService {
     }
 
     public FileEntity saveFile(MultipartFile file, FileUploadRequest fileUploadRequest) {
+        if (!validateObjects(file, fileUploadRequest)) {
+            return null;
+        }
+
         logger.info("File received: {}", file.getOriginalFilename());
 
         String uuid = UUID.randomUUID().toString();

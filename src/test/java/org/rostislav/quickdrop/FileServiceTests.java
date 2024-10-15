@@ -44,7 +44,9 @@ public class FileServiceTests {
             when(file.getSize()).thenReturn(1024L);
             when(file.getBytes()).thenReturn("test content".getBytes());
 
-            when(fileRepository.save(any(FileEntity.class))).thenReturn(getFileEntity());
+            FileEntity fileEntity = getFileEntity();
+            fileEntity.passwordHash = null;
+            when(fileRepository.save(any(FileEntity.class))).thenReturn(fileEntity);
 
             FileEntity result = fileService.saveFile(file, getFileUploadRequest());
 

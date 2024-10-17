@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         MAVEN_HOME = tool name: 'Maven', type: 'hudson.tasks.Maven$MavenInstallation'
-        DOCKER_IMAGE = "quickdrop:latest"
+        DOCKER_IMAGE = "roastslav/quickdrop:latest"
         CONTAINER_NAME = "quickdrop-1"
         DOCKER_CREDENTIALS_ID = 'dockerhub-credentials'
     }

@@ -52,7 +52,7 @@ docker pull roastslav/quickdrop:latest
 docker run -d -p 8080:8080 roastslav/quickdrop:latest
 ```
 
-Optional: Use a volume to persist the uploaded files or change the default configuration:
+Optional: Use a volume to persist the uploaded files or if you want to change the default configuration:
 
 ```
 docker run -d -p 8080:8080 \

@@ -170,7 +170,7 @@ public class FileService {
         fileRepository.save(fileEntity);
     }
 
-    public boolean deleteFile(String uuid) {
+    public boolean deleteFileFromFileSystem(String uuid) {
         Path path = Path.of(fileSavePath, uuid);
         try {
             Files.delete(path);
@@ -179,6 +179,17 @@ public class FileService {
             return false;
         }
         return true;
+    }
+
+    public boolean deleteFile(Long id) {
+        Optional<FileEntity> referenceById = fileRepository.findById(id);
+        if (referenceById.isEmpty()) {
+            return false;
+        }
+
+        FileEntity fileEntity = referenceById.get();
+        fileRepository.delete(fileEntity);
+        return deleteFileFromFileSystem(fileEntity.uuid);
     }
 
     public boolean checkPassword(String uuid, String password) {

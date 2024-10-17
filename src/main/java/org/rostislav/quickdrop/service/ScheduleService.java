@@ -31,7 +31,7 @@ public class ScheduleService {
         List<FileEntity> filesForDeletion = fileRepository.getFilesForDeletion(thresholdDate);
         for (FileEntity file : filesForDeletion) {
             logger.info("Deleting file: {}", file);
-            boolean deleted = fileService.deleteFile(file.uuid);
+            boolean deleted = fileService.deleteFileFromFileSystem(file.uuid);
             if (deleted) {
                 fileRepository.delete(file);
             } else {

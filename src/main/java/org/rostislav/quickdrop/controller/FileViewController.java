@@ -88,4 +88,13 @@ public class FileViewController {
         populateModelAttributes(fileEntity, model, request);
         return "fileView";
     }
+
+    @PostMapping("/delete/{id}")
+    public String deleteFile(@PathVariable Long id) {
+        if (fileService.deleteFile(id)) {
+            return "redirect:/file/list";
+        } else {
+            return "redirect:/file/" + id;
+        }
+    }
 }

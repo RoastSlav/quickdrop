@@ -18,15 +18,15 @@ protection.
 ## Technologies Used
 
 - **Java**
+- **SQLite**
 - **Spring Framework**
 - **Spring Security**
 - **Spring Data JPA (Hibernate)**
 - **Spring Web**
 - **Spring Boot**
-- **Maven**
 - **Thymeleaf**
 - **Bootstrap**
-- **SQLite**
+- **Maven**
 
 ## Getting Started
 

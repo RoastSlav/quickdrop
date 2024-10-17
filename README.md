@@ -1,14 +1,11 @@
 [![Build Status](https://jenkins.tyron.rocks/buildStatus/icon?job=quickdrop)](https://jenkins.tyron.rocks/job/quickdrop)
+[![Live Status](https://img.shields.io/badge/status-live-brightgreen)]([https://quickdrop.tyron.rocks])
 
 # QuickDrop
 
 QuickDrop is an easy-to-use file sharing application that allows users to upload files without an account,
 generate download links, and manage file availability, file encryption and optional password
 protection.
-
-## Live Application
-
-The QuickDrop app is live and actively used by us! You can access the production version [here](https://quickdrop.tyron.rocks).
 
 
 ## Features

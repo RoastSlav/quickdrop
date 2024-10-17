@@ -6,6 +6,11 @@ QuickDrop is an easy-to-use file sharing application that allows users to upload
 generate download links, and manage file availability, file encryption and optional password
 protection.
 
+## Live Application
+
+The QuickDrop app is live and actively used by us! You can access the production version [here](https://quickdrop.tyron.rocks).
+
+
 ## Features
 
 - **File Upload**: Users can upload files without needing to create an account.

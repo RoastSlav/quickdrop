@@ -97,4 +97,11 @@ public class FileViewController {
             return "redirect:/file/" + id;
         }
     }
+
+    @GetMapping("/search")
+    public String searchFiles(String query, Model model) {
+        List<FileEntity> files = fileService.searchFiles(query);
+        model.addAttribute("files", files);
+        return "listFiles";
+    }
 }

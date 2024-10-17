@@ -201,4 +201,8 @@ public class FileService {
         FileEntity fileEntity = referenceByUUID.get();
         return passwordEncoder.matches(password, fileEntity.passwordHash);
     }
+
+    public List<FileEntity> searchFiles(String query) {
+        return fileRepository.searchFiles(query);
+    }
 }

@@ -39,6 +39,19 @@
 <!-- Main Content -->
 <div class="container mt-5">
     <h1 class="text-center mb-4">All Files</h1>
+    <!-- Search Bar Section -->
+    <div class="row mb-4">
+        <div class="col-12 col-md-8 offset-md-2">
+            <form action="/file/search" method="GET">
+                <div class="input-group">
+                    <input aria-describedby="search-button" aria-label="Search for files" class="form-control" name="query"
+                           placeholder="Search for files..." type="text">
+                    <button class="btn btn-primary" id="search-button" type="submit">Search</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <div class="row">
         <div class="col-12 col-sm-6 col-md-4 col-lg-3 mb-4" th:each="file : ${files}">
             <div class="card h-100 shadow">

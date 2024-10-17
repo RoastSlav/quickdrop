@@ -33,12 +33,6 @@ protection.
 
 ## Getting Started
 
-### Prerequisites
-
-- Java 21 or higher
-- Maven
-- SQLite
-
 ### Installation
 
 **Installation with Docker**
@@ -66,6 +60,11 @@ docker run -d -p 8080:8080 \
 ```
 
 **Installation without Docker**
+
+Prerequisites
+- Java 21 or higher
+- Maven
+- SQLite
 
 1. Clone the repository:
 

@@ -96,7 +96,14 @@
 
                     <!-- Buttons Row -->
                     <div class="d-flex justify-content-between mt-3 border-top pt-3">
-                        <form method="post" th:action="@{/file/extend/{id}(id=${file.id})}">
+                        <a
+                                class="btn btn-success"
+                                th:href="@{/file/download/{id}(id=${file.id})}"
+                        >
+                            Download
+                        </a>
+                        <form method="post" th:action="@{/file/extend/{id}(id=${file.id})}"
+                              th:if="${file.keepIndefinitely == false}">
                             <input
                                     th:name="${_csrf.parameterName}"
                                     th:value="${_csrf.token}"
@@ -104,12 +111,6 @@
                             />
                             <button class="btn btn-primary" type="submit">Renew File Lifetime</button>
                         </form>
-                        <a
-                                class="btn btn-success"
-                                th:href="@{/file/download/{id}(id=${file.id})}"
-                        >
-                            Download
-                        </a>
                     </div>
                 </div>
             </div>

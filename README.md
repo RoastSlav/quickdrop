@@ -1,5 +1,5 @@
 [![Build Status](https://jenkins.tyron.rocks/buildStatus/icon?job=quickdrop)](https://jenkins.tyron.rocks/job/quickdrop)
-[![Live Status](https://img.shields.io/badge/status-live-brightgreen)]([https://quickdrop.tyron.rocks])
+[![Live Status](https://img.shields.io/badge/status-live-brightgreen)](https://quickdrop.tyron.rocks)
 
 # QuickDrop
 

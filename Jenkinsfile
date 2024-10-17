@@ -5,6 +5,7 @@ pipeline {
         MAVEN_HOME = tool name: 'Maven', type: 'hudson.tasks.Maven$MavenInstallation'
         DOCKER_IMAGE = "quickdrop:latest"
         CONTAINER_NAME = "quickdrop-1"
+        DOCKER_CREDENTIALS_ID = 'dockerhub-credentials'
     }
 
     stages {
@@ -28,6 +29,20 @@ pipeline {
                 """
             }
         }
+
+        stage('Push to Docker Hub') {
+                    steps {
+                        script {
+                            withCredentials([usernamePassword(credentialsId: DOCKER_CREDENTIALS_ID, passwordVariable: 'DOCKER_PASS', usernameVariable: 'DOCKER_USER')]) {
+                                sh """
+                                echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+                                docker push ${DOCKER_IMAGE}
+                                docker logout
+                                """
+                            }
+                        }
+                    }
+                }
 
         stage('Stop and Remove Old Container') {
             steps {

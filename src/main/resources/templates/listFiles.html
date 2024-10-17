@@ -40,7 +40,7 @@
     <h1 class="text-center mb-4">All Files</h1>
     <div class="row">
         <div class="col-12 col-sm-6 col-md-4 col-lg-3 mb-4" th:each="file : ${files}">
-            <div class="card h-100">
+            <div class="card h-100 shadow">
                 <div class="card-body">
                     <h5 class="card-title" th:text="${file.name}">File Name</h5>
                     <p class="card-text" th:if="${!#strings.isEmpty(file.description)}"

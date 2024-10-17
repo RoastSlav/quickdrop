@@ -50,7 +50,7 @@ public class FileService {
         String uuid = UUID.randomUUID().toString();
         Path path = Path.of(fileSavePath, uuid);
 
-        if (fileUploadRequest.password == null) {
+        if (fileUploadRequest.password == null || fileUploadRequest.password.isEmpty()) {
             if (!saveUnencryptedFile(file, path)) {
                 return null;
             }
@@ -67,7 +67,7 @@ public class FileService {
         fileEntity.size = file.getSize();
         fileEntity.keepIndefinitely = fileUploadRequest.keepIndefinitely;
 
-        if (fileUploadRequest.password != null) {
+        if (fileUploadRequest.password != null && !fileUploadRequest.password.isEmpty()) {
             fileEntity.passwordHash = passwordEncoder.encode(fileUploadRequest.password);
         }
 

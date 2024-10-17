@@ -3,54 +3,121 @@
 <head>
     <meta charset="UTF-8">
     <title>File View</title>
-    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Viewport Meta Tag -->
+    <meta content="width=device-width, initial-scale=1" name="viewport">
+    <!-- Bootstrap 5 CSS -->
+    <link
+            href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+            rel="stylesheet"
+    >
 </head>
-<body class="container mt-5">
+<body>
+<!-- Navbar -->
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
-    <a class="navbar-brand" href="/">QuickDrop</a>
-    <div class="collapse navbar-collapse">
-        <ul class="navbar-nav ml-auto">
-            <li class="nav-item">
-                <a class="nav-link" href="/file/list">View Files</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="/file/upload">Upload File</a>
-            </li>
-        </ul>
+    <div class="container">
+        <a class="navbar-brand" href="/">QuickDrop</a>
+        <button
+                aria-controls="navbarNav"
+                aria-expanded="false"
+                aria-label="Toggle navigation"
+                class="navbar-toggler"
+                data-bs-target="#navbarNav"
+                data-bs-toggle="collapse"
+                type="button"
+        >
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="/file/list">View Files</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/file/upload">Upload File</a>
+                </li>
+            </ul>
+        </div>
     </div>
 </nav>
 
-<h1 class="text-center mb-4">File View</h1>
-<div class="card p-4">
-    <h3>File Name</h3>
-    <p th:text="${file.name}"></p>
+<!-- Main Content -->
+<div class="container mt-5">
+    <h1 class="text-center mb-4">File View</h1>
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-8 col-lg-6">
+            <!-- Card -->
+            <div class="card">
+                <div class="card-body">
+                    <!-- File Name -->
+                    <h5 class="card-title text-center" th:text="${file.name}">File Name</h5>
 
-    <h3>File description</h3>
-    <p th:text="${file.description}"></p>
+                    <!-- File Description if there is a description -->
+                    <div th:if="${!#strings.isEmpty(file.description)}">
+                        <p class="card-text text-center mb-3" th:text="${file.description}"></p>
+                    </div>
 
-    <h3>Uploaded/Renewed At</h3>
-    <p th:text="${file.uploadDate}"></p>
-    <p>Files are kept only for 30 days after this date.</p>
+                    <!-- Uploaded/Renewed At -->
+                    <div class="d-flex justify-content-between align-items-center border-top pt-3">
+                        <h5 class="card-title mb-0">Uploaded/Renewed At:</h5>
+                        <p class="card-text mb-0" th:text="${file.uploadDate}"></p>
+                    </div>
+                    <small class="text-muted">Files are kept only for 30 days after this date.</small>
 
-    <h3>Keep Indefinitely</h3>
-    <p th:text="${file.keepIndefinitely} ? 'Yes' : 'No'"></p>
+                    <!-- Keep Indefinitely -->
+                    <div class="d-flex justify-content-between align-items-center pt-3">
+                        <h5 class="card-title">Keep Indefinitely:</h5>
+                        <p class="card-text" th:text="${file.keepIndefinitely} ? 'Yes' : 'No'"></p>
+                    </div>
 
-    <h3>File Size</h3>
-    <p th:text="${fileSize}"></p>
+                    <!-- File Size -->
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="card-title">File Size:</h5>
+                        <p class="card-text" th:text="${fileSize}"></p>
+                    </div>
 
-    <h3>Renew file lifetime</h3>
-    <form method="post" th:action="@{/file/extend/{id}(id=${file.id})}">
-        <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden"/>
-        <button class="btn btn-primary" type="submit">Extend</button>
-    </form>
+                    <!-- Link -->
+                    <h5 class="card-title border-top pt-3">Link</h5>
+                    <div class="input-group mb-3">
+                        <input
+                                class="form-control"
+                                id="downloadLink"
+                                readonly
+                                th:value="${downloadLink}"
+                                type="text"
+                        />
+                        <button
+                                class="btn btn-outline-secondary copyButton"
+                                onclick="copyToClipboard()"
+                                type="button"
+                        >
+                            Copy Link
+                        </button>
+                    </div>
 
-    <h3>Link</h3>
-    <a th:href="@{${downloadLink}}"><p th:text="${downloadLink}"></p></a>
-
-    <h3>Download</h3>
-    <p>
-        <a class="btn btn-success" th:href="@{/file/download/{id}(id=${file.id})}">Download</a>
-    </p>
+                    <!-- Buttons Row -->
+                    <div class="d-flex justify-content-between mt-3 border-top pt-3">
+                        <form method="post" th:action="@{/file/extend/{id}(id=${file.id})}">
+                            <input
+                                    th:name="${_csrf.parameterName}"
+                                    th:value="${_csrf.token}"
+                                    type="hidden"
+                            />
+                            <button class="btn btn-primary" type="submit">Renew File Lifetime</button>
+                        </form>
+                        <a
+                                class="btn btn-success"
+                                th:href="@{/file/download/{id}(id=${file.id})}"
+                        >
+                            Download
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <!-- End of Card -->
+        </div>
+    </div>
 </div>
+
+<script src="/js/fileView.js"></script>
 </body>
 </html>

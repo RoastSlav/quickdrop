@@ -1,10 +1,13 @@
 [![Build Status](https://jenkins.tyron.rocks/buildStatus/icon?job=quickdrop)](https://jenkins.tyron.rocks/job/quickdrop)
+[![Live Status](https://img.shields.io/badge/status-live-brightgreen)](https://quickdrop.tyron.rocks)
+[![MIT License](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 # QuickDrop
 
 QuickDrop is an easy-to-use file sharing application that allows users to upload files without an account,
 generate download links, and manage file availability, file encryption and optional password
 protection.
+
 
 ## Features
 
@@ -29,12 +32,6 @@ protection.
 - **Maven**
 
 ## Getting Started
-
-### Prerequisites
-
-- Java 21 or higher
-- Maven
-- SQLite
 
 ### Installation
 
@@ -63,6 +60,11 @@ docker run -d -p 8080:8080 \
 ```
 
 **Installation without Docker**
+
+Prerequisites
+- Java 21 or higher
+- Maven
+- SQLite
 
 1. Clone the repository:
 

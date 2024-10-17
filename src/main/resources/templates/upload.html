@@ -111,12 +111,21 @@
         </div>
     </div>
     <!-- Upload Indicator -->
-    <div
-            class="mt-3 text-info text-center"
-            id="uploadIndicator"
-            style="display: none;"
-    >
-        Upload started...
+    <div class="mt-3 text-center">
+        <div id="uploadIndicator" style="display: none;">
+            <p class="text-info" id="uploadStatus">Upload started...</p>
+            <div class="progress" style="width: 50%; margin: 0 auto;">
+                <div
+                        aria-valuemax="100"
+                        aria-valuemin="0"
+                        aria-valuenow="0"
+                        class="progress-bar progress-bar-striped progress-bar-animated"
+                        id="uploadProgress"
+                        role="progressbar"
+                        style="width: 0%;"
+                ></div>
+            </div>
+        </div>
     </div>
     <div class="container mt-4">
         <p class="text-center text-muted">

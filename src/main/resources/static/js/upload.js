@@ -3,6 +3,10 @@ document.getElementById("uploadForm").addEventListener("submit", function (event
 
     // Display the indicator
     document.getElementById("uploadIndicator").style.display = "block";
+    const progressBar = document.getElementById("uploadProgress");
+    const uploadStatus = document.getElementById("uploadStatus");
+    progressBar.style.width = "0%";
+    progressBar.setAttribute("aria-valuenow", 0);
 
     // Prepare form data
     const formData = new FormData(event.target);
@@ -41,6 +45,26 @@ document.getElementById("uploadForm").addEventListener("submit", function (event
         document.getElementById("uploadIndicator").style.display = "none";
     };
 
+    // Track upload progress
+    xhr.upload.onprogress = function (event) {
+        if (event.lengthComputable) {
+            const percentComplete = (event.loaded / event.total) * 100;
+            progressBar.style.width = percentComplete + "%";
+            progressBar.setAttribute("aria-valuenow", percentComplete);
+
+            // Update the status text when upload is complete (100%)
+            if (percentComplete === 100 && isPasswordProtected()) {
+                uploadStatus.innerText = "Upload complete. Encrypting...";
+            }
+        }
+    };
+
     // Send the form data
     xhr.send(formData);
 });
+
+function isPasswordProtected() {
+    const passwordField = document.getElementById("password");
+
+    return passwordField && passwordField.value.trim() !== "";
+}

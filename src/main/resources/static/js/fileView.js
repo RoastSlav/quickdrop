@@ -8,3 +8,7 @@ function copyToClipboard() {
         console.error("Could not copy text: ", err);
     });
 }
+
+function showPreparingMessage() {
+    document.getElementById('preparingMessage').style.display = 'block';
+}

@@ -86,10 +86,16 @@
                         </button>
                     </div>
 
+                    <div class="alert alert-info" id="preparingMessage" style="display: none;">
+                        Your file is being prepared for download. Please wait...
+                    </div>
+
                     <div class="d-flex justify-content-between mt-3 border-top pt-3">
                         <a
                                 class="btn btn-success"
+                                id="downloadButton"
                                 th:href="@{/file/download/{id}(id=${file.id})}"
+                                th:onclick="${file.passwordHash != null} ? 'showPreparingMessage()' : ''"
                         >
                             Download
                         </a>

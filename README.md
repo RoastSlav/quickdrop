@@ -38,6 +38,30 @@ protection.
 
 ### Installation
 
+**Installation with Docker**
+
+1. Pull the Docker image:
+
+```
+docker pull roastslav/quickdrop:latest
+```
+
+2. Run the Docker container:
+
+```
+docker run -d -p 8080:8080 roastslav/quickdrop:latest
+```
+
+Optional: Use a volume to persist the uploaded files or change the default configuration:
+
+```
+docker run -d -p 8080:8080 \
+  -v /path/to/db:/app/db \
+  -v /path/to/log:/app/log \
+  -v /path/to/files:/files \
+  quickdrop
+```
+
 **Installation without Docker**
 
 1. Clone the repository:

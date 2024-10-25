@@ -1,7 +1,10 @@
 package org.rostislav.quickdrop;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -19,6 +22,7 @@ import org.springframework.web.multipart.MultipartFile;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -39,13 +43,27 @@ public class FileServiceTests {
         @MockBean
         PasswordEncoder passwordEncoder;
 
+        @AfterEach
+        void tearDown() {
+            // Reset the mock to avoid any conflicts
+            fileRepository.deleteAll();
+
+            //Delete the file after each test
+            Path file = Path.of("testPath");
+            try {
+                Files.deleteIfExists(file);
+            } catch (
+                    IOException e) {
+                e.printStackTrace();
+            }
+        }
+
         // Successfully saves an unencrypted file when no password is provided
         @Test
-        void test_save_unencrypted_file_without_password() throws IOException {
+        void test_save_unencrypted_file_without_password() {
             MultipartFile file = mock(MultipartFile.class);
             when(file.getOriginalFilename()).thenReturn("test.txt");
             when(file.getSize()).thenReturn(1024L);
-            when(file.getBytes()).thenReturn("test content".getBytes());
 
             FileEntity fileEntity = getFileEntity();
             fileEntity.passwordHash = null;
@@ -62,11 +80,10 @@ public class FileServiceTests {
 
         // Successfully saves an encrypted file when a password is provided
         @Test
-        void test_save_encrypted_file_with_password() throws IOException {
+        void test_save_encrypted_file_with_password() {
             MultipartFile file = mock(MultipartFile.class);
             when(file.getOriginalFilename()).thenReturn("test.txt");
             when(file.getSize()).thenReturn(1024L);
-            when(file.getBytes()).thenReturn("test content".getBytes());
 
             FileEntity fileEntity = getFileEntity();
             when(passwordEncoder.encode(anyString())).thenReturn(fileEntity.passwordHash);
@@ -81,13 +98,23 @@ public class FileServiceTests {
             assertNotNull(result.passwordHash);
         }
 
+        // Successfully encrypts a file
+        @Test
+        void test_encrypt_file() {
+            MultipartFile file = mock(MultipartFile.class);
+
+            // Call the method responsible for encrypting files directly
+            boolean encryptionResult = fileService.saveEncryptedFile(Path.of("testPath"), file, getFileUploadRequest());
+
+            assertTrue(encryptionResult);
+        }
+
         // Correctly encodes password when provided
         @Test
-        void test_correctly_encodes_password_when_provided() throws IOException {
+        void test_correctly_encodes_password_when_provided() {
             MultipartFile file = mock(MultipartFile.class);
             when(file.getOriginalFilename()).thenReturn("test.txt");
             when(file.getSize()).thenReturn(1024L);
-            when(file.getBytes()).thenReturn("test content".getBytes());
 
             FileEntity fileEntity = getFileEntity();
             when(passwordEncoder.encode("securePassword")).thenReturn(fileEntity.passwordHash);
@@ -100,11 +127,10 @@ public class FileServiceTests {
         }
 
         @Test
-        void test_handles_empty_file_upload_request_gracefully() throws IOException {
+        void test_handles_empty_file_upload_request_gracefully() {
             MultipartFile file = mock(MultipartFile.class);
             when(file.getOriginalFilename()).thenReturn("test.txt");
             when(file.getSize()).thenReturn(1024L);
-            when(file.getBytes()).thenReturn("test content".getBytes());
 
             when(fileRepository.save(any(FileEntity.class))).thenAnswer(invocation -> {
                 FileEntity fileEntity = invocation.getArgument(0);

@@ -34,14 +34,12 @@ optional
 password
 protection.
 
+
 ## Features
 
 -
-
 *
-
-*
-File
+*File
 Upload
 **:
 Users
@@ -54,13 +52,9 @@ to
 create
 an
 account.
-
 -
-
 *
-
-*
-Download
+*Download
 Links
 **:
 Generate
@@ -69,13 +63,9 @@ links
 for
 easy
 sharing.
-
 -
-
 *
-
-*
-File
+*File
 Management
 **:
 Manage
@@ -90,13 +80,9 @@ indefinitely
 or
 delete
 them.
-
 -
-
 *
-
-*
-Password
+*Password
 Protection
 **:
 Optionally
@@ -105,13 +91,9 @@ files
 with
 a
 password.
-
 -
-
 *
-
-*
-File
+*File
 Encryption
 **:
 Encrypt
@@ -119,13 +101,9 @@ files
 to
 ensure
 privacy.
-
 -
-
 *
-
-*
-Whole
+*Whole
 app
 password
 protection
@@ -142,90 +120,51 @@ password.
 ## Technologies Used
 
 -
-
 *
-
-*
-Java
+*Java
 **
-
 -
-
 *
-
-*
-SQLite
+*SQLite
 **
-
 -
-
 *
-
-*
-Spring
+*Spring
 Framework
 **
-
 -
-
 *
-
-*
-Spring
+*Spring
 Security
 **
-
 -
-
 *
-
-*
-Spring
+*Spring
 Data
 JPA (
 Hibernate)
 **
-
 -
-
 *
-
-*
-Spring
+*Spring
 Web
 **
-
 -
-
 *
-
-*
-Spring
+*Spring
 Boot
 **
-
 -
-
 *
-
-*
-Thymeleaf
+*Thymeleaf
 **
-
 -
-
 *
-
-*
-Bootstrap
+*Bootstrap
 **
-
 -
-
 *
-
-*
-Maven
+*Maven
 **
 
 ## Getting Started
@@ -233,15 +172,12 @@ Maven
 ### Installation
 
 *
-
-*
-Installation
+*Installation
 with
 Docker
 **
 
 1.
-
 Pull
 the
 Docker
@@ -252,7 +188,6 @@ docker pull roastslav/quickdrop:latest
 ```
 
 2.
-
 Run
 the
 Docker
@@ -290,9 +225,7 @@ docker run -d -p 8080:8080 \
 ```
 
 *
-
-*
-Installation
+*Installation
 without
 Docker
 **
@@ -300,20 +233,16 @@ Docker
 Prerequisites
 
 -
-
 Java
 21
 or
 higher
-
 -
-
 Maven
 -
 SQLite
 
 1.
-
 Clone
 the
 repository:
@@ -324,7 +253,6 @@ cd quickdrop
 ```
 
 2.
-
 Build
 the
 application:
@@ -334,7 +262,6 @@ mvn clean package
 ```
 
 3.
-
 Run
 the
 application:
@@ -344,36 +271,34 @@ java -jar target/quickdrop-0.0.1-SNAPSHOT.jar
 ```
 
 4.
-
 Using
 an
 external
 application.properties
 file:
--
-Create
-an
-*
-*
-application.properties
-**
-file
-in
-the
-same
-directory
-as
-the
-JAR
-file
-or
-specify
-its
-location
-in
-the
-start
-command.
+    -
+    Create
+    an
+    *
+    *application.properties
+    **
+    file
+    in
+    the
+    same
+    directory
+    as
+    the
+    JAR
+    file
+    or
+    specify
+    its
+    location
+    in
+    the
+    start
+    command.
 
     -
     Add
@@ -391,7 +316,7 @@ command.
 
 ```
 file.save.path=files
-file.max.age=30
+file.max.age=30 (days)
 logging.file.name=log/quickdrop.log
 file.deletion.cron=0 0 2 * * *
 app.basic.password=test
@@ -400,7 +325,6 @@ max-upload-file-size=1GB
 ```
 
 -
-
 Run
 the
 application

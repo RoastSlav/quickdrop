@@ -70,8 +70,9 @@ function isPasswordProtected() {
 }
 
 function validateFileSize() {
+    const maxFileSize = document.getElementsByClassName('maxFileSize')[0].innerText;
     const file = document.getElementById('file').files[0];
-    const maxSize = 1024 * 1024 * 1024; // 1GB
+    const maxSize = parseSize(maxFileSize);
     const fileSizeAlert = document.getElementById('fileSizeAlert');
 
     if (file.size > maxSize) {
@@ -80,4 +81,25 @@ function validateFileSize() {
     } else {
         fileSizeAlert.style.display = 'none';
     }
+}
+
+function parseSize(size) {
+    const units = {
+        B: 1,
+        KB: 1024,
+        MB: 1024 * 1024,
+        GB: 1024 * 1024 * 1024
+    };
+
+    const unitMatch = size.match(/[a-zA-Z]+/);
+    const valueMatch = size.match(/[0-9.]+/);
+
+    if (!unitMatch || !valueMatch) {
+        throw new Error("Invalid size format");
+    }
+
+    const unit = unitMatch[0];
+    const value = parseFloat(valueMatch[0]);
+
+    return value * (units[unit] || 1);
 }

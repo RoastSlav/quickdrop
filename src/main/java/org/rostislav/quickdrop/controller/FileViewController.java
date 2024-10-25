@@ -5,6 +5,7 @@ import java.util.List;
 import jakarta.servlet.http.HttpServletRequest;
 import org.rostislav.quickdrop.model.FileEntity;
 import org.rostislav.quickdrop.service.FileService;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -21,13 +22,16 @@ import static org.rostislav.quickdrop.util.FileUtils.populateModelAttributes;
 @RequestMapping("/file")
 public class FileViewController {
     private final FileService fileService;
+    @Value("${max-upload-file-size}")
+    private String maxFileSize;
 
     public FileViewController(FileService fileService) {
         this.fileService = fileService;
     }
 
     @GetMapping("/upload")
-    public String showUploadFile() {
+    public String showUploadFile(Model model) {
+        model.addAttribute("maxFileSize", maxFileSize);
         return "upload";
     }
 

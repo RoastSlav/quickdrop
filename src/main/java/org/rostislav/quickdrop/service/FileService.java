@@ -67,18 +67,6 @@ public class FileService {
         };
     }
 
-    private boolean saveUnencryptedFile(MultipartFile file, Path path) {
-        try {
-            Files.createFile(path);
-            Files.write(path, file.getBytes());
-            logger.info("File saved: {}", path);
-        } catch (Exception e) {
-            logger.error("Error saving file: {}", e.getMessage());
-            return false;
-        }
-        return true;
-    }
-
     public FileEntity saveFile(MultipartFile file, FileUploadRequest fileUploadRequest) {
         if (!validateObjects(file, fileUploadRequest)) {
             return null;
@@ -114,17 +102,27 @@ public class FileService {
         return fileRepository.save(fileEntity);
     }
 
-    public List<FileEntity> getFiles() {
-        return fileRepository.findAll();
+    private boolean saveUnencryptedFile(MultipartFile file, Path path) {
+        try {
+            Files.createFile(path);
+            file.transferTo(path);
+            logger.info("File saved: {}", path);
+        } catch (
+                Exception e) {
+            logger.error("Error saving file: {}", e.getMessage());
+            return false;
+        }
+        return true;
     }
 
     public boolean saveEncryptedFile(Path savePath, MultipartFile file, FileUploadRequest fileUploadRequest) {
         Path tempFile;
         try {
             tempFile = Files.createTempFile("Unencrypted", "tmp");
-            Files.write(tempFile, file.getBytes());
+            file.transferTo(tempFile);
             logger.info("Unencrypted temp file saved: {}", tempFile);
-        } catch (Exception e) {
+        } catch (
+                Exception e) {
             logger.error("Error saving unencrypted temp file: {}", e.getMessage());
             return false;
         }
@@ -134,7 +132,8 @@ public class FileService {
             logger.info("Encrypting file: {}", encryptedFile);
             encryptFile(tempFile.toFile(), encryptedFile.toFile(), fileUploadRequest.password);
             logger.info("Encrypted file saved: {}", encryptedFile);
-        } catch (Exception e) {
+        } catch (
+                Exception e) {
             logger.error("Error encrypting file: {}", e.getMessage());
             return false;
         }
@@ -142,12 +141,17 @@ public class FileService {
         try {
             Files.delete(tempFile);
             logger.info("Temp file deleted: {}", tempFile);
-        } catch (Exception e) {
+        } catch (
+                Exception e) {
             logger.error("Error deleting temp file: {}", e.getMessage());
             return false;
         }
 
         return true;
+    }
+
+    public List<FileEntity> getFiles() {
+        return fileRepository.findAll();
     }
 
     public ResponseEntity<StreamingResponseBody> downloadFile(Long id, String password) {
@@ -165,7 +169,8 @@ public class FileService {
                 logger.info("Decrypting file: {}", pathOfFile);
                 decryptFile(pathOfFile.toFile(), outputFile.toFile(), password);
                 logger.info("File decrypted: {}", outputFile);
-            } catch (Exception e) {
+            } catch (
+                    Exception e) {
                 logger.error("Error decrypting file: {}", e.getMessage());
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
             }
@@ -179,11 +184,12 @@ public class FileService {
             Resource resource = new UrlResource(outputFile.toUri());
             logger.info("Sending file: {}", fileEntity);
             return ResponseEntity.ok()
-                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + URLEncoder.encode(fileEntity.name, StandardCharsets.UTF_8) + "\"")
-                    .header(HttpHeaders.CONTENT_TYPE, "application/octet-stream")
-                    .header(HttpHeaders.CONTENT_LENGTH, String.valueOf(resource.contentLength()))
+                                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + URLEncoder.encode(fileEntity.name, StandardCharsets.UTF_8) + "\"")
+                                 .header(HttpHeaders.CONTENT_TYPE, "application/octet-stream")
+                                 .header(HttpHeaders.CONTENT_LENGTH, String.valueOf(resource.contentLength()))
                                  .body(responseBody);
-        } catch (Exception e) {
+        } catch (
+                Exception e) {
             logger.error("Error reading file: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
@@ -213,7 +219,8 @@ public class FileService {
         try {
             Files.delete(path);
             logger.info("File deleted: {}", path);
-        } catch (Exception e) {
+        } catch (
+                Exception e) {
             return false;
         }
         return true;

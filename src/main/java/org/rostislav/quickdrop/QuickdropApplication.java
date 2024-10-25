@@ -1,5 +1,8 @@
 package org.rostislav.quickdrop;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+
 import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -7,9 +10,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.scheduling.annotation.EnableScheduling;
-
-import java.nio.file.Files;
-import java.nio.file.Path;
 
 @SpringBootApplication
 @EnableScheduling
@@ -27,7 +27,8 @@ public class QuickdropApplication {
         try {
             Files.createDirectories(Path.of(fileSavePath));
             logger.info("File save path created: {}", fileSavePath);
-        } catch (Exception e) {
+        } catch (
+                Exception e) {
             logger.error("Failed to create file save path: {}", fileSavePath);
         }
     }

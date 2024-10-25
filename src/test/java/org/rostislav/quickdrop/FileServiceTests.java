@@ -14,6 +14,7 @@ import org.rostislav.quickdrop.model.FileUploadRequest;
 import org.rostislav.quickdrop.repository.FileRepository;
 import org.rostislav.quickdrop.service.FileService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -36,6 +37,8 @@ import static org.rostislav.quickdrop.TestDataContainer.getFileUploadRequest;
 public class FileServiceTests {
     @Nested
     class SaveFileTests {
+        @Value("${file.save.path}")
+        private String fileSavePath;
         @Autowired
         FileService fileService;
         @MockBean
@@ -45,13 +48,18 @@ public class FileServiceTests {
 
         @AfterEach
         void tearDown() {
-            // Reset the mock to avoid any conflicts
-            fileRepository.deleteAll();
-
-            //Delete the file after each test
-            Path file = Path.of("testPath");
+            //Delete the all files in the fileSavePath
             try {
-                Files.deleteIfExists(file);
+                Files.walk(Path.of(fileSavePath))
+                     .filter(Files::isRegularFile)
+                     .forEach(file -> {
+                         try {
+                             Files.delete(file);
+                         } catch (
+                                 IOException e) {
+                             e.printStackTrace();
+                         }
+                     });
             } catch (
                     IOException e) {
                 e.printStackTrace();
@@ -102,9 +110,10 @@ public class FileServiceTests {
         @Test
         void test_encrypt_file() {
             MultipartFile file = mock(MultipartFile.class);
+            Path encryptedFile = Path.of(fileSavePath, "test.txt");
 
             // Call the method responsible for encrypting files directly
-            boolean encryptionResult = fileService.saveEncryptedFile(Path.of("testPath"), file, getFileUploadRequest());
+            boolean encryptionResult = fileService.saveEncryptedFile(encryptedFile, file, getFileUploadRequest());
 
             assertTrue(encryptionResult);
         }

@@ -33,11 +33,11 @@ import static org.rostislav.quickdrop.util.FileEncryptionUtils.encryptFile;
 
 @Service
 public class FileService {
+    @Value("${file.save.path}")
+    private String fileSavePath;
     private static final Logger logger = LoggerFactory.getLogger(FileService.class);
     private final FileRepository fileRepository;
     private final PasswordEncoder passwordEncoder;
-    @Value("${file.save.path}")
-    private String fileSavePath;
 
     public FileService(FileRepository fileRepository, PasswordEncoder passwordEncoder) {
         this.fileRepository = fileRepository;

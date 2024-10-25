@@ -316,7 +316,7 @@ file:
 
 ```
 file.save.path=files
-file.max.age=30 (days)
+file.max.age=30 # days
 logging.file.name=log/quickdrop.log
 file.deletion.cron=0 0 2 * * *
 app.basic.password=test

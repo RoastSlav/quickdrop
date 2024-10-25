@@ -68,3 +68,16 @@ function isPasswordProtected() {
 
     return passwordField && passwordField.value.trim() !== "";
 }
+
+function validateFileSize() {
+    const file = document.getElementById('file').files[0];
+    const maxSize = 1024 * 1024 * 1024; // 1GB
+    const fileSizeAlert = document.getElementById('fileSizeAlert');
+
+    if (file.size > maxSize) {
+        fileSizeAlert.style.display = 'block';
+        document.getElementById('file').value = '';
+    } else {
+        fileSizeAlert.style.display = 'none';
+    }
+}

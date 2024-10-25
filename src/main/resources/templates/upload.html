@@ -67,7 +67,21 @@
                             name="file"
                             required
                             type="file"
+                            onchange="validateFileSize()"
                     />
+                </div>
+
+                <!-- File Size Alert -->
+                <div class="alert alert-danger"
+                     id="fileSizeAlert"
+                     role="alert"
+                     style="display: none;">
+                    File
+                    size
+                    exceeds
+                    the
+                    1GB
+                    limit.
                 </div>
 
                 <!-- Description Input -->

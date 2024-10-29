@@ -50,7 +50,7 @@ docker pull roastslav/quickdrop:latest
 docker run -d -p 8080:8080 roastslav/quickdrop:latest
 ```
 
-Optional: Use a volume to persist the uploaded files or if you want to change the default configuration:
+Optional: Use volumes to persist the uploaded files:
 
 ```
 docker run -d -p 8080:8080 \
@@ -87,7 +87,7 @@ mvn clean package
 java -jar target/quickdrop-0.0.1-SNAPSHOT.jar
 ```
 
-4. Using an external application.properties file:
+Using an external application.properties file:
     - Create an **application.properties** file in the same directory as the JAR file or specify its location in the
       start command.
 
@@ -103,7 +103,7 @@ app.enable.password=false
 max-upload-file-size=1GB
 ```
 
-- Run the application with the external configuration:
+- Run the application with the external configuration (If not in the same directory as the JAR file):
 
 ```
 java -jar target/quickdrop-0.0.1-SNAPSHOT.jar --spring.config.location=./application.properties

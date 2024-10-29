@@ -97,7 +97,7 @@
                         Password
                         Protected</p>
                     <p class="card-text border-top pt-3"
-                       th:text="'Uploaded/Renewed: ' + ${#temporals.format(file.uploadDate, 'dd.MM.yyyy')}"></p>
+                       th:text="${file.keepIndefinitely} ? 'Uploaded: ' + ${#temporals.format(file.uploadDate, 'dd.MM.yyyy')} : 'Uploaded/Renewed: ' + ${#temporals.format(file.uploadDate, 'dd.MM.yyyy')}"></p>
                 </div>
                 <div class="card-footer">
                     <a class="btn btn-primary w-100"

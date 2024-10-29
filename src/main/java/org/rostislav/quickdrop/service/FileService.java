@@ -1,16 +1,5 @@
 package org.rostislav.quickdrop.service;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.time.LocalDate;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-
 import org.rostislav.quickdrop.model.FileEntity;
 import org.rostislav.quickdrop.model.FileUploadRequest;
 import org.rostislav.quickdrop.repository.FileRepository;
@@ -26,6 +15,17 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 import static org.rostislav.quickdrop.util.DataValidator.validateObjects;
 import static org.rostislav.quickdrop.util.FileEncryptionUtils.decryptFile;
@@ -211,6 +211,7 @@ public class FileService {
 
         FileEntity fileEntity = referenceById.get();
         fileEntity.uploadDate = LocalDate.now();
+        logger.info("File extended: {}", fileEntity);
         fileRepository.save(fileEntity);
     }
 

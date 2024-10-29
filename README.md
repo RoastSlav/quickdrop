@@ -8,6 +8,7 @@ QuickDrop is an easy-to-use file sharing application that allows users to upload
 generate download links, and manage file availability, file encryption and optional password
 protection.
 
+This project is made with the self-hosting community in mind as a self-hosted file-sharing application.
 
 ## Features
 

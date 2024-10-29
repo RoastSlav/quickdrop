@@ -5,6 +5,9 @@ import org.rostislav.quickdrop.model.FileEntity;
 import org.springframework.ui.Model;
 
 public class FileUtils {
+    private FileUtils() {
+        // To prevent instantiation
+    }
 
     public static String formatFileSize(long size) {
         String[] units = {"B", "KB", "MB", "GB", "TB"};
@@ -15,6 +18,14 @@ public class FileUtils {
             unitIndex++;
         }
         return String.format("%.2f %s", sizeInUnits, units[unitIndex]);
+    }
+
+    public static long bytesToMegabytes(long bytes) {
+        return bytes / 1024 / 1024;
+    }
+
+    public static long megabytesToBytes(long megabytes) {
+        return megabytes * 1024 * 1024;
     }
 
     public static String getDownloadLink(HttpServletRequest request, FileEntity fileEntity) {

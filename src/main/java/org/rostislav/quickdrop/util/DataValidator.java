@@ -1,6 +1,10 @@
 package org.rostislav.quickdrop.util;
 
 public class DataValidator {
+    private DataValidator() {
+        // To prevent instantiation
+    }
+
     public static boolean validateObjects(Object... objs) {
         for (Object temp : objs) {
             if (temp != null) {

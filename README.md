@@ -1,6 +1,7 @@
 [![Build Status](https://jenkins.tyron.rocks/buildStatus/icon?job=quickdrop)](https://jenkins.tyron.rocks/job/quickdrop)
 [![Live Status](https://img.shields.io/badge/status-live-brightgreen)](https://quickdrop.tyron.rocks)
 [![MIT License](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+![Docker Pulls](https://img.shields.io/docker/pulls/roastslav/quickdrop)
 
 # QuickDrop
 

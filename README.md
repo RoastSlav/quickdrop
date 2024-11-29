@@ -12,6 +12,7 @@ This project is made with the self-hosting community in mind as a self-hosted fi
 ## Features
 
 - **File Upload**: Users can upload files without needing to create an account.
+- **Adjustable file size limit**: The maximum file size can be ajusted in the settings.
 - **Download Links**: Generate download links for easy sharing.
 - **File Management**: Manage file availability with options to keep files indefinitely or delete them.
 - **Password Protection**: Optionally protect files with a password.

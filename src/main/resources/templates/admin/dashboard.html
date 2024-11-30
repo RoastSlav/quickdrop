@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>QuickDrop Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+<div class="container">
+    <h1 class="mt-4">Admin Dashboard</h1>
+
+    <div id="file-list">
+        <h2>Files</h2>
+        <table class="table">
+            <thead>
+            <tr>
+                <th>Name</th>
+                <th>Upload Date</th>
+                <th>Expiration Date</th>
+                <th>Size</th>
+                <th>Actions</th>
+            </tr>
+            </thead>
+            <tbody id="filesTableBody">
+            <!-- Filled dynamically -->
+            </tbody>
+        </table>
+    </div>
+
+    <div id="analytics">
+        <h2>Analytics</h2>
+        <p>Total Downloads: <span id="totalDownloads"></span></p>
+        <p>Total Space Used: <span id="totalSpaceUsed"></span></p>
+    </div>
+</div>
+
+<script>
+    async function loadFiles() {
+        const response = await fetch('/admin/files');
+        const files = await response.json();
+        // Populate file data in the table
+    }
+
+    async function loadAnalytics() {
+        const response = await fetch('/admin/analytics');
+        const data = await response.json();
+        // Populate analytics data
+    }
+
+    loadFiles();
+    loadAnalytics();
+</script>
+</body>
+</html>

@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Settings</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+<div class="container mt-5">
+    <h1>Admin Settings</h1>
+    <form method="post" th:action="@{/admin/save}" th:object="${settings}">
+        <input th:field="*{id}" type="hidden">
+
+        <!-- Max File Size -->
+        <div class="mb-3">
+            <label class="form-label">
+                Max File Size (MB)
+                <input class="form-control" required th:field="*{maxFileSize}" type="text">
+            </label>
+        </div>
+
+        <!-- Max File Lifetime -->
+        <div class="mb-3">
+            <label class="form-label">
+                Max File Lifetime (days)
+                <input class="form-control" required th:field="*{maxFileLifeTime}" type="text">
+            </label>
+        </div>
+
+        <!-- File Storage Path -->
+        <div class="mb-3">
+            <label class="form-label">
+                File Storage Path
+                <input class="form-control" required th:field="*{fileStoragePath}" type="text">
+            </label>
+        </div>
+
+        <!-- Log Storage Path -->
+        <div class="mb-3">
+            <label class="form-label">
+                Log Storage Path
+                <input class="form-control" required th:field="*{logStoragePath}" type="text">
+            </label>
+        </div>
+
+        <!-- File Deletion Cron -->
+        <div class="mb-3">
+            <label class="form-label">
+                File Deletion Cron Expression
+                <input class="form-control" required th:field="*{fileDeletionCron}" type="text">
+            </label>
+
+        </div>
+        <!-- App Password Enabled -->
+        <div class="form-check mb-3">
+            <label class="form-check-label">
+                Enable Password Protection
+                <input class="form-check-input" th:field="*{appPasswordEnabled}" type="checkbox">
+            </label>
+        </div>
+
+        <!-- Admin Password (only displayed if setting up) -->
+        <div class="mb-3" th:if="${#strings.isEmpty(settings.adminPasswordHash)}">
+            <label class="form-label">
+                Set Admin Password
+                <input class="form-control" th:field="*{adminPasswordHash}" type="password">
+            </label>
+        </div>
+
+        <!-- Save Button -->
+        <button class="btn btn-primary" type="submit">Save Settings</button>
+        <div class="alert alert-success mt-3" th:if="${param.success}">Settings saved successfully!</div>
+    </form>
+</div>
+</body>
+</html>

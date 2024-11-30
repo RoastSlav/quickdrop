@@ -50,7 +50,7 @@ docker pull roastslav/quickdrop:latest
 docker run -d -p 8080:8080 roastslav/quickdrop:latest
 ```
 
-Optional: Use volumes to persist the uploaded files:
+Optional: Use volumes to persist the uploaded files when you update the container:
 
 ```
 docker run -d -p 8080:8080 \

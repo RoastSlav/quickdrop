@@ -20,16 +20,12 @@ public class FileUtils {
         return String.format("%.2f %s", sizeInUnits, units[unitIndex]);
     }
 
-    public static long bytesToMegabytes(long bytes) {
-        return bytes / 1024 / 1024;
-    }
-
-    public static long megabytesToBytes(long megabytes) {
-        return megabytes * 1024 * 1024;
-    }
-
     public static String getDownloadLink(HttpServletRequest request, FileEntity fileEntity) {
-        return request.getScheme() + "://" + request.getServerName() + "/file/" + fileEntity.uuid;
+        String scheme = request.getHeader("X-Forwarded-Proto");
+        if (scheme == null) {
+            scheme = request.getScheme(); // Fallback to the default scheme
+        }
+        return scheme + "://" + request.getServerName() + "/file/" + fileEntity.uuid;
     }
 
     public static void populateModelAttributes(FileEntity fileEntity, Model model, HttpServletRequest request) {

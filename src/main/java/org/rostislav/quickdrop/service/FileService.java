@@ -1,7 +1,10 @@
 package org.rostislav.quickdrop.service;
 
-import org.rostislav.quickdrop.model.FileEntity;
+import jakarta.servlet.http.HttpServletRequest;
+import org.rostislav.quickdrop.entity.DownloadLog;
+import org.rostislav.quickdrop.entity.FileEntity;
 import org.rostislav.quickdrop.model.FileUploadRequest;
+import org.rostislav.quickdrop.repository.DownloadLogRepository;
 import org.rostislav.quickdrop.repository.FileRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,6 +30,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import static org.rostislav.quickdrop.util.DataValidator.nullToZero;
 import static org.rostislav.quickdrop.util.DataValidator.validateObjects;
 import static org.rostislav.quickdrop.util.FileEncryptionUtils.decryptFile;
 import static org.rostislav.quickdrop.util.FileEncryptionUtils.encryptFile;
@@ -37,12 +41,14 @@ public class FileService {
     private final FileRepository fileRepository;
     private final PasswordEncoder passwordEncoder;
     private final ApplicationSettingsService applicationSettingsService;
+    private final DownloadLogRepository downloadLogRepository;
 
     @Lazy
-    public FileService(FileRepository fileRepository, PasswordEncoder passwordEncoder, ApplicationSettingsService applicationSettingsService) {
+    public FileService(FileRepository fileRepository, PasswordEncoder passwordEncoder, ApplicationSettingsService applicationSettingsService, DownloadLogRepository downloadLogRepository) {
         this.fileRepository = fileRepository;
         this.passwordEncoder = passwordEncoder;
         this.applicationSettingsService = applicationSettingsService;
+        this.downloadLogRepository = downloadLogRepository;
     }
 
     private static StreamingResponseBody getStreamingResponseBody(Path outputFile, FileEntity fileEntity) {
@@ -155,7 +161,7 @@ public class FileService {
         return fileRepository.findAll();
     }
 
-    public ResponseEntity<StreamingResponseBody> downloadFile(Long id, String password) {
+    public ResponseEntity<StreamingResponseBody> downloadFile(Long id, String password, HttpServletRequest request) {
         FileEntity fileEntity = fileRepository.findById(id).orElse(null);
         if (fileEntity == null) {
             logger.info("File not found: {}", id);
@@ -184,6 +190,7 @@ public class FileService {
         try {
             Resource resource = new UrlResource(outputFile.toUri());
             logger.info("Sending file: {}", fileEntity);
+            logDownload(fileEntity, request);
             return ResponseEntity.ok()
                     .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + URLEncoder.encode(fileEntity.name, StandardCharsets.UTF_8) + "\"")
                     .header(HttpHeaders.CONTENT_TYPE, "application/octet-stream")
@@ -194,6 +201,13 @@ public class FileService {
             logger.error("Error reading file: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
+    }
+
+    private void logDownload(FileEntity fileEntity, HttpServletRequest request) {
+        String downloaderIp = request.getRemoteAddr();
+        String userAgent = request.getHeader(HttpHeaders.USER_AGENT);
+        DownloadLog downloadLog = new DownloadLog(fileEntity, downloaderIp, userAgent);
+        downloadLogRepository.save(downloadLog);
     }
 
     public FileEntity getFile(Long id) {
@@ -251,5 +265,9 @@ public class FileService {
 
     public List<FileEntity> searchFiles(String query) {
         return fileRepository.searchFiles(query);
+    }
+
+    public long calculateTotalSpaceUsed() {
+        return nullToZero(fileRepository.totalFileSizeForAllFiles());
     }
 }

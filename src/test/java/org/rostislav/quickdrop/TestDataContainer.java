@@ -1,6 +1,6 @@
 package org.rostislav.quickdrop;
 
-import org.rostislav.quickdrop.model.FileEntity;
+import org.rostislav.quickdrop.entity.FileEntity;
 import org.rostislav.quickdrop.model.FileUploadRequest;
 
 import java.util.UUID;

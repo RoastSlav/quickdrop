@@ -1,6 +1,6 @@
 package org.rostislav.quickdrop.controller;
 
-import org.rostislav.quickdrop.model.FileEntity;
+import org.rostislav.quickdrop.entity.FileEntity;
 import org.rostislav.quickdrop.model.FileUploadRequest;
 import org.rostislav.quickdrop.service.FileService;
 import org.springframework.http.ResponseEntity;

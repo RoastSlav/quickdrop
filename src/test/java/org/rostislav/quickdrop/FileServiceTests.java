@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.rostislav.quickdrop.model.FileEntity;
+import org.rostislav.quickdrop.entity.FileEntity;
 import org.rostislav.quickdrop.model.FileUploadRequest;
 import org.rostislav.quickdrop.repository.FileRepository;
 import org.rostislav.quickdrop.service.FileService;

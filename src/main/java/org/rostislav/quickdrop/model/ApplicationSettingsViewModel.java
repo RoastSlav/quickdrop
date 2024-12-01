@@ -1,5 +1,7 @@
 package org.rostislav.quickdrop.model;
 
+import org.rostislav.quickdrop.entity.ApplicationSettingsEntity;
+
 public class ApplicationSettingsViewModel {
     private Long id;
 

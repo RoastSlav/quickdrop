@@ -1,4 +1,4 @@
-package org.rostislav.quickdrop.model;
+package org.rostislav.quickdrop.entity;
 
 import jakarta.persistence.*;
 

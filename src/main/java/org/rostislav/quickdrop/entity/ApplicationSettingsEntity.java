@@ -1,9 +1,10 @@
-package org.rostislav.quickdrop.model;
+package org.rostislav.quickdrop.entity;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import org.rostislav.quickdrop.model.ApplicationSettingsViewModel;
 
 @Entity
 public class ApplicationSettingsEntity {

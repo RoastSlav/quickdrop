@@ -1,6 +1,6 @@
 package org.rostislav.quickdrop.repository;
 
-import org.rostislav.quickdrop.model.FileEntity;
+import org.rostislav.quickdrop.entity.FileEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -18,4 +18,7 @@ public interface FileRepository extends JpaRepository<FileEntity, Long> {
 
     @Query("SELECT f FROM FileEntity f WHERE f.name LIKE %:searchString% OR f.description LIKE %:searchString% OR f.uuid LIKE %:searchString%")
     List<FileEntity> searchFiles(@Param("searchString") String searchString);
+
+    @Query("SELECT SUM(f.size) FROM FileEntity f")
+    Long totalFileSizeForAllFiles();
 }

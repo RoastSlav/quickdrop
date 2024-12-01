@@ -1,6 +1,6 @@
 package org.rostislav.quickdrop.service;
 
-import org.rostislav.quickdrop.model.ApplicationSettingsEntity;
+import org.rostislav.quickdrop.entity.ApplicationSettingsEntity;
 import org.rostislav.quickdrop.model.ApplicationSettingsViewModel;
 import org.rostislav.quickdrop.repository.ApplicationSettingsRepository;
 import org.springframework.beans.factory.annotation.Qualifier;

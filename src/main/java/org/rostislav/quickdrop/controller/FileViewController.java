@@ -1,7 +1,11 @@
 package org.rostislav.quickdrop.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
-import org.rostislav.quickdrop.model.FileEntity;
+import org.rostislav.quickdrop.entity.DownloadLog;
+import org.rostislav.quickdrop.entity.FileEntity;
+import org.rostislav.quickdrop.model.FileEntityView;
+import org.rostislav.quickdrop.repository.DownloadLogRepository;
+import org.rostislav.quickdrop.service.AnalyticsService;
 import org.rostislav.quickdrop.service.ApplicationSettingsService;
 import org.rostislav.quickdrop.service.FileService;
 import org.springframework.http.HttpStatus;
@@ -16,6 +20,7 @@ import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBo
 
 import java.util.List;
 
+import static org.rostislav.quickdrop.util.FileUtils.formatFileSize;
 import static org.rostislav.quickdrop.util.FileUtils.populateModelAttributes;
 
 @Controller
@@ -23,10 +28,14 @@ import static org.rostislav.quickdrop.util.FileUtils.populateModelAttributes;
 public class FileViewController {
     private final FileService fileService;
     private final ApplicationSettingsService applicationSettingsService;
+    private final DownloadLogRepository downloadLogRepository;
+    private final AnalyticsService analyticsService;
 
-    public FileViewController(FileService fileService, ApplicationSettingsService applicationSettingsService) {
+    public FileViewController(FileService fileService, ApplicationSettingsService applicationSettingsService, DownloadLogRepository downloadLogRepository, AnalyticsService analyticsService) {
         this.fileService = fileService;
         this.applicationSettingsService = applicationSettingsService;
+        this.downloadLogRepository = downloadLogRepository;
+        this.analyticsService = analyticsService;
     }
 
     @GetMapping("/upload")
@@ -60,6 +69,19 @@ public class FileViewController {
         return "fileView";
     }
 
+    @GetMapping("/history/{id}")
+    public String viewDownloadHistory(@PathVariable Long id, Model model) {
+        FileEntity file = fileService.getFile(id);
+        List<DownloadLog> downloadHistory = downloadLogRepository.findByFileId(id);
+        long totalDownloads = analyticsService.getTotalDownloadsByFile(id);
+
+        model.addAttribute("file", new FileEntityView(file, formatFileSize(file.size), totalDownloads));
+        model.addAttribute("downloadHistory", downloadHistory);
+
+        return "admin/download-history";
+    }
+
+
     @PostMapping("/password")
     public String checkPassword(String uuid, String password, HttpServletRequest request, Model model) {
         if (fileService.checkPassword(uuid, password)) {
@@ -83,7 +105,7 @@ public class FileViewController {
         }
 
         String password = (String) request.getSession().getAttribute("password");
-        return fileService.downloadFile(id, password);
+        return fileService.downloadFile(id, password, request);
     }
 
     @PostMapping("/extend/{id}")

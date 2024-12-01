@@ -7,70 +7,77 @@
 </head>
 <body>
 <div class="container mt-5">
-    <h1>Admin Settings</h1>
+    <h1 class="mb-4 text-center">Admin Settings</h1>
+
     <form method="post" th:action="@{/admin/save}" th:object="${settings}">
-        <input th:field="*{id}" type="hidden">
 
-        <!-- Max File Size -->
-        <div class="mb-3">
-            <label class="form-label">
-                Max File Size (MB)
-                <input class="form-control" required th:field="*{maxFileSize}" type="text">
-            </label>
+        <!-- File Settings -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5>File Settings</h5>
+            </div>
+            <div class="card-body">
+                <!-- Max File Size -->
+                <div class="mb-3">
+                    <label class="form-label">Max File Size (MB)</label>
+                    <input class="form-control" required th:field="*{maxFileSize}" type="text">
+                </div>
+
+                <!-- Max File Lifetime -->
+                <div class="mb-3">
+                    <label class="form-label">Max File Lifetime (days)</label>
+                    <input class="form-control" required th:field="*{maxFileLifeTime}" type="text">
+                </div>
+
+                <!-- File Storage Path -->
+                <div class="mb-3">
+                    <label class="form-label">File Storage Path</label>
+                    <input class="form-control" required th:field="*{fileStoragePath}" type="text">
+                </div>
+            </div>
         </div>
 
-        <!-- Max File Lifetime -->
-        <div class="mb-3">
-            <label class="form-label">
-                Max File Lifetime (days)
-                <input class="form-control" required th:field="*{maxFileLifeTime}" type="text">
-            </label>
+        <!-- System Settings -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5>System Settings</h5>
+            </div>
+            <div class="card-body">
+                <!-- File Deletion Cron -->
+                <div class="mb-3">
+                    <label class="form-label">File Deletion Cron Expression</label>
+                    <input class="form-control" required th:field="*{fileDeletionCron}" type="text">
+                </div>
+            </div>
         </div>
 
-        <!-- File Storage Path -->
-        <div class="mb-3">
-            <label class="form-label">
-                File Storage Path
-                <input class="form-control" required th:field="*{fileStoragePath}" type="text">
-            </label>
-        </div>
+        <!-- Security Settings -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5>Security Settings</h5>
+            </div>
+            <div class="card-body">
+                <!-- App Password Enabled -->
+                <div class="form-check mb-3">
+                    <input class="form-check-input" id="appPasswordEnabled" onclick="togglePasswordField()"
+                           th:field="*{appPasswordEnabled}" type="checkbox">
+                    <label class="form-check-label">Enable Password Protection</label>
+                </div>
 
-        <!-- Log Storage Path -->
-        <div class="mb-3">
-            <label class="form-label">
-                Log Storage Path
-                <input class="form-control" required th:field="*{logStoragePath}" type="text">
-            </label>
-        </div>
-
-        <!-- File Deletion Cron -->
-        <div class="mb-3">
-            <label class="form-label">
-                File Deletion Cron Expression
-                <input class="form-control" required th:field="*{fileDeletionCron}" type="text">
-            </label>
-
-        </div>
-        <!-- App Password Enabled -->
-        <div class="form-check mb-3">
-            <label class="form-check-label">
-                Enable Password Protection
-                <input class="form-check-input" th:field="*{appPasswordEnabled}" type="checkbox">
-            </label>
-        </div>
-
-        <!-- Admin Password (only displayed if setting up) -->
-        <div class="mb-3" th:if="${#strings.isEmpty(settings.adminPasswordHash)}">
-            <label class="form-label">
-                Set Admin Password
-                <input class="form-control" th:field="*{adminPasswordHash}" type="password">
-            </label>
+                <!-- App Password -->
+                <div class="mb-3" id="passwordInputGroup" style="display: none;">
+                    <label class="form-label">App Password</label>
+                    <input class="form-control" th:field="*{appPassword}" type="password">
+                </div>
+            </div>
         </div>
 
         <!-- Save Button -->
-        <button class="btn btn-primary" type="submit">Save Settings</button>
-        <div class="alert alert-success mt-3" th:if="${param.success}">Settings saved successfully!</div>
+        <div class="d-flex justify-content-center">
+            <button class="btn btn-primary" type="submit">Save Settings</button>
+        </div>
     </form>
 </div>
+<script src="/js/settings.js"></script>
 </body>
 </html>

@@ -4,7 +4,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.rostislav.quickdrop.model.FileEntity;
 import org.rostislav.quickdrop.service.ApplicationSettingsService;
 import org.rostislav.quickdrop.service.FileService;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -24,8 +23,6 @@ import static org.rostislav.quickdrop.util.FileUtils.populateModelAttributes;
 public class FileViewController {
     private final FileService fileService;
     private final ApplicationSettingsService applicationSettingsService;
-    @Value("${file.max.age}")
-    private String maxFileLifeTime;
 
     public FileViewController(FileService fileService, ApplicationSettingsService applicationSettingsService) {
         this.fileService = fileService;
@@ -35,7 +32,7 @@ public class FileViewController {
     @GetMapping("/upload")
     public String showUploadFile(Model model) {
         model.addAttribute("maxFileSize", applicationSettingsService.getFormattedMaxFileSize());
-        model.addAttribute("maxFileLifeTime", maxFileLifeTime);
+        model.addAttribute("maxFileLifeTime", applicationSettingsService.getMaxFileLifeTime());
         return "upload";
     }
 
@@ -49,7 +46,7 @@ public class FileViewController {
     @GetMapping("/{uuid}")
     public String filePage(@PathVariable String uuid, Model model, HttpServletRequest request) {
         FileEntity fileEntity = fileService.getFile(uuid);
-        model.addAttribute("maxFileLifeTime", maxFileLifeTime);
+        model.addAttribute("maxFileLifeTime", applicationSettingsService.getMaxFileLifeTime());
 
         String password = (String) request.getSession().getAttribute("password");
         if (fileEntity.passwordHash != null &&

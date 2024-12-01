@@ -1,6 +1,7 @@
 package org.rostislav.quickdrop.controller;
 
 import org.rostislav.quickdrop.model.ApplicationSettingsEntity;
+import org.rostislav.quickdrop.model.ApplicationSettingsViewModel;
 import org.rostislav.quickdrop.service.ApplicationSettingsService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -29,18 +30,19 @@ public class AdminViewController {
     public String getSettingsPage(Model model) {
         ApplicationSettingsEntity settings = applicationSettingsService.getApplicationSettings();
 
-        ApplicationSettingsEntity applicationSettingsEntity = new ApplicationSettingsEntity(settings);
-        applicationSettingsEntity.setMaxFileSize(bytesToMegabytes(settings.getMaxFileSize()));
+        ApplicationSettingsViewModel applicationSettingsViewModel = new ApplicationSettingsViewModel(settings);
+        applicationSettingsViewModel.setMaxFileSize(bytesToMegabytes(settings.getMaxFileSize()));
 
-        model.addAttribute("settings", applicationSettingsEntity);
+        model.addAttribute("settings", applicationSettingsViewModel);
         return "admin/settings";
     }
 
     @PostMapping("/save")
-    public String saveSettings(ApplicationSettingsEntity settings) {
+    public String saveSettings(ApplicationSettingsViewModel settings) {
         settings.setMaxFileSize(megabytesToBytes(settings.getMaxFileSize()));
 
-        applicationSettingsService.updateApplicationSettings(settings);
+
+        applicationSettingsService.updateApplicationSettings(settings, settings.getAppPassword());
         return "redirect:/admin/dashboard";
     }
 }

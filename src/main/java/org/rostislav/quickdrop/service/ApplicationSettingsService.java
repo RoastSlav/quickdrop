@@ -1,9 +1,11 @@
 package org.rostislav.quickdrop.service;
 
 import org.rostislav.quickdrop.model.ApplicationSettingsEntity;
+import org.rostislav.quickdrop.model.ApplicationSettingsViewModel;
 import org.rostislav.quickdrop.repository.ApplicationSettingsRepository;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.cloud.context.refresh.ContextRefresher;
+import org.springframework.security.crypto.bcrypt.BCrypt;
 import org.springframework.stereotype.Service;
 
 import static org.rostislav.quickdrop.util.FileUtils.formatFileSize;
@@ -13,10 +15,12 @@ public class ApplicationSettingsService {
     private final ApplicationSettingsRepository applicationSettingsRepository;
     private final ContextRefresher contextRefresher;
     private ApplicationSettingsEntity applicationSettings;
+    private final ScheduleService scheduleService;
 
-    public ApplicationSettingsService(ApplicationSettingsRepository applicationSettingsRepository, @Qualifier("configDataContextRefresher") ContextRefresher contextRefresher) {
+    public ApplicationSettingsService(ApplicationSettingsRepository applicationSettingsRepository, @Qualifier("configDataContextRefresher") ContextRefresher contextRefresher, ScheduleService scheduleService) {
         this.contextRefresher = contextRefresher;
         this.applicationSettingsRepository = applicationSettingsRepository;
+        this.scheduleService = scheduleService;
 
         this.applicationSettings = applicationSettingsRepository.findById(1L).orElseGet(() -> {
             ApplicationSettingsEntity settings = new ApplicationSettingsEntity();
@@ -29,6 +33,7 @@ public class ApplicationSettingsService {
             settings.setAppPasswordHash("");
             settings.setAdminPasswordHash("");
             settings = applicationSettingsRepository.save(settings);
+            scheduleService.updateSchedule(settings.getFileDeletionCron(), settings.getMaxFileLifeTime());
             return settings;
         });
     }
@@ -37,7 +42,7 @@ public class ApplicationSettingsService {
         return applicationSettings;
     }
 
-    public void updateApplicationSettings(ApplicationSettingsEntity settings) {
+    public void updateApplicationSettings(ApplicationSettingsViewModel settings, String appPassword) {
         ApplicationSettingsEntity applicationSettingsEntity = applicationSettingsRepository.findById(1L).orElseThrow();
         applicationSettingsEntity.setMaxFileSize(settings.getMaxFileSize());
         applicationSettingsEntity.setMaxFileLifeTime(settings.getMaxFileLifeTime());
@@ -46,9 +51,15 @@ public class ApplicationSettingsService {
         applicationSettingsEntity.setFileDeletionCron(settings.getFileDeletionCron());
         applicationSettingsEntity.setAppPasswordEnabled(settings.isAppPasswordEnabled());
 
+        if (settings.isAppPasswordEnabled()) {
+            applicationSettingsEntity.setAppPasswordHash(BCrypt.hashpw(appPassword, BCrypt.gensalt()));
+        }
+
 
         applicationSettingsRepository.save(applicationSettingsEntity);
         this.applicationSettings = applicationSettingsEntity;
+
+        scheduleService.updateSchedule(applicationSettingsEntity.getFileDeletionCron(), applicationSettingsEntity.getMaxFileLifeTime());
         contextRefresher.refresh();
     }
 

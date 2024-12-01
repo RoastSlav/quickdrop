@@ -1,14 +1,6 @@
 package org.rostislav.quickdrop.model;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-
-@Entity
-public class ApplicationSettingsEntity {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+public class ApplicationSettingsViewModel {
     private Long id;
 
     private long maxFileSize;
@@ -17,13 +9,12 @@ public class ApplicationSettingsEntity {
     private String logStoragePath;
     private String fileDeletionCron;
     private boolean appPasswordEnabled;
-    private String appPasswordHash;
-    private String adminPasswordHash;
+    private String appPassword;
 
-    public ApplicationSettingsEntity() {
+    public ApplicationSettingsViewModel() {
     }
 
-    public ApplicationSettingsEntity(ApplicationSettingsViewModel settings) {
+    public ApplicationSettingsViewModel(ApplicationSettingsEntity settings) {
         this.id = settings.getId();
         this.maxFileSize = settings.getMaxFileSize();
         this.maxFileLifeTime = settings.getMaxFileLifeTime();
@@ -31,6 +22,14 @@ public class ApplicationSettingsEntity {
         this.logStoragePath = settings.getLogStoragePath();
         this.fileDeletionCron = settings.getFileDeletionCron();
         this.appPasswordEnabled = settings.isAppPasswordEnabled();
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
     }
 
     public long getMaxFileSize() {
@@ -81,27 +80,11 @@ public class ApplicationSettingsEntity {
         this.appPasswordEnabled = appPasswordEnabled;
     }
 
-    public String getAppPasswordHash() {
-        return appPasswordHash;
+    public String getAppPassword() {
+        return appPassword;
     }
 
-    public void setAppPasswordHash(String appPasswordHash) {
-        this.appPasswordHash = appPasswordHash;
-    }
-
-    public String getAdminPasswordHash() {
-        return adminPasswordHash;
-    }
-
-    public void setAdminPasswordHash(String adminPasswordHash) {
-        this.adminPasswordHash = adminPasswordHash;
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
+    public void setAppPassword(String appPassword) {
+        this.appPassword = appPassword;
     }
 }

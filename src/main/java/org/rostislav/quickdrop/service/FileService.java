@@ -5,7 +5,7 @@ import org.rostislav.quickdrop.model.FileUploadRequest;
 import org.rostislav.quickdrop.repository.FileRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpHeaders;
@@ -36,12 +36,13 @@ public class FileService {
     private static final Logger logger = LoggerFactory.getLogger(FileService.class);
     private final FileRepository fileRepository;
     private final PasswordEncoder passwordEncoder;
-    @Value("${file.save.path}")
-    private String fileSavePath;
+    private final ApplicationSettingsService applicationSettingsService;
 
-    public FileService(FileRepository fileRepository, PasswordEncoder passwordEncoder) {
+    @Lazy
+    public FileService(FileRepository fileRepository, PasswordEncoder passwordEncoder, ApplicationSettingsService applicationSettingsService) {
         this.fileRepository = fileRepository;
         this.passwordEncoder = passwordEncoder;
+        this.applicationSettingsService = applicationSettingsService;
     }
 
     private static StreamingResponseBody getStreamingResponseBody(Path outputFile, FileEntity fileEntity) {
@@ -75,7 +76,7 @@ public class FileService {
         logger.info("File received: {}", file.getOriginalFilename());
 
         String uuid = UUID.randomUUID().toString();
-        Path path = Path.of(fileSavePath, uuid);
+        Path path = Path.of(applicationSettingsService.getFileStoragePath(), uuid);
 
         if (fileUploadRequest.password == null || fileUploadRequest.password.isEmpty()) {
             if (!saveUnencryptedFile(file, path)) {
@@ -161,7 +162,7 @@ public class FileService {
             return ResponseEntity.notFound().build();
         }
 
-        Path pathOfFile = Path.of(fileSavePath, fileEntity.uuid);
+        Path pathOfFile = Path.of(applicationSettingsService.getFileStoragePath(), fileEntity.uuid);
         Path outputFile = null;
         if (fileEntity.passwordHash != null) {
             try {
@@ -216,7 +217,7 @@ public class FileService {
     }
 
     public boolean deleteFileFromFileSystem(String uuid) {
-        Path path = Path.of(fileSavePath, uuid);
+        Path path = Path.of(applicationSettingsService.getFileStoragePath(), uuid);
         try {
             Files.delete(path);
             logger.info("File deleted: {}", path);

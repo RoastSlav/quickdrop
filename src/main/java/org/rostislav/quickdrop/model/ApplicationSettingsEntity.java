@@ -20,6 +20,21 @@ public class ApplicationSettingsEntity {
     private String appPasswordHash;
     private String adminPasswordHash;
 
+    public ApplicationSettingsEntity() {
+    }
+
+    public ApplicationSettingsEntity(ApplicationSettingsEntity settings) {
+        this.id = settings.id;
+        this.maxFileSize = settings.maxFileSize;
+        this.maxFileLifeTime = settings.maxFileLifeTime;
+        this.fileStoragePath = settings.fileStoragePath;
+        this.logStoragePath = settings.logStoragePath;
+        this.fileDeletionCron = settings.fileDeletionCron;
+        this.appPasswordEnabled = settings.appPasswordEnabled;
+        this.appPasswordHash = settings.appPasswordHash;
+        this.adminPasswordHash = settings.adminPasswordHash;
+    }
+
     public long getMaxFileSize() {
         return maxFileSize;
     }

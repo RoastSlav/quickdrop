@@ -1,9 +1,5 @@
 package org.rostislav.quickdrop;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -20,46 +16,45 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.multipart.MultipartFile;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static org.rostislav.quickdrop.TestDataContainer.getEmptyFileUploadRequest;
-import static org.rostislav.quickdrop.TestDataContainer.getFileEntity;
-import static org.rostislav.quickdrop.TestDataContainer.getFileUploadRequest;
+import static org.rostislav.quickdrop.TestDataContainer.*;
 
 @SpringBootTest
 @ExtendWith(MockitoExtension.class)
 public class FileServiceTests {
     @Nested
     class SaveFileTests {
-        @Value("${file.save.path}")
-        private String fileSavePath;
         @Autowired
         FileService fileService;
         @MockBean
         FileRepository fileRepository;
         @MockBean
         PasswordEncoder passwordEncoder;
+        @Value("${file.save.path}")
+        private String fileSavePath;
 
         @AfterEach
         void tearDown() {
             //Delete the all files in the fileSavePath
             try {
                 Files.walk(Path.of(fileSavePath))
-                     .filter(Files::isRegularFile)
-                     .forEach(file -> {
-                         try {
-                             Files.delete(file);
-                         } catch (
-                                 IOException e) {
-                             e.printStackTrace();
-                         }
-                     });
+                        .filter(Files::isRegularFile)
+                        .forEach(file -> {
+                            try {
+                                Files.delete(file);
+                            } catch (
+                                    IOException e) {
+                                e.printStackTrace();
+                            }
+                        });
             } catch (
                     IOException e) {
                 e.printStackTrace();

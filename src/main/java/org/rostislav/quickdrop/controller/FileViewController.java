@@ -2,6 +2,7 @@ package org.rostislav.quickdrop.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
 import org.rostislav.quickdrop.model.FileEntity;
+import org.rostislav.quickdrop.service.ApplicationSettingsService;
 import org.rostislav.quickdrop.service.FileService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -22,18 +23,18 @@ import static org.rostislav.quickdrop.util.FileUtils.populateModelAttributes;
 @RequestMapping("/file")
 public class FileViewController {
     private final FileService fileService;
-    @Value("${max-upload-file-size}")
-    private String maxFileSize;
+    private final ApplicationSettingsService applicationSettingsService;
     @Value("${file.max.age}")
     private String maxFileLifeTime;
 
-    public FileViewController(FileService fileService) {
+    public FileViewController(FileService fileService, ApplicationSettingsService applicationSettingsService) {
         this.fileService = fileService;
+        this.applicationSettingsService = applicationSettingsService;
     }
 
     @GetMapping("/upload")
     public String showUploadFile(Model model) {
-        model.addAttribute("maxFileSize", maxFileSize);
+        model.addAttribute("maxFileSize", applicationSettingsService.getFormattedMaxFileSize());
         model.addAttribute("maxFileLifeTime", maxFileLifeTime);
         return "upload";
     }

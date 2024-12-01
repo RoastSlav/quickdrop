@@ -28,9 +28,11 @@ public class AdminViewController {
     @GetMapping("/settings")
     public String getSettingsPage(Model model) {
         ApplicationSettingsEntity settings = applicationSettingsService.getApplicationSettings();
-        settings.setMaxFileSize(bytesToMegabytes(settings.getMaxFileSize()));
 
-        model.addAttribute("settings", settings);
+        ApplicationSettingsEntity applicationSettingsEntity = new ApplicationSettingsEntity(settings);
+        applicationSettingsEntity.setMaxFileSize(bytesToMegabytes(settings.getMaxFileSize()));
+
+        model.addAttribute("settings", applicationSettingsEntity);
         return "admin/settings";
     }
 

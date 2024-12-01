@@ -1,12 +1,8 @@
 package org.rostislav.quickdrop.model;
 
-import java.time.LocalDate;
+import jakarta.persistence.*;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.PrePersist;
+import java.time.LocalDate;
 
 @Entity
 public class FileEntity {

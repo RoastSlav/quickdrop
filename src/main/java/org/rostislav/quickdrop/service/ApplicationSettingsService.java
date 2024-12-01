@@ -2,17 +2,23 @@ package org.rostislav.quickdrop.service;
 
 import org.rostislav.quickdrop.model.ApplicationSettingsEntity;
 import org.rostislav.quickdrop.repository.ApplicationSettingsRepository;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.cloud.context.refresh.ContextRefresher;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.stereotype.Service;
+
+import static org.rostislav.quickdrop.util.FileUtils.formatFileSize;
 
 @Service
 public class ApplicationSettingsService {
     private final ConfigurableApplicationContext applicationContext;
     private final ApplicationSettingsRepository applicationSettingsRepository;
+    private final ContextRefresher contextRefresher;
     private ApplicationSettingsEntity applicationSettings;
 
-    public ApplicationSettingsService(ApplicationSettingsRepository applicationSettingsRepository, ApplicationContext applicationContext) {
+    public ApplicationSettingsService(ApplicationSettingsRepository applicationSettingsRepository, ApplicationContext applicationContext, @Qualifier("configDataContextRefresher") ContextRefresher contextRefresher) {
+        this.contextRefresher = contextRefresher;
         this.applicationContext = (ConfigurableApplicationContext) applicationContext;
         this.applicationSettingsRepository = applicationSettingsRepository;
 
@@ -27,7 +33,6 @@ public class ApplicationSettingsService {
             settings.setAppPasswordHash("");
             settings.setAdminPasswordHash("");
             settings = applicationSettingsRepository.save(settings);
-            this.applicationContext.refresh();
             return settings;
         });
     }
@@ -47,10 +52,16 @@ public class ApplicationSettingsService {
 
 
         applicationSettingsRepository.save(applicationSettingsEntity);
+        this.applicationSettings = applicationSettingsEntity;
+        contextRefresher.refresh();
     }
 
     public long getMaxFileSize() {
         return applicationSettings.getMaxFileSize();
+    }
+
+    public String getFormattedMaxFileSize() {
+        return formatFileSize(applicationSettings.getMaxFileSize());
     }
 
     public long getMaxFileLifeTime() {

@@ -33,11 +33,11 @@ import static org.rostislav.quickdrop.util.FileEncryptionUtils.encryptFile;
 
 @Service
 public class FileService {
-    @Value("${file.save.path}")
-    private String fileSavePath;
     private static final Logger logger = LoggerFactory.getLogger(FileService.class);
     private final FileRepository fileRepository;
     private final PasswordEncoder passwordEncoder;
+    @Value("${file.save.path}")
+    private String fileSavePath;
 
     public FileService(FileRepository fileRepository, PasswordEncoder passwordEncoder) {
         this.fileRepository = fileRepository;
@@ -184,10 +184,10 @@ public class FileService {
             Resource resource = new UrlResource(outputFile.toUri());
             logger.info("Sending file: {}", fileEntity);
             return ResponseEntity.ok()
-                                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + URLEncoder.encode(fileEntity.name, StandardCharsets.UTF_8) + "\"")
-                                 .header(HttpHeaders.CONTENT_TYPE, "application/octet-stream")
-                                 .header(HttpHeaders.CONTENT_LENGTH, String.valueOf(resource.contentLength()))
-                                 .body(responseBody);
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + URLEncoder.encode(fileEntity.name, StandardCharsets.UTF_8) + "\"")
+                    .header(HttpHeaders.CONTENT_TYPE, "application/octet-stream")
+                    .header(HttpHeaders.CONTENT_LENGTH, String.valueOf(resource.contentLength()))
+                    .body(responseBody);
         } catch (
                 Exception e) {
             logger.error("Error reading file: {}", e.getMessage());

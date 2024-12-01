@@ -1,8 +1,5 @@
 package org.rostislav.quickdrop.service;
 
-import java.time.LocalDate;
-import java.util.List;
-
 import org.rostislav.quickdrop.model.FileEntity;
 import org.rostislav.quickdrop.repository.FileRepository;
 import org.slf4j.Logger;
@@ -10,6 +7,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+
+import java.time.LocalDate;
+import java.util.List;
 
 @Service
 public class ScheduleService {

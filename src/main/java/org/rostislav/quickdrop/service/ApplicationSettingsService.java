@@ -98,4 +98,15 @@ public class ApplicationSettingsService {
     public String getAdminPasswordHash() {
         return applicationSettings.getAdminPasswordHash();
     }
+
+    public boolean isAdminPasswordSet() {
+        return !applicationSettings.getAdminPasswordHash().isEmpty();
+    }
+
+    public void setAdminPassword(String adminPassword) {
+        ApplicationSettingsEntity applicationSettingsEntity = applicationSettingsRepository.findById(1L).orElseThrow();
+        applicationSettingsEntity.setAdminPasswordHash(BCrypt.hashpw(adminPassword, BCrypt.gensalt()));
+        applicationSettingsRepository.save(applicationSettingsEntity);
+        this.applicationSettings = applicationSettingsEntity;
+    }
 }

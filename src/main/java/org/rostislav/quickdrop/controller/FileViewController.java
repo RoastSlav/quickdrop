@@ -61,7 +61,7 @@ public class FileViewController {
         if (fileEntity.passwordHash != null &&
                 (password == null || !fileService.checkPassword(uuid, password))) {
             model.addAttribute("uuid", uuid);
-            return "filePassword";
+            return "file-password";
         }
 
         populateModelAttributes(fileEntity, model, request);
@@ -89,7 +89,7 @@ public class FileViewController {
             return "redirect:/file/" + uuid;
         } else {
             model.addAttribute("uuid", uuid);
-            return "filePassword";
+            return "file-password";
         }
     }
 

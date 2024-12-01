@@ -1,7 +1,6 @@
 package org.rostislav.quickdrop.config;
 
 import jakarta.servlet.MultipartConfigElement;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.web.servlet.MultipartConfigFactory;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.context.annotation.Bean;
@@ -12,12 +11,9 @@ import org.springframework.util.unit.DataSize;
 public class MultipartConfig {
     private final long ADDITIONAL_REQUEST_SIZE = 1024L * 1024L * 10L; // 10 MB
 
-    @Autowired
-    private MultipartProperties multipartProperties;
-
     @Bean
     @RefreshScope
-    public MultipartConfigElement multipartConfigElement() {
+    public MultipartConfigElement multipartConfigElement(MultipartProperties multipartProperties) {
         MultipartConfigFactory factory = new MultipartConfigFactory();
 
         factory.setMaxFileSize(DataSize.parse(multipartProperties.getMaxFileSize()));

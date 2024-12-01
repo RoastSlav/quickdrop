@@ -109,6 +109,16 @@ max-upload-file-size=1GB
 java -jar target/quickdrop-0.0.1-SNAPSHOT.jar --spring.config.location=./application.properties
 ```
 
+## Updates
+
+To update the app, you need to:
+
+1. Stop and remove the old container.
+2. Pull the new image.
+3. Start the updated container.
+
+If you want to ensure file and database persistence between updates, you can use Docker volumes. (Check docker instalation above)
+
 ## License
 
 This project is licensed under the MIT License. See the `LICENSE` file for details.

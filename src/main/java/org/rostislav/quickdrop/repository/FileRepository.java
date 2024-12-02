@@ -16,9 +16,15 @@ public interface FileRepository extends JpaRepository<FileEntity, Long> {
     @Query("SELECT f FROM FileEntity f WHERE f.keepIndefinitely = false AND f.uploadDate < :thresholdDate")
     List<FileEntity> getFilesForDeletion(@Param("thresholdDate") LocalDate thresholdDate);
 
-    @Query("SELECT f FROM FileEntity f WHERE f.name LIKE %:searchString% OR f.description LIKE %:searchString% OR f.uuid LIKE %:searchString%")
+    @Query("SELECT f FROM FileEntity f WHERE (LOWER(f.name) LIKE LOWER(CONCAT('%', :searchString, '%')) OR LOWER(f.description) LIKE LOWER(CONCAT('%', :searchString, '%')) OR LOWER(f.uuid) LIKE LOWER(CONCAT('%', :searchString, '%')))")
     List<FileEntity> searchFiles(@Param("searchString") String searchString);
+
+    @Query("SELECT f FROM FileEntity f WHERE f.hidden = false")
+    List<FileEntity> findAllNotHiddenFiles();
 
     @Query("SELECT SUM(f.size) FROM FileEntity f")
     Long totalFileSizeForAllFiles();
+
+    @Query("SELECT f FROM FileEntity f WHERE f.hidden = false AND (LOWER(f.name) LIKE LOWER(CONCAT('%', :searchString, '%')) OR LOWER(f.description) LIKE LOWER(CONCAT('%', :searchString, '%')) OR LOWER(f.uuid) LIKE LOWER(CONCAT('%', :searchString, '%')))")
+    List<FileEntity> searchNotHiddenFiles(@Param("searchString") String query);
 }

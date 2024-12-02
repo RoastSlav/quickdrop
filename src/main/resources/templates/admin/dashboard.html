@@ -63,53 +63,64 @@
             <table class="table table-striped align-middle">
                 <thead>
                 <tr>
-                    <th class="px-4">Name</th>
-                    <th class="px-4">Upload Date</th>
-                    <th class="px-4">Size</th>
-                    <th class="px-4">Downloads</th>
-                    <th class="text-end px-4">Actions</th>
+                    <th style="width: 20%;">Name</th>
+                    <th style="width: 15%;">Upload Date</th>
+                    <th style="width: 10%;">Size</th>
+                    <th style="width: 10%;">Downloads</th>
+                    <th style="width: 10%; text-align: center;">Keep Indefinitely</th>
+                    <th style="width: 10%; text-align: center;">Hidden</th>
+                    <th style="width: 25%; text-align: right;">Actions</th>
                 </tr>
                 </thead>
                 <tbody>
                 <tr class="align-middle" th:each="file : ${files}">
-                    <td class="px-4" th:text="${file.name}"></td>
-                    <td class="px-4" th:text="${#temporals.format(file.uploadDate, 'dd.MM.yyyy')}"></td>
-                    <td class="px-4" th:text="${file.size}"></td>
-                    <td class="px-4" th:text="${file.totalDownloads}"></td>
-                    <td class="px-4 text-center">
-                        <!-- Keep Indefinitely Checkbox -->
+                    <td th:text="${file.name}"></td>
+                    <td th:text="${#temporals.format(file.uploadDate, 'dd.MM.yyyy')}"></td>
+                    <td th:text="${file.size}"></td>
+                    <td th:text="${file.totalDownloads}"></td>
+
+                    <!-- Keep Indefinitely Checkbox -->
+                    <td class="text-center">
                         <form class="d-inline" method="post" th:action="@{/file/keep-indefinitely/{id}(id=${file.id})}">
                             <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden">
                             <input name="keepIndefinitely" type="hidden" value="false">
-                            <div class="d-flex flex-column align-items-center">
-                                <span>Keep Indefinitely</span>
-                                <div class="form-check form-switch mt-2">
-                                    <input class="form-check-input"
-                                           name="keepIndefinitely"
-                                           onchange="updateCheckboxState(event, this)"
-                                           th:checked="${file.keepIndefinitely}"
-                                           type="checkbox"
-                                           value="true">
-                                </div>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input"
+                                       name="keepIndefinitely"
+                                       onchange="updateCheckboxState(event, this)"
+                                       th:checked="${file.keepIndefinitely}"
+                                       type="checkbox"
+                                       value="true">
                             </div>
                         </form>
                     </td>
-                    <td class="text-end px-4">
-                        <!-- View File Button -->
-                        <a class="btn btn-sm btn-info me-2" th:href="@{/file/{uuid}(uuid=${file.uuid})}">View File</a>
 
-                        <!-- View Download History Button -->
-                        <a class="btn btn-sm btn-warning me-2" th:href="@{/file/history/{id}(id=${file.id})}">View
-                            History</a>
+                    <!-- Hidden Checkbox -->
+                    <td class="text-center">
+                        <form class="d-inline" method="post" th:action="@{/file/toggle-hidden/{id}(id=${file.id})}">
+                            <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden">
+                            <input name="hidden" type="hidden" value="false">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input"
+                                       name="hidden"
+                                       onchange="updateHiddenState(event, this)"
+                                       th:checked="${file.hidden}"
+                                       type="checkbox"
+                                       value="true">
+                            </div>
+                        </form>
+                    </td>
 
-                        <!-- Download Button -->
-                        <a class="btn btn-sm btn-success me-2"
+                    <!-- Actions -->
+                    <td class="text-end">
+                        <a class="btn btn-sm btn-info me-1" th:href="@{/file/{uuid}(uuid=${file.uuid})}">View File</a>
+                        <a class="btn btn-sm btn-warning me-1"
+                           th:href="@{/file/history/{id}(id=${file.id})}">History</a>
+                        <a class="btn btn-sm btn-success me-1"
                            th:href="@{/file/download/{id}(id=${file.id})}">Download</a>
-
-                        <!-- Delete Button with POST -->
                         <form class="d-inline" method="post" th:action="@{/file/delete/{id}(id=${file.id})}">
                             <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden">
-                            <button class="btn btn-sm btn-danger" type="submit">Delete</button>
+                            <button class="btn btn-sm btn-danger">Delete</button>
                         </form>
                     </td>
                 </tr>
@@ -131,6 +142,20 @@
         checkbox.form.submit();
     }
 </script>
+
+<script>
+    function updateHiddenState(event, checkbox) {
+        event.preventDefault();
+        const hiddenField = checkbox.form.querySelector('input[name="hidden"][type="hidden"]');
+        if (hiddenField) {
+            hiddenField.value = checkbox.checked;
+        }
+
+        console.log('Submitting hidden state form...');
+        checkbox.form.submit();
+    }
+</script>
+
 
 <!-- Bootstrap Bundle -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>

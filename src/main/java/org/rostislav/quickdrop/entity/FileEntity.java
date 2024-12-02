@@ -17,6 +17,8 @@ public class FileEntity {
     public boolean keepIndefinitely;
     public LocalDate uploadDate;
     public String passwordHash;
+    @Column(columnDefinition = "boolean default false")
+    public boolean hidden;
 
     @PrePersist
     public void prePersist() {

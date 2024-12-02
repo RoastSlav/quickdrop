@@ -118,3 +118,14 @@ function parseSize(size) {
 
     return value * (units[unit] || 1);
 }
+
+function updateHiddenState(event, checkbox) {
+    event.preventDefault();
+    const hiddenField = checkbox.form.querySelector('input[name="hidden"][type="hidden"]');
+    if (hiddenField) {
+        hiddenField.value = checkbox.checked;
+    }
+
+    console.log('Submitting hidden state form...');
+    checkbox.form.submit();
+}

@@ -44,7 +44,7 @@ public class FileViewController {
 
     @GetMapping("/list")
     public String listFiles(Model model) {
-        List<FileEntity> files = fileService.getFiles();
+        List<FileEntity> files = fileService.getNotHiddenFiles();
         model.addAttribute("files", files);
         return "listFiles";
     }
@@ -129,32 +129,54 @@ public class FileViewController {
 
     @GetMapping("/search")
     public String searchFiles(String query, Model model) {
-        List<FileEntity> files = fileService.searchFiles(query);
+        List<FileEntity> files = fileService.searchNotHiddenFiles(query);
         model.addAttribute("files", files);
         return "listFiles";
     }
 
     @PostMapping("/keep-indefinitely/{id}")
     public String updateKeepIndefinitely(@PathVariable Long id, @RequestParam(required = false, defaultValue = "false") boolean keepIndefinitely, HttpServletRequest request, Model model) {
+        return handlePasswordValidationAndRedirect(id, request, model, () -> fileService.updateKeepIndefinitely(id, keepIndefinitely));
+    }
+
+
+    @PostMapping("/toggle-hidden/{id}")
+    public String toggleHidden(@PathVariable Long id, HttpServletRequest request, Model model) {
+        return handlePasswordValidationAndRedirect(id, request, model, () -> fileService.toggleHidden(id));
+    }
+
+
+    private String handlePasswordValidationAndRedirect(Long fileId, HttpServletRequest request, Model model, Runnable action) {
+        String referer = request.getHeader("Referer");
+
         // Check for admin password
-        if (!applicationSettingsService.checkForAdminPassword(request)) {
-            // Check for file password
-            String filePassword = (String) request.getSession().getAttribute("password");
-            if (filePassword != null) {
-                FileEntity fileEntity = fileService.getFile(id);
-                // Check if file password is correct
-                if (fileEntity.passwordHash != null && !fileService.checkPassword(fileEntity.uuid, filePassword)) {
-                    model.addAttribute("uuid", fileEntity.uuid);
-                    return "file-password";
-                }
-                // Redirect to file page
-                fileService.updateKeepIndefinitely(id, keepIndefinitely);
-                return "redirect:/file/" + fileEntity.uuid;
-            }
-            return "redirect:/admin/password";
+        if (applicationSettingsService.checkForAdminPassword(request)) {
+            action.run();
+            return "redirect:" + referer;
         }
 
-        fileService.updateKeepIndefinitely(id, keepIndefinitely);
-        return "redirect:/admin/dashboard";
+        // Check for file password in the session
+        String filePassword = (String) request.getSession().getAttribute("password");
+        if (filePassword != null) {
+            FileEntity fileEntity = fileService.getFile(fileId);
+            // Validate file password if the file is password-protected
+            if (fileEntity.passwordHash != null && !fileService.checkPassword(fileEntity.uuid, filePassword)) {
+                model.addAttribute("uuid", fileEntity.uuid);
+                return "file-password"; // Redirect to file password page if the password is incorrect
+            }
+
+            action.run();
+            return "redirect:" + referer;
+        }
+
+        // No valid password found, determine the redirect destination
+        if (referer != null && referer.contains("/admin/dashboard")) {
+            return "redirect:/admin/password"; // Redirect to admin password page
+        } else {
+            // Get the file for adding the UUID to the model for the file password page
+            FileEntity fileEntity = fileService.getFile(fileId);
+            model.addAttribute("uuid", fileEntity.uuid);
+            return "file-password";
+        }
     }
 }

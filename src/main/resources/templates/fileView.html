@@ -96,8 +96,25 @@
                             </div>
                         </form>
                     </div>
+                    <div class="d-flex justify-content-between align-items-center" th:if="${file.passwordHash != null}">
+                        <h5 class="card-title">Hide File From List:</h5>
+                        <form class="d-inline" method="post" th:action="@{/file/toggle-hidden/{id}(id=${file.id})}">
+                            <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden">
+                            <input name="hidden" type="hidden" value="false">
+                            <div class="form-check form-switch">
+                                <input
+                                        class="form-check-input"
+                                        id="hidden"
+                                        name="hidden"
+                                        onchange="updateCheckboxState(event, this)"
+                                        th:checked="${file.hidden}"
+                                        type="checkbox"
+                                        value="true"/>
+                            </div>
+                        </form>
+                    </div>
 
-                    <div class="d-flex justify-content-between align-items-center">
+                    <div class="d-flex justify-content-between align-items-center pt-3">
                         <h5 class="card-title">
                             File
                             Size:</h5>

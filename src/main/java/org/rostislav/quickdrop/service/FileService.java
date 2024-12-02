@@ -267,6 +267,10 @@ public class FileService {
         return fileRepository.searchFiles(query);
     }
 
+    public List<FileEntity> searchNotHiddenFiles(String query) {
+        return fileRepository.searchNotHiddenFiles(query);
+    }
+
     public long calculateTotalSpaceUsed() {
         return nullToZero(fileRepository.totalFileSizeForAllFiles());
     }
@@ -285,5 +289,21 @@ public class FileService {
         fileEntity.keepIndefinitely = keepIndefinitely;
         logger.info("File keepIndefinitely updated: {}", fileEntity);
         fileRepository.save(fileEntity);
+    }
+
+    public void toggleHidden(Long id) {
+        Optional<FileEntity> referenceById = fileRepository.findById(id);
+        if (referenceById.isEmpty()) {
+            return;
+        }
+
+        FileEntity fileEntity = referenceById.get();
+        fileEntity.hidden = !fileEntity.hidden;
+        logger.info("File hidden updated: {}", fileEntity);
+        fileRepository.save(fileEntity);
+    }
+
+    public List<FileEntity> getNotHiddenFiles() {
+        return fileRepository.findAllNotHiddenFiles();
     }
 }

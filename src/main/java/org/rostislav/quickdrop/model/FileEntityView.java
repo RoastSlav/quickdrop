@@ -13,6 +13,7 @@ public class FileEntityView {
     public boolean keepIndefinitely;
     public LocalDate uploadDate;
     public long totalDownloads;
+    public boolean hidden;
 
     public FileEntityView() {
     }
@@ -26,5 +27,6 @@ public class FileEntityView {
         this.keepIndefinitely = fileEntity.keepIndefinitely;
         this.uploadDate = fileEntity.uploadDate;
         this.totalDownloads = totalDownloads;
+        this.hidden = fileEntity.hidden;
     }
 }

@@ -79,11 +79,22 @@
                         Files are kept only for <span th:text="${maxFileLifeTime}">30</span> days after this date.
                     </small>
                     <div class="d-flex justify-content-between align-items-center pt-3">
-                        <h5 class="card-title">
-                            Keep
-                            Indefinitely:</h5>
-                        <p class="card-text"
-                           th:text="${file.keepIndefinitely} ? 'Yes' : 'No'"></p>
+                        <h5 class="card-title">Keep Indefinitely:</h5>
+                        <form class="d-inline" method="post" th:action="@{/file/keep-indefinitely/{id}(id=${file.id})}">
+                            <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden">
+                            <input name="keepIndefinitely" type="hidden" value="false">
+                            <div class="form-check form-switch">
+                                <input
+                                        class="form-check-input"
+                                        id="keepIndefinitely"
+                                        name="keepIndefinitely"
+                                        onchange="updateCheckboxState(event, this)"
+                                        th:checked="${file.keepIndefinitely}"
+                                        th:disabled="${file.passwordHash == null}"
+                                        type="checkbox"
+                                        value="true"/>
+                            </div>
+                        </form>
                     </div>
 
                     <div class="d-flex justify-content-between align-items-center">
@@ -172,6 +183,19 @@
         </div>
     </div>
 </div>
+
+<script>
+    function updateCheckboxState(event, checkbox) {
+        event.preventDefault();
+        const hiddenField = checkbox.form.querySelector('input[name="keepIndefinitely"][type="hidden"]');
+        if (hiddenField) {
+            hiddenField.value = checkbox.checked;
+        }
+
+        console.log('Submitting form...');
+        checkbox.form.submit();
+    }
+</script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script src="/js/fileView.js"></script>
 </body>

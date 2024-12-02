@@ -277,6 +277,10 @@ public class FileService {
             return;
         }
 
+        if (!keepIndefinitely) {
+            extendFile(id);
+        }
+
         FileEntity fileEntity = referenceById.get();
         fileEntity.keepIndefinitely = keepIndefinitely;
         logger.info("File keepIndefinitely updated: {}", fileEntity);

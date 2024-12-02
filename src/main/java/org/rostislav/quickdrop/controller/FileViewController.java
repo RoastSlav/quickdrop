@@ -135,8 +135,22 @@ public class FileViewController {
     }
 
     @PostMapping("/keep-indefinitely/{id}")
-    public String updateKeepIndefinitely(@PathVariable Long id, @RequestParam(required = false, defaultValue = "false") boolean keepIndefinitely, HttpServletRequest request) {
+    public String updateKeepIndefinitely(@PathVariable Long id, @RequestParam(required = false, defaultValue = "false") boolean keepIndefinitely, HttpServletRequest request, Model model) {
+        // Check for admin password
         if (!applicationSettingsService.checkForAdminPassword(request)) {
+            // Check for file password
+            String filePassword = (String) request.getSession().getAttribute("password");
+            if (filePassword != null) {
+                FileEntity fileEntity = fileService.getFile(id);
+                // Check if file password is correct
+                if (fileEntity.passwordHash != null && !fileService.checkPassword(fileEntity.uuid, filePassword)) {
+                    model.addAttribute("uuid", fileEntity.uuid);
+                    return "file-password";
+                }
+                // Redirect to file page
+                fileService.updateKeepIndefinitely(id, keepIndefinitely);
+                return "redirect:/file/" + fileEntity.uuid;
+            }
             return "redirect:/admin/password";
         }
 

@@ -2,7 +2,6 @@ package org.rostislav.quickdrop.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
 import org.rostislav.quickdrop.entity.ApplicationSettingsEntity;
-import org.rostislav.quickdrop.entity.FileEntity;
 import org.rostislav.quickdrop.model.AnalyticsDataView;
 import org.rostislav.quickdrop.model.ApplicationSettingsViewModel;
 import org.rostislav.quickdrop.model.FileEntityView;
@@ -19,7 +18,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
 
-import static org.rostislav.quickdrop.util.FileUtils.*;
+import static org.rostislav.quickdrop.util.FileUtils.bytesToMegabytes;
+import static org.rostislav.quickdrop.util.FileUtils.megabytesToBytes;
 
 @Controller
 @RequestMapping("/admin")
@@ -40,10 +40,8 @@ public class AdminViewController {
             return "redirect:/admin/password";
         }
 
-        List<FileEntity> files = fileService.getFiles();
-
-        model.addAttribute("files", files.stream().map(
-                file -> new FileEntityView(file, formatFileSize(file.size), analyticsService.getTotalDownloadsByFile(file.id))));
+        List<FileEntityView> files = fileService.getAllFilesWithDownloadCounts();
+        model.addAttribute("files", files);
 
         AnalyticsDataView analytics = analyticsService.getAnalytics();
         model.addAttribute("analytics", analytics);

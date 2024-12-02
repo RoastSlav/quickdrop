@@ -3,6 +3,7 @@ package org.rostislav.quickdrop.service;
 import jakarta.servlet.http.HttpServletRequest;
 import org.rostislav.quickdrop.entity.DownloadLog;
 import org.rostislav.quickdrop.entity.FileEntity;
+import org.rostislav.quickdrop.model.FileEntityView;
 import org.rostislav.quickdrop.model.FileUploadRequest;
 import org.rostislav.quickdrop.repository.DownloadLogRepository;
 import org.rostislav.quickdrop.repository.FileRepository;
@@ -306,4 +307,9 @@ public class FileService {
     public List<FileEntity> getNotHiddenFiles() {
         return fileRepository.findAllNotHiddenFiles();
     }
+
+    public List<FileEntityView> getAllFilesWithDownloadCounts() {
+        return fileRepository.findAllFilesWithDownloadCounts();
+    }
+
 }

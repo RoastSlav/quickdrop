@@ -17,7 +17,6 @@ import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBo
 
 import java.util.List;
 
-import static org.rostislav.quickdrop.util.FileUtils.formatFileSize;
 import static org.rostislav.quickdrop.util.FileUtils.populateModelAttributes;
 
 @Controller
@@ -76,7 +75,7 @@ public class FileViewController {
         List<DownloadLog> downloadHistory = downloadLogRepository.findByFileId(id);
         long totalDownloads = analyticsService.getTotalDownloadsByFile(id);
 
-        model.addAttribute("file", new FileEntityView(file, formatFileSize(file.size), totalDownloads));
+        model.addAttribute("file", new FileEntityView(file, totalDownloads));
         model.addAttribute("downloadHistory", downloadHistory);
 
         return "admin/download-history";

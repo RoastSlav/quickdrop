@@ -36,7 +36,7 @@ public class AdminViewController {
 
     @GetMapping("/dashboard")
     public String getDashboardPage(Model model, HttpServletRequest request) {
-        if (!checkForAdminPassword(request)) {
+        if (!applicationSettingsService.checkForAdminPassword(request)) {
             return "redirect:/admin/password";
         }
 
@@ -67,7 +67,7 @@ public class AdminViewController {
 
     @GetMapping("/settings")
     public String getSettingsPage(Model model, HttpServletRequest request) {
-        if (!checkForAdminPassword(request)) {
+        if (!applicationSettingsService.checkForAdminPassword(request)) {
             return "redirect:/admin/password";
         }
 
@@ -82,7 +82,7 @@ public class AdminViewController {
 
     @PostMapping("/save")
     public String saveSettings(ApplicationSettingsViewModel settings, HttpServletRequest request) {
-        if (!checkForAdminPassword(request)) {
+        if (!applicationSettingsService.checkForAdminPassword(request)) {
             return "redirect:/admin/password";
         }
         settings.setMaxFileSize(megabytesToBytes(settings.getMaxFileSize()));
@@ -106,11 +106,5 @@ public class AdminViewController {
     @GetMapping("/password")
     public String showAdminPasswordPage() {
         return "/admin/admin-password";
-    }
-
-    private boolean checkForAdminPassword(HttpServletRequest request) {
-        String password = (String) request.getSession().getAttribute("adminPassword");
-        String adminPasswordHash = applicationSettingsService.getAdminPasswordHash();
-        return password != null && password.equals(adminPasswordHash);
     }
 }

@@ -76,6 +76,24 @@
                     <td class="px-4" th:text="${#temporals.format(file.uploadDate, 'dd.MM.yyyy')}"></td>
                     <td class="px-4" th:text="${file.size}"></td>
                     <td class="px-4" th:text="${file.totalDownloads}"></td>
+                    <td class="px-4 text-center">
+                        <!-- Keep Indefinitely Checkbox -->
+                        <form class="d-inline" method="post" th:action="@{/file/keep-indefinitely/{id}(id=${file.id})}">
+                            <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden">
+                            <input name="keepIndefinitely" type="hidden" value="false">
+                            <div class="d-flex flex-column align-items-center">
+                                <span>Keep Indefinitely</span>
+                                <div class="form-check form-switch mt-2">
+                                    <input class="form-check-input"
+                                           name="keepIndefinitely"
+                                           onchange="updateCheckboxState(event, this)"
+                                           th:checked="${file.keepIndefinitely}"
+                                           type="checkbox"
+                                           value="true">
+                                </div>
+                            </div>
+                        </form>
+                    </td>
                     <td class="text-end px-4">
                         <!-- View File Button -->
                         <a class="btn btn-sm btn-info me-2" th:href="@{/file/{uuid}(uuid=${file.uuid})}">View File</a>
@@ -100,6 +118,19 @@
         </div>
     </div>
 </div>
+
+<script>
+    function updateCheckboxState(event, checkbox) {
+        event.preventDefault();
+        const hiddenField = checkbox.form.querySelector('input[name="keepIndefinitely"][type="hidden"]');
+        if (hiddenField) {
+            hiddenField.value = checkbox.checked;
+        }
+
+        console.log('Submitting form...');
+        checkbox.form.submit();
+    }
+</script>
 
 <!-- Bootstrap Bundle -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>

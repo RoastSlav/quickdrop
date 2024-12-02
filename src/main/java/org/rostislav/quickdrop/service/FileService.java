@@ -270,4 +270,16 @@ public class FileService {
     public long calculateTotalSpaceUsed() {
         return nullToZero(fileRepository.totalFileSizeForAllFiles());
     }
+
+    public void updateKeepIndefinitely(Long id, boolean keepIndefinitely) {
+        Optional<FileEntity> referenceById = fileRepository.findById(id);
+        if (referenceById.isEmpty()) {
+            return;
+        }
+
+        FileEntity fileEntity = referenceById.get();
+        fileEntity.keepIndefinitely = keepIndefinitely;
+        logger.info("File keepIndefinitely updated: {}", fileEntity);
+        fileRepository.save(fileEntity);
+    }
 }

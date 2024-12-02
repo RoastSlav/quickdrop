@@ -12,10 +12,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 import java.util.List;
@@ -70,7 +67,11 @@ public class FileViewController {
     }
 
     @GetMapping("/history/{id}")
-    public String viewDownloadHistory(@PathVariable Long id, Model model) {
+    public String viewDownloadHistory(@PathVariable Long id, Model model, HttpServletRequest request) {
+        if (!applicationSettingsService.checkForAdminPassword(request)) {
+            return "redirect:/admin/password";
+        }
+
         FileEntity file = fileService.getFile(id);
         List<DownloadLog> downloadHistory = downloadLogRepository.findByFileId(id);
         long totalDownloads = analyticsService.getTotalDownloadsByFile(id);
@@ -131,5 +132,15 @@ public class FileViewController {
         List<FileEntity> files = fileService.searchFiles(query);
         model.addAttribute("files", files);
         return "listFiles";
+    }
+
+    @PostMapping("/keep-indefinitely/{id}")
+    public String updateKeepIndefinitely(@PathVariable Long id, @RequestParam(required = false, defaultValue = "false") boolean keepIndefinitely, HttpServletRequest request) {
+        if (!applicationSettingsService.checkForAdminPassword(request)) {
+            return "redirect:/admin/password";
+        }
+
+        fileService.updateKeepIndefinitely(id, keepIndefinitely);
+        return "redirect:/admin/dashboard";
     }
 }

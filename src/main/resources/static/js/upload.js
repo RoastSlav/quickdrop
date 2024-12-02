@@ -69,6 +69,21 @@ function isPasswordProtected() {
     return passwordField && passwordField.value.trim() !== "";
 }
 
+function validateKeepIndefinitely() {
+    const keepIndefinitely = document.getElementById("keepIndefinitely").checked;
+    const password = document.getElementById("password").value;
+
+    if (keepIndefinitely && !password) {
+        return confirm(
+            "You have selected 'Keep indefinitely' but haven't set a password. " +
+            "This means the file will only be deletable by an admin. " +
+            "Do you want to proceed?"
+        );
+    }
+
+    return true; // Allow form submission if conditions are not met
+}
+
 function validateFileSize() {
     const maxFileSize = document.getElementsByClassName('maxFileSize')[0].innerText;
     const file = document.getElementById('file').files[0];

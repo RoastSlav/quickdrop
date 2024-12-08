@@ -32,6 +32,14 @@ public class FileUtils {
         return request.getScheme() + "://" + request.getServerName() + "/file/share/" + fileEntity.uuid + "/" + token;
     }
 
+    public static long bytesToMegabytes(long bytes) {
+        return bytes / 1024 / 1024;
+    }
+
+    public static long megabytesToBytes(long megabytes) {
+        return megabytes * 1024 * 1024;
+    }
+
     public static void populateModelAttributes(FileEntity fileEntity, Model model, HttpServletRequest request) {
         model.addAttribute("file", fileEntity);
         model.addAttribute("fileSize", formatFileSize(fileEntity.size));

@@ -78,7 +78,7 @@ public class FileViewController {
         model.addAttribute("file", new FileEntityView(file, totalDownloads));
         model.addAttribute("downloadHistory", downloadHistory);
 
-        return "admin/download-history";
+        return "download-history";
     }
 
 

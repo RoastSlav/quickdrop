@@ -34,7 +34,7 @@ public class SecurityConfig {
         if (applicationSettingsService.isAppPasswordEnabled()) {
             http
                     .authorizeHttpRequests(authz -> authz
-                            .requestMatchers("/password/login", "/favicon.ico", "/error", "/file/share/**").permitAll()
+                            .requestMatchers("/password/login", "/favicon.ico", "/error", "/file/share/**", "/api/file/download/**").permitAll()
                             .anyRequest().authenticated()
                     )
                     .formLogin(form -> form

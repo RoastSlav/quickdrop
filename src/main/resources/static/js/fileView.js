@@ -48,6 +48,10 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 });
 
+function confirmDelete() {
+    return confirm("Are you sure you want to delete this file? This action cannot be undone.");
+}
+
 function updateCheckboxState(event, checkbox) {
     event.preventDefault();
     const hiddenField = checkbox.form.querySelector('input[name="keepIndefinitely"][type="hidden"]');

@@ -102,6 +102,7 @@ public class FileService {
         fileEntity.description = fileUploadRequest.description;
         fileEntity.size = file.getSize();
         fileEntity.keepIndefinitely = fileUploadRequest.keepIndefinitely;
+        fileEntity.hidden = fileUploadRequest.hidden;
 
         if (fileUploadRequest.password != null && !fileUploadRequest.password.isEmpty()) {
             fileEntity.passwordHash = passwordEncoder.encode(fileUploadRequest.password);

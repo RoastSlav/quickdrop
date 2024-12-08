@@ -24,10 +24,11 @@ public class FileRestController {
 
     @PostMapping("/upload")
     public ResponseEntity<FileEntity> saveFile(@RequestParam("file") MultipartFile file,
-                                               @RequestParam(value = "description") String description,
+                                               @RequestParam(value = "description", required = false) String description,
                                                @RequestParam(value = "keepIndefinitely", defaultValue = "false") boolean keepIndefinitely,
-                                               @RequestParam(value = "password", required = false) String password) {
-        FileUploadRequest fileUploadRequest = new FileUploadRequest(description, keepIndefinitely, password);
+                                               @RequestParam(value = "password", required = false) String password,
+                                               @RequestParam(value = "hidden", defaultValue = "false") boolean hidden) {
+        FileUploadRequest fileUploadRequest = new FileUploadRequest(description, keepIndefinitely, password, hidden);
         FileEntity fileEntity = fileService.saveFile(file, fileUploadRequest);
         if (fileEntity != null) {
             return ResponseEntity.ok(fileEntity);
@@ -35,6 +36,7 @@ public class FileRestController {
             return ResponseEntity.badRequest().build();
         }
     }
+
 
     @PostMapping("/share/{id}")
     public ResponseEntity<String> generateShareableLink(@PathVariable Long id, HttpServletRequest request) {

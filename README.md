@@ -87,29 +87,6 @@ mvn clean package
 java -jar target/quickdrop-0.0.1-SNAPSHOT.jar
 ```
 
-Using an external application.properties file:
-
-- Create an **application.properties** file in the same directory as the JAR file or specify its location in the
-  start command.
-
-    - Add your custom settings, for example (Listed below are the default values):
-
-```
-file.save.path=files
-file.max.age=30 # days
-logging.file.name=log/quickdrop.log
-file.deletion.cron=0 0 2 * * *
-app.basic.password=test
-app.enable.password=false
-max-upload-file-size=1GB
-```
-
-- Run the application with the external configuration (If not in the same directory as the JAR file):
-
-```
-java -jar target/quickdrop-0.0.1-SNAPSHOT.jar --spring.config.location=./application.properties
-```
-
 ## Updates
 
 To update the app, you need to:

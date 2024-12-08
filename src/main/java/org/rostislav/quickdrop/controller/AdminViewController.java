@@ -37,7 +37,7 @@ public class AdminViewController {
     @GetMapping("/dashboard")
     public String getDashboardPage(Model model, HttpServletRequest request) {
         if (!applicationSettingsService.checkForAdminPassword(request)) {
-            return "redirect:/admin/password";
+            return "redirect:password";
         }
 
         List<FileEntityView> files = fileService.getAllFilesWithDownloadCounts();
@@ -52,7 +52,7 @@ public class AdminViewController {
     @GetMapping("/setup")
     public String showSetupPage() {
         if (applicationSettingsService.isAdminPasswordSet()) {
-            return "redirect:/admin/dashboard";
+            return "redirect:dashboard";
         }
         return "welcome";
     }
@@ -60,13 +60,13 @@ public class AdminViewController {
     @PostMapping("/setup")
     public String setAdminPassword(String adminPassword) {
         applicationSettingsService.setAdminPassword(adminPassword);
-        return "redirect:/admin/dashboard";
+        return "redirect:dashboard";
     }
 
     @GetMapping("/settings")
     public String getSettingsPage(Model model, HttpServletRequest request) {
         if (!applicationSettingsService.checkForAdminPassword(request)) {
-            return "redirect:/admin/password";
+            return "redirect:password";
         }
 
         ApplicationSettingsEntity settings = applicationSettingsService.getApplicationSettings();
@@ -75,19 +75,19 @@ public class AdminViewController {
         applicationSettingsViewModel.setMaxFileSize(bytesToMegabytes(settings.getMaxFileSize()));
 
         model.addAttribute("settings", applicationSettingsViewModel);
-        return "admin/settings";
+        return "settings";
     }
 
     @PostMapping("/save")
     public String saveSettings(ApplicationSettingsViewModel settings, HttpServletRequest request) {
         if (!applicationSettingsService.checkForAdminPassword(request)) {
-            return "redirect:/admin/password";
+            return "redirect:password";
         }
         settings.setMaxFileSize(megabytesToBytes(settings.getMaxFileSize()));
 
 
         applicationSettingsService.updateApplicationSettings(settings, settings.getAppPassword());
-        return "redirect:/admin/dashboard";
+        return "redirect:dashboard";
     }
 
     @PostMapping("/password")
@@ -95,14 +95,14 @@ public class AdminViewController {
         String adminPasswordHash = applicationSettingsService.getAdminPasswordHash();
         if (BCrypt.checkpw(password, adminPasswordHash)) {
             request.getSession().setAttribute("adminPassword", adminPasswordHash);
-            return "redirect:/admin/dashboard";
+            return "redirect:dashboard";
         } else {
-            return "redirect:/admin/password";
+            return "redirect:password";
         }
     }
 
     @GetMapping("/password")
     public String showAdminPasswordPage() {
-        return "/admin-password";
+        return "admin-password";
     }
 }

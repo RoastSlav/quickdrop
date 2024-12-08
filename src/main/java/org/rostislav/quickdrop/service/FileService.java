@@ -359,7 +359,7 @@ public class FileService {
         }
     }
 
-    public StreamingResponseBody streamFileAndInvalidateToken(String uuid, String token) {
+    public StreamingResponseBody streamFileAndInvalidateToken(String uuid, String token, HttpServletRequest request) {
         Optional<FileEntity> optionalFile = fileRepository.findByUUID(uuid);
 
         if (optionalFile.isEmpty() || !validateShareToken(uuid, token)) {
@@ -367,6 +367,7 @@ public class FileService {
         }
 
         FileEntity fileEntity = optionalFile.get();
+        logDownload(fileEntity, request);
 
         return outputStream -> {
             try {

@@ -23,7 +23,7 @@ public class TestDataContainer {
     }
 
     public static FileUploadRequest getFileUploadRequest() {
-        return new FileUploadRequest("Test description", false, "password123");
+        return new FileUploadRequest("Test description", false, "password123", false);
     }
 
     public static FileUploadRequest getEmptyFileUploadRequest() {

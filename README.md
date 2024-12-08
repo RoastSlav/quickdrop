@@ -14,10 +14,18 @@ This project is made with the self-hosting community in mind as a self-hosted fi
 - **File Upload**: Users can upload files without needing to create an account.
 - **Adjustable file size limit**: The maximum file size can be ajusted in the settings.
 - **Download Links**: Generate download links for easy sharing.
-- **File Management**: Manage file availability with options to keep files indefinitely or delete them.
+- **File Management**:
+    - Manage file availability with options to keep files indefinitely or delete them.
+    - Password-protected files can be updated (e.g. "kept indefinitely").
+    - Add hidden files that are only accessible via their unique link.
 - **Password Protection**: Optionally protect files with a password.
 - **File Encryption**: Encrypt files to ensure privacy.
+- **Shareable Links**: Share files with others via a unique link.
+    - Generate secure shareable links that bypass app-level and file password protections.
+    - Token-based access control with optional expiration times for shareable links.
 - **Whole app password protection**: Optionally protect the entire app with a password.
+- **QR Code Generation**: Generate QR codes for easy sharing.
+- **Admin Panel**: Manage users, files, and settings.
 
 ## Technologies Used
 

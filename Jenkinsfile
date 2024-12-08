@@ -27,9 +27,6 @@ pipeline {
         }
 
         stage('Push to Docker Hub') {
-            when {
-                environment name: 'PUSH_TO_DOCKERHUB', value: 'true'
-            }
             steps {
                 script {
                     withCredentials([usernamePassword(credentialsId: DOCKER_CREDENTIALS_ID, passwordVariable: 'DOCKER_PASS', usernameVariable: 'DOCKER_USER')]) {

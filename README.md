@@ -88,8 +88,9 @@ java -jar target/quickdrop-0.0.1-SNAPSHOT.jar
 ```
 
 Using an external application.properties file:
-    - Create an **application.properties** file in the same directory as the JAR file or specify its location in the
-      start command.
+
+- Create an **application.properties** file in the same directory as the JAR file or specify its location in the
+  start command.
 
     - Add your custom settings, for example (Listed below are the default values):
 

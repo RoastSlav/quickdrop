@@ -1,7 +1,7 @@
 package org.rostislav.quickdrop.util;
 
 import jakarta.servlet.http.HttpServletRequest;
-import org.rostislav.quickdrop.model.FileEntity;
+import org.rostislav.quickdrop.entity.FileEntity;
 import org.springframework.ui.Model;
 
 public class FileUtils {
@@ -28,9 +28,13 @@ public class FileUtils {
         return scheme + "://" + request.getServerName() + "/file/" + fileEntity.uuid;
     }
 
+    public static String getShareLink(HttpServletRequest request, FileEntity fileEntity, String token) {
+        return request.getScheme() + "://" + request.getServerName() + "/file/share/" + fileEntity.uuid + "/" + token;
+    }
+
     public static void populateModelAttributes(FileEntity fileEntity, Model model, HttpServletRequest request) {
         model.addAttribute("file", fileEntity);
-        model.addAttribute("fileSize", FileUtils.formatFileSize(fileEntity.size));
+        model.addAttribute("fileSize", formatFileSize(fileEntity.size));
         model.addAttribute("downloadLink", getDownloadLink(request, fileEntity));
     }
 }

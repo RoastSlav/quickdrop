@@ -17,37 +17,34 @@
 <!-- Navbar -->
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
     <div class="container">
-        <a class="navbar-brand d-flex align-items-center"
-           href="/">
-            <img alt="Website Logo"
-                 class="me-2"
-                 height="40"
-                 src="/images/favicon.png">
+        <a class="navbar-brand d-flex align-items-center" href="/">
+            <img alt="Website Logo" class="me-2" height="40" src="/images/favicon.png">
             QuickDrop
         </a>
         <button
+                class="navbar-toggler"
+                type="button"
                 aria-controls="navbarNav"
                 aria-expanded="false"
                 aria-label="Toggle navigation"
-                class="navbar-toggler"
                 data-bs-target="#navbarNav"
-                data-bs-toggle="collapse"
-                type="button"
-        >
+                data-bs-toggle="collapse">
             <span class="navbar-toggler-icon"></span>
         </button>
-        <div class="collapse navbar-collapse"
-             id="navbarNav">
+        <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav ms-auto">
                 <li class="nav-item">
-                    <a class="nav-link"
-                       href="/file/list">View
-                        Files</a>
+                    <a class="nav-link" href="/file/list">View Files</a>
+                </li>
+                <li class="nav-item">
+                    <!-- Admin Dashboard Button -->
+                    <a class="nav-link" href="/admin/dashboard" onclick="requestAdminPassword()">Admin Dashboard</a>
                 </li>
             </ul>
         </div>
     </div>
 </nav>
+
 
 <!-- Main Content -->
 <div class="container">
@@ -88,23 +85,17 @@
                     id="uploadForm"
                     method="post"
                     th:action="@{/file/upload}"
+                    onsubmit="return validateKeepIndefinitely()"
             >
                 <!-- CSRF Token -->
-                <input th:name="${_csrf.parameterName}"
-                       th:value="${_csrf.token}"
-                       type="hidden"/>
+                <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden"/>
 
                 <!-- UUID -->
-                <input name="uuid"
-                       th:value="${uuid}"
-                       type="hidden"/>
+                <input name="uuid" th:value="${uuid}" type="hidden"/>
 
                 <!-- File Input -->
                 <div class="mb-3">
-                    <label class="form-label"
-                           for="file">Select
-                        a
-                        file:</label>
+                    <label class="form-label" for="file">Select a file:</label>
                     <input
                             class="form-control"
                             id="file"
@@ -116,61 +107,36 @@
                 </div>
 
                 <!-- File Size Alert -->
-                <div class="alert alert-danger"
-                     id="fileSizeAlert"
-                     role="alert"
-                     style="display: none;">
-                    File
-                    size
-                    exceeds
-                    the
-                    <span th:text="${maxFileSize}">1GB</span>
-                    limit.
+                <div class="alert alert-danger" id="fileSizeAlert" role="alert" style="display: none;">
+                    File size exceeds the <span th:text="${maxFileSize}">1GB</span> limit.
                 </div>
 
                 <!-- Description Input -->
                 <div class="mb-3">
-                    <label class="form-label"
-                           for="description">Description:</label>
-                    <input
-                            class="form-control"
-                            id="description"
-                            name="description"
-                            type="text"
-                    />
+                    <label class="form-label" for="description">Description:</label>
+                    <input class="form-control" id="description" name="description" type="text"/>
                 </div>
 
                 <!-- Keep Indefinitely Checkbox -->
                 <div class="form-check mb-3">
-                    <input
-                            class="form-check-input"
-                            id="keepIndefinitely"
-                            name="keepIndefinitely"
-                            type="checkbox"
-                    />
-                    <label class="form-check-label"
-                           for="keepIndefinitely">
-                        Keep
-                        indefinitely
-                    </label>
+                    <input class="form-check-input" id="keepIndefinitely" name="keepIndefinitely" type="checkbox"/>
+                    <label class="form-check-label" for="keepIndefinitely">Keep indefinitely</label>
+                </div>
+
+                <!-- Hidden File Checkbox -->
+                <div class="form-check mb-3">
+                    <input class="form-check-input" id="hidden" name="hidden" type="checkbox"/>
+                    <label class="form-check-label" for="hidden">Hide from file list</label>
                 </div>
 
                 <!-- Password Input -->
                 <div class="mb-3">
-                    <label class="form-label"
-                           for="password">Password
-                        (Optional):</label>
-                    <input
-                            class="form-control"
-                            id="password"
-                            name="password"
-                            type="password"
-                    />
+                    <label class="form-label" for="password">Password (Optional):</label>
+                    <input class="form-control" id="password" name="password" type="password"/>
                 </div>
 
                 <!-- Submit Button -->
-                <button class="btn btn-primary w-100"
-                        type="submit">
+                <button class="btn btn-primary w-100" type="submit">
                     Upload
                 </button>
             </form>

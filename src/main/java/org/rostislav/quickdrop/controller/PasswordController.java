@@ -9,6 +9,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 public class PasswordController {
     @GetMapping("/login")
     public String passwordPage() {
-        return "password";
+        return "app-password";
+    }
+
+    @GetMapping("/admin")
+    public String adminPasswordPage() {
+        return "admin/admin-password";
     }
 }

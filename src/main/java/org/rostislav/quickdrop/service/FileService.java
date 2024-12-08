@@ -1,11 +1,15 @@
 package org.rostislav.quickdrop.service;
 
-import org.rostislav.quickdrop.model.FileEntity;
+import jakarta.servlet.http.HttpServletRequest;
+import org.rostislav.quickdrop.entity.DownloadLog;
+import org.rostislav.quickdrop.entity.FileEntity;
+import org.rostislav.quickdrop.model.FileEntityView;
 import org.rostislav.quickdrop.model.FileUploadRequest;
+import org.rostislav.quickdrop.repository.DownloadLogRepository;
 import org.rostislav.quickdrop.repository.FileRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpHeaders;
@@ -18,6 +22,7 @@ import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBo
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.OutputStream;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -27,21 +32,25 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import static org.rostislav.quickdrop.util.DataValidator.nullToZero;
 import static org.rostislav.quickdrop.util.DataValidator.validateObjects;
 import static org.rostislav.quickdrop.util.FileEncryptionUtils.decryptFile;
 import static org.rostislav.quickdrop.util.FileEncryptionUtils.encryptFile;
 
 @Service
 public class FileService {
-    @Value("${file.save.path}")
-    private String fileSavePath;
     private static final Logger logger = LoggerFactory.getLogger(FileService.class);
     private final FileRepository fileRepository;
     private final PasswordEncoder passwordEncoder;
+    private final ApplicationSettingsService applicationSettingsService;
+    private final DownloadLogRepository downloadLogRepository;
 
-    public FileService(FileRepository fileRepository, PasswordEncoder passwordEncoder) {
+    @Lazy
+    public FileService(FileRepository fileRepository, PasswordEncoder passwordEncoder, ApplicationSettingsService applicationSettingsService, DownloadLogRepository downloadLogRepository) {
         this.fileRepository = fileRepository;
         this.passwordEncoder = passwordEncoder;
+        this.applicationSettingsService = applicationSettingsService;
+        this.downloadLogRepository = downloadLogRepository;
     }
 
     private static StreamingResponseBody getStreamingResponseBody(Path outputFile, FileEntity fileEntity) {
@@ -75,7 +84,7 @@ public class FileService {
         logger.info("File received: {}", file.getOriginalFilename());
 
         String uuid = UUID.randomUUID().toString();
-        Path path = Path.of(fileSavePath, uuid);
+        Path path = Path.of(applicationSettingsService.getFileStoragePath(), uuid);
 
         if (fileUploadRequest.password == null || fileUploadRequest.password.isEmpty()) {
             if (!saveUnencryptedFile(file, path)) {
@@ -93,6 +102,7 @@ public class FileService {
         fileEntity.description = fileUploadRequest.description;
         fileEntity.size = file.getSize();
         fileEntity.keepIndefinitely = fileUploadRequest.keepIndefinitely;
+        fileEntity.hidden = fileUploadRequest.hidden;
 
         if (fileUploadRequest.password != null && !fileUploadRequest.password.isEmpty()) {
             fileEntity.passwordHash = passwordEncoder.encode(fileUploadRequest.password);
@@ -154,14 +164,14 @@ public class FileService {
         return fileRepository.findAll();
     }
 
-    public ResponseEntity<StreamingResponseBody> downloadFile(Long id, String password) {
+    public ResponseEntity<StreamingResponseBody> downloadFile(Long id, String password, HttpServletRequest request) {
         FileEntity fileEntity = fileRepository.findById(id).orElse(null);
         if (fileEntity == null) {
             logger.info("File not found: {}", id);
             return ResponseEntity.notFound().build();
         }
 
-        Path pathOfFile = Path.of(fileSavePath, fileEntity.uuid);
+        Path pathOfFile = Path.of(applicationSettingsService.getFileStoragePath(), fileEntity.uuid);
         Path outputFile = null;
         if (fileEntity.passwordHash != null) {
             try {
@@ -183,16 +193,24 @@ public class FileService {
         try {
             Resource resource = new UrlResource(outputFile.toUri());
             logger.info("Sending file: {}", fileEntity);
+            logDownload(fileEntity, request);
             return ResponseEntity.ok()
-                                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + URLEncoder.encode(fileEntity.name, StandardCharsets.UTF_8) + "\"")
-                                 .header(HttpHeaders.CONTENT_TYPE, "application/octet-stream")
-                                 .header(HttpHeaders.CONTENT_LENGTH, String.valueOf(resource.contentLength()))
-                                 .body(responseBody);
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + URLEncoder.encode(fileEntity.name, StandardCharsets.UTF_8) + "\"")
+                    .header(HttpHeaders.CONTENT_TYPE, "application/octet-stream")
+                    .header(HttpHeaders.CONTENT_LENGTH, String.valueOf(resource.contentLength()))
+                    .body(responseBody);
         } catch (
                 Exception e) {
             logger.error("Error reading file: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
+    }
+
+    private void logDownload(FileEntity fileEntity, HttpServletRequest request) {
+        String downloaderIp = request.getRemoteAddr();
+        String userAgent = request.getHeader(HttpHeaders.USER_AGENT);
+        DownloadLog downloadLog = new DownloadLog(fileEntity, downloaderIp, userAgent);
+        downloadLogRepository.save(downloadLog);
     }
 
     public FileEntity getFile(Long id) {
@@ -216,7 +234,7 @@ public class FileService {
     }
 
     public boolean deleteFileFromFileSystem(String uuid) {
-        Path path = Path.of(fileSavePath, uuid);
+        Path path = Path.of(applicationSettingsService.getFileStoragePath(), uuid);
         try {
             Files.delete(path);
             logger.info("File deleted: {}", path);
@@ -250,5 +268,119 @@ public class FileService {
 
     public List<FileEntity> searchFiles(String query) {
         return fileRepository.searchFiles(query);
+    }
+
+    public List<FileEntity> searchNotHiddenFiles(String query) {
+        return fileRepository.searchNotHiddenFiles(query);
+    }
+
+    public long calculateTotalSpaceUsed() {
+        return nullToZero(fileRepository.totalFileSizeForAllFiles());
+    }
+
+    public void updateKeepIndefinitely(Long id, boolean keepIndefinitely) {
+        Optional<FileEntity> referenceById = fileRepository.findById(id);
+        if (referenceById.isEmpty()) {
+            return;
+        }
+
+        if (!keepIndefinitely) {
+            extendFile(id);
+        }
+
+        FileEntity fileEntity = referenceById.get();
+        fileEntity.keepIndefinitely = keepIndefinitely;
+        logger.info("File keepIndefinitely updated: {}", fileEntity);
+        fileRepository.save(fileEntity);
+    }
+
+    public void toggleHidden(Long id) {
+        Optional<FileEntity> referenceById = fileRepository.findById(id);
+        if (referenceById.isEmpty()) {
+            return;
+        }
+
+        FileEntity fileEntity = referenceById.get();
+        fileEntity.hidden = !fileEntity.hidden;
+        logger.info("File hidden updated: {}", fileEntity);
+        fileRepository.save(fileEntity);
+    }
+
+    public List<FileEntity> getNotHiddenFiles() {
+        return fileRepository.findAllNotHiddenFiles();
+    }
+
+    public List<FileEntityView> getAllFilesWithDownloadCounts() {
+        return fileRepository.findAllFilesWithDownloadCounts();
+    }
+
+    public String generateShareToken(Long fileId, LocalDate tokenExpirationDate) {
+        Optional<FileEntity> optionalFile = fileRepository.findById(fileId);
+        if (optionalFile.isEmpty()) {
+            throw new IllegalArgumentException("File not found");
+        }
+
+        FileEntity file = optionalFile.get();
+        String token = UUID.randomUUID().toString(); // Generate a unique token
+        file.shareToken = token;
+        file.tokenExpirationDate = tokenExpirationDate;
+        fileRepository.save(file);
+
+        logger.info("Share token generated for file: {}", file.name);
+        return token;
+    }
+
+    public boolean validateShareToken(String uuid, String token) {
+        Optional<FileEntity> optionalFile = fileRepository.findByUUID(uuid);
+        if (optionalFile.isEmpty()) {
+            return false;
+        }
+
+        FileEntity file = optionalFile.get();
+        if (!token.equals(file.shareToken)) {
+            return false;
+        }
+
+        return file.tokenExpirationDate == null || !LocalDate.now().isAfter(file.tokenExpirationDate);
+    }
+
+    private void writeFileToStream(String uuid, OutputStream outputStream) {
+        Path path = Path.of(applicationSettingsService.getFileStoragePath(), uuid);
+        try (FileInputStream inputStream = new FileInputStream(path.toFile())) {
+            byte[] buffer = new byte[1024];
+            int bytesRead;
+            while ((bytesRead = inputStream.read(buffer)) != -1) {
+                outputStream.write(buffer, 0, bytesRead);
+            }
+            outputStream.flush();
+        } catch (
+                Exception e) {
+            logger.error("Error writing file to stream: {}", e.getMessage());
+        }
+    }
+
+    public StreamingResponseBody streamFileAndInvalidateToken(String uuid, String token, HttpServletRequest request) {
+        Optional<FileEntity> optionalFile = fileRepository.findByUUID(uuid);
+
+        if (optionalFile.isEmpty() || !validateShareToken(uuid, token)) {
+            return null;
+        }
+
+        FileEntity fileEntity = optionalFile.get();
+        logDownload(fileEntity, request);
+
+        return outputStream -> {
+            try {
+                writeFileToStream(uuid, outputStream);
+
+                fileEntity.shareToken = null;
+                fileEntity.tokenExpirationDate = null;
+                fileRepository.save(fileEntity);
+
+                logger.info("Share token invalidated and file streamed successfully: {}", fileEntity.name);
+            } catch (Exception e) {
+                logger.error("Error streaming file or invalidating token for UUID: {}", uuid, e);
+            }
+        };
     }
 }

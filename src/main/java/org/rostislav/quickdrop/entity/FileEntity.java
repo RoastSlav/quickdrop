@@ -1,12 +1,8 @@
-package org.rostislav.quickdrop.model;
+package org.rostislav.quickdrop.entity;
+
+import jakarta.persistence.*;
 
 import java.time.LocalDate;
-
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.PrePersist;
 
 @Entity
 public class FileEntity {
@@ -21,6 +17,13 @@ public class FileEntity {
     public boolean keepIndefinitely;
     public LocalDate uploadDate;
     public String passwordHash;
+    @Column(columnDefinition = "boolean default false")
+    public boolean hidden;
+    @Column(nullable = true)
+    public String shareToken;
+
+    @Column(nullable = true)
+    public LocalDate tokenExpirationDate;
 
     @PrePersist
     public void prePersist() {

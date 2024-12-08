@@ -1,6 +1,7 @@
 package org.rostislav.quickdrop.config;
 
-import org.springframework.beans.factory.annotation.Value;
+import org.rostislav.quickdrop.service.ApplicationSettingsService;
+import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationProvider;
@@ -10,6 +11,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.crypto.bcrypt.BCrypt;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -20,19 +22,19 @@ import java.util.List;
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
+    private final ApplicationSettingsService applicationSettingsService;
 
-    @Value("${app.enable.password}")
-    private boolean enablePassword;
-
-    @Value("${app.basic.password}")
-    private String appPassword;
+    public SecurityConfig(ApplicationSettingsService applicationSettingsService) {
+        this.applicationSettingsService = applicationSettingsService;
+    }
 
     @Bean
+    @RefreshScope
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        if (enablePassword) {
+        if (applicationSettingsService.isAppPasswordEnabled()) {
             http
                     .authorizeHttpRequests(authz -> authz
-                            .requestMatchers("/password/login", "/favicon.ico", "/error").permitAll()
+                            .requestMatchers("/password/login", "/favicon.ico", "/error", "/file/share/**", "/api/file/download/**").permitAll()
                             .anyRequest().authenticated()
                     )
                     .formLogin(form -> form
@@ -64,7 +66,7 @@ public class SecurityConfig {
             @Override
             public Authentication authenticate(Authentication authentication) throws AuthenticationException {
                 String providedPassword = (String) authentication.getCredentials();
-                if (appPassword.equals(providedPassword)) {
+                if (BCrypt.checkpw(providedPassword, applicationSettingsService.getAppPasswordHash())) {
                     return new UsernamePasswordAuthenticationToken(null, providedPassword, List.of());
                 } else {
                     throw new BadCredentialsException("Invalid password");

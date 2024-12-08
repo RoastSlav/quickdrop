@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>QuickDrop Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container">
+        <a class="navbar-brand" href="/">
+            <img alt="QuickDrop Logo" class="me-2" height="40" src="/images/favicon.png">
+            QuickDrop Admin
+        </a>
+        <button aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation" class="navbar-toggler"
+                data-bs-target="#navbarNav" data-bs-toggle="collapse" type="button">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="/admin/settings">Settings</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/">Home</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<!-- Main Content -->
+<div class="container mt-5">
+    <h1 class="text-center mb-4">Admin Dashboard</h1>
+
+    <!-- Analytics Section -->
+    <div class="card mb-4">
+        <div class="card-header bg-secondary text-white">
+            <h2 class="mb-0">Analytics</h2>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>Total Downloads</h5>
+                    <p class="text-muted" th:text="${analytics.totalDownloads}">0</p>
+                </div>
+                <div class="col-md-6">
+                    <h5>Total Space Used</h5>
+                    <p class="text-muted" th:text="${analytics.totalSpaceUsed}">0 MB</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Files Section -->
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h2 class="mb-0">Files</h2>
+        </div>
+        <div class="card-body">
+            <table class="table table-striped align-middle">
+                <thead>
+                <tr>
+                    <th style="width: 20%;">Name</th>
+                    <th style="width: 15%;">Upload Date</th>
+                    <th style="width: 10%;">Size</th>
+                    <th style="width: 10%;">Downloads</th>
+                    <th style="width: 10%; text-align: center;">Keep Indefinitely</th>
+                    <th style="width: 10%; text-align: center;">Hidden</th>
+                    <th style="width: 25%; text-align: right;">Actions</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr class="align-middle" th:each="file : ${files}">
+                    <td th:text="${file.name}"></td>
+                    <td th:text="${#temporals.format(file.uploadDate, 'dd.MM.yyyy')}"></td>
+                    <td th:text="${file.size}"></td>
+                    <td th:text="${file.totalDownloads}"></td>
+
+                    <!-- Keep Indefinitely Checkbox -->
+                    <td class="text-center">
+                        <form class="d-inline" method="post" th:action="@{/file/keep-indefinitely/{id}(id=${file.id})}">
+                            <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden">
+                            <input name="keepIndefinitely" type="hidden" value="false">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input"
+                                       name="keepIndefinitely"
+                                       onchange="updateCheckboxState(event, this)"
+                                       th:checked="${file.keepIndefinitely}"
+                                       type="checkbox"
+                                       value="true">
+                            </div>
+                        </form>
+                    </td>
+
+                    <!-- Hidden Checkbox -->
+                    <td class="text-center">
+                        <form class="d-inline" method="post" th:action="@{/file/toggle-hidden/{id}(id=${file.id})}">
+                            <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden">
+                            <input name="hidden" type="hidden" value="false">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input"
+                                       name="hidden"
+                                       onchange="updateHiddenState(event, this)"
+                                       th:checked="${file.hidden}"
+                                       type="checkbox"
+                                       value="true">
+                            </div>
+                        </form>
+                    </td>
+
+                    <!-- Actions -->
+                    <td class="text-end">
+                        <a class="btn btn-sm btn-info me-1" th:href="@{/file/{uuid}(uuid=${file.uuid})}">View File</a>
+                        <a class="btn btn-sm btn-warning me-1"
+                           th:href="@{/file/history/{id}(id=${file.id})}">History</a>
+                        <a class="btn btn-sm btn-success me-1"
+                           th:href="@{/file/download/{id}(id=${file.id})}">Download</a>
+                        <form class="d-inline" method="post" onsubmit="return confirmDelete();"
+                              th:action="@{/file/delete/{id}(id=${file.id})}">
+                            <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden">
+                            <button class="btn btn-sm btn-danger">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    function updateHiddenState(event, checkbox) {
+        event.preventDefault();
+        const hiddenField = checkbox.form.querySelector('input[name="hidden"][type="hidden"]');
+        if (hiddenField) {
+            hiddenField.value = checkbox.checked;
+        }
+
+        console.log('Submitting hidden state form...');
+        checkbox.form.submit();
+    }
+
+    function confirmDelete() {
+        return confirm("Are you sure you want to delete this file? This action cannot be undone.");
+    }
+
+    function updateCheckboxState(event, checkbox) {
+        event.preventDefault();
+        const hiddenField = checkbox.form.querySelector('input[name="keepIndefinitely"][type="hidden"]');
+        if (hiddenField) {
+            hiddenField.value = checkbox.checked;
+        }
+
+        console.log('Submitting form...');
+        checkbox.form.submit();
+    }
+</script>
+
+
+<!-- Bootstrap Bundle -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

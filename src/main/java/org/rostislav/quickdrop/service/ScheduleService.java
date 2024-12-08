@@ -1,33 +1,46 @@
 package org.rostislav.quickdrop.service;
 
-import java.time.LocalDate;
-import java.util.List;
-
-import org.rostislav.quickdrop.model.FileEntity;
+import org.rostislav.quickdrop.entity.FileEntity;
 import org.rostislav.quickdrop.repository.FileRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
+import org.springframework.scheduling.support.CronTrigger;
 import org.springframework.stereotype.Service;
+
+import java.time.LocalDate;
+import java.util.List;
+import java.util.concurrent.ScheduledFuture;
 
 @Service
 public class ScheduleService {
     private static final Logger logger = LoggerFactory.getLogger(ScheduleService.class);
     private final FileRepository fileRepository;
     private final FileService fileService;
-    @Value("${file.max.age}")
-    private int maxFileAge;
+    private final ThreadPoolTaskScheduler taskScheduler = new ThreadPoolTaskScheduler();
+    private ScheduledFuture<?> scheduledTask;
 
     public ScheduleService(FileRepository fileRepository, FileService fileService) {
         this.fileRepository = fileRepository;
         this.fileService = fileService;
+        taskScheduler.setPoolSize(1);
+        taskScheduler.initialize();
     }
 
-    @Scheduled(cron = "${file.deletion.cron}")
-    public void deleteOldFiles() {
+    public void updateSchedule(String cronExpression, long maxFileLifeTime) {
+        if (scheduledTask != null) {
+            scheduledTask.cancel(false);
+        }
+
+        scheduledTask = taskScheduler.schedule(
+                () -> deleteOldFiles(maxFileLifeTime),
+                new CronTrigger(cronExpression)
+        );
+    }
+
+    public void deleteOldFiles(long maxFileLifeTime) {
         logger.info("Deleting old files");
-        LocalDate thresholdDate = LocalDate.now().minusDays(maxFileAge);
+        LocalDate thresholdDate = LocalDate.now().minusDays(maxFileLifeTime);
         List<FileEntity> filesForDeletion = fileRepository.getFilesForDeletion(thresholdDate);
         for (FileEntity file : filesForDeletion) {
             logger.info("Deleting file: {}", file);

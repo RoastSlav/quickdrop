@@ -97,7 +97,7 @@ public class AdminViewController {
             request.getSession().setAttribute("adminPassword", adminPasswordHash);
             return "redirect:/admin/dashboard";
         } else {
-            return "redirect:/admin/password";
+            return "redirect:/admin/admin-password";
         }
     }
 

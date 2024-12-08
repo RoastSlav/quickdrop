@@ -207,11 +207,24 @@ public class FileService {
     }
 
     private void logDownload(FileEntity fileEntity, HttpServletRequest request) {
-        String downloaderIp = request.getRemoteAddr();
+        String forwardedFor = request.getHeader("X-Forwarded-For");
+        String realIp = request.getHeader("X-Real-IP");
+        String downloaderIp;
+
+        if (forwardedFor != null && !forwardedFor.isEmpty()) {
+            // The X-Forwarded-For header can contain multiple IPs, pick the first one
+            downloaderIp = forwardedFor.split(",")[0].trim();
+        } else if (realIp != null && !realIp.isEmpty()) {
+            downloaderIp = realIp;
+        } else {
+            downloaderIp = request.getRemoteAddr();
+        }
+
         String userAgent = request.getHeader(HttpHeaders.USER_AGENT);
         DownloadLog downloadLog = new DownloadLog(fileEntity, downloaderIp, userAgent);
         downloadLogRepository.save(downloadLog);
     }
+
 
     public FileEntity getFile(Long id) {
         return fileRepository.findById(id).orElse(null);

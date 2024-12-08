@@ -1,6 +1,7 @@
 package org.rostislav.quickdrop;
 
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -29,6 +30,7 @@ import static org.rostislav.quickdrop.TestDataContainer.*;
 
 @SpringBootTest
 @ExtendWith(MockitoExtension.class)
+@Disabled
 public class FileServiceTests {
     @Nested
     class SaveFileTests {

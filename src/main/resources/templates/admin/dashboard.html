@@ -118,7 +118,8 @@
                            th:href="@{/file/history/{id}(id=${file.id})}">History</a>
                         <a class="btn btn-sm btn-success me-1"
                            th:href="@{/file/download/{id}(id=${file.id})}">Download</a>
-                        <form class="d-inline" method="post" th:action="@{/file/delete/{id}(id=${file.id})}">
+                        <form class="d-inline" method="post" onsubmit="return confirmDelete();"
+                              th:action="@{/file/delete/{id}(id=${file.id})}">
                             <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden">
                             <button class="btn btn-sm btn-danger">Delete</button>
                         </form>
@@ -131,19 +132,6 @@
 </div>
 
 <script>
-    function updateCheckboxState(event, checkbox) {
-        event.preventDefault();
-        const hiddenField = checkbox.form.querySelector('input[name="keepIndefinitely"][type="hidden"]');
-        if (hiddenField) {
-            hiddenField.value = checkbox.checked;
-        }
-
-        console.log('Submitting form...');
-        checkbox.form.submit();
-    }
-</script>
-
-<script>
     function updateHiddenState(event, checkbox) {
         event.preventDefault();
         const hiddenField = checkbox.form.querySelector('input[name="hidden"][type="hidden"]');
@@ -152,6 +140,21 @@
         }
 
         console.log('Submitting hidden state form...');
+        checkbox.form.submit();
+    }
+
+    function confirmDelete() {
+        return confirm("Are you sure you want to delete this file? This action cannot be undone.");
+    }
+
+    function updateCheckboxState(event, checkbox) {
+        event.preventDefault();
+        const hiddenField = checkbox.form.querySelector('input[name="keepIndefinitely"][type="hidden"]');
+        if (hiddenField) {
+            hiddenField.value = checkbox.checked;
+        }
+
+        console.log('Submitting form...');
         checkbox.form.submit();
     }
 </script>

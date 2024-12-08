@@ -22,6 +22,7 @@ import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBo
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.OutputStream;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -312,4 +313,72 @@ public class FileService {
         return fileRepository.findAllFilesWithDownloadCounts();
     }
 
+    public String generateShareToken(Long fileId, LocalDate tokenExpirationDate) {
+        Optional<FileEntity> optionalFile = fileRepository.findById(fileId);
+        if (optionalFile.isEmpty()) {
+            throw new IllegalArgumentException("File not found");
+        }
+
+        FileEntity file = optionalFile.get();
+        String token = UUID.randomUUID().toString(); // Generate a unique token
+        file.shareToken = token;
+        file.tokenExpirationDate = tokenExpirationDate;
+        fileRepository.save(file);
+
+        logger.info("Share token generated for file: {}", file.name);
+        return token;
+    }
+
+    public boolean validateShareToken(String uuid, String token) {
+        Optional<FileEntity> optionalFile = fileRepository.findByUUID(uuid);
+        if (optionalFile.isEmpty()) {
+            return false;
+        }
+
+        FileEntity file = optionalFile.get();
+        if (!token.equals(file.shareToken)) {
+            return false;
+        }
+
+        return file.tokenExpirationDate == null || !LocalDate.now().isAfter(file.tokenExpirationDate);
+    }
+
+    private void writeFileToStream(String uuid, OutputStream outputStream) {
+        Path path = Path.of(applicationSettingsService.getFileStoragePath(), uuid);
+        try (FileInputStream inputStream = new FileInputStream(path.toFile())) {
+            byte[] buffer = new byte[1024];
+            int bytesRead;
+            while ((bytesRead = inputStream.read(buffer)) != -1) {
+                outputStream.write(buffer, 0, bytesRead);
+            }
+            outputStream.flush();
+        } catch (
+                Exception e) {
+            logger.error("Error writing file to stream: {}", e.getMessage());
+        }
+    }
+
+    public StreamingResponseBody streamFileAndInvalidateToken(String uuid, String token) {
+        Optional<FileEntity> optionalFile = fileRepository.findByUUID(uuid);
+
+        if (optionalFile.isEmpty() || !validateShareToken(uuid, token)) {
+            return null;
+        }
+
+        FileEntity fileEntity = optionalFile.get();
+
+        return outputStream -> {
+            try {
+                writeFileToStream(uuid, outputStream);
+
+                fileEntity.shareToken = null;
+                fileEntity.tokenExpirationDate = null;
+                fileRepository.save(fileEntity);
+
+                logger.info("Share token invalidated and file streamed successfully: {}", fileEntity.name);
+            } catch (Exception e) {
+                logger.error("Error streaming file or invalidating token for UUID: {}", uuid, e);
+            }
+        };
+    }
 }

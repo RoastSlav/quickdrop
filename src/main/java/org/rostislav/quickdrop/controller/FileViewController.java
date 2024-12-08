@@ -178,4 +178,17 @@ public class FileViewController {
             return "file-password";
         }
     }
+
+    @GetMapping("/share/{uuid}/{token}")
+    public String viewSharedFile(@PathVariable String uuid, @PathVariable String token, Model model) {
+        if (!fileService.validateShareToken(uuid, token)) {
+            return "invalid-share-link";
+        }
+
+        FileEntity file = fileService.getFile(uuid);
+        model.addAttribute("file", new FileEntityView(file, analyticsService.getTotalDownloadsByFile(file.id)));
+        model.addAttribute("downloadLink", "/api/file/download/" + file.uuid + "/" + token);
+
+        return "file-share-view";
+    }
 }

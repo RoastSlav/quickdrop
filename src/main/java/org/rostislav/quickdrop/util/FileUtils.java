@@ -32,6 +32,10 @@ public class FileUtils {
         return request.getScheme() + "://" + request.getServerName() + "/file/" + fileEntity.uuid;
     }
 
+    public static String getShareLink(HttpServletRequest request, FileEntity fileEntity, String token) {
+        return request.getScheme() + "://" + request.getServerName() + "/file/share/" + fileEntity.uuid + "/" + token;
+    }
+
     public static void populateModelAttributes(FileEntity fileEntity, Model model, HttpServletRequest request) {
         model.addAttribute("file", fileEntity);
         model.addAttribute("fileSize", formatFileSize(fileEntity.size));

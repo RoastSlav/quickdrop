@@ -2,16 +2,13 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>
-        File
-        View</title>
-    <meta content="width=device-width, initial-scale=1"
-          name="viewport">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
-          rel="stylesheet">
-    <link href="/images/favicon.png"
-          rel="icon"
-          type="image/png">
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <title>File View</title>
+    <meta content="width=device-width, initial-scale=1" name="viewport">
+    <link
+            href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+            rel="stylesheet">
+    <link href="/images/favicon.png" rel="icon" type="image/png">
     <script src="https://cdn.jsdelivr.net/npm/qrcode@1.4.4/build/qrcode.min.js"></script>
     <style>
         .copyButton.copied {
@@ -22,6 +19,7 @@
     </style>
 </head>
 <body>
+
 <!-- Navbar -->
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
     <div class="container">
@@ -32,60 +30,49 @@
         <button
                 class="navbar-toggler"
                 type="button"
-                aria-controls="navbarNav"
-                aria-expanded="false"
                 aria-label="Toggle navigation"
                 data-bs-target="#navbarNav"
+                aria-controls="navbarNav"
+                aria-expanded="false"
                 data-bs-toggle="collapse">
             <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav ms-auto">
-                <li class="nav-item">
-                    <a class="nav-link" href="/file/list">View Files</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/file/upload">Upload File</a>
-                </li>
-                <li class="nav-item">
-                    <!-- Admin Dashboard Button -->
-                    <a class="nav-link" href="/admin/dashboard" onclick="requestAdminPassword()">Admin Dashboard</a>
-                </li>
+                <li class="nav-item"><a class="nav-link" href="/file/list">View Files</a></li>
+                <li class="nav-item"><a class="nav-link" href="/file/upload">Upload File</a></li>
+                <li class="nav-item"><a class="nav-link" href="/admin/dashboard" onclick="requestAdminPassword()">Admin
+                    Dashboard</a></li>
             </ul>
         </div>
     </div>
 </nav>
 
+<!-- Hidden element to retrieve file ID -->
+<span hidden id="fileId" th:text="${file.id}"></span>
 
 <!-- Main Content -->
 <div class="container mt-5">
-    <h1 class="text-center mb-4">
-        File
-        View</h1>
+    <h1 class="text-center mb-4">File View</h1>
     <div class="row justify-content-center">
         <div class="col-12 col-md-8 col-lg-6">
             <div class="card shadow">
                 <div class="card-body">
-                    <h5 class="card-title text-center"
-                        th:text="${file.name}">
-                        File
-                        Name</h5>
-
+                    <h5 class="card-title text-center" th:text="${file.name}">File Name</h5>
                     <div th:if="${!#strings.isEmpty(file.description)}">
-                        <p class="card-text text-center mb-3"
-                           th:text="${file.description}"></p>
+                        <p class="card-text text-center mb-3" th:text="${file.description}"></p>
                     </div>
 
+                    <!-- File info -->
                     <div class="d-flex justify-content-between align-items-center border-top pt-3">
                         <h5 class="card-title mb-0"
                             th:text="${file.keepIndefinitely} ? 'Uploaded At:' : 'Uploaded/Renewed At:'"></h5>
-                        <p class="card-text mb-0"
-                           th:text="${#temporals.format(file.uploadDate, 'dd.MM.yyyy')}"></p>
+                        <p class="card-text mb-0" th:text="${#temporals.format(file.uploadDate, 'dd.MM.yyyy')}"></p>
                     </div>
-                    <small class="text-muted"
-                           th:if="${file.keepIndefinitely == false}">
+                    <small class="text-muted" th:if="${file.keepIndefinitely == false}">
                         Files are kept only for <span th:text="${maxFileLifeTime}">30</span> days after this date.
                     </small>
+
                     <div class="d-flex justify-content-between align-items-center pt-3">
                         <h5 class="card-title">Keep Indefinitely:</h5>
                         <form class="d-inline" method="post" th:action="@{/file/keep-indefinitely/{id}(id=${file.id})}">
@@ -94,16 +81,17 @@
                             <div class="form-check form-switch">
                                 <input
                                         class="form-check-input"
+                                        onchange="updateCheckboxState(event, this)"
                                         id="keepIndefinitely"
                                         name="keepIndefinitely"
-                                        onchange="updateCheckboxState(event, this)"
+                                        type="checkbox"
                                         th:checked="${file.keepIndefinitely}"
                                         th:disabled="${file.passwordHash == null}"
-                                        type="checkbox"
-                                        value="true"/>
+                                        value="true">
                             </div>
                         </form>
                     </div>
+
                     <div class="d-flex justify-content-between align-items-center" th:if="${file.passwordHash != null}">
                         <h5 class="card-title">Hide File From List:</h5>
                         <form class="d-inline" method="post" th:action="@{/file/toggle-hidden/{id}(id=${file.id})}">
@@ -112,57 +100,46 @@
                             <div class="form-check form-switch">
                                 <input
                                         class="form-check-input"
+                                        onchange="updateCheckboxState(event, this)"
                                         id="hidden"
                                         name="hidden"
-                                        onchange="updateCheckboxState(event, this)"
-                                        th:checked="${file.hidden}"
                                         type="checkbox"
-                                        value="true"/>
+                                        th:checked="${file.hidden}"
+                                        value="true">
                             </div>
                         </form>
                     </div>
 
                     <div class="d-flex justify-content-between align-items-center pt-3">
-                        <h5 class="card-title">
-                            File
-                            Size:</h5>
-                        <p class="card-text"
-                           th:text="${fileSize}"></p>
+                        <h5 class="card-title">File Size:</h5>
+                        <p class="card-text" th:text="${fileSize}"></p>
                     </div>
 
-                    <h5 class="card-title border-top pt-3">
-                        Link
-                    </h5>
+                    <!-- Link and QR -->
+                    <h5 class="card-title border-top pt-3">Link</h5>
                     <div class="input-group mb-3 align-items-center">
                         <input
+                                th:value="${downloadLink}"
                                 class="form-control"
                                 id="downloadLink"
-                                readonly
-                                th:value="${downloadLink}"
                                 type="text"
+                                readonly
                                 style="height: 38px;"/>
                         <button
+                                type="button"
                                 class="btn btn-outline-secondary copyButton"
                                 onclick="copyToClipboard(this)"
-                                type="button"
                                 style="height: 38px;">
                             Copy Link
                         </button>
                         <canvas id="qrCodeContainer" style="width: 100px; height: 100px;"></canvas>
                     </div>
 
-                    <div class="alert alert-info"
-                         id="preparingMessage"
-                         style="display: none;">
-                        Your
-                        file
-                        is
-                        being
-                        prepared
-                        for
-                        download.
-                        Please
-                        wait...
+                    <div
+                            class="alert alert-info"
+                            id="preparingMessage"
+                            style="display: none;">
+                        Your file is being prepared for download. Please wait...
                     </div>
 
                     <div class="d-flex justify-content-between mt-3 border-top pt-3">
@@ -170,21 +147,53 @@
                                 class="btn btn-success"
                                 id="downloadButton"
                                 th:href="@{/file/download/{id}(id=${file.id})}"
-                                th:onclick="${file.passwordHash != null} ? 'showPreparingMessage()' : ''"
-                        >
+                                th:onclick="${file.passwordHash != null} ? 'showPreparingMessage()' : ''">
                             Download
                         </a>
-                        <form method="post" onsubmit="return confirmDelete();"
-                              th:action="@{/file/delete/{id}(id=${file.id})}">
-                            <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden"/>
+
+                        <form method="post"
+                              onsubmit="return confirmDelete();"
+                              th:action="@{/file/delete/{id}(id=${file.id})}"
+                              th:if="${file.passwordHash != null}">
+                            <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden">
                             <button class="btn btn-danger" type="submit">Delete File</button>
                         </form>
-                        <form method="post" th:action="@{/file/extend/{id}(id=${file.id})}"
+
+                        <form method="post"
+                              th:action="@{/file/extend/{id}(id=${file.id})}"
                               th:if="${file.keepIndefinitely == false}">
-                            <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden"/>
+                            <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden">
                             <button class="btn btn-primary" type="submit">Renew File Lifetime</button>
                         </form>
+
+                        <!-- New Share Button -->
+                        <button class="btn btn-secondary" onclick="openShareModal()" th:if="${file.passwordHash != null}"
+                                type="button">Share
+                        </button>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Share Modal -->
+<div aria-hidden="true" aria-labelledby="shareModalLabel" class="modal fade" id="shareModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="shareModalLabel">Share File</h1>
+                <button aria-label="Close" class="btn-close" data-bs-dismiss="modal" type="button"></button>
+            </div>
+            <div class="modal-body">
+                <p>This link can be used to share the file once without any password protection. It will be valid for 30
+                    days.</p>
+                <div class="input-group mb-3">
+                    <input class="form-control" id="shareLink" readonly type="text">
+                    <button class="btn btn-outline-secondary" onclick="copyShareLink()" type="button">Copy Link</button>
+                </div>
+                <div class="text-center">
+                    <canvas id="shareQRCode" style="width: 150px; height: 150px;"></canvas>
                 </div>
             </div>
         </div>

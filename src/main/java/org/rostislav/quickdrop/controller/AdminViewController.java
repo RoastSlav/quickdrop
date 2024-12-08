@@ -46,7 +46,7 @@ public class AdminViewController {
         AnalyticsDataView analytics = analyticsService.getAnalytics();
         model.addAttribute("analytics", analytics);
 
-        return "admin/dashboard";
+        return "dashboard";
     }
 
     @GetMapping("/setup")
@@ -97,12 +97,12 @@ public class AdminViewController {
             request.getSession().setAttribute("adminPassword", adminPasswordHash);
             return "redirect:/admin/dashboard";
         } else {
-            return "redirect:/admin/admin-password";
+            return "redirect:/admin/password";
         }
     }
 
     @GetMapping("/password")
     public String showAdminPasswordPage() {
-        return "/admin/admin-password";
+        return "/admin-password";
     }
 }

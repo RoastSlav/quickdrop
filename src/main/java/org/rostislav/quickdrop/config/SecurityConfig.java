@@ -9,6 +9,7 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.bcrypt.BCrypt;
@@ -46,7 +47,7 @@ public class SecurityConfig {
                     .authenticationProvider(authenticationProvider())
                     .csrf(csrf -> csrf
                             .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
-                    );
+                    ).headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::disable));
         } else {
             http
                     .authorizeHttpRequests(authz -> authz
@@ -54,7 +55,7 @@ public class SecurityConfig {
                     )
                     .csrf(csrf -> csrf
                             .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
-                    );
+                    ).headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::disable));
         }
 
         return http.build();

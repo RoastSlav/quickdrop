@@ -7,6 +7,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
@@ -17,7 +18,11 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import java.util.Arrays;
 import java.util.List;
 
 @Configuration
@@ -37,29 +42,45 @@ public class SecurityConfig {
                     .authorizeHttpRequests(authz -> authz
                             .requestMatchers("/password/login", "/favicon.ico", "/error", "/file/share/**", "/api/file/download/**").permitAll()
                             .anyRequest().authenticated()
-                    )
-                    .formLogin(form -> form
+                    ).formLogin(form -> form
                             .loginPage("/password/login")
                             .permitAll()
                             .failureUrl("/password/login?error")
                             .defaultSuccessUrl("/", true)
-                    )
-                    .authenticationProvider(authenticationProvider())
-                    .csrf(csrf -> csrf
+                    ).authenticationProvider(authenticationProvider()
+                    ).csrf(csrf -> csrf
                             .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
-                    ).headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::disable));
+                    ).headers(headers -> headers
+                            .frameOptions(HeadersConfigurer.FrameOptionsConfig::disable)
+                            .contentSecurityPolicy(csp -> csp.policyDirectives("frame-ancestors *;"))
+                    ).cors(Customizer.withDefaults());
         } else {
             http
                     .authorizeHttpRequests(authz -> authz
                             .anyRequest().permitAll()
-                    )
-                    .csrf(csrf -> csrf
+                    ).csrf(csrf -> csrf
                             .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
-                            .ignoringRequestMatchers("/api/file/upload-chunk")
-                    ).headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::disable));
+                    ).headers(headers -> headers
+                            .frameOptions(HeadersConfigurer.FrameOptionsConfig::disable)
+                            .contentSecurityPolicy(csp -> csp.policyDirectives("frame-ancestors *;"))
+                    ).cors(Customizer.withDefaults());
         }
 
         return http.build();
+    }
+
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.addAllowedOriginPattern("*");
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-CSRF-TOKEN"));
+        configuration.setAllowCredentials(true);
+        configuration.setExposedHeaders(Arrays.asList("Authorization", "Content-Disposition"));
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
     }
 
     @Bean

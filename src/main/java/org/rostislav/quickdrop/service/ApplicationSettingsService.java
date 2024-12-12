@@ -15,8 +15,8 @@ import static org.rostislav.quickdrop.util.FileUtils.formatFileSize;
 public class ApplicationSettingsService {
     private final ApplicationSettingsRepository applicationSettingsRepository;
     private final ContextRefresher contextRefresher;
-    private ApplicationSettingsEntity applicationSettings;
     private final ScheduleService scheduleService;
+    private ApplicationSettingsEntity applicationSettings;
 
     public ApplicationSettingsService(ApplicationSettingsRepository applicationSettingsRepository, @Qualifier("configDataContextRefresher") ContextRefresher contextRefresher, ScheduleService scheduleService) {
         this.contextRefresher = contextRefresher;

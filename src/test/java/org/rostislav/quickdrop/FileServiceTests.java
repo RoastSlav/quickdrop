@@ -15,8 +15,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -66,9 +66,7 @@ public class FileServiceTests {
         // Successfully saves an unencrypted file when no password is provided
         @Test
         void test_save_unencrypted_file_without_password() {
-            MultipartFile file = mock(MultipartFile.class);
-            when(file.getOriginalFilename()).thenReturn("test.txt");
-            when(file.getSize()).thenReturn(1024L);
+            File file = mock(File.class);
 
             FileEntity fileEntity = getFileEntity();
             fileEntity.passwordHash = null;
@@ -86,9 +84,7 @@ public class FileServiceTests {
         // Successfully saves an encrypted file when a password is provided
         @Test
         void test_save_encrypted_file_with_password() {
-            MultipartFile file = mock(MultipartFile.class);
-            when(file.getOriginalFilename()).thenReturn("test.txt");
-            when(file.getSize()).thenReturn(1024L);
+            File file = mock(File.class);
 
             FileEntity fileEntity = getFileEntity();
             when(passwordEncoder.encode(anyString())).thenReturn(fileEntity.passwordHash);
@@ -106,7 +102,7 @@ public class FileServiceTests {
         // Successfully encrypts a file
         @Test
         void test_encrypt_file() {
-            MultipartFile file = mock(MultipartFile.class);
+            File file = mock(File.class);
             Path encryptedFile = Path.of(fileSavePath, "test.txt");
 
             // Call the method responsible for encrypting files directly
@@ -118,9 +114,7 @@ public class FileServiceTests {
         // Correctly encodes password when provided
         @Test
         void test_correctly_encodes_password_when_provided() {
-            MultipartFile file = mock(MultipartFile.class);
-            when(file.getOriginalFilename()).thenReturn("test.txt");
-            when(file.getSize()).thenReturn(1024L);
+            File file = mock(File.class);
 
             FileEntity fileEntity = getFileEntity();
             when(passwordEncoder.encode("securePassword")).thenReturn(fileEntity.passwordHash);
@@ -134,9 +128,7 @@ public class FileServiceTests {
 
         @Test
         void test_handles_empty_file_upload_request_gracefully() {
-            MultipartFile file = mock(MultipartFile.class);
-            when(file.getOriginalFilename()).thenReturn("test.txt");
-            when(file.getSize()).thenReturn(1024L);
+            File file = mock(File.class);
 
             when(fileRepository.save(any(FileEntity.class))).thenAnswer(invocation -> {
                 FileEntity fileEntity = invocation.getArgument(0);
@@ -155,7 +147,7 @@ public class FileServiceTests {
 
         @Test
         void test_handles_null_file_upload_request() {
-            MultipartFile file = mock(MultipartFile.class);
+            File file = mock(File.class);
             FileUploadRequest fileUploadRequest = null;
 
             when(fileRepository.save(any(FileEntity.class))).thenReturn(getFileEntity());
@@ -167,8 +159,7 @@ public class FileServiceTests {
 
         @Test
         void test_handle_null_or_empty_multipartfile() {
-            MultipartFile file = mock(MultipartFile.class);
-            when(file.getOriginalFilename()).thenReturn(null);
+            File file = mock(File.class);
 
             FileEntity result = fileService.saveFile(file, getFileUploadRequest());
 

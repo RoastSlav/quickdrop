@@ -1,5 +1,13 @@
 document.getElementById("uploadForm").addEventListener("submit", function (event) {
-    event.preventDefault(); // Prevent the form from submitting synchronously
+    event.preventDefault();
+
+    const file = document.getElementById("file").files[0];
+    const passwordField = document.getElementById("password");
+    const isPasswordProtected = passwordField && passwordField.value.trim() !== "";
+
+    const chunkSize = 10 * 1024 * 1024; // 10MB chunks
+    const totalChunks = Math.ceil(file.size / chunkSize);
+    let currentChunk = 0;
 
     // Display the indicator
     document.getElementById("uploadIndicator").style.display = "block";
@@ -8,66 +16,75 @@ document.getElementById("uploadForm").addEventListener("submit", function (event
     progressBar.style.width = "0%";
     progressBar.setAttribute("aria-valuenow", 0);
 
-    // Prepare form data
     const formData = new FormData(event.target);
 
-    // Create an AJAX request
-    const xhr = new XMLHttpRequest();
-    xhr.open("POST", "/api/file/upload", true);
+    function uploadChunk() {
+        const start = currentChunk * chunkSize;
+        const end = Math.min(start + chunkSize, file.size);
+        const chunk = file.slice(start, end);
 
-    // Add CSRF token if required
-    const csrfTokenElement = document.querySelector('input[name="_csrf"]');
-    if (csrfTokenElement) {
-        xhr.setRequestHeader("X-CSRF-TOKEN", csrfTokenElement.value);
-    }
+        const chunkFormData = new FormData();
+        chunkFormData.append("file", chunk);
+        chunkFormData.append("fileName", file.name);
+        chunkFormData.append("chunkNumber", currentChunk);
+        chunkFormData.append("totalChunks", totalChunks);
+        chunkFormData.append("description", formData.get("description"));
+        chunkFormData.append("keepIndefinitely", formData.get("keepIndefinitely") || "false");
+        chunkFormData.append("hidden", formData.get("hidden") || "false");
+        chunkFormData.append("password", passwordField.value.trim() || ""); // Add password field
 
-    // Handle response
-    xhr.onload = function () {
-        if (xhr.status === 200) {
-            const response = JSON.parse(xhr.responseText);
-            if (response.uuid) {
-                // Redirect to the view page using the UUID from the JSON response
-                window.location.href = "/file/" + response.uuid;
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", "/api/file/upload-chunk", true);
+
+        const csrfTokenElement = document.querySelector('input[name="_csrf"]');
+        if (csrfTokenElement) {
+            xhr.setRequestHeader("X-CSRF-TOKEN", csrfTokenElement.value);
+        }
+
+        xhr.onload = function () {
+            if (xhr.status === 200) {
+                try {
+                    const response = JSON.parse(xhr.responseText); // Parse JSON response
+
+                    currentChunk++;
+                    const percentComplete = (currentChunk / totalChunks) * 100;
+                    progressBar.style.width = percentComplete + "%";
+                    progressBar.setAttribute("aria-valuenow", percentComplete);
+
+                    if (currentChunk < totalChunks) {
+                        uploadChunk();
+                        if (currentChunk === totalChunks - 1 && isPasswordProtected) {
+                            uploadStatus.innerText = "Upload complete. Encrypting..."
+                        }
+                    } else {
+                        uploadStatus.innerText = "Upload complete.";
+                        if (response.uuid) {
+                            window.location.href = "/file/" + response.uuid;
+                        } else {
+                            alert("Upload completed but no UUID received.");
+                        }
+                    }
+                } catch (error) {
+                    console.error("Error parsing JSON:", error);
+                    alert("Unexpected server response. Please try again.");
+                }
             } else {
-                alert("Unexpected response. Please try again.");
+                console.error("Upload error:", xhr.responseText);
+                alert("Chunk upload failed. Please try again.");
                 document.getElementById("uploadIndicator").style.display = "none";
             }
-        } else {
-            alert("Upload failed. Please try again.");
-            console.log(xhr.responseText);
+        };
+
+        xhr.onerror = function () {
+            alert("An error occurred during the upload. Please try again.");
             document.getElementById("uploadIndicator").style.display = "none";
-        }
-    };
+        };
 
-    // Handle network or server errors
-    xhr.onerror = function () {
-        alert("An error occurred during the upload. Please try again.");
-        document.getElementById("uploadIndicator").style.display = "none";
-    };
+        xhr.send(chunkFormData);
+    }
 
-    // Track upload progress
-    xhr.upload.onprogress = function (event) {
-        if (event.lengthComputable) {
-            const percentComplete = (event.loaded / event.total) * 100;
-            progressBar.style.width = percentComplete + "%";
-            progressBar.setAttribute("aria-valuenow", percentComplete);
-
-            // Update the status text when upload is complete (100%)
-            if (percentComplete === 100 && isPasswordProtected()) {
-                uploadStatus.innerText = "Upload complete. Encrypting...";
-            }
-        }
-    };
-
-    // Send the form data
-    xhr.send(formData);
+    uploadChunk();
 });
-
-function isPasswordProtected() {
-    const passwordField = document.getElementById("password");
-
-    return passwordField && passwordField.value.trim() !== "";
-}
 
 function validateKeepIndefinitely() {
     const keepIndefinitely = document.getElementById("keepIndefinitely").checked;
@@ -117,15 +134,4 @@ function parseSize(size) {
     const value = parseFloat(valueMatch[0]);
 
     return value * (units[unit] || 1);
-}
-
-function updateHiddenState(event, checkbox) {
-    event.preventDefault();
-    const hiddenField = checkbox.form.querySelector('input[name="hidden"][type="hidden"]');
-    if (hiddenField) {
-        hiddenField.value = checkbox.checked;
-    }
-
-    console.log('Submitting hidden state form...');
-    checkbox.form.submit();
 }

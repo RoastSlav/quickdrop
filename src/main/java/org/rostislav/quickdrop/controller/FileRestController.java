@@ -11,7 +11,10 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
+import java.io.IOException;
 import java.time.LocalDate;
+import java.util.HashMap;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/file")
@@ -22,21 +25,40 @@ public class FileRestController {
         this.fileService = fileService;
     }
 
-    @PostMapping("/upload")
-    public ResponseEntity<FileEntity> saveFile(@RequestParam("file") MultipartFile file,
-                                               @RequestParam(value = "description", required = false) String description,
-                                               @RequestParam(value = "keepIndefinitely", defaultValue = "false") boolean keepIndefinitely,
-                                               @RequestParam(value = "password", required = false) String password,
-                                               @RequestParam(value = "hidden", defaultValue = "false") boolean hidden) {
-        FileUploadRequest fileUploadRequest = new FileUploadRequest(description, keepIndefinitely, password, hidden);
-        FileEntity fileEntity = fileService.saveFile(file, fileUploadRequest);
-        if (fileEntity != null) {
-            return ResponseEntity.ok(fileEntity);
-        } else {
-            return ResponseEntity.badRequest().build();
+    @PostMapping("/upload-chunk")
+    public ResponseEntity<?> handleChunkUpload(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam("fileName") String fileName,
+            @RequestParam("chunkNumber") int chunkNumber,
+            @RequestParam("totalChunks") int totalChunks,
+            @RequestParam(value = "description", required = false) String description,
+            @RequestParam(value = "keepIndefinitely", defaultValue = "false") Boolean keepIndefinitely,
+            @RequestParam(value = "password", required = false) String password,
+            @RequestParam(value = "hidden", defaultValue = "false") Boolean hidden) {
+        try {
+            fileService.saveChunk(file, fileName, chunkNumber);
+
+            if (chunkNumber + 1 == totalChunks) {
+                FileUploadRequest fileUploadRequest = new FileUploadRequest(description, keepIndefinitely, password, hidden);
+                FileEntity fileEntity = fileService.assembleChunks(fileName, totalChunks, fileUploadRequest);
+
+                if (fileEntity != null) {
+                    return ResponseEntity.ok(fileEntity);
+                } else {
+                    return ResponseEntity.badRequest().build();
+                }
+            }
+
+            Map<String, String> response = new HashMap<>();
+            response.put("message", "Chunk " + chunkNumber + " uploaded successfully");
+            return ResponseEntity.ok(response);
+
+        } catch (IOException e) {
+            fileService.deleteTempFiles(fileName);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("{\"error\": \"Error processing chunk\"}");
         }
     }
-
 
     @PostMapping("/share/{id}")
     public ResponseEntity<String> generateShareableLink(@PathVariable Long id, HttpServletRequest request) {

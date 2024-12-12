@@ -20,13 +20,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -44,6 +43,7 @@ public class FileService {
     private final PasswordEncoder passwordEncoder;
     private final ApplicationSettingsService applicationSettingsService;
     private final DownloadLogRepository downloadLogRepository;
+    private final File tempDir = Paths.get(System.getProperty("java.io.tmpdir")).toFile();
 
     @Lazy
     public FileService(FileRepository fileRepository, PasswordEncoder passwordEncoder, ApplicationSettingsService applicationSettingsService, DownloadLogRepository downloadLogRepository) {
@@ -76,18 +76,61 @@ public class FileService {
         };
     }
 
-    public FileEntity saveFile(MultipartFile file, FileUploadRequest fileUploadRequest) {
+    public void saveChunk(MultipartFile file, String fileName, int chunkNumber) throws IOException {
+        File chunkFile = new File(tempDir, getFileChunkName(fileName) + chunkNumber);
+        try (FileOutputStream fos = new FileOutputStream(chunkFile)) {
+            fos.write(file.getBytes());
+        }
+    }
+
+    public FileEntity assembleChunks(String fileName, int totalChunks, FileUploadRequest fileUploadRequest) throws IOException {
+        File finalFile = new File(tempDir, fileName);
+        boolean successfullyCreated = finalFile.createNewFile();
+        if (!successfullyCreated) {
+            throw new IOException("Failed to create new file");
+        }
+
+        try (FileOutputStream fos = new FileOutputStream(finalFile)) {
+            for (int i = 0; i < totalChunks; i++) {
+                File partFile = new File(tempDir, getFileChunkName(fileName) + i);
+                Files.copy(partFile.toPath(), fos);
+                Files.delete(partFile.toPath());
+            }
+        }
+
+        return saveFile(finalFile, fileUploadRequest);
+    }
+
+    public void deleteTempFiles(String fileName) {
+        File[] tempFiles = tempDir.listFiles((dir, name) -> name.startsWith(getFileChunkName(fileName)));
+
+        if (tempFiles != null) {
+            for (File tempFile : tempFiles) {
+                if (tempFile.delete()) {
+                    logger.info("Deleted temp file: {}", tempFile);
+                } else {
+                    logger.error("Failed to delete temp file: {}", tempFile);
+                }
+            }
+        }
+    }
+
+    private String getFileChunkName(String fileName) {
+        return fileName + "_chunk";
+    }
+
+    public FileEntity saveFile(File file, FileUploadRequest fileUploadRequest) {
         if (!validateObjects(file, fileUploadRequest)) {
             return null;
         }
 
-        logger.info("File received: {}", file.getOriginalFilename());
+        logger.info("File received: {}", file.getName());
 
         String uuid = UUID.randomUUID().toString();
         Path path = Path.of(applicationSettingsService.getFileStoragePath(), uuid);
 
         if (fileUploadRequest.password == null || fileUploadRequest.password.isEmpty()) {
-            if (!saveUnencryptedFile(file, path)) {
+            if (!moveAndRenameUnencryptedFile(file, path)) {
                 return null;
             }
         } else {
@@ -97,10 +140,10 @@ public class FileService {
         }
 
         FileEntity fileEntity = new FileEntity();
-        fileEntity.name = file.getOriginalFilename();
+        fileEntity.name = file.getName();
         fileEntity.uuid = uuid;
         fileEntity.description = fileUploadRequest.description;
-        fileEntity.size = file.getSize();
+        fileEntity.size = file.getTotalSpace();
         fileEntity.keepIndefinitely = fileUploadRequest.keepIndefinitely;
         fileEntity.hidden = fileUploadRequest.hidden;
 
@@ -112,10 +155,9 @@ public class FileService {
         return fileRepository.save(fileEntity);
     }
 
-    private boolean saveUnencryptedFile(MultipartFile file, Path path) {
+    private boolean moveAndRenameUnencryptedFile(File file, Path path) {
         try {
-            Files.createFile(path);
-            file.transferTo(path);
+            Files.move(file.toPath(), path);
             logger.info("File saved: {}", path);
         } catch (
                 Exception e) {
@@ -125,22 +167,11 @@ public class FileService {
         return true;
     }
 
-    public boolean saveEncryptedFile(Path savePath, MultipartFile file, FileUploadRequest fileUploadRequest) {
-        Path tempFile;
-        try {
-            tempFile = Files.createTempFile("Unencrypted", "tmp");
-            file.transferTo(tempFile);
-            logger.info("Unencrypted temp file saved: {}", tempFile);
-        } catch (
-                Exception e) {
-            logger.error("Error saving unencrypted temp file: {}", e.getMessage());
-            return false;
-        }
-
+    public boolean saveEncryptedFile(Path savePath, File file, FileUploadRequest fileUploadRequest) {
         try {
             Path encryptedFile = Files.createFile(savePath);
             logger.info("Encrypting file: {}", encryptedFile);
-            encryptFile(tempFile.toFile(), encryptedFile.toFile(), fileUploadRequest.password);
+            encryptFile(file, encryptedFile.toFile(), fileUploadRequest.password);
             logger.info("Encrypted file saved: {}", encryptedFile);
         } catch (
                 Exception e) {
@@ -149,8 +180,8 @@ public class FileService {
         }
 
         try {
-            Files.delete(tempFile);
-            logger.info("Temp file deleted: {}", tempFile);
+            Files.delete(file.toPath());
+            logger.info("Temp file deleted: {}", file);
         } catch (
                 Exception e) {
             logger.error("Error deleting temp file: {}", e.getMessage());
@@ -159,6 +190,7 @@ public class FileService {
 
         return true;
     }
+
 
     public List<FileEntity> getFiles() {
         return fileRepository.findAll();

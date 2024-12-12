@@ -55,6 +55,7 @@ public class SecurityConfig {
                     )
                     .csrf(csrf -> csrf
                             .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                            .ignoringRequestMatchers("/api/file/upload-chunk")
                     ).headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::disable));
         }
 

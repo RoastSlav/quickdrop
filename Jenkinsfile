@@ -20,9 +20,25 @@ pipeline {
             }
         }
 
-        stage('Docker Build') {
+        stage('Docker Buildx Setup') {
             steps {
-                sh "docker build -t ${DOCKER_IMAGE} ."
+                script {
+                    sh """
+                    docker buildx create --use || echo 'Buildx already created'
+                    docker buildx inspect --bootstrap
+                    """
+                }
+            }
+        }
+
+        stage('Docker Build Multi-Arch') {
+            steps {
+                sh """
+                docker buildx build \
+                    --platform linux/amd64,linux/arm64 \
+                    -t ${DOCKER_IMAGE} \
+                    --output type=docker .
+                """
             }
         }
 
@@ -37,6 +53,12 @@ pipeline {
                         """
                     }
                 }
+            }
+        }
+
+        stage('Cleanup') {
+            steps {
+                sh "docker system prune -f"
             }
         }
     }

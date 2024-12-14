@@ -31,24 +31,16 @@ pipeline {
             }
         }
 
-        stage('Docker Build Multi-Arch') {
-            steps {
-                sh """
-                docker buildx build \
-                    --platform linux/amd64,linux/arm64 \
-                    -t ${DOCKER_IMAGE} \
-                    --output type=docker .
-                """
-            }
-        }
-
-        stage('Push to Docker Hub') {
+        stage('Docker Build and Push Multi-Arch') {
             steps {
                 script {
                     withCredentials([usernamePassword(credentialsId: DOCKER_CREDENTIALS_ID, passwordVariable: 'DOCKER_PASS', usernameVariable: 'DOCKER_USER')]) {
                         sh """
                         echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
-                        docker push ${DOCKER_IMAGE}
+                        docker buildx build \
+                            --platform linux/amd64,linux/arm64 \
+                            -t ${DOCKER_IMAGE} \
+                            --push .
                         docker logout
                         """
                     }

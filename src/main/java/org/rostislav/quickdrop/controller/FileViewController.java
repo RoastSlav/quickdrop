@@ -55,7 +55,7 @@ public class FileViewController {
 
         String password = (String) request.getSession().getAttribute("password");
         if (fileEntity.passwordHash != null &&
-                (password == null || !fileService.checkPassword(uuid, password))) {
+                (password == null || !fileService.checkFilePassword(uuid, password))) {
             model.addAttribute("uuid", uuid);
             return "file-password";
         }
@@ -84,7 +84,7 @@ public class FileViewController {
 
     @PostMapping("/password")
     public String checkPassword(String uuid, String password, HttpServletRequest request, Model model) {
-        if (fileService.checkPassword(uuid, password)) {
+        if (fileService.checkFilePassword(uuid, password)) {
             request.getSession().setAttribute("password", password);
             return "redirect:/file/" + uuid;
         } else {
@@ -99,7 +99,7 @@ public class FileViewController {
 
         if (fileEntity.passwordHash != null) {
             String password = (String) request.getSession().getAttribute("password");
-            if (password == null || !fileService.checkPassword(fileEntity.uuid, password)) {
+            if (password == null || !fileService.checkFilePassword(fileEntity.uuid, password)) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
             }
         }
@@ -159,7 +159,7 @@ public class FileViewController {
         if (filePassword != null) {
             FileEntity fileEntity = fileService.getFile(fileId);
             // Validate file password if the file is password-protected
-            if (fileEntity.passwordHash != null && !fileService.checkPassword(fileEntity.uuid, filePassword)) {
+            if (fileEntity.passwordHash != null && !fileService.checkFilePassword(fileEntity.uuid, filePassword)) {
                 model.addAttribute("uuid", fileEntity.uuid);
                 return "file-password"; // Redirect to file password page if the password is incorrect
             }

@@ -38,33 +38,27 @@ public class SecurityConfig {
     @RefreshScope
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         if (applicationSettingsService.isAppPasswordEnabled()) {
-            http
-                    .authorizeHttpRequests(authz -> authz
-                            .requestMatchers("/password/login", "/favicon.ico", "/error", "/file/share/**", "/api/file/download/**").permitAll()
-                            .anyRequest().authenticated()
-                    ).formLogin(form -> form
-                            .loginPage("/password/login")
-                            .permitAll()
-                            .failureUrl("/password/login?error")
-                            .defaultSuccessUrl("/", true)
-                    ).authenticationProvider(authenticationProvider()
-                    ).csrf(csrf -> csrf
-                            .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
-                    ).headers(headers -> headers
-                            .frameOptions(HeadersConfigurer.FrameOptionsConfig::disable)
-                            .contentSecurityPolicy(csp -> csp.policyDirectives("frame-ancestors *;"))
-                    ).cors(Customizer.withDefaults());
+            http.authorizeHttpRequests(authz -> authz
+                    .requestMatchers("/password/login", "/favicon.ico", "/error", "/file/share/**", "/api/file/download/**").permitAll()
+                    .anyRequest().authenticated()
+            ).formLogin(form -> form
+                    .loginPage("/password/login")
+                    .permitAll()
+                    .failureUrl("/password/login?error")
+                    .defaultSuccessUrl("/", true)
+            ).authenticationProvider(authenticationProvider()
+            );
         } else {
-            http
-                    .authorizeHttpRequests(authz -> authz
-                            .anyRequest().permitAll()
-                    ).csrf(csrf -> csrf
-                            .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
-                    ).headers(headers -> headers
-                            .frameOptions(HeadersConfigurer.FrameOptionsConfig::disable)
-                            .contentSecurityPolicy(csp -> csp.policyDirectives("frame-ancestors *;"))
-                    ).cors(Customizer.withDefaults());
+            http.authorizeHttpRequests(authz -> authz
+                    .anyRequest().permitAll());
         }
+
+        http.csrf(csrf -> csrf
+                .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+        ).headers(headers -> headers
+                .frameOptions(HeadersConfigurer.FrameOptionsConfig::disable)
+                .contentSecurityPolicy(csp -> csp.policyDirectives("frame-ancestors *;"))
+        ).cors(Customizer.withDefaults());
 
         return http.build();
     }

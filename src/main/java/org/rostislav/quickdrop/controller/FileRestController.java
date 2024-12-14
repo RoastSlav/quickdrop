@@ -2,7 +2,6 @@ package org.rostislav.quickdrop.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
 import org.rostislav.quickdrop.entity.FileEntity;
-import org.rostislav.quickdrop.model.FileUploadRequest;
 import org.rostislav.quickdrop.service.FileService;
 import org.rostislav.quickdrop.util.FileUtils;
 import org.springframework.http.HttpStatus;
@@ -36,28 +35,22 @@ public class FileRestController {
             @RequestParam(value = "password", required = false) String password,
             @RequestParam(value = "hidden", defaultValue = "false") Boolean hidden) {
         try {
-            fileService.saveChunk(file, fileName, chunkNumber);
+            fileService.saveFileChunk(file, fileName, chunkNumber);
 
             if (chunkNumber + 1 == totalChunks) {
-                FileUploadRequest fileUploadRequest = new FileUploadRequest(description, keepIndefinitely, password, hidden);
-                FileEntity fileEntity = fileService.assembleChunks(fileName, totalChunks, fileUploadRequest);
-
-                if (fileEntity != null) {
-                    return ResponseEntity.ok(fileEntity);
-                } else {
-                    return ResponseEntity.badRequest().build();
-                }
+                return fileService.finalizeFile(fileName, totalChunks, description, keepIndefinitely, password, hidden);
             }
 
-            Map<String, String> response = new HashMap<>();
-            response.put("message", "Chunk " + chunkNumber + " uploaded successfully");
-            return ResponseEntity.ok(response);
-
         } catch (IOException e) {
-            fileService.deleteTempFiles(fileName);
+            fileService.deleteChunkFilesFromTemp(fileName);
+            fileService.deleteFullFileFromTemp(fileName);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("{\"error\": \"Error processing chunk\"}");
         }
+
+        Map<String, String> response = new HashMap<>();
+        response.put("message", "Chunk " + chunkNumber + " uploaded successfully");
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/share/{id}")
@@ -67,12 +60,8 @@ public class FileRestController {
             return ResponseEntity.badRequest().body("File not found.");
         }
 
-        String password = (String) request.getSession().getAttribute("password");
-        if (fileEntity.passwordHash != null) {
-            if (password == null || !fileService.checkPassword(fileEntity.uuid, password)) {
-                System.out.println("Invalid or missing password.");
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Invalid or missing password in session.");
-            }
+        if (!isFilePasswordValid(fileEntity, request)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Invalid or missing password in session.");
         }
 
         String token = fileService.generateShareToken(id, LocalDate.now().plusDays(30));
@@ -99,5 +88,13 @@ public class FileRestController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
+    }
+
+    private boolean isFilePasswordValid(FileEntity fileEntity, HttpServletRequest request) {
+        String sessionPassword = (String) request.getSession().getAttribute("password");
+        if (fileEntity.passwordHash != null) {
+            return sessionPassword != null && fileService.checkFilePassword(fileEntity.uuid, sessionPassword);
+        }
+        return true;
     }
 }

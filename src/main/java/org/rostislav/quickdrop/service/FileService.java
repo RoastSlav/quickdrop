@@ -26,6 +26,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -76,8 +77,8 @@ public class FileService {
         };
     }
 
-    public void saveChunk(MultipartFile file, String fileName, int chunkNumber) throws IOException {
-        File chunkFile = new File(tempDir, getFileChunkName(fileName) + chunkNumber);
+    public void saveFileChunk(MultipartFile file, String fileName, int chunkNumber) throws IOException {
+        File chunkFile = new File(tempDir, getFileChunkName(fileName, chunkNumber));
         try (FileOutputStream fos = new FileOutputStream(chunkFile)) {
             fos.write(file.getBytes());
         }
@@ -85,24 +86,34 @@ public class FileService {
 
     public FileEntity assembleChunks(String fileName, int totalChunks, FileUploadRequest fileUploadRequest) throws IOException {
         File finalFile = new File(tempDir, fileName);
-        boolean successfullyCreated = finalFile.createNewFile();
-        if (!successfullyCreated) {
+
+        if (!finalFile.createNewFile()) {
             throw new IOException("Failed to create new file");
         }
 
-        try (FileOutputStream fos = new FileOutputStream(finalFile)) {
-            for (int i = 0; i < totalChunks; i++) {
-                File partFile = new File(tempDir, getFileChunkName(fileName) + i);
-                Files.copy(partFile.toPath(), fos);
-                Files.delete(partFile.toPath());
-            }
-        }
+        mergeChunksIntoFile(finalFile, fileName, totalChunks);
+        deleteChunkFilesFromTemp(fileName);
 
         return saveFile(finalFile, fileUploadRequest);
     }
 
-    public void deleteTempFiles(String fileName) {
-        File[] tempFiles = tempDir.listFiles((dir, name) -> name.startsWith(getFileChunkName(fileName)));
+    private void mergeChunksIntoFile(File finalFile, String fileName, int totalChunks) throws IOException {
+        try (FileOutputStream fos = new FileOutputStream(finalFile)) {
+            for (int i = 0; i < totalChunks; i++) {
+                File chunk = new File(tempDir, fileName + "_chunk_" + i);
+                try {
+                    Files.copy(chunk.toPath(), fos);
+                    Files.delete(chunk.toPath());
+                } catch (IOException ex) {
+                    logger.error("Error processing chunk {}: {}", i, ex.getMessage());
+                    throw ex;
+                }
+            }
+        }
+    }
+
+    public void deleteChunkFilesFromTemp(String fileName) {
+        File[] tempFiles = tempDir.listFiles((dir, name) -> name.startsWith(fileName + "_chunk_"));
 
         if (tempFiles != null) {
             for (File tempFile : tempFiles) {
@@ -115,8 +126,16 @@ public class FileService {
         }
     }
 
-    private String getFileChunkName(String fileName) {
-        return fileName + "_chunk";
+    public void deleteFullFileFromTemp(String fileName) {
+        Path assembledFilePath = Paths.get(tempDir.getAbsolutePath(), fileName);
+        try {
+            if (Files.exists(assembledFilePath)) {
+                Files.delete(assembledFilePath);
+                logger.info("Deleted assembled file: {}", assembledFilePath);
+            }
+        } catch (IOException e) {
+            logger.error("Failed to delete assembled file: {}", assembledFilePath, e);
+        }
     }
 
     public FileEntity saveFile(File file, FileUploadRequest fileUploadRequest) {
@@ -127,136 +146,39 @@ public class FileService {
         logger.info("File received: {}", file.getName());
 
         String uuid = UUID.randomUUID().toString();
-        Path path = Path.of(applicationSettingsService.getFileStoragePath(), uuid);
+        Path targetPath = Path.of(applicationSettingsService.getFileStoragePath(), uuid);
 
-        if (fileUploadRequest.password == null || fileUploadRequest.password.isEmpty()) {
-            if (!moveAndRenameUnencryptedFile(file, path)) {
-                return null;
-            }
+        boolean isEncrypted = fileUploadRequest.password != null && !fileUploadRequest.password.isBlank();
+        if (isEncrypted) {
+            if (!saveEncryptedFile(targetPath, file, fileUploadRequest)) return null;
         } else {
-            if (!saveEncryptedFile(path, file, fileUploadRequest)) {
-                return null;
-            }
+            if (!moveAndRenameUnencryptedFile(file, targetPath)) return null;
         }
 
-        FileEntity fileEntity = new FileEntity();
-        fileEntity.name = file.getName();
-        fileEntity.uuid = uuid;
-        fileEntity.description = fileUploadRequest.description;
-        fileEntity.size = file.getTotalSpace();
-        fileEntity.keepIndefinitely = fileUploadRequest.keepIndefinitely;
-        fileEntity.hidden = fileUploadRequest.hidden;
-
-        if (fileUploadRequest.password != null && !fileUploadRequest.password.isEmpty()) {
-            fileEntity.passwordHash = passwordEncoder.encode(fileUploadRequest.password);
-        }
-
+        FileEntity fileEntity = populateFileEntity(file, fileUploadRequest, uuid);
         logger.info("FileEntity inserted into database: {}", fileEntity);
         return fileRepository.save(fileEntity);
     }
-
-    private boolean moveAndRenameUnencryptedFile(File file, Path path) {
-        try {
-            Files.move(file.toPath(), path);
-            logger.info("File saved: {}", path);
-        } catch (
-                Exception e) {
-            logger.error("Error saving file: {}", e.getMessage());
-            return false;
-        }
-        return true;
-    }
-
-    public boolean saveEncryptedFile(Path savePath, File file, FileUploadRequest fileUploadRequest) {
-        try {
-            Path encryptedFile = Files.createFile(savePath);
-            logger.info("Encrypting file: {}", encryptedFile);
-            encryptFile(file, encryptedFile.toFile(), fileUploadRequest.password);
-            logger.info("Encrypted file saved: {}", encryptedFile);
-        } catch (
-                Exception e) {
-            logger.error("Error encrypting file: {}", e.getMessage());
-            return false;
-        }
-
-        try {
-            Files.delete(file.toPath());
-            logger.info("Temp file deleted: {}", file);
-        } catch (
-                Exception e) {
-            logger.error("Error deleting temp file: {}", e.getMessage());
-            return false;
-        }
-
-        return true;
-    }
-
 
     public List<FileEntity> getFiles() {
         return fileRepository.findAll();
     }
 
-    public ResponseEntity<StreamingResponseBody> downloadFile(Long id, String password, HttpServletRequest request) {
-        FileEntity fileEntity = fileRepository.findById(id).orElse(null);
-        if (fileEntity == null) {
-            logger.info("File not found: {}", id);
-            return ResponseEntity.notFound().build();
+    private FileEntity populateFileEntity(File file, FileUploadRequest request, String uuid) {
+        FileEntity fileEntity = new FileEntity();
+        fileEntity.name = file.getName();
+        fileEntity.uuid = uuid;
+        fileEntity.description = request.description;
+        fileEntity.size = file.length();
+        fileEntity.keepIndefinitely = request.keepIndefinitely;
+        fileEntity.hidden = request.hidden;
+
+        if (request.password != null && !request.password.isBlank()) {
+            fileEntity.passwordHash = passwordEncoder.encode(request.password);
         }
 
-        Path pathOfFile = Path.of(applicationSettingsService.getFileStoragePath(), fileEntity.uuid);
-        Path outputFile = null;
-        if (fileEntity.passwordHash != null) {
-            try {
-                outputFile = File.createTempFile("Decrypted", "tmp").toPath();
-                logger.info("Decrypting file: {}", pathOfFile);
-                decryptFile(pathOfFile.toFile(), outputFile.toFile(), password);
-                logger.info("File decrypted: {}", outputFile);
-            } catch (
-                    Exception e) {
-                logger.error("Error decrypting file: {}", e.getMessage());
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-            }
-        } else {
-            outputFile = pathOfFile;
-        }
-
-        StreamingResponseBody responseBody = getStreamingResponseBody(outputFile, fileEntity);
-
-        try {
-            Resource resource = new UrlResource(outputFile.toUri());
-            logger.info("Sending file: {}", fileEntity);
-            logDownload(fileEntity, request);
-            return ResponseEntity.ok()
-                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + URLEncoder.encode(fileEntity.name, StandardCharsets.UTF_8) + "\"")
-                    .header(HttpHeaders.CONTENT_TYPE, "application/octet-stream")
-                    .header(HttpHeaders.CONTENT_LENGTH, String.valueOf(resource.contentLength()))
-                    .body(responseBody);
-        } catch (
-                Exception e) {
-            logger.error("Error reading file: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
+        return fileEntity;
     }
-
-    private void logDownload(FileEntity fileEntity, HttpServletRequest request) {
-        String forwardedFor = request.getHeader("X-Forwarded-For");
-        String realIp = request.getHeader("X-Real-IP");
-        String downloaderIp;
-
-        if (forwardedFor != null && !forwardedFor.isEmpty()) {
-            // The X-Forwarded-For header can contain multiple IPs, pick the first one
-            downloaderIp = forwardedFor.split(",")[0].trim();
-        } else if (realIp != null && !realIp.isEmpty()) {
-            downloaderIp = realIp;
-        } else {
-            downloaderIp = request.getRemoteAddr();
-        }
-
-        String userAgent = request.getHeader(HttpHeaders.USER_AGENT);
-        DownloadLog downloadLog = new DownloadLog(fileEntity, downloaderIp, userAgent);
-        downloadLogRepository.save(downloadLog);
-    }
-
 
     public FileEntity getFile(Long id) {
         return fileRepository.findById(id).orElse(null);
@@ -301,14 +223,25 @@ public class FileService {
         return deleteFileFromFileSystem(fileEntity.uuid);
     }
 
-    public boolean checkPassword(String uuid, String password) {
-        Optional<FileEntity> referenceByUUID = fileRepository.findByUUID(uuid);
-        if (referenceByUUID.isEmpty()) {
-            return false;
+    public ResponseEntity<StreamingResponseBody> downloadFile(Long id, String password, HttpServletRequest request) {
+        FileEntity fileEntity = fileRepository.findById(id).orElse(null);
+        if (fileEntity == null) {
+            logger.info("File not found: {}", id);
+            return ResponseEntity.notFound().build();
         }
 
-        FileEntity fileEntity = referenceByUUID.get();
-        return passwordEncoder.matches(password, fileEntity.passwordHash);
+        Path filePath = Path.of(applicationSettingsService.getFileStoragePath(), fileEntity.uuid);
+        Path decryptedFilePath = decryptFileIfNeeded(fileEntity, filePath, password);
+        if (decryptedFilePath == null) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+
+        try {
+            return createFileDownloadResponse(decryptedFilePath, fileEntity, request);
+        } catch (Exception e) {
+            logger.error("Error preparing file download response: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 
     public List<FileEntity> searchFiles(String query) {
@@ -389,19 +322,14 @@ public class FileService {
         return file.tokenExpirationDate == null || !LocalDate.now().isAfter(file.tokenExpirationDate);
     }
 
-    private void writeFileToStream(String uuid, OutputStream outputStream) {
-        Path path = Path.of(applicationSettingsService.getFileStoragePath(), uuid);
-        try (FileInputStream inputStream = new FileInputStream(path.toFile())) {
-            byte[] buffer = new byte[1024];
-            int bytesRead;
-            while ((bytesRead = inputStream.read(buffer)) != -1) {
-                outputStream.write(buffer, 0, bytesRead);
-            }
-            outputStream.flush();
-        } catch (
-                Exception e) {
-            logger.error("Error writing file to stream: {}", e.getMessage());
+    public boolean checkFilePassword(String uuid, String password) {
+        Optional<FileEntity> referenceByUUID = fileRepository.findByUUID(uuid);
+        if (referenceByUUID.isEmpty()) {
+            return false;
         }
+
+        FileEntity fileEntity = referenceByUUID.get();
+        return passwordEncoder.matches(password, fileEntity.passwordHash);
     }
 
     public StreamingResponseBody streamFileAndInvalidateToken(String uuid, String token, HttpServletRequest request) {
@@ -427,5 +355,122 @@ public class FileService {
                 logger.error("Error streaming file or invalidating token for UUID: {}", uuid, e);
             }
         };
+    }
+
+    public ResponseEntity<?> finalizeFile(String fileName, int totalChunks, String description,
+                                          Boolean keepIndefinitely, String password, Boolean hidden) throws IOException {
+        FileUploadRequest fileUploadRequest = new FileUploadRequest(description, keepIndefinitely, password, hidden);
+        FileEntity fileEntity = assembleChunks(fileName, totalChunks, fileUploadRequest);
+
+        if (fileEntity != null) {
+            return ResponseEntity.ok(fileEntity);
+        }
+
+        return ResponseEntity.badRequest().build();
+    }
+
+    private boolean saveEncryptedFile(Path savePath, File file, FileUploadRequest fileUploadRequest) {
+        try {
+            Path encryptedFile = Files.createFile(savePath);
+            logger.info("Encrypting file: {}", encryptedFile);
+            encryptFile(file, encryptedFile.toFile(), fileUploadRequest.password);
+            logger.info("Encrypted file saved: {}", encryptedFile);
+        } catch (
+                Exception e) {
+            logger.error("Error encrypting file: {}", e.getMessage());
+            return false;
+        }
+
+        try {
+            Files.delete(file.toPath());
+            logger.info("Temp file deleted: {}", file);
+        } catch (
+                Exception e) {
+            logger.error("Error deleting temp file: {}", e.getMessage());
+            return false;
+        }
+
+        return true;
+    }
+
+    private boolean moveAndRenameUnencryptedFile(File file, Path path) {
+        for (int retry = 0; retry < 3; retry++) {
+            try {
+                Files.move(file.toPath(), path, StandardCopyOption.REPLACE_EXISTING);
+                logger.info("File moved successfully: {}", path);
+                return true;
+            } catch (IOException e) {
+                logger.error("Attempt {}/3 failed to move file {}: {}", retry + 1, file.getName(), e.getMessage());
+            }
+        }
+        logger.error("Failed to move file after 3 attempts: {}", file.getName());
+        return false;
+    }
+
+    private void writeFileToStream(String uuid, OutputStream outputStream) {
+        Path path = Path.of(applicationSettingsService.getFileStoragePath(), uuid);
+        try (FileInputStream inputStream = new FileInputStream(path.toFile())) {
+            byte[] buffer = new byte[1024];
+            int bytesRead;
+            while ((bytesRead = inputStream.read(buffer)) != -1) {
+                outputStream.write(buffer, 0, bytesRead);
+            }
+            outputStream.flush();
+        } catch (
+                Exception e) {
+            logger.error("Error writing file to stream: {}", e.getMessage());
+        }
+    }
+
+    private void logDownload(FileEntity fileEntity, HttpServletRequest request) {
+        String forwardedFor = request.getHeader("X-Forwarded-For");
+        String realIp = request.getHeader("X-Real-IP");
+        String downloaderIp;
+
+        if (forwardedFor != null && !forwardedFor.isEmpty()) {
+            // The X-Forwarded-For header can contain multiple IPs, pick the first one
+            downloaderIp = forwardedFor.split(",")[0].trim();
+        } else if (realIp != null && !realIp.isEmpty()) {
+            downloaderIp = realIp;
+        } else {
+            downloaderIp = request.getRemoteAddr();
+        }
+
+        String userAgent = request.getHeader(HttpHeaders.USER_AGENT);
+        DownloadLog downloadLog = new DownloadLog(fileEntity, downloaderIp, userAgent);
+        downloadLogRepository.save(downloadLog);
+    }
+
+    private String getFileChunkName(String fileName, int chunkNumber) {
+        return fileName + "_chunk_" + chunkNumber;
+    }
+
+    private Path decryptFileIfNeeded(FileEntity fileEntity, Path filePath, String password) {
+        if (fileEntity.passwordHash == null) {
+            return filePath;
+        }
+        try {
+            Path tempFile = File.createTempFile("Decrypted", "tmp").toPath();
+            logger.info("Decrypting file: {}", filePath);
+            decryptFile(filePath.toFile(), tempFile.toFile(), password);
+            logger.info("File decrypted: {}", tempFile);
+            return tempFile;
+        } catch (Exception e) {
+            logger.error("Error decrypting file: {}", e.getMessage());
+            return null;
+        }
+    }
+
+    private ResponseEntity<StreamingResponseBody> createFileDownloadResponse(Path filePath, FileEntity fileEntity, HttpServletRequest request) throws IOException {
+        StreamingResponseBody responseBody = getStreamingResponseBody(filePath, fileEntity);
+        Resource resource = new UrlResource(filePath.toUri());
+        logger.info("Sending file: {}", fileEntity);
+        logDownload(fileEntity, request);
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + URLEncoder.encode(fileEntity.name, StandardCharsets.UTF_8) + "\"")
+                .header(HttpHeaders.CONTENT_TYPE, "application/octet-stream")
+                .header(HttpHeaders.CONTENT_LENGTH, String.valueOf(resource.contentLength()))
+                .body(responseBody);
     }
 }

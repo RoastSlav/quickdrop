@@ -83,8 +83,8 @@ public class AdminViewController {
         if (!applicationSettingsService.checkForAdminPassword(request)) {
             return "redirect:password";
         }
-        settings.setMaxFileSize(megabytesToBytes(settings.getMaxFileSize()));
 
+        settings.setMaxFileSize(megabytesToBytes(settings.getMaxFileSize()));
 
         applicationSettingsService.updateApplicationSettings(settings, settings.getAppPassword());
         return "redirect:dashboard";
@@ -93,6 +93,7 @@ public class AdminViewController {
     @PostMapping("/password")
     public String checkAdminPassword(@RequestParam String password, HttpServletRequest request) {
         String adminPasswordHash = applicationSettingsService.getAdminPasswordHash();
+
         if (BCrypt.checkpw(password, adminPasswordHash)) {
             request.getSession().setAttribute("adminPassword", adminPasswordHash);
             return "redirect:dashboard";

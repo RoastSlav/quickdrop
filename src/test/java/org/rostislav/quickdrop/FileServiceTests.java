@@ -99,18 +99,6 @@ public class FileServiceTests {
             assertNotNull(result.passwordHash);
         }
 
-        // Successfully encrypts a file
-        @Test
-        void test_encrypt_file() {
-            File file = mock(File.class);
-            Path encryptedFile = Path.of(fileSavePath, "test.txt");
-
-            // Call the method responsible for encrypting files directly
-            boolean encryptionResult = fileService.saveEncryptedFile(encryptedFile, file, getFileUploadRequest());
-
-            assertTrue(encryptionResult);
-        }
-
         // Correctly encodes password when provided
         @Test
         void test_correctly_encodes_password_when_provided() {

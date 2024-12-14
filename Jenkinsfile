@@ -20,23 +20,37 @@ pipeline {
             }
         }
 
-        stage('Docker Build') {
+        stage('Docker Buildx Setup') {
             steps {
-                sh "docker build -t ${DOCKER_IMAGE} ."
+                script {
+                    sh """
+                    docker buildx create --use || echo 'Buildx already created'
+                    docker buildx inspect --bootstrap
+                    """
+                }
             }
         }
 
-        stage('Push to Docker Hub') {
+        stage('Docker Build and Push Multi-Arch') {
             steps {
                 script {
                     withCredentials([usernamePassword(credentialsId: DOCKER_CREDENTIALS_ID, passwordVariable: 'DOCKER_PASS', usernameVariable: 'DOCKER_USER')]) {
                         sh """
                         echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
-                        docker push ${DOCKER_IMAGE}
+                        docker buildx build \
+                            --platform linux/amd64,linux/arm64 \
+                            -t ${DOCKER_IMAGE} \
+                            --push .
                         docker logout
                         """
                     }
                 }
+            }
+        }
+
+        stage('Cleanup') {
+            steps {
+                sh "docker system prune -f"
             }
         }
     }

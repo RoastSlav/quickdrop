@@ -7,11 +7,11 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 
 @Component
-public class AdminPasswordInterceptor implements HandlerInterceptor {
+public class AdminPasswordSetupInterceptor implements HandlerInterceptor {
 
     private final ApplicationSettingsService applicationSettingsService;
 
-    public AdminPasswordInterceptor(ApplicationSettingsService applicationSettingsService) {
+    public AdminPasswordSetupInterceptor(ApplicationSettingsService applicationSettingsService) {
         this.applicationSettingsService = applicationSettingsService;
     }
 

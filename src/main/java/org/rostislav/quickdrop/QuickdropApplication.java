@@ -23,6 +23,11 @@ public class QuickdropApplication {
     }
 
     public static void main(String[] args) {
+        try {
+            Files.createDirectories(Path.of("./db"));
+        } catch (Exception e) {
+            logger.error("Error creating directory for database", e);
+        }
         SpringApplication.run(QuickdropApplication.class, args);
     }
 

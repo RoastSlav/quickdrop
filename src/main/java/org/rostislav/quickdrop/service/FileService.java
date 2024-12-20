@@ -45,13 +45,15 @@ public class FileService {
     private final ApplicationSettingsService applicationSettingsService;
     private final DownloadLogRepository downloadLogRepository;
     private final File tempDir = Paths.get(System.getProperty("java.io.tmpdir")).toFile();
+    private final SessionService sessionService;
 
     @Lazy
-    public FileService(FileRepository fileRepository, PasswordEncoder passwordEncoder, ApplicationSettingsService applicationSettingsService, DownloadLogRepository downloadLogRepository) {
+    public FileService(FileRepository fileRepository, PasswordEncoder passwordEncoder, ApplicationSettingsService applicationSettingsService, DownloadLogRepository downloadLogRepository, SessionService sessionService) {
         this.fileRepository = fileRepository;
         this.passwordEncoder = passwordEncoder;
         this.applicationSettingsService = applicationSettingsService;
         this.downloadLogRepository = downloadLogRepository;
+        this.sessionService = sessionService;
     }
 
     private static StreamingResponseBody getStreamingResponseBody(Path outputFile, FileEntity fileEntity) {
@@ -148,6 +150,8 @@ public class FileService {
         String uuid = UUID.randomUUID().toString();
         Path targetPath = Path.of(applicationSettingsService.getFileStoragePath(), uuid);
 
+        FileEntity fileEntity = populateFileEntity(file, fileUploadRequest, uuid);
+
         boolean isEncrypted = fileUploadRequest.password != null && !fileUploadRequest.password.isBlank();
         if (isEncrypted) {
             if (!saveEncryptedFile(targetPath, file, fileUploadRequest)) return null;
@@ -155,7 +159,6 @@ public class FileService {
             if (!moveAndRenameUnencryptedFile(file, targetPath)) return null;
         }
 
-        FileEntity fileEntity = populateFileEntity(file, fileUploadRequest, uuid);
         logger.info("FileEntity inserted into database: {}", fileEntity);
         return fileRepository.save(fileEntity);
     }
@@ -188,8 +191,8 @@ public class FileService {
         return fileRepository.findByUUID(uuid).orElse(null);
     }
 
-    public void extendFile(Long id) {
-        Optional<FileEntity> referenceById = fileRepository.findById(id);
+    public void extendFile(String uuid) {
+        Optional<FileEntity> referenceById = fileRepository.findByUUID(uuid);
         if (referenceById.isEmpty()) {
             return;
         }
@@ -212,8 +215,8 @@ public class FileService {
         return true;
     }
 
-    public boolean deleteFile(Long id) {
-        Optional<FileEntity> referenceById = fileRepository.findById(id);
+    public boolean deleteFile(String uuid) {
+        Optional<FileEntity> referenceById = fileRepository.findByUUID(uuid);
         if (referenceById.isEmpty()) {
             return false;
         }
@@ -223,14 +226,15 @@ public class FileService {
         return deleteFileFromFileSystem(fileEntity.uuid);
     }
 
-    public ResponseEntity<StreamingResponseBody> downloadFile(Long id, String password, HttpServletRequest request) {
-        FileEntity fileEntity = fileRepository.findById(id).orElse(null);
+    public ResponseEntity<StreamingResponseBody> downloadFile(String uuid, HttpServletRequest request) {
+        FileEntity fileEntity = fileRepository.findByUUID(uuid).orElse(null);
         if (fileEntity == null) {
-            logger.info("File not found: {}", id);
+            logger.info("File not found: {}", uuid);
             return ResponseEntity.notFound().build();
         }
 
         Path filePath = Path.of(applicationSettingsService.getFileStoragePath(), fileEntity.uuid);
+        String password = getFilePasswordFromSessionToken(request);
         Path decryptedFilePath = decryptFileIfNeeded(fileEntity, filePath, password);
         if (decryptedFilePath == null) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
@@ -242,6 +246,15 @@ public class FileService {
             logger.error("Error preparing file download response: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
+    }
+
+    private String getFilePasswordFromSessionToken(HttpServletRequest request) {
+        Object sessionToken = request.getSession().getAttribute("file-session-token");
+        if (sessionToken == null) {
+            return null;
+        }
+
+        return sessionService.getPasswordForFileSessionToken(sessionToken.toString()).getPassword();
     }
 
     public List<FileEntity> searchFiles(String query) {
@@ -256,32 +269,36 @@ public class FileService {
         return nullToZero(fileRepository.totalFileSizeForAllFiles());
     }
 
-    public void updateKeepIndefinitely(Long id, boolean keepIndefinitely) {
-        Optional<FileEntity> referenceById = fileRepository.findById(id);
+    public FileEntity updateKeepIndefinitely(String uuid, boolean keepIndefinitely) {
+        Optional<FileEntity> referenceById = fileRepository.findByUUID(uuid);
         if (referenceById.isEmpty()) {
-            return;
+            logger.info("File not found for 'update keep indefinitely': {}", uuid);
+            return null;
         }
 
         if (!keepIndefinitely) {
-            extendFile(id);
+            extendFile(uuid);
         }
 
         FileEntity fileEntity = referenceById.get();
         fileEntity.keepIndefinitely = keepIndefinitely;
         logger.info("File keepIndefinitely updated: {}", fileEntity);
         fileRepository.save(fileEntity);
+        return fileEntity;
     }
 
-    public void toggleHidden(Long id) {
-        Optional<FileEntity> referenceById = fileRepository.findById(id);
+    public FileEntity toggleHidden(String uuid) {
+        Optional<FileEntity> referenceById = fileRepository.findByUUID(uuid);
         if (referenceById.isEmpty()) {
-            return;
+            logger.info("File not found for 'toggle hidden': {}", uuid);
+            return null;
         }
 
         FileEntity fileEntity = referenceById.get();
         fileEntity.hidden = !fileEntity.hidden;
         logger.info("File hidden updated: {}", fileEntity);
         fileRepository.save(fileEntity);
+        return fileEntity;
     }
 
     public List<FileEntity> getNotHiddenFiles() {
@@ -292,14 +309,30 @@ public class FileService {
         return fileRepository.findAllFilesWithDownloadCounts();
     }
 
-    public String generateShareToken(Long fileId, LocalDate tokenExpirationDate) {
-        Optional<FileEntity> optionalFile = fileRepository.findById(fileId);
+    public String generateShareToken(String uuid, LocalDate tokenExpirationDate, String sessionToken) {
+        Optional<FileEntity> optionalFile = fileRepository.findByUUID(uuid);
         if (optionalFile.isEmpty()) {
             throw new IllegalArgumentException("File not found");
         }
 
         FileEntity file = optionalFile.get();
-        String token = UUID.randomUUID().toString(); // Generate a unique token
+        Path encryptedFilePath = Path.of(applicationSettingsService.getFileStoragePath(), file.uuid);
+        Path decryptedFilePath = encryptedFilePath.resolveSibling(file.uuid + "-decrypted");
+
+        // Decrypt the file if necessary
+        if (file.passwordHash != null) {
+            try {
+                String password = sessionService.getPasswordForFileSessionToken(sessionToken).getPassword();
+                decryptFile(encryptedFilePath.toFile(), decryptedFilePath.toFile(), password);
+                logger.info("Decrypted file created alongside encrypted file: {}", decryptedFilePath);
+            } catch (Exception e) {
+                logger.error("Error decrypting file for sharing: {}", e.getMessage());
+                throw new RuntimeException("Failed to decrypt file", e);
+            }
+        }
+
+        // Generate the share token
+        String token = UUID.randomUUID().toString();
         file.shareToken = token;
         file.tokenExpirationDate = tokenExpirationDate;
         fileRepository.save(file);
@@ -307,6 +340,7 @@ public class FileService {
         logger.info("Share token generated for file: {}", file.name);
         return token;
     }
+
 
     public boolean validateShareToken(String uuid, String token) {
         Optional<FileEntity> optionalFile = fileRepository.findByUUID(uuid);
@@ -340,20 +374,47 @@ public class FileService {
         }
 
         FileEntity fileEntity = optionalFile.get();
+        Path decryptedFilePath = Path.of(applicationSettingsService.getFileStoragePath(), fileEntity.uuid + "-decrypted");
+        Path filePathToStream;
+
+        // Decide whether to stream the decrypted file or the encrypted file
+        if (Files.exists(decryptedFilePath)) {
+            filePathToStream = decryptedFilePath;
+        } else {
+            filePathToStream = Path.of(applicationSettingsService.getFileStoragePath(), fileEntity.uuid);
+        }
+
         logDownload(fileEntity, request);
 
         return outputStream -> {
-            try {
-                writeFileToStream(uuid, outputStream);
-
-                fileEntity.shareToken = null;
-                fileEntity.tokenExpirationDate = null;
-                fileRepository.save(fileEntity);
-
-                logger.info("Share token invalidated and file streamed successfully: {}", fileEntity.name);
+            try (FileInputStream inputStream = new FileInputStream(filePathToStream.toFile())) {
+                byte[] buffer = new byte[1024];
+                int bytesRead;
+                while ((bytesRead = inputStream.read(buffer)) != -1) {
+                    outputStream.write(buffer, 0, bytesRead);
+                }
+                outputStream.flush();
             } catch (Exception e) {
-                logger.error("Error streaming file or invalidating token for UUID: {}", uuid, e);
+                logger.error("Error streaming file for UUID: {}", uuid, e);
+                throw e;
+            } finally {
+                // Delete the decrypted file after streaming if it exists
+                if (filePathToStream.equals(decryptedFilePath)) {
+                    try {
+                        Files.deleteIfExists(decryptedFilePath);
+                        logger.info("Deleted decrypted file after download: {}", decryptedFilePath);
+                    } catch (IOException e) {
+                        logger.error("Failed to delete decrypted file: {}", decryptedFilePath, e);
+                    }
+                }
             }
+
+            // Invalidate the share token
+            fileEntity.shareToken = null;
+            fileEntity.tokenExpirationDate = null;
+            fileRepository.save(fileEntity);
+
+            logger.info("Share token invalidated and file streamed successfully: {}", fileEntity.name);
         };
     }
 

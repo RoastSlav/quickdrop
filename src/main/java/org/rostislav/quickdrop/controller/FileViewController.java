@@ -1,6 +1,7 @@
 package org.rostislav.quickdrop.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import org.rostislav.quickdrop.entity.DownloadLog;
 import org.rostislav.quickdrop.entity.FileEntity;
 import org.rostislav.quickdrop.model.FileEntityView;
@@ -8,7 +9,7 @@ import org.rostislav.quickdrop.repository.DownloadLogRepository;
 import org.rostislav.quickdrop.service.AnalyticsService;
 import org.rostislav.quickdrop.service.ApplicationSettingsService;
 import org.rostislav.quickdrop.service.FileService;
-import org.springframework.http.HttpStatus;
+import org.rostislav.quickdrop.service.SessionService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 import java.util.List;
+import java.util.UUID;
 
 import static org.rostislav.quickdrop.util.FileUtils.populateModelAttributes;
 
@@ -26,12 +28,14 @@ public class FileViewController {
     private final ApplicationSettingsService applicationSettingsService;
     private final DownloadLogRepository downloadLogRepository;
     private final AnalyticsService analyticsService;
+    private final SessionService sessionService;
 
-    public FileViewController(FileService fileService, ApplicationSettingsService applicationSettingsService, DownloadLogRepository downloadLogRepository, AnalyticsService analyticsService) {
+    public FileViewController(FileService fileService, ApplicationSettingsService applicationSettingsService, DownloadLogRepository downloadLogRepository, AnalyticsService analyticsService, SessionService sessionService) {
         this.fileService = fileService;
         this.applicationSettingsService = applicationSettingsService;
         this.downloadLogRepository = downloadLogRepository;
         this.analyticsService = analyticsService;
+        this.sessionService = sessionService;
     }
 
     @GetMapping("/upload")
@@ -53,27 +57,16 @@ public class FileViewController {
         FileEntity fileEntity = fileService.getFile(uuid);
         model.addAttribute("maxFileLifeTime", applicationSettingsService.getMaxFileLifeTime());
 
-        String password = (String) request.getSession().getAttribute("password");
-        if (fileEntity.passwordHash != null &&
-                (password == null || !fileService.checkFilePassword(uuid, password))) {
-            model.addAttribute("uuid", uuid);
-            return "file-password";
-        }
-
         populateModelAttributes(fileEntity, model, request);
 
         return "fileView";
     }
 
-    @GetMapping("/history/{id}")
-    public String viewDownloadHistory(@PathVariable Long id, Model model, HttpServletRequest request) {
-        if (!applicationSettingsService.checkForAdminPassword(request)) {
-            return "redirect:/admin/password";
-        }
-
-        FileEntity file = fileService.getFile(id);
-        List<DownloadLog> downloadHistory = downloadLogRepository.findByFileId(id);
-        long totalDownloads = analyticsService.getTotalDownloadsByFile(id);
+    @GetMapping("/history/{uuid}")
+    public String viewDownloadHistory(@PathVariable String uuid, Model model) {
+        FileEntity file = fileService.getFile(uuid);
+        List<DownloadLog> downloadHistory = downloadLogRepository.findByFileUuid(uuid);
+        long totalDownloads = analyticsService.getTotalDownloadsByFile(uuid);
 
         model.addAttribute("file", new FileEntityView(file, totalDownloads));
         model.addAttribute("downloadHistory", downloadHistory);
@@ -85,7 +78,9 @@ public class FileViewController {
     @PostMapping("/password")
     public String checkPassword(String uuid, String password, HttpServletRequest request, Model model) {
         if (fileService.checkFilePassword(uuid, password)) {
-            request.getSession().setAttribute("password", password);
+            String fileSessionToken = sessionService.addFileSessionToken(UUID.randomUUID().toString(), password, uuid);
+            HttpSession session = request.getSession();
+            session.setAttribute("file-session-token", fileSessionToken);
             return "redirect:/file/" + uuid;
         } else {
             model.addAttribute("uuid", uuid);
@@ -93,36 +88,33 @@ public class FileViewController {
         }
     }
 
-    @GetMapping("/download/{id}")
-    public ResponseEntity<StreamingResponseBody> downloadFile(@PathVariable Long id, HttpServletRequest request) {
-        FileEntity fileEntity = fileService.getFile(id);
-
-        if (fileEntity.passwordHash != null) {
-            String password = (String) request.getSession().getAttribute("password");
-            if (password == null || !fileService.checkFilePassword(fileEntity.uuid, password)) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-            }
-        }
-
-        String password = (String) request.getSession().getAttribute("password");
-        return fileService.downloadFile(id, password, request);
+    @GetMapping("/password/{uuid}")
+    public String passwordPage(@PathVariable String uuid, Model model) {
+        model.addAttribute("uuid", uuid);
+        return "file-password";
     }
 
-    @PostMapping("/extend/{id}")
-    public String extendFile(@PathVariable Long id, Model model, HttpServletRequest request) {
-        fileService.extendFile(id);
+    @GetMapping("/download/{uuid}")
+    public ResponseEntity<StreamingResponseBody> downloadFile(@PathVariable String uuid, HttpServletRequest request) {
+        return fileService.downloadFile(uuid, request);
+    }
 
-        FileEntity fileEntity = fileService.getFile(id);
+    @PostMapping("/extend/{uuid}")
+    public String extendFile(@PathVariable String uuid, Model model, HttpServletRequest request) {
+        fileService.extendFile(uuid);
+
+        FileEntity fileEntity = fileService.getFile(uuid);
         populateModelAttributes(fileEntity, model, request);
+        model.addAttribute("maxFileLifeTime", applicationSettingsService.getMaxFileLifeTime());
         return "fileView";
     }
 
-    @PostMapping("/delete/{id}")
-    public String deleteFile(@PathVariable Long id) {
-        if (fileService.deleteFile(id)) {
+    @PostMapping("/delete/{uuid}")
+    public String deleteFile(@PathVariable String uuid) {
+        if (fileService.deleteFile(uuid)) {
             return "redirect:/file/list";
         } else {
-            return "redirect:/file/" + id;
+            return "redirect:/file/" + uuid;
         }
     }
 
@@ -133,50 +125,23 @@ public class FileViewController {
         return "listFiles";
     }
 
-    @PostMapping("/keep-indefinitely/{id}")
-    public String updateKeepIndefinitely(@PathVariable Long id, @RequestParam(required = false, defaultValue = "false") boolean keepIndefinitely, HttpServletRequest request, Model model) {
-        return handlePasswordValidationAndRedirect(id, request, model, () -> fileService.updateKeepIndefinitely(id, keepIndefinitely));
+    @PostMapping("/keep-indefinitely/{uuid}")
+    public String updateKeepIndefinitely(@PathVariable String uuid, @RequestParam(required = false, defaultValue = "false") boolean keepIndefinitely) {
+        FileEntity fileEntity = fileService.updateKeepIndefinitely(uuid, keepIndefinitely);
+        if (fileEntity != null) {
+            return "redirect:/file/" + fileEntity.uuid;
+        }
+        return "redirect:/file/list";
     }
 
 
-    @PostMapping("/toggle-hidden/{id}")
-    public String toggleHidden(@PathVariable Long id, HttpServletRequest request, Model model) {
-        return handlePasswordValidationAndRedirect(id, request, model, () -> fileService.toggleHidden(id));
-    }
-
-
-    private String handlePasswordValidationAndRedirect(Long fileId, HttpServletRequest request, Model model, Runnable action) {
-        String referer = request.getHeader("Referer");
-
-        // Check for admin password
-        if (applicationSettingsService.checkForAdminPassword(request)) {
-            action.run();
-            return "redirect:" + referer;
+    @PostMapping("/toggle-hidden/{uuid}")
+    public String toggleHidden(@PathVariable String uuid) {
+        FileEntity fileEntity = fileService.toggleHidden(uuid);
+        if (fileEntity != null) {
+            return "redirect:/file/" + fileEntity.uuid;
         }
-
-        // Check for file password in the session
-        String filePassword = (String) request.getSession().getAttribute("password");
-        if (filePassword != null) {
-            FileEntity fileEntity = fileService.getFile(fileId);
-            // Validate file password if the file is password-protected
-            if (fileEntity.passwordHash != null && !fileService.checkFilePassword(fileEntity.uuid, filePassword)) {
-                model.addAttribute("uuid", fileEntity.uuid);
-                return "file-password"; // Redirect to file password page if the password is incorrect
-            }
-
-            action.run();
-            return "redirect:" + referer;
-        }
-
-        // No valid password found, determine the redirect destination
-        if (referer != null && referer.contains("/admin/dashboard")) {
-            return "redirect:/admin/password"; // Redirect to admin password page
-        } else {
-            // Get the file for adding the UUID to the model for the file password page
-            FileEntity fileEntity = fileService.getFile(fileId);
-            model.addAttribute("uuid", fileEntity.uuid);
-            return "file-password";
-        }
+        return "redirect:/file/list";
     }
 
     @GetMapping("/share/{uuid}/{token}")
@@ -186,8 +151,12 @@ public class FileViewController {
         }
 
         FileEntity file = fileService.getFile(uuid);
-        model.addAttribute("file", new FileEntityView(file, analyticsService.getTotalDownloadsByFile(file.id)));
-        model.addAttribute("downloadLink", "/api/file/download/" + file.uuid + "/" + token);
+        if (file == null) {
+            return "redirect:/file/list";
+        }
+
+        model.addAttribute("file", new FileEntityView(file, analyticsService.getTotalDownloadsByFile(uuid)));
+        model.addAttribute("downloadLink", "/api/file/download/" + uuid + "/" + token);
 
         return "file-share-view";
     }

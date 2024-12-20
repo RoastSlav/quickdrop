@@ -1,6 +1,7 @@
 package org.rostislav.quickdrop.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import org.rostislav.quickdrop.entity.ApplicationSettingsEntity;
 import org.rostislav.quickdrop.model.AnalyticsDataView;
 import org.rostislav.quickdrop.model.ApplicationSettingsViewModel;
@@ -8,15 +9,14 @@ import org.rostislav.quickdrop.model.FileEntityView;
 import org.rostislav.quickdrop.service.AnalyticsService;
 import org.rostislav.quickdrop.service.ApplicationSettingsService;
 import org.rostislav.quickdrop.service.FileService;
+import org.rostislav.quickdrop.service.SessionService;
 import org.springframework.security.crypto.bcrypt.BCrypt;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 
 import static org.rostislav.quickdrop.util.FileUtils.bytesToMegabytes;
 import static org.rostislav.quickdrop.util.FileUtils.megabytesToBytes;
@@ -27,19 +27,17 @@ public class AdminViewController {
     private final ApplicationSettingsService applicationSettingsService;
     private final AnalyticsService analyticsService;
     private final FileService fileService;
+    private final SessionService sessionService;
 
-    public AdminViewController(ApplicationSettingsService applicationSettingsService, AnalyticsService analyticsService, FileService fileService) {
+    public AdminViewController(ApplicationSettingsService applicationSettingsService, AnalyticsService analyticsService, FileService fileService, SessionService sessionService) {
         this.applicationSettingsService = applicationSettingsService;
         this.analyticsService = analyticsService;
         this.fileService = fileService;
+        this.sessionService = sessionService;
     }
 
     @GetMapping("/dashboard")
-    public String getDashboardPage(Model model, HttpServletRequest request) {
-        if (!applicationSettingsService.checkForAdminPassword(request)) {
-            return "redirect:password";
-        }
-
+    public String getDashboardPage(Model model) {
         List<FileEntityView> files = fileService.getAllFilesWithDownloadCounts();
         model.addAttribute("files", files);
 
@@ -64,11 +62,7 @@ public class AdminViewController {
     }
 
     @GetMapping("/settings")
-    public String getSettingsPage(Model model, HttpServletRequest request) {
-        if (!applicationSettingsService.checkForAdminPassword(request)) {
-            return "redirect:password";
-        }
-
+    public String getSettingsPage(Model model) {
         ApplicationSettingsEntity settings = applicationSettingsService.getApplicationSettings();
 
         ApplicationSettingsViewModel applicationSettingsViewModel = new ApplicationSettingsViewModel(settings);
@@ -79,11 +73,7 @@ public class AdminViewController {
     }
 
     @PostMapping("/save")
-    public String saveSettings(ApplicationSettingsViewModel settings, HttpServletRequest request) {
-        if (!applicationSettingsService.checkForAdminPassword(request)) {
-            return "redirect:password";
-        }
-
+    public String saveSettings(ApplicationSettingsViewModel settings) {
         settings.setMaxFileSize(megabytesToBytes(settings.getMaxFileSize()));
 
         applicationSettingsService.updateApplicationSettings(settings, settings.getAppPassword());
@@ -95,7 +85,9 @@ public class AdminViewController {
         String adminPasswordHash = applicationSettingsService.getAdminPasswordHash();
 
         if (BCrypt.checkpw(password, adminPasswordHash)) {
-            request.getSession().setAttribute("adminPassword", adminPasswordHash);
+            String adminAccessToken = sessionService.addAdminToken(UUID.randomUUID().toString());
+            HttpSession session = request.getSession();
+            session.setAttribute("admin-session-token", adminAccessToken);
             return "redirect:dashboard";
         } else {
             return "redirect:password";
@@ -105,5 +97,25 @@ public class AdminViewController {
     @GetMapping("/password")
     public String showAdminPasswordPage() {
         return "admin-password";
+    }
+
+    @PostMapping("/keep-indefinitely/{uuid}")
+    public String updateKeepIndefinitely(@PathVariable String uuid, @RequestParam(required = false, defaultValue = "false") boolean keepIndefinitely) {
+        fileService.updateKeepIndefinitely(uuid, keepIndefinitely);
+        return "redirect:/admin/dashboard";
+    }
+
+
+    @PostMapping("/toggle-hidden/{uuid}")
+    public String toggleHidden(@PathVariable String uuid) {
+        fileService.toggleHidden(uuid);
+        return "redirect:/admin/dashboard";
+    }
+
+    @PostMapping("/delete/{uuid}")
+    public String deleteFile(@PathVariable String uuid) {
+        fileService.deleteFile(uuid);
+
+        return "redirect:/admin/dashboard";
     }
 }

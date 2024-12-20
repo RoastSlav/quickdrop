@@ -62,11 +62,11 @@ function updateCheckboxState(event, checkbox) {
 }
 
 function openShareModal() {
-    const fileId = document.getElementById("fileId").textContent.trim();
+    const fileUuid = document.getElementById("fileUuid").textContent.trim(); // Use UUID instead of ID
     const filePasswordInput = document.getElementById("filePassword");
     const password = filePasswordInput ? filePasswordInput.value : "";
 
-    generateShareLink(fileId, password)
+    generateShareLink(fileUuid, password)
         .then(link => {
             const shareLinkInput = document.getElementById("shareLink");
             shareLinkInput.value = link;
@@ -93,9 +93,9 @@ function openShareModal() {
 }
 
 
-function generateShareLink(fileId) {
+function generateShareLink(fileUuid) {
     const csrfToken = document.querySelector('meta[name="_csrf"]').content; // Retrieve CSRF token
-    return fetch(`/api/file/share/${fileId}`, {
+    return fetch(`/api/file/share/${fileUuid}`, { // Use fileUuid in the URL
         method: 'POST',
         credentials: 'same-origin', // Ensures cookies are sent for session
         headers: {
@@ -109,6 +109,7 @@ function generateShareLink(fileId) {
             return response.text();
         });
 }
+
 
 function copyShareLink() {
     const shareLink = document.getElementById("shareLink");

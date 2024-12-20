@@ -10,8 +10,8 @@ public interface DownloadLogRepository extends JpaRepository<DownloadLog, Long> 
     @Query("SELECT COUNT(dl) FROM DownloadLog dl")
     long countAllDownloads();
 
-    @Query("SELECT COUNT(dl) FROM DownloadLog dl WHERE dl.file.id = :fileId")
-    long countDownloadsByFileId(Long fileId);
+    @Query("SELECT COUNT(dl) FROM DownloadLog dl WHERE dl.file.uuid = :uuid")
+    long countDownloadsByFileId(String uuid);
 
-    List<DownloadLog> findByFileId(Long fileId);
+    List<DownloadLog> findByFileUuid(String fileUUID);
 }

@@ -69,6 +69,13 @@
                     <label class="form-label">File Deletion Cron Expression</label>
                     <input class="form-control" required th:field="*{fileDeletionCron}" type="text">
                 </div>
+
+                <!-- Admin Session Token Lifetime -->
+                <div class="mb-3">
+                    <label class="form-label">Session Lifetime (minutes)</label>
+                    <small>this will impact how long file and admin sessions are kept for</small>
+                    <input class="form-control" min="0" required th:field="*{sessionLifeTime}" type="number">
+                </div>
             </div>
         </div>
 

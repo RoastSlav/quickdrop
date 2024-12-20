@@ -48,8 +48,8 @@
     </div>
 </nav>
 
-<!-- Hidden element to retrieve file ID -->
-<span hidden id="fileId" th:text="${file.id}"></span>
+<!-- Hidden element to retrieve file uuid -->
+<span hidden id="fileUuid" th:text="${file.uuid}"></span>
 
 <!-- Main Content -->
 <div class="container mt-5">
@@ -75,7 +75,8 @@
 
                     <div class="d-flex justify-content-between align-items-center pt-3">
                         <h5 class="card-title">Keep Indefinitely:</h5>
-                        <form class="d-inline" method="post" th:action="@{/file/keep-indefinitely/{id}(id=${file.id})}">
+                        <form class="d-inline" method="post"
+                              th:action="@{/file/keep-indefinitely/{uuid}(uuid=${file.uuid})}">
                             <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden">
                             <input name="keepIndefinitely" type="hidden" value="false">
                             <div class="form-check form-switch">
@@ -94,7 +95,8 @@
 
                     <div class="d-flex justify-content-between align-items-center" th:if="${file.passwordHash != null}">
                         <h5 class="card-title">Hide File From List:</h5>
-                        <form class="d-inline" method="post" th:action="@{/file/toggle-hidden/{id}(id=${file.id})}">
+                        <form class="d-inline" method="post"
+                              th:action="@{/file/toggle-hidden/{uuid}(uuid=${file.uuid})}">
                             <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden">
                             <input name="hidden" type="hidden" value="false">
                             <div class="form-check form-switch">
@@ -146,21 +148,21 @@
                         <a
                                 class="btn btn-success"
                                 id="downloadButton"
-                                th:href="@{/file/download/{id}(id=${file.id})}"
+                                th:href="@{/file/download/{uuid}(uuid=${file.uuid})}"
                                 th:onclick="${file.passwordHash != null} ? 'showPreparingMessage()' : ''">
                             Download
                         </a>
 
                         <form method="post"
                               onsubmit="return confirmDelete();"
-                              th:action="@{/file/delete/{id}(id=${file.id})}"
+                              th:action="@{/file/delete/{uuid}(uuid=${file.uuid})}"
                               th:if="${file.passwordHash != null}">
                             <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden">
                             <button class="btn btn-danger" type="submit">Delete File</button>
                         </form>
 
                         <form method="post"
-                              th:action="@{/file/extend/{id}(id=${file.id})}"
+                              th:action="@{/file/extend/{uuid}(uuid=${file.uuid})}"
                               th:if="${file.keepIndefinitely == false}">
                             <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden">
                             <button class="btn btn-primary" type="submit">Renew File Lifetime</button>

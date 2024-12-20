@@ -43,9 +43,15 @@ document.getElementById("uploadForm").addEventListener("submit", function (event
             formData.append("password", passwordInput.value.trim());
         }
 
+        // Explicitly append the checkbox states as true or false
+        const keepIndefinitelyCheckbox = document.getElementById("keepIndefinitely");
+        const hiddenCheckbox = document.getElementById("hidden");
+        formData.append("keepIndefinitely", keepIndefinitelyCheckbox.checked ? "true" : "false");
+        formData.append("hidden", hiddenCheckbox.checked ? "true" : "false");
+
         // Include other form fields except the file input
         Array.from(uploadForm.elements).forEach((element) => {
-            if (element.name && element.type !== "file") {
+            if (element.name && element.type !== "file" && element.type !== "checkbox") {
                 formData.append(element.name, element.value);
             }
         });

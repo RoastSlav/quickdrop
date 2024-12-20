@@ -12,6 +12,7 @@ public class ApplicationSettingsViewModel {
     private String fileDeletionCron;
     private boolean appPasswordEnabled;
     private String appPassword;
+    private long sessionLifeTime;
 
     public ApplicationSettingsViewModel() {
     }
@@ -24,6 +25,7 @@ public class ApplicationSettingsViewModel {
         this.logStoragePath = settings.getLogStoragePath();
         this.fileDeletionCron = settings.getFileDeletionCron();
         this.appPasswordEnabled = settings.isAppPasswordEnabled();
+        this.sessionLifeTime = settings.getSessionLifetime();
     }
 
     public Long getId() {
@@ -88,5 +90,13 @@ public class ApplicationSettingsViewModel {
 
     public void setAppPassword(String appPassword) {
         this.appPassword = appPassword;
+    }
+
+    public long getSessionLifeTime() {
+        return sessionLifeTime;
+    }
+
+    public void setSessionLifeTime(long sessionLifeTime) {
+        this.sessionLifeTime = sessionLifeTime;
     }
 }

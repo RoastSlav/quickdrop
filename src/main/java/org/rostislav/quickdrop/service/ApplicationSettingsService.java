@@ -33,6 +33,7 @@ public class ApplicationSettingsService {
             settings.setAppPasswordEnabled(false);
             settings.setAppPasswordHash("");
             settings.setAdminPasswordHash("");
+            settings.setSessionLifetime(30);
             settings = applicationSettingsRepository.save(settings);
             scheduleService.updateSchedule(settings.getFileDeletionCron(), settings.getMaxFileLifeTime());
             return settings;
@@ -51,6 +52,7 @@ public class ApplicationSettingsService {
         applicationSettingsEntity.setLogStoragePath(settings.getLogStoragePath());
         applicationSettingsEntity.setFileDeletionCron(settings.getFileDeletionCron());
         applicationSettingsEntity.setAppPasswordEnabled(settings.isAppPasswordEnabled());
+        applicationSettingsEntity.setSessionLifetime(settings.getSessionLifeTime());
 
         if (settings.isAppPasswordEnabled()) {
             applicationSettingsEntity.setAppPasswordHash(BCrypt.hashpw(appPassword, BCrypt.gensalt()));
@@ -115,5 +117,9 @@ public class ApplicationSettingsService {
         String password = (String) request.getSession().getAttribute("adminPassword");
         String adminPasswordHash = getAdminPasswordHash();
         return password != null && password.equals(adminPasswordHash);
+    }
+
+    public long getSessionLifetime() {
+        return applicationSettings.getSessionLifetime();
     }
 }

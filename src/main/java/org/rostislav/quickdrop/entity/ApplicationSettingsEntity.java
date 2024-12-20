@@ -1,9 +1,6 @@
 package org.rostislav.quickdrop.entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import org.rostislav.quickdrop.model.ApplicationSettingsViewModel;
 
 @Entity
@@ -20,6 +17,8 @@ public class ApplicationSettingsEntity {
     private boolean appPasswordEnabled;
     private String appPasswordHash;
     private String adminPasswordHash;
+    @Column(name = "sessionLifetime", nullable = false, columnDefinition = "BIGINT DEFAULT 30")
+    private long sessionLifetime;
 
     public ApplicationSettingsEntity() {
     }
@@ -104,5 +103,13 @@ public class ApplicationSettingsEntity {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public long getSessionLifetime() {
+        return sessionLifetime;
+    }
+
+    public void setSessionLifetime(long sessionLifetime) {
+        this.sessionLifetime = sessionLifetime;
     }
 }

@@ -31,7 +31,7 @@ public class AnalyticsService {
         return downloadLogRepository.countAllDownloads();
     }
 
-    public long getTotalDownloadsByFile(long id) {
-        return downloadLogRepository.countDownloadsByFileId(id);
+    public long getTotalDownloadsByFile(String uuid) {
+        return downloadLogRepository.countDownloadsByFileId(uuid);
     }
 }

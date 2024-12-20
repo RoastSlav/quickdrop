@@ -3,6 +3,7 @@ package org.rostislav.quickdrop.controller;
 import jakarta.servlet.http.HttpServletRequest;
 import org.rostislav.quickdrop.entity.FileEntity;
 import org.rostislav.quickdrop.service.FileService;
+import org.rostislav.quickdrop.service.SessionService;
 import org.rostislav.quickdrop.util.FileUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,9 +20,11 @@ import java.util.Map;
 @RequestMapping("/api/file")
 public class FileRestController {
     private final FileService fileService;
+    private final SessionService sessionService;
 
-    public FileRestController(FileService fileService) {
+    public FileRestController(FileService fileService, SessionService sessionService) {
         this.fileService = fileService;
+        this.sessionService = sessionService;
     }
 
     @PostMapping("/upload-chunk")
@@ -53,18 +56,19 @@ public class FileRestController {
         return ResponseEntity.ok(response);
     }
 
-    @PostMapping("/share/{id}")
-    public ResponseEntity<String> generateShareableLink(@PathVariable Long id, HttpServletRequest request) {
-        FileEntity fileEntity = fileService.getFile(id);
+    @PostMapping("/share/{uuid}")
+    public ResponseEntity<String> generateShareableLink(@PathVariable String uuid, HttpServletRequest request) {
+        FileEntity fileEntity = fileService.getFile(uuid);
         if (fileEntity == null) {
             return ResponseEntity.badRequest().body("File not found.");
         }
 
-        if (!isFilePasswordValid(fileEntity, request)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Invalid or missing password in session.");
+        String sessionToken = (String) request.getSession().getAttribute("file-session-token");
+        if (sessionToken == null || !sessionService.validateFileSessionToken(sessionToken, uuid)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
-        String token = fileService.generateShareToken(id, LocalDate.now().plusDays(30));
+        String token = fileService.generateShareToken(uuid, LocalDate.now().plusDays(30), sessionToken);
         String shareLink = FileUtils.getShareLink(request, fileEntity, token);
         return ResponseEntity.ok(shareLink);
     }
@@ -81,20 +85,12 @@ public class FileRestController {
 
             return ResponseEntity.ok()
                     .header("Content-Disposition", "attachment; filename=\"" + fileEntity.name + "\"")
-                    .header("Content-Length", String.valueOf(fileEntity.size))
+                    .header("Content-Type", "application/octet-stream")
                     .body(responseBody);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
-    }
-
-    private boolean isFilePasswordValid(FileEntity fileEntity, HttpServletRequest request) {
-        String sessionPassword = (String) request.getSession().getAttribute("password");
-        if (fileEntity.passwordHash != null) {
-            return sessionPassword != null && fileService.checkFilePassword(fileEntity.uuid, sessionPassword);
-        }
-        return true;
     }
 }

@@ -1,5 +1,11 @@
+let isUploading = false;
+
+// Event listener for form submission
 document.getElementById("uploadForm").addEventListener("submit", function (event) {
     event.preventDefault();
+
+    if (isUploading) return; // Prevent duplicate uploads
+    isUploading = true;
 
     const uploadForm = event.target;
     const fileInput = document.getElementById("file");
@@ -16,28 +22,38 @@ document.getElementById("uploadForm").addEventListener("submit", function (event
 
     const isPasswordProtected = passwordInput && passwordInput.value.trim() !== "";
 
-    // Helpers
+    // Initialize progress bar
     function initializeProgressBar() {
         uploadIndicator.style.display = "block";
         progressBar.style.width = "0%";
         progressBar.setAttribute("aria-valuenow", 0);
     }
 
+    // Create FormData for a specific chunk
     function createChunkFormData(chunk, chunkNumber) {
-        const formData = new FormData(uploadForm);
-        formData.append("file", chunk);
+        const formData = new FormData();
+
+        formData.append("file", chunk); // Only append the current chunk
         formData.append("fileName", file.name);
         formData.append("chunkNumber", chunkNumber);
         formData.append("totalChunks", totalChunks);
 
-        // Only include the password if it exists
+        // Include password if it exists
         if (passwordInput && passwordInput.value.trim() !== "") {
             formData.append("password", passwordInput.value.trim());
         }
 
+        // Include other form fields except the file input
+        Array.from(uploadForm.elements).forEach((element) => {
+            if (element.name && element.type !== "file") {
+                formData.append(element.name, element.value);
+            }
+        });
+
         return formData;
     }
 
+    // Handle response for chunk upload
     function handleChunkUploadResponse(xhr, onSuccess, onError) {
         if (xhr.status === 200) {
             try {
@@ -51,9 +67,11 @@ document.getElementById("uploadForm").addEventListener("submit", function (event
             console.error("Upload error:", xhr.responseText);
             alert("Chunk upload failed. Please try again.");
             uploadIndicator.style.display = "none";
+            isUploading = false;
         }
     }
 
+    // Upload the next chunk
     function uploadNextChunk() {
         const start = currentChunk * chunkSize;
         const end = Math.min(start + chunkSize, file.size);
@@ -87,6 +105,7 @@ document.getElementById("uploadForm").addEventListener("submit", function (event
                     } else {
                         alert("Upload completed but no UUID received.");
                     }
+                    isUploading = false;
                 }
             });
         };
@@ -94,6 +113,7 @@ document.getElementById("uploadForm").addEventListener("submit", function (event
         xhr.onerror = function () {
             alert("An error occurred during the upload. Please try again.");
             uploadIndicator.style.display = "none";
+            isUploading = false;
         };
 
         xhr.send(chunkFormData);

@@ -76,6 +76,13 @@
                     <small>this will impact how long file and admin sessions are kept for</small>
                     <input class="form-control" min="0" required th:field="*{sessionLifeTime}" type="number">
                 </div>
+
+                <!-- Enable File List Page -->
+                <div class="form-check mb-3">
+                    <input class="form-check-input" id="fileListPageEnabled" th:field="*{fileListPageEnabled}"
+                           type="checkbox">
+                    <label class="form-check-label" for="fileListPageEnabled">Enable File List Page</label>
+                </div>
             </div>
         </div>
 

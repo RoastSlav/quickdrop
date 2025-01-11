@@ -13,6 +13,7 @@ public class ApplicationSettingsViewModel {
     private boolean appPasswordEnabled;
     private String appPassword;
     private long sessionLifeTime;
+    private boolean isFileListPageEnabled;
 
     public ApplicationSettingsViewModel() {
     }
@@ -26,6 +27,7 @@ public class ApplicationSettingsViewModel {
         this.fileDeletionCron = settings.getFileDeletionCron();
         this.appPasswordEnabled = settings.isAppPasswordEnabled();
         this.sessionLifeTime = settings.getSessionLifetime();
+        this.isFileListPageEnabled = settings.isFileListPageEnabled();
     }
 
     public Long getId() {
@@ -98,5 +100,13 @@ public class ApplicationSettingsViewModel {
 
     public void setSessionLifeTime(long sessionLifeTime) {
         this.sessionLifeTime = sessionLifeTime;
+    }
+
+    public boolean isFileListPageEnabled() {
+        return isFileListPageEnabled;
+    }
+
+    public void setFileListPageEnabled(boolean fileListPageEnabled) {
+        isFileListPageEnabled = fileListPageEnabled;
     }
 }

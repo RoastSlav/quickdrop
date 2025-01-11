@@ -19,6 +19,8 @@ public class ApplicationSettingsEntity {
     private String adminPasswordHash;
     @Column(name = "sessionLifetime", nullable = false, columnDefinition = "BIGINT DEFAULT 30")
     private long sessionLifetime;
+    @Column(name = "isFileListPageEnabled", nullable = false, columnDefinition = "BOOLEAN DEFAULT TRUE")
+    private boolean isFileListPageEnabled;
 
     public ApplicationSettingsEntity() {
     }
@@ -31,6 +33,7 @@ public class ApplicationSettingsEntity {
         this.logStoragePath = settings.getLogStoragePath();
         this.fileDeletionCron = settings.getFileDeletionCron();
         this.appPasswordEnabled = settings.isAppPasswordEnabled();
+        this.isFileListPageEnabled = settings.isFileListPageEnabled();
     }
 
     public long getMaxFileSize() {
@@ -111,5 +114,13 @@ public class ApplicationSettingsEntity {
 
     public void setSessionLifetime(long sessionLifetime) {
         this.sessionLifetime = sessionLifetime;
+    }
+
+    public boolean isFileListPageEnabled() {
+        return isFileListPageEnabled;
+    }
+
+    public void setFileListPageEnabled(boolean fileListPageEnabled) {
+        isFileListPageEnabled = fileListPageEnabled;
     }
 }

@@ -48,6 +48,10 @@ public class FileViewController {
 
     @GetMapping("/list")
     public String listFiles(Model model) {
+        if (!applicationSettingsService.isFileListPageEnabled()) {
+            return "redirect:/";
+        }
+
         List<FileEntity> files = fileService.getNotHiddenFiles();
         model.addAttribute("files", files);
         return "listFiles";

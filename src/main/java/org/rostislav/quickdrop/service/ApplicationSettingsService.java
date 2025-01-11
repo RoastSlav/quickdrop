@@ -34,6 +34,7 @@ public class ApplicationSettingsService {
             settings.setAppPasswordHash("");
             settings.setAdminPasswordHash("");
             settings.setSessionLifetime(30);
+            settings.setFileListPageEnabled(true);
             settings = applicationSettingsRepository.save(settings);
             scheduleService.updateSchedule(settings.getFileDeletionCron(), settings.getMaxFileLifeTime());
             return settings;
@@ -53,6 +54,7 @@ public class ApplicationSettingsService {
         applicationSettingsEntity.setFileDeletionCron(settings.getFileDeletionCron());
         applicationSettingsEntity.setAppPasswordEnabled(settings.isAppPasswordEnabled());
         applicationSettingsEntity.setSessionLifetime(settings.getSessionLifeTime());
+        applicationSettingsEntity.setFileListPageEnabled(settings.isFileListPageEnabled());
 
         if (settings.isAppPasswordEnabled()) {
             applicationSettingsEntity.setAppPasswordHash(BCrypt.hashpw(appPassword, BCrypt.gensalt()));
@@ -100,6 +102,10 @@ public class ApplicationSettingsService {
 
     public String getAdminPasswordHash() {
         return applicationSettings.getAdminPasswordHash();
+    }
+
+    public boolean isFileListPageEnabled() {
+        return applicationSettings.isFileListPageEnabled();
     }
 
     public boolean isAdminPasswordSet() {

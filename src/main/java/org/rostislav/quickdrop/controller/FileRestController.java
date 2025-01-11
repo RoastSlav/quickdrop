@@ -5,6 +5,8 @@ import org.rostislav.quickdrop.entity.FileEntity;
 import org.rostislav.quickdrop.service.FileService;
 import org.rostislav.quickdrop.service.SessionService;
 import org.rostislav.quickdrop.util.FileUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -19,6 +21,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/file")
 public class FileRestController {
+    private static final Logger logger = LoggerFactory.getLogger(FileRestController.class);
     private final FileService fileService;
     private final SessionService sessionService;
 
@@ -37,10 +40,16 @@ public class FileRestController {
             @RequestParam(value = "keepIndefinitely", defaultValue = "false") Boolean keepIndefinitely,
             @RequestParam(value = "password", required = false) String password,
             @RequestParam(value = "hidden", defaultValue = "false") Boolean hidden) {
+        if (chunkNumber == 0) {
+            logger.info("Upload started for file: {}", fileName);
+        }
+
         try {
+            logger.info("Processing chunk {} of {}", chunkNumber, totalChunks);
             fileService.saveFileChunk(file, fileName, chunkNumber);
 
             if (chunkNumber + 1 == totalChunks) {
+                logger.info("All chunks uploaded for file: {} - Finalizing", fileName);
                 return fileService.finalizeFile(fileName, totalChunks, description, keepIndefinitely, password, hidden);
             }
 

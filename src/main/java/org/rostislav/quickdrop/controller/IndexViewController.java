@@ -19,4 +19,9 @@ public class IndexViewController {
         model.addAttribute("maxFileLifeTime", applicationSettingsService.getMaxFileLifeTime());
         return "upload";
     }
+
+    @GetMapping("/error")
+    public String getErrorPage() {
+        return "error";
+    }
 }

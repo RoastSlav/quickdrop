@@ -4,8 +4,9 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import org.rostislav.quickdrop.entity.DownloadLog;
 import org.rostislav.quickdrop.entity.FileEntity;
+import org.rostislav.quickdrop.entity.FileRenewalLog;
+import org.rostislav.quickdrop.model.FileActionLogDTO;
 import org.rostislav.quickdrop.model.FileEntityView;
-import org.rostislav.quickdrop.repository.DownloadLogRepository;
 import org.rostislav.quickdrop.service.AnalyticsService;
 import org.rostislav.quickdrop.service.ApplicationSettingsService;
 import org.rostislav.quickdrop.service.FileService;
@@ -16,6 +17,8 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 
@@ -26,14 +29,12 @@ import static org.rostislav.quickdrop.util.FileUtils.populateModelAttributes;
 public class FileViewController {
     private final FileService fileService;
     private final ApplicationSettingsService applicationSettingsService;
-    private final DownloadLogRepository downloadLogRepository;
     private final AnalyticsService analyticsService;
     private final SessionService sessionService;
 
-    public FileViewController(FileService fileService, ApplicationSettingsService applicationSettingsService, DownloadLogRepository downloadLogRepository, AnalyticsService analyticsService, SessionService sessionService) {
+    public FileViewController(FileService fileService, ApplicationSettingsService applicationSettingsService, AnalyticsService analyticsService, SessionService sessionService) {
         this.fileService = fileService;
         this.applicationSettingsService = applicationSettingsService;
-        this.downloadLogRepository = downloadLogRepository;
         this.analyticsService = analyticsService;
         this.sessionService = sessionService;
     }
@@ -63,15 +64,24 @@ public class FileViewController {
     }
 
     @GetMapping("/history/{uuid}")
-    public String viewDownloadHistory(@PathVariable String uuid, Model model) {
-        FileEntity file = fileService.getFile(uuid);
-        List<DownloadLog> downloadHistory = downloadLogRepository.findByFileUuid(uuid);
+    public String viewFileHistory(@PathVariable String uuid, Model model) {
+        FileEntity fileEntity = fileService.getFile(uuid);
         long totalDownloads = analyticsService.getTotalDownloadsByFile(uuid);
+        FileEntityView fileEntityView = new FileEntityView(fileEntity, totalDownloads);
 
-        model.addAttribute("file", new FileEntityView(file, totalDownloads));
-        model.addAttribute("downloadHistory", downloadHistory);
+        List<FileActionLogDTO> actionLogs = new ArrayList<>();
 
-        return "download-history";
+        List<DownloadLog> downloadLogs = analyticsService.getDownloadsByFile(uuid);
+        List<FileRenewalLog> renewalLogs = analyticsService.getRenewalLogsByFile(uuid);
+        downloadLogs.forEach(log -> actionLogs.add(new FileActionLogDTO(log)));
+        renewalLogs.forEach(log -> actionLogs.add(new FileActionLogDTO(log)));
+
+        actionLogs.sort(Comparator.comparing(FileActionLogDTO::getActionDate).reversed());
+
+        model.addAttribute("file", fileEntityView);
+        model.addAttribute("actionLogs", actionLogs);
+
+        return "file-history";
     }
 
 
@@ -101,7 +111,7 @@ public class FileViewController {
 
     @PostMapping("/extend/{uuid}")
     public String extendFile(@PathVariable String uuid, Model model, HttpServletRequest request) {
-        fileService.extendFile(uuid);
+        fileService.extendFile(uuid, request);
 
         FileEntity fileEntity = fileService.getFile(uuid);
         populateModelAttributes(fileEntity, model, request);
@@ -126,8 +136,8 @@ public class FileViewController {
     }
 
     @PostMapping("/keep-indefinitely/{uuid}")
-    public String updateKeepIndefinitely(@PathVariable String uuid, @RequestParam(required = false, defaultValue = "false") boolean keepIndefinitely) {
-        FileEntity fileEntity = fileService.updateKeepIndefinitely(uuid, keepIndefinitely);
+    public String updateKeepIndefinitely(@PathVariable String uuid, @RequestParam(required = false, defaultValue = "false") boolean keepIndefinitely, HttpServletRequest request) {
+        FileEntity fileEntity = fileService.updateKeepIndefinitely(uuid, keepIndefinitely, request);
         if (fileEntity != null) {
             return "redirect:/file/" + fileEntity.uuid;
         }

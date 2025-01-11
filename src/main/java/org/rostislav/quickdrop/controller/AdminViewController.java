@@ -100,8 +100,8 @@ public class AdminViewController {
     }
 
     @PostMapping("/keep-indefinitely/{uuid}")
-    public String updateKeepIndefinitely(@PathVariable String uuid, @RequestParam(required = false, defaultValue = "false") boolean keepIndefinitely) {
-        fileService.updateKeepIndefinitely(uuid, keepIndefinitely);
+    public String updateKeepIndefinitely(@PathVariable String uuid, @RequestParam(required = false, defaultValue = "false") boolean keepIndefinitely, HttpServletRequest request) {
+        fileService.updateKeepIndefinitely(uuid, keepIndefinitely, request);
         return "redirect:/admin/dashboard";
     }
 

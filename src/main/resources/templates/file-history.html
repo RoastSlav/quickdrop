@@ -58,7 +58,7 @@
 
 <!-- Main Content -->
 <div class="container mt-5">
-    <h1 class="text-center mb-4">Download History</h1>
+    <h1 class="text-center mb-4">History</h1>
 
     <!-- File Name and Description -->
     <div class="text-center">
@@ -89,30 +89,25 @@
         </div>
     </div>
 
-    <!-- Download History Table -->
-    <div class="card">
-        <div class="card-header bg-primary text-white">
-            <h2 class="mb-0">Download History</h2>
-        </div>
-        <div class="card-body">
-            <table class="table table-striped text-center">
-                <thead>
-                <tr>
-                    <th>Downloader IP</th>
-                    <th>Date</th>
-                    <th>User Agent</th>
-                </tr>
-                </thead>
-                <tbody>
-                <tr th:each="log : ${downloadHistory}">
-                    <td th:text="${log.downloaderIp}">127.0.0.1</td>
-                    <td th:text="${#temporals.format(log.downloadDate, 'dd.MM.yyyy HH:mm:ss')}">01.12.2024 20:12:22</td>
-                    <td th:text="${log.userAgent ?: 'N/A'}">Mozilla/5.0 (Windows NT 10.0; Win64; x64)</td>
-                </tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
+    <!-- History Table -->
+    <table class="table table-striped text-center">
+        <thead>
+        <tr>
+            <th>Date</th>
+            <th>Action</th>
+            <th>IP Address</th>
+            <th>User Agent</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="log : ${actionLogs}">
+            <td th:text="${#temporals.format(log.actionDate, 'dd.MM.yyyy HH:mm:ss')}">01.12.2024 20:12:22</td>
+            <td th:text="${log.actionType}">Action</td>
+            <td th:text="${log.ipAddress}">127.0.0.1</td>
+            <td th:text="${log.userAgent}">Mozilla/5.0 (Windows NT 10.0; Win64; x64)</td>
+        </tr>
+        </tbody>
+    </table>
 </div>
 
 <!-- Bootstrap Bundle -->

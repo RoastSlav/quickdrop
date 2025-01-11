@@ -4,10 +4,12 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import org.rostislav.quickdrop.entity.DownloadLog;
 import org.rostislav.quickdrop.entity.FileEntity;
+import org.rostislav.quickdrop.entity.FileRenewalLog;
 import org.rostislav.quickdrop.model.FileEntityView;
 import org.rostislav.quickdrop.model.FileUploadRequest;
 import org.rostislav.quickdrop.repository.DownloadLogRepository;
 import org.rostislav.quickdrop.repository.FileRepository;
+import org.rostislav.quickdrop.repository.RenewalLogRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Lazy;
@@ -50,14 +52,16 @@ public class FileService {
     private final DownloadLogRepository downloadLogRepository;
     private final File tempDir = Paths.get(System.getProperty("java.io.tmpdir")).toFile();
     private final SessionService sessionService;
+    private final RenewalLogRepository renewalLogRepository;
 
     @Lazy
-    public FileService(FileRepository fileRepository, PasswordEncoder passwordEncoder, ApplicationSettingsService applicationSettingsService, DownloadLogRepository downloadLogRepository, SessionService sessionService) {
+    public FileService(FileRepository fileRepository, PasswordEncoder passwordEncoder, ApplicationSettingsService applicationSettingsService, DownloadLogRepository downloadLogRepository, SessionService sessionService, RenewalLogRepository renewalLogRepository) {
         this.fileRepository = fileRepository;
         this.passwordEncoder = passwordEncoder;
         this.applicationSettingsService = applicationSettingsService;
         this.downloadLogRepository = downloadLogRepository;
         this.sessionService = sessionService;
+        this.renewalLogRepository = renewalLogRepository;
     }
 
     private static StreamingResponseBody getStreamingResponseBody(Path outputFile, FileEntity fileEntity) {
@@ -199,16 +203,22 @@ public class FileService {
         return fileRepository.findByUUID(uuid).orElse(null);
     }
 
-    public void extendFile(String uuid) {
-        Optional<FileEntity> referenceById = fileRepository.findByUUID(uuid);
-        if (referenceById.isEmpty()) {
-            return;
+    private static RequesterInfo getRequesterInfo(HttpServletRequest request) {
+        String forwardedFor = request.getHeader("X-Forwarded-For");
+        String realIp = request.getHeader("X-Real-IP");
+        String ipAddress;
+
+        if (forwardedFor != null && !forwardedFor.isEmpty()) {
+            // The X-Forwarded-For header can contain multiple IPs, pick the first one
+            ipAddress = forwardedFor.split(",")[0].trim();
+        } else if (realIp != null && !realIp.isEmpty()) {
+            ipAddress = realIp;
+        } else {
+            ipAddress = request.getRemoteAddr();
         }
 
-        FileEntity fileEntity = referenceById.get();
-        fileEntity.uploadDate = LocalDate.now();
-        logger.info("File extended: {}", fileEntity);
-        fileRepository.save(fileEntity);
+        String userAgent = request.getHeader(HttpHeaders.USER_AGENT);
+        return new RequesterInfo(ipAddress, userAgent);
     }
 
     public boolean deleteFileFromFileSystem(String uuid) {
@@ -267,10 +277,6 @@ public class FileService {
         return sessionService.getPasswordForFileSessionToken(sessionToken.toString()).getPassword();
     }
 
-    public List<FileEntity> searchFiles(String query) {
-        return fileRepository.searchFiles(query);
-    }
-
     public List<FileEntity> searchNotHiddenFiles(String query) {
         return fileRepository.searchNotHiddenFiles(query);
     }
@@ -279,22 +285,17 @@ public class FileService {
         return nullToZero(fileRepository.totalFileSizeForAllFiles());
     }
 
-    public FileEntity updateKeepIndefinitely(String uuid, boolean keepIndefinitely) {
+    public void extendFile(String uuid, HttpServletRequest request) {
         Optional<FileEntity> referenceById = fileRepository.findByUUID(uuid);
         if (referenceById.isEmpty()) {
-            logger.info("File not found for 'update keep indefinitely': {}", uuid);
-            return null;
-        }
-
-        if (!keepIndefinitely) {
-            extendFile(uuid);
+            return;
         }
 
         FileEntity fileEntity = referenceById.get();
-        fileEntity.keepIndefinitely = keepIndefinitely;
-        logger.info("File keepIndefinitely updated: {}", fileEntity);
+        fileEntity.uploadDate = LocalDate.now();
+        logger.info("File extended: {}", fileEntity);
         fileRepository.save(fileEntity);
-        return fileEntity;
+        logFileRenewal(fileEntity, request);
     }
 
     public FileEntity toggleHidden(String uuid) {
@@ -478,23 +479,37 @@ public class FileService {
         return false;
     }
 
-    private void logDownload(FileEntity fileEntity, HttpServletRequest request) {
-        String forwardedFor = request.getHeader("X-Forwarded-For");
-        String realIp = request.getHeader("X-Real-IP");
-        String downloaderIp;
-
-        if (forwardedFor != null && !forwardedFor.isEmpty()) {
-            // The X-Forwarded-For header can contain multiple IPs, pick the first one
-            downloaderIp = forwardedFor.split(",")[0].trim();
-        } else if (realIp != null && !realIp.isEmpty()) {
-            downloaderIp = realIp;
-        } else {
-            downloaderIp = request.getRemoteAddr();
+    public FileEntity updateKeepIndefinitely(String uuid, boolean keepIndefinitely, HttpServletRequest request) {
+        Optional<FileEntity> referenceById = fileRepository.findByUUID(uuid);
+        if (referenceById.isEmpty()) {
+            logger.info("File not found for 'update keep indefinitely': {}", uuid);
+            return null;
         }
 
-        String userAgent = request.getHeader(HttpHeaders.USER_AGENT);
-        DownloadLog downloadLog = new DownloadLog(fileEntity, downloaderIp, userAgent);
+        if (!keepIndefinitely) {
+            extendFile(uuid, request);
+        }
+
+        FileEntity fileEntity = referenceById.get();
+        fileEntity.keepIndefinitely = keepIndefinitely;
+        logger.info("File keepIndefinitely updated: {}", fileEntity);
+        fileRepository.save(fileEntity);
+        return fileEntity;
+    }
+
+    private void logDownload(FileEntity fileEntity, HttpServletRequest request) {
+        RequesterInfo info = getRequesterInfo(request);
+        DownloadLog downloadLog = new DownloadLog(fileEntity, info.ipAddress(), info.userAgent());
         downloadLogRepository.save(downloadLog);
+    }
+
+    private void logFileRenewal(FileEntity fileEntity, HttpServletRequest request) {
+        RequesterInfo info = getRequesterInfo(request);
+        FileRenewalLog fileRenewalLog = new FileRenewalLog(fileEntity, info.ipAddress(), info.userAgent());
+        renewalLogRepository.save(fileRenewalLog);
+    }
+
+    private record RequesterInfo(String ipAddress, String userAgent) {
     }
 
     private String getFileChunkName(String fileName, int chunkNumber) {

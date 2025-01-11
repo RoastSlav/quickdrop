@@ -72,12 +72,16 @@ public class FileRestController {
             return ResponseEntity.badRequest().body("File not found.");
         }
 
-        String sessionToken = (String) request.getSession().getAttribute("file-session-token");
-        if (sessionToken == null || !sessionService.validateFileSessionToken(sessionToken, uuid)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        String token;
+        if (fileEntity.passwordHash != null && !fileEntity.passwordHash.isEmpty()) {
+            String sessionToken = (String) request.getSession().getAttribute("file-session-token");
+            if (sessionToken == null || !sessionService.validateFileSessionToken(sessionToken, uuid)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            }
+            token = fileService.generateShareToken(uuid, LocalDate.now().plusDays(30), sessionToken);
+        } else {
+            token = fileService.generateShareToken(uuid, LocalDate.now().plusDays(30));
         }
-
-        String token = fileService.generateShareToken(uuid, LocalDate.now().plusDays(30), sessionToken);
         String shareLink = FileUtils.getShareLink(request, fileEntity, token);
         return ResponseEntity.ok(shareLink);
     }

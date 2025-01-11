@@ -170,8 +170,8 @@
                             <button class="btn btn-primary" type="submit">Renew File Lifetime</button>
                         </form>
 
-                        <!-- New Share Button -->
-                        <button class="btn btn-secondary" onclick="openShareModal()" th:if="${file.passwordHash != null}"
+                        <button class="btn btn-secondary" onclick="openShareModal()"
+                                th:if="${file.passwordHash != null || isAppPasswordSet == true}"
                                 type="button">Share
                         </button>
                     </div>

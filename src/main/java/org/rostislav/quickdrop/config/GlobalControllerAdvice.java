@@ -17,5 +17,6 @@ public class GlobalControllerAdvice {
     @ModelAttribute
     public void addGlobalAttributes(Model model) {
         model.addAttribute("isFileListPageEnabled", applicationSettingsService.isFileListPageEnabled());
+        model.addAttribute("isAppPasswordSet", applicationSettingsService.isAppPasswordEnabled());
     }
 }

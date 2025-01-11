@@ -320,38 +320,6 @@ public class FileService {
         return fileRepository.findAllFilesWithDownloadCounts();
     }
 
-    public String generateShareToken(String uuid, LocalDate tokenExpirationDate, String sessionToken) {
-        Optional<FileEntity> optionalFile = fileRepository.findByUUID(uuid);
-        if (optionalFile.isEmpty()) {
-            throw new IllegalArgumentException("File not found");
-        }
-
-        FileEntity file = optionalFile.get();
-        Path encryptedFilePath = Path.of(applicationSettingsService.getFileStoragePath(), file.uuid);
-        Path decryptedFilePath = encryptedFilePath.resolveSibling(file.uuid + "-decrypted");
-
-        // Decrypt the file if necessary
-        if (file.passwordHash != null) {
-            try {
-                String password = sessionService.getPasswordForFileSessionToken(sessionToken).getPassword();
-                decryptFile(encryptedFilePath.toFile(), decryptedFilePath.toFile(), password);
-                logger.info("Decrypted file created alongside encrypted file: {}", decryptedFilePath);
-            } catch (Exception e) {
-                logger.error("Error decrypting file for sharing: {}", e.getMessage());
-                throw new RuntimeException("Failed to decrypt file", e);
-            }
-        }
-
-        // Generate the share token
-        String token = UUID.randomUUID().toString();
-        file.shareToken = token;
-        file.tokenExpirationDate = tokenExpirationDate;
-        fileRepository.save(file);
-
-        logger.info("Share token generated for file: {}", file.name);
-        return token;
-    }
-
 
     public boolean validateShareToken(String uuid, String token) {
         Optional<FileEntity> optionalFile = fileRepository.findByUUID(uuid);
@@ -507,6 +475,53 @@ public class FileService {
         RequesterInfo info = getRequesterInfo(request);
         FileRenewalLog fileRenewalLog = new FileRenewalLog(fileEntity, info.ipAddress(), info.userAgent());
         renewalLogRepository.save(fileRenewalLog);
+    }
+
+    public String generateShareToken(String uuid, LocalDate tokenExpirationDate) {
+        Optional<FileEntity> optionalFile = fileRepository.findByUUID(uuid);
+        if (optionalFile.isEmpty()) {
+            throw new IllegalArgumentException("File not found");
+        }
+        FileEntity file = optionalFile.get();
+
+        String token = UUID.randomUUID().toString();
+        file.shareToken = token;
+        file.tokenExpirationDate = tokenExpirationDate;
+        fileRepository.save(file);
+
+        return token;
+    }
+
+    public String generateShareToken(String uuid, LocalDate tokenExpirationDate, String sessionToken) {
+        Optional<FileEntity> optionalFile = fileRepository.findByUUID(uuid);
+        if (optionalFile.isEmpty()) {
+            throw new IllegalArgumentException("File not found");
+        }
+
+        FileEntity file = optionalFile.get();
+        Path encryptedFilePath = Path.of(applicationSettingsService.getFileStoragePath(), file.uuid);
+        Path decryptedFilePath = encryptedFilePath.resolveSibling(file.uuid + "-decrypted");
+
+        // Decrypt the file if necessary
+        if (file.passwordHash != null) {
+            try {
+                String password = sessionService.getPasswordForFileSessionToken(sessionToken).getPassword();
+                decryptFile(encryptedFilePath.toFile(), decryptedFilePath.toFile(), password);
+                logger.info("Decrypted file created alongside encrypted file: {}", decryptedFilePath);
+            } catch (Exception e) {
+                logger.error("Error decrypting file for sharing: {}", e.getMessage());
+                throw new RuntimeException("Failed to decrypt file", e);
+            }
+        }
+
+        // Generate the share token
+        String token = UUID.randomUUID().toString();
+        file.shareToken = token;
+        file.tokenExpirationDate = tokenExpirationDate;
+        fileRepository.save(file);
+
+        logger.info("Share token generated for file: {}", file.name);
+        return token;
     }
 
     private record RequesterInfo(String ipAddress, String userAgent) {

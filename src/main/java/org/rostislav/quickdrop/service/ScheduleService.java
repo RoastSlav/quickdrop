@@ -4,6 +4,7 @@ import org.rostislav.quickdrop.entity.FileEntity;
 import org.rostislav.quickdrop.repository.FileRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.scheduling.support.CronTrigger;
 import org.springframework.stereotype.Service;
@@ -52,5 +53,15 @@ public class ScheduleService {
             }
         }
         logger.info("Deleted {} files", filesForDeletion.size());
+    }
+
+    @Scheduled(cron = "0 0 3 * * *")
+    public void cleanDatabaseFromDeletedFiles() {
+        logger.info("Cleaning database from deleted files");
+        fileRepository.findAll().forEach(file -> {
+            if (!fileService.fileExistsInFileSystem(file.uuid)) {
+                fileRepository.delete(file);
+            }
+        });
     }
 }

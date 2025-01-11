@@ -534,4 +534,8 @@ public class FileService {
                 .header(HttpHeaders.CONTENT_LENGTH, String.valueOf(resource.contentLength()))
                 .body(responseBody);
     }
+
+    public boolean fileExistsInFileSystem(String uuid) {
+        return Files.exists(Path.of(applicationSettingsService.getFileStoragePath(), uuid));
+    }
 }

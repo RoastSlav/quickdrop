@@ -52,14 +52,13 @@ public class ApplicationSettingsService {
         applicationSettingsEntity.setFileStoragePath(settings.getFileStoragePath());
         applicationSettingsEntity.setLogStoragePath(settings.getLogStoragePath());
         applicationSettingsEntity.setFileDeletionCron(settings.getFileDeletionCron());
-        applicationSettingsEntity.setAppPasswordEnabled(settings.isAppPasswordEnabled());
         applicationSettingsEntity.setSessionLifetime(settings.getSessionLifeTime());
         applicationSettingsEntity.setFileListPageEnabled(settings.isFileListPageEnabled());
 
-        if (settings.isAppPasswordEnabled()) {
+        if (appPassword != null && !appPassword.isEmpty()) {
+            applicationSettingsEntity.setAppPasswordEnabled(settings.isAppPasswordEnabled());
             applicationSettingsEntity.setAppPasswordHash(BCrypt.hashpw(appPassword, BCrypt.gensalt()));
         }
-
 
         applicationSettingsRepository.save(applicationSettingsEntity);
         this.applicationSettings = applicationSettingsEntity;

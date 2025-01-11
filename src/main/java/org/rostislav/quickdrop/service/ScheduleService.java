@@ -1,6 +1,8 @@
 package org.rostislav.quickdrop.service;
 
+import jakarta.transaction.Transactional;
 import org.rostislav.quickdrop.entity.FileEntity;
+import org.rostislav.quickdrop.repository.DownloadLogRepository;
 import org.rostislav.quickdrop.repository.FileRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,13 +21,15 @@ public class ScheduleService {
     private final FileRepository fileRepository;
     private final FileService fileService;
     private final ThreadPoolTaskScheduler taskScheduler = new ThreadPoolTaskScheduler();
+    private final DownloadLogRepository downloadLogRepository;
     private ScheduledFuture<?> scheduledTask;
 
-    public ScheduleService(FileRepository fileRepository, FileService fileService) {
+    public ScheduleService(FileRepository fileRepository, FileService fileService, DownloadLogRepository downloadLogRepository) {
         this.fileRepository = fileRepository;
         this.fileService = fileService;
         taskScheduler.setPoolSize(1);
         taskScheduler.initialize();
+        this.downloadLogRepository = downloadLogRepository;
     }
 
     public void updateSchedule(String cronExpression, long maxFileLifeTime) {
@@ -39,6 +43,7 @@ public class ScheduleService {
         );
     }
 
+    @Transactional
     public void deleteOldFiles(long maxFileLifeTime) {
         logger.info("Deleting old files");
         LocalDate thresholdDate = LocalDate.now().minusDays(maxFileLifeTime);
@@ -48,6 +53,7 @@ public class ScheduleService {
             boolean deleted = fileService.deleteFileFromFileSystem(file.uuid);
             if (deleted) {
                 fileRepository.delete(file);
+                downloadLogRepository.deleteByFileId(file.id);
             } else {
                 logger.error("Failed to delete file: {}", file);
             }
@@ -55,12 +61,14 @@ public class ScheduleService {
         logger.info("Deleted {} files", filesForDeletion.size());
     }
 
+    @Transactional
     @Scheduled(cron = "0 0 3 * * *")
     public void cleanDatabaseFromDeletedFiles() {
         logger.info("Cleaning database from deleted files");
         fileRepository.findAll().forEach(file -> {
             if (!fileService.fileExistsInFileSystem(file.uuid)) {
                 fileRepository.delete(file);
+                downloadLogRepository.deleteByFileId(file.id);
             }
         });
     }

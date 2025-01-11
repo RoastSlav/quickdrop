@@ -1,6 +1,7 @@
 package org.rostislav.quickdrop.service;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.transaction.Transactional;
 import org.rostislav.quickdrop.entity.DownloadLog;
 import org.rostislav.quickdrop.entity.FileEntity;
 import org.rostislav.quickdrop.model.FileEntityView;
@@ -20,7 +21,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -148,6 +152,10 @@ public class FileService {
         logger.info("File received: {}", file.getName());
 
         String uuid = UUID.randomUUID().toString();
+        while (fileRepository.findByUUID(uuid).isPresent()) {
+            uuid = UUID.randomUUID().toString();
+        }
+
         Path targetPath = Path.of(applicationSettingsService.getFileStoragePath(), uuid);
 
         FileEntity fileEntity = populateFileEntity(file, fileUploadRequest, uuid);
@@ -215,6 +223,7 @@ public class FileService {
         return true;
     }
 
+    @Transactional
     public boolean deleteFile(String uuid) {
         Optional<FileEntity> referenceById = fileRepository.findByUUID(uuid);
         if (referenceById.isEmpty()) {
@@ -223,6 +232,7 @@ public class FileService {
 
         FileEntity fileEntity = referenceById.get();
         fileRepository.delete(fileEntity);
+        downloadLogRepository.deleteByFileId(fileEntity.id);
         return deleteFileFromFileSystem(fileEntity.uuid);
     }
 
@@ -466,21 +476,6 @@ public class FileService {
         }
         logger.error("Failed to move file after 3 attempts: {}", file.getName());
         return false;
-    }
-
-    private void writeFileToStream(String uuid, OutputStream outputStream) {
-        Path path = Path.of(applicationSettingsService.getFileStoragePath(), uuid);
-        try (FileInputStream inputStream = new FileInputStream(path.toFile())) {
-            byte[] buffer = new byte[1024];
-            int bytesRead;
-            while ((bytesRead = inputStream.read(buffer)) != -1) {
-                outputStream.write(buffer, 0, bytesRead);
-            }
-            outputStream.flush();
-        } catch (
-                Exception e) {
-            logger.error("Error writing file to stream: {}", e.getMessage());
-        }
     }
 
     private void logDownload(FileEntity fileEntity, HttpServletRequest request) {

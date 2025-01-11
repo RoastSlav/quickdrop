@@ -58,6 +58,8 @@ public class ApplicationSettingsService {
         if (appPassword != null && !appPassword.isEmpty()) {
             applicationSettingsEntity.setAppPasswordEnabled(settings.isAppPasswordEnabled());
             applicationSettingsEntity.setAppPasswordHash(BCrypt.hashpw(appPassword, BCrypt.gensalt()));
+        } else if (!settings.isAppPasswordEnabled()) {
+            applicationSettingsEntity.setAppPasswordEnabled(false);
         }
 
         applicationSettingsRepository.save(applicationSettingsEntity);

@@ -119,6 +119,7 @@ public class FileService {
                     throw ex;
                 }
             }
+            logger.info("All chunks merged into file: {}", finalFile);
         }
     }
 
@@ -153,7 +154,7 @@ public class FileService {
             return null;
         }
 
-        logger.info("File received: {}", file.getName());
+        logger.info("Saving file: {}", file.getName());
 
         String uuid = UUID.randomUUID().toString();
         while (fileRepository.findByUUID(uuid).isPresent()) {

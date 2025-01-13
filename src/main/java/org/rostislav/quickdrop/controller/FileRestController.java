@@ -45,7 +45,7 @@ public class FileRestController {
         }
 
         try {
-            logger.info("Processing chunk {} of {}", chunkNumber, totalChunks);
+            logger.info("Saving chunk {} of {}", chunkNumber, totalChunks);
             fileService.saveFileChunk(file, fileName, chunkNumber);
 
             if (chunkNumber + 1 == totalChunks) {

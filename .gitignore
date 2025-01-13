@@ -34,3 +34,4 @@ build/
 /db/
 /log/
 /files/
+.qodo

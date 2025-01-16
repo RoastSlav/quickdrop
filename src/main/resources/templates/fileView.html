@@ -190,8 +190,11 @@
                 <button aria-label="Close" class="btn-close" data-bs-dismiss="modal" type="button"></button>
             </div>
             <div class="modal-body">
-                <p>This link can be used to share the file once without any password protection. It will be valid for 30
-                    days.</p>
+                <p>This link can be used to share the file without any password protection.</p>
+                <div class="mb-3">
+                    <label class="form-label" for="daysValid">Number of days the link will be valid:</label>
+                    <input class="form-control" id="daysValid" max="365" min="1" type="number" value="30">
+                </div>
                 <div class="input-group mb-3">
                     <input class="form-control" id="shareLink" readonly type="text">
                     <button class="btn btn-outline-secondary" onclick="copyShareLink()" type="button">Copy Link</button>
@@ -199,6 +202,9 @@
                 <div class="text-center">
                     <canvas id="shareQRCode" style="width: 150px; height: 150px;"></canvas>
                 </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="createShareLink()" type="button">Generate Link</button>
             </div>
         </div>
     </div>

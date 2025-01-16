@@ -66,7 +66,7 @@ public class FileRestController {
     }
 
     @PostMapping("/share/{uuid}")
-    public ResponseEntity<String> generateShareableLink(@PathVariable String uuid, HttpServletRequest request) {
+    public ResponseEntity<String> generateShareableLink(@PathVariable String uuid, @RequestParam("expirationDate") LocalDate expirationDate, HttpServletRequest request) {
         FileEntity fileEntity = fileService.getFile(uuid);
         if (fileEntity == null) {
             return ResponseEntity.badRequest().body("File not found.");
@@ -78,9 +78,9 @@ public class FileRestController {
             if (sessionToken == null || !sessionService.validateFileSessionToken(sessionToken, uuid)) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
             }
-            token = fileService.generateShareToken(uuid, LocalDate.now().plusDays(30), sessionToken);
+            token = fileService.generateShareToken(uuid, expirationDate, sessionToken);
         } else {
-            token = fileService.generateShareToken(uuid, LocalDate.now().plusDays(30));
+            token = fileService.generateShareToken(uuid, expirationDate);
         }
         String shareLink = FileUtils.getShareLink(request, fileEntity, token);
         return ResponseEntity.ok(shareLink);

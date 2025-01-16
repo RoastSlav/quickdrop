@@ -93,16 +93,19 @@ function openShareModal() {
 }
 
 
-function generateShareLink(fileUuid) {
+function generateShareLink(fileUuid, daysValid) {
     const csrfToken = document.querySelector('meta[name="_csrf"]').content; // Retrieve CSRF token
-    return fetch(`/api/file/share/${fileUuid}`, { // Use fileUuid in the URL
+    const expirationDate = new Date();
+    expirationDate.setDate(expirationDate.getDate() + daysValid); // Add days to current date
+    const expirationDateStr = expirationDate.toISOString().split('T')[0]; // Format as YYYY-MM-DD
+
+    return fetch(`/api/file/share/${fileUuid}?expirationDate=${expirationDateStr}`, { // Include expirationDate in URL
         method: 'POST',
         credentials: 'same-origin', // Ensures cookies are sent for session
         headers: {
             'Content-Type': 'application/json',
-            'X-XSRF-TOKEN': csrfToken // Include CSRF token in request headers
+            'X-XSRF-TOKEN': csrfToken, // Include CSRF token in headers
         },
-        body: JSON.stringify({}),
     })
         .then((response) => {
             if (!response.ok) throw new Error("Failed to generate share link");
@@ -118,4 +121,30 @@ function copyShareLink() {
     navigator.clipboard.writeText(shareLink.value).then(() => {
         alert("Share link copied to clipboard!");
     });
+}
+
+function createShareLink() {
+    const fileUuid = document.getElementById('fileUuid').textContent.trim(); // Get the file UUID
+    const daysValidInput = document.getElementById('daysValid'); // Input field for number of days
+    const daysValid = parseInt(daysValidInput.value, 10); // Parse the input value as an integer
+
+    if (isNaN(daysValid) || daysValid < 1) {
+        alert("Please enter a valid number of days.");
+        return;
+    }
+
+    generateShareLink(fileUuid, daysValid)
+        .then((shareLink) => {
+            const shareLinkInput = document.getElementById('shareLink');
+            shareLinkInput.value = shareLink; // Update the input field with the generated link
+
+            // Generate QR Code
+            const qrCodeContainer = document.getElementById('shareQRCode');
+            qrCodeContainer.innerHTML = ""; // Clear any existing QR code
+            QRCode.toCanvas(qrCodeContainer, shareLink, {width: 150, height: 150});
+        })
+        .catch((error) => {
+            console.error(error);
+            alert("Failed to generate share link.");
+        });
 }

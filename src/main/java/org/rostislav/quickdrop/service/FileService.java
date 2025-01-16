@@ -504,7 +504,7 @@ public class FileService {
         Path decryptedFilePath = encryptedFilePath.resolveSibling(file.uuid + "-decrypted");
 
         // Decrypt the file if necessary
-        if (file.passwordHash != null) {
+        if (file.passwordHash != null && !Files.exists(decryptedFilePath)) {
             try {
                 String password = sessionService.getPasswordForFileSessionToken(sessionToken).getPassword();
                 decryptFile(encryptedFilePath.toFile(), decryptedFilePath.toFile(), password);

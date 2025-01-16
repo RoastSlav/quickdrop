@@ -32,6 +32,7 @@ public class ScheduleService {
         this.downloadLogRepository = downloadLogRepository;
     }
 
+    @Transactional
     public void updateSchedule(String cronExpression, long maxFileLifeTime) {
         if (scheduledTask != null) {
             scheduledTask.cancel(false);

@@ -24,28 +24,6 @@ function copyToClipboard(button) {
         });
 }
 
-function showPreparingMessage() {
-    document.getElementById('preparingMessage').style.display = 'block';
-}
-
-document.addEventListener("DOMContentLoaded", function () {
-    const downloadLink = document.getElementById("downloadLink").value; // Get the file download link
-    const qrCodeContainer = document.getElementById("qrCodeContainer"); // Container for the QR code
-
-    if (downloadLink) {
-        QRCode.toCanvas(qrCodeContainer, encodeURI(downloadLink), {
-            width: 100, // Size of the QR Code
-            margin: 2 // Margin around the QR Code
-        }, function (error) {
-            if (error) {
-                console.error("QR Code generation failed:", error);
-            }
-        });
-    } else {
-        console.error("Download link is empty or undefined.");
-    }
-});
-
 function confirmDelete() {
     return confirm("Are you sure you want to delete this file? This action cannot be undone.");
 }
@@ -61,50 +39,46 @@ function updateCheckboxState(event, checkbox) {
     checkbox.form.submit();
 }
 
-function openShareModal() {
-    const fileUuid = document.getElementById("fileUuid").textContent.trim(); // Use UUID instead of ID
-    const filePasswordInput = document.getElementById("filePassword");
-    const password = filePasswordInput ? filePasswordInput.value : "";
-
-    generateShareLink(fileUuid, password)
-        .then(link => {
-            const shareLinkInput = document.getElementById("shareLink");
-            shareLinkInput.value = link;
-
-            // Generate QR code for the share link
-            const shareQRCode = document.getElementById("shareQRCode");
-            QRCode.toCanvas(shareQRCode, encodeURI(link), {
-                width: 150,
-                margin: 2
-            }, function (error) {
-                if (error) {
-                    console.error("QR Code generation failed:", error);
-                }
-            });
-
-            // Show the modal
-            const shareModal = new bootstrap.Modal(document.getElementById('shareModal'));
-            shareModal.show();
-        })
-        .catch(error => {
-            console.error(error);
-            alert("Error generating share link.");
-        });
+function initializeModal() {
+    const downloadLink = document.getElementById("downloadLink").innerText;
+    updateShareLink(downloadLink);
+    document.getElementById('unrestrictedLink').checked = false;
+    document.getElementById('daysValidContainer').style.display = 'none';
+    document.getElementById('generateLinkButton').disabled = true;
 }
 
+function openShareModal() {
+    const downloadLink = document.getElementById("downloadLink").innerText;
+
+    const shareLinkInput = document.getElementById("shareLink");
+    shareLinkInput.value = downloadLink;
+
+    const shareQRCode = document.getElementById("shareQRCode");
+    QRCode.toCanvas(shareQRCode, encodeURI(downloadLink), {
+        width: 150,
+        margin: 2
+    }, function (error) {
+        if (error) {
+            console.error("QR Code generation failed:", error);
+        }
+    });
+
+    const shareModal = new bootstrap.Modal(document.getElementById('shareModal'));
+    shareModal.show();
+}
 
 function generateShareLink(fileUuid, daysValid) {
-    const csrfToken = document.querySelector('meta[name="_csrf"]').content; // Retrieve CSRF token
+    const csrfToken = document.querySelector('meta[name="_csrf"]').content;
     const expirationDate = new Date();
-    expirationDate.setDate(expirationDate.getDate() + daysValid); // Add days to current date
-    const expirationDateStr = expirationDate.toISOString().split('T')[0]; // Format as YYYY-MM-DD
+    expirationDate.setDate(expirationDate.getDate() + daysValid);
+    const expirationDateStr = expirationDate.toISOString().split('T')[0];
 
-    return fetch(`/api/file/share/${fileUuid}?expirationDate=${expirationDateStr}`, { // Include expirationDate in URL
+    return fetch(`/api/file/share/${fileUuid}?expirationDate=${expirationDateStr}`, {
         method: 'POST',
-        credentials: 'same-origin', // Ensures cookies are sent for session
+        credentials: 'same-origin',
         headers: {
             'Content-Type': 'application/json',
-            'X-XSRF-TOKEN': csrfToken, // Include CSRF token in headers
+            'X-XSRF-TOKEN': csrfToken,
         },
     })
         .then((response) => {
@@ -115,18 +89,20 @@ function generateShareLink(fileUuid, daysValid) {
 
 
 function copyShareLink() {
-    const shareLink = document.getElementById("shareLink");
-    shareLink.select();
-    shareLink.setSelectionRange(0, 99999); // For mobile devices
-    navigator.clipboard.writeText(shareLink.value).then(() => {
-        alert("Share link copied to clipboard!");
-    });
+    const shareLinkInput = document.getElementById('shareLink');
+    navigator.clipboard.writeText(shareLinkInput.value)
+        .then(() => {
+            alert("Link copied to clipboard!");
+        })
+        .catch((err) => {
+            console.error("Failed to copy link:", err);
+        });
 }
 
 function createShareLink() {
-    const fileUuid = document.getElementById('fileUuid').textContent.trim(); // Get the file UUID
-    const daysValidInput = document.getElementById('daysValid'); // Input field for number of days
-    const daysValid = parseInt(daysValidInput.value, 10); // Parse the input value as an integer
+    const fileUuid = document.getElementById('fileUuid').textContent.trim();
+    const daysValidInput = document.getElementById('daysValid');
+    const daysValid = parseInt(daysValidInput.value, 10);
 
     if (isNaN(daysValid) || daysValid < 1) {
         alert("Please enter a valid number of days.");
@@ -135,16 +111,35 @@ function createShareLink() {
 
     generateShareLink(fileUuid, daysValid)
         .then((shareLink) => {
-            const shareLinkInput = document.getElementById('shareLink');
-            shareLinkInput.value = shareLink; // Update the input field with the generated link
-
-            // Generate QR Code
-            const qrCodeContainer = document.getElementById('shareQRCode');
-            qrCodeContainer.innerHTML = ""; // Clear any existing QR code
-            QRCode.toCanvas(qrCodeContainer, shareLink, {width: 150, height: 150});
+            updateShareLink(shareLink); // Update with the token-based link
         })
         .catch((error) => {
             console.error(error);
             alert("Failed to generate share link.");
         });
+}
+
+function updateShareLink(link) {
+    const shareLinkInput = document.getElementById('shareLink');
+    const qrCodeContainer = document.getElementById('shareQRCode');
+
+    shareLinkInput.value = link;
+    qrCodeContainer.innerHTML = '';
+    QRCode.toCanvas(qrCodeContainer, link, {width: 150, height: 150});
+}
+
+
+function toggleLinkType() {
+    const unrestrictedLinkCheckbox = document.getElementById('unrestrictedLink');
+    const daysValidContainer = document.getElementById('daysValidContainer');
+    const generateLinkButton = document.getElementById('generateLinkButton');
+
+    if (unrestrictedLinkCheckbox.checked) {
+        daysValidContainer.style.display = 'block';
+        generateLinkButton.disabled = false;
+    } else {
+        daysValidContainer.style.display = 'none';
+        generateLinkButton.disabled = true;
+        initializeModal();
+    }
 }

@@ -50,8 +50,9 @@
     </div>
 </nav>
 
-<!-- Hidden element to retrieve file uuid -->
+<!-- Hidden elements -->
 <span hidden id="fileUuid" th:text="${file.uuid}"></span>
+<span hidden id="downloadLink" th:text='${downloadLink}'></span>
 
 <!-- Main Content -->
 <div class="container mt-5">
@@ -119,26 +120,6 @@
                         <p class="card-text" th:text="${fileSize}"></p>
                     </div>
 
-                    <!-- Link and QR -->
-                    <h5 class="card-title border-top pt-3">Link</h5>
-                    <div class="input-group mb-3 align-items-center">
-                        <input
-                                th:value="${downloadLink}"
-                                class="form-control"
-                                id="downloadLink"
-                                type="text"
-                                readonly
-                                style="height: 38px;"/>
-                        <button
-                                type="button"
-                                class="btn btn-outline-secondary copyButton"
-                                onclick="copyToClipboard(this)"
-                                style="height: 38px;">
-                            Copy Link
-                        </button>
-                        <canvas id="qrCodeContainer" style="width: 100px; height: 100px;"></canvas>
-                    </div>
-
                     <div
                             class="alert alert-info"
                             id="preparingMessage"
@@ -171,7 +152,6 @@
                         </form>
 
                         <button class="btn btn-secondary" onclick="openShareModal()"
-                                th:if="${file.passwordHash != null || isAppPasswordSet == true}"
                                 type="button">Share
                         </button>
                     </div>
@@ -190,21 +170,34 @@
                 <button aria-label="Close" class="btn-close" data-bs-dismiss="modal" type="button"></button>
             </div>
             <div class="modal-body">
-                <p>This link can be used to share the file without any password protection.</p>
-                <div class="mb-3">
-                    <label class="form-label" for="daysValid">Number of days the link will be valid:</label>
-                    <input class="form-control" id="daysValid" max="365" min="1" type="number" value="30">
-                </div>
+                <p>By default, this link requires will a password to access the file if the file is password-protected
+                    or if the app password is enabled. You can generate an unrestricted link valid for a specific number
+                    of days, usable once.</p>
+
                 <div class="input-group mb-3">
-                    <input class="form-control" id="shareLink" readonly type="text">
+                    <input class="form-control" id="shareLink" placeholder="Generated link will appear here" readonly type="text"
+                           value="">
                     <button class="btn btn-outline-secondary" onclick="copyShareLink()" type="button">Copy Link</button>
                 </div>
-                <div class="text-center">
+
+                <div class="text-center mb-3">
                     <canvas id="shareQRCode" style="width: 150px; height: 150px;"></canvas>
                 </div>
+
+                <div class="form-check mb-3" th:if="${file.passwordHash != null || isAppPasswordSet == true}">
+                    <input class="form-check-input" id="unrestrictedLink" onchange="toggleLinkType()" type="checkbox">
+                    <label class="form-check-label" for="unrestrictedLink">Generate an unrestricted link</label>
+                </div>
+
+                <div class="mb-3" id="daysValidContainer" style="display: none;">
+                    <label class="form-label" for="daysValid">Number of days the link will be valid:</label>
+                    <input class="form-control" id="daysValid" min="1" type="number" value="30">
+                </div>
             </div>
-            <div class="modal-footer">
-                <button class="btn btn-primary" onclick="createShareLink()" type="button">Generate Link</button>
+            <div class="modal-footer" th:if="${file.passwordHash != null || isAppPasswordSet == true}">
+                <button class="btn btn-primary" id="generateLinkButton" onclick="createShareLink()" type="button">
+                    Generate
+                </button>
             </div>
         </div>
     </div>

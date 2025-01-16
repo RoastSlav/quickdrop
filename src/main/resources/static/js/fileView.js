@@ -1,29 +1,3 @@
-function copyToClipboard(button) {
-    const copyText = document.getElementById("downloadLink");
-
-    navigator.clipboard.writeText(copyText.value)
-        .then(() => {
-            button.innerText = "Copied!";
-            button.classList.add("copied");
-
-            // Revert back after 2 seconds
-            setTimeout(() => {
-                button.innerText = "Copy Link";
-                button.classList.remove("copied");
-            }, 2000);
-        })
-        .catch((err) => {
-            console.error("Could not copy text: ", err);
-            button.innerText = "Failed!";
-            button.classList.add("btn-danger");
-
-            setTimeout(() => {
-                button.innerText = "Copy Link";
-                button.classList.remove("btn-danger");
-            }, 2000);
-        });
-}
-
 function confirmDelete() {
     return confirm("Are you sure you want to delete this file? This action cannot be undone.");
 }

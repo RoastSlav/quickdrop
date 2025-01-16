@@ -124,7 +124,7 @@
                 </div>
 
                 <!-- Hidden File Checkbox -->
-                <div class="form-check mb-3">
+                <div class="form-check mb-3" th:if="${isFileListPageEnabled}">
                     <input class="form-check-input" id="hidden" name="hidden" type="checkbox"/>
                     <label class="form-check-label" for="hidden">Hide from file list</label>
                 </div>

@@ -103,29 +103,40 @@
                 </div>
 
                 <!-- Keep Indefinitely Checkbox -->
-                <div class="form-check mb-3">
-                    <input
-                            class="form-check-input"
-                            id="keepIndefinitely"
-                            name="keepIndefinitely"
-                            type="checkbox"
-                    />
-                    <label class="form-check-label" for="keepIndefinitely">
-                        Keep indefinitely
-                    </label>
+                <div class="mb-3">
+                    <div class="form-check">
+                        <input
+                                class="form-check-input"
+                                id="keepIndefinitely"
+                                name="keepIndefinitely"
+                                type="checkbox"
+                        />
+                        <label class="form-check-label" for="keepIndefinitely">
+                            Keep indefinitely
+                        </label>
+                    </div>
+                    <small class="text-muted">
+                        If checked, this file will not be auto-deleted after
+                        <span class="maxFileLifeTime" th:text="${maxFileLifeTime}">30</span> days.
+                    </small>
                 </div>
 
                 <!-- Hidden File Checkbox -->
-                <div class="form-check mb-3" th:if="${isFileListPageEnabled}">
-                    <input
-                            class="form-check-input"
-                            id="hidden"
-                            name="hidden"
-                            type="checkbox"
-                    />
-                    <label class="form-check-label" for="hidden">
-                        Hide from file list
-                    </label>
+                <div class="mb-3" th:if="${isFileListPageEnabled}">
+                    <div class="form-check">
+                        <input
+                                class="form-check-input"
+                                id="hidden"
+                                name="hidden"
+                                type="checkbox"
+                        />
+                        <label class="form-check-label" for="hidden">
+                            Hide from file list
+                        </label>
+                    </div>
+                    <small class="text-muted">
+                        If checked, this file won’t appear on the “View Files” page.
+                    </small>
                 </div>
 
                 <!-- Password Input -->

@@ -125,7 +125,7 @@ public class FileViewController {
 
     @PostMapping("/delete/{uuid}")
     public String deleteFile(@PathVariable String uuid) {
-        if (fileService.deleteFile(uuid)) {
+        if (fileService.deleteFileFromDatabaseAndFileSystem(uuid)) {
             return "redirect:/file/list";
         } else {
             return "redirect:/file/" + uuid;

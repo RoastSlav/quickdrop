@@ -114,7 +114,7 @@ public class AdminViewController {
 
     @PostMapping("/delete/{uuid}")
     public String deleteFile(@PathVariable String uuid) {
-        fileService.deleteFile(uuid);
+        fileService.deleteFileFromDatabaseAndFileSystem(uuid);
 
         return "redirect:/admin/dashboard";
     }

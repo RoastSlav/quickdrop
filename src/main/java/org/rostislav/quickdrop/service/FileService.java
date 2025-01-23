@@ -235,7 +235,7 @@ public class FileService {
     }
 
     @Transactional
-    public boolean deleteFile(String uuid) {
+    public boolean deleteFileFromDatabaseAndFileSystem(String uuid) {
         Optional<FileEntity> referenceById = fileRepository.findByUUID(uuid);
         if (referenceById.isEmpty()) {
             return false;
@@ -245,6 +245,19 @@ public class FileService {
         fileRepository.delete(fileEntity);
         downloadLogRepository.deleteByFileId(fileEntity.id);
         return deleteFileFromFileSystem(fileEntity.uuid);
+    }
+
+    @Transactional
+    public boolean removeFileFromDatabase(String uuid) {
+        Optional<FileEntity> referenceById = fileRepository.findByUUID(uuid);
+        if (referenceById.isEmpty()) {
+            return false;
+        }
+
+        FileEntity fileEntity = referenceById.get();
+        fileRepository.delete(fileEntity);
+        downloadLogRepository.deleteByFileId(fileEntity.id);
+        return true;
     }
 
     public ResponseEntity<StreamingResponseBody> downloadFile(String uuid, HttpServletRequest request) {

@@ -66,11 +66,11 @@ public class ScheduleService {
     @Scheduled(cron = "0 0 3 * * *")
     public void cleanDatabaseFromDeletedFiles() {
         logger.info("Cleaning database from deleted files");
-        fileRepository.findAll().forEach(file -> {
-            if (!fileService.fileExistsInFileSystem(file.uuid)) {
-                fileRepository.delete(file);
-                downloadLogRepository.deleteByFileId(file.id);
-            }
-        });
+
+        List<FileEntity> toDelete = fileRepository.findAll().stream()
+                .filter(file -> !fileService.fileExistsInFileSystem(file.uuid))
+                .toList();
+
+        toDelete.forEach(file -> fileService.removeFileFromDatabase(file.uuid));
     }
 }

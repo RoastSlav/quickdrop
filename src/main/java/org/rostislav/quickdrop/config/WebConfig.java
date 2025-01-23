@@ -39,7 +39,7 @@ public class WebConfig implements WebMvcConfigurer {
 
         registry.addInterceptor(filePasswordInterceptor)
                 .addPathPatterns("/file/**", "/api/file/share/**")
-                .excludePathPatterns("/file/upload", "/file/list", "/file/password", "/file/password/**", "/file/history/*");
+                .excludePathPatterns("/file/upload", "/file/list", "/file/password", "/file/password/**", "/file/history/*", "/file/search");
     }
 
     @Bean

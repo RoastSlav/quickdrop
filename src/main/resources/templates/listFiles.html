@@ -72,6 +72,12 @@
             </form>
         </div>
     </div>
+    <div class="row" th:if="${#lists.isEmpty(files)}">
+        <div class="col-12 text-center my-5">
+            <h3 class="text-muted">No files have been uploaded yet.</h3>
+            <p>Start by <a href="/">uploading a file</a>.</p>
+        </div>
+    </div>
 
     <div class="row">
         <div class="col-12 col-sm-6 col-md-4 col-lg-3 mb-4"
@@ -98,10 +104,7 @@
                 </div>
                 <div class="card-footer">
                     <a class="btn btn-primary w-100"
-                       th:href="@{/file/{UUID}(UUID=${file.uuid})}">Go
-                        to
-                        File
-                        Page</a>
+                       th:href="@{/file/{UUID}(UUID=${file.uuid})}">Go to File Page</a>
                 </div>
             </div>
         </div>

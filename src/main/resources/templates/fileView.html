@@ -195,6 +195,12 @@
                 </div>
             </div>
             <div class="modal-footer" th:if="${file.passwordHash != null || isAppPasswordSet == true}">
+                <div class="spinner-border text-primary"
+                     id="spinner"
+                     role="status"
+                     style="display: none; margin-bottom: 1rem;">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
                 <button class="btn btn-primary" id="generateLinkButton" onclick="createShareLink()" type="button">
                     Generate
                 </button>

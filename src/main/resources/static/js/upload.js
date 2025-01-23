@@ -7,6 +7,11 @@ document.getElementById("uploadForm").addEventListener("submit", function (event
     if (isUploading) return; // Prevent duplicate uploads
     isUploading = true;
 
+    if (!validateKeepIndefinitely()) {
+        isUploading = false;
+        return; // Stop here if they chose not to proceed
+    }
+
     const uploadForm = event.target;
     const fileInput = document.getElementById("file");
     const passwordInput = document.getElementById("password");
@@ -37,11 +42,6 @@ document.getElementById("uploadForm").addEventListener("submit", function (event
         formData.append("fileName", file.name);
         formData.append("chunkNumber", chunkNumber);
         formData.append("totalChunks", totalChunks);
-
-        // Include password if it exists
-        if (passwordInput && passwordInput.value.trim() !== "") {
-            formData.append("password", passwordInput.value.trim());
-        }
 
         // Explicitly append the checkbox states as true or false
         const keepIndefinitelyCheckbox = document.getElementById("keepIndefinitely");

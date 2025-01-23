@@ -83,6 +83,12 @@ function createShareLink() {
         return;
     }
 
+    const spinner = document.getElementById('spinner');
+    const generateLinkButton = document.getElementById('generateLinkButton');
+
+    spinner.style.display = 'inline-block';
+    generateLinkButton.disabled = true;
+
     generateShareLink(fileUuid, daysValid)
         .then((shareLink) => {
             updateShareLink(shareLink); // Update with the token-based link
@@ -90,7 +96,10 @@ function createShareLink() {
         .catch((error) => {
             console.error(error);
             alert("Failed to generate share link.");
-        });
+        }).finally(() => {
+        spinner.style.display = 'none';
+        generateLinkButton.disabled = false;
+    });
 }
 
 function updateShareLink(link) {

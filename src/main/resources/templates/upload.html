@@ -85,7 +85,6 @@
                     id="uploadForm"
                     method="post"
                     th:action="@{/file/upload}"
-                    onsubmit="return validateKeepIndefinitely()"
             >
                 <!-- CSRF Token -->
                 <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden"/>

@@ -170,9 +170,14 @@
                 <button aria-label="Close" class="btn-close" data-bs-dismiss="modal" type="button"></button>
             </div>
             <div class="modal-body">
-                <p>By default, this link requires will a password to access the file if the file is password-protected
-                    or if the app password is enabled. You can generate an unrestricted link valid for a specific number
-                    of days, usable once.</p>
+                <div th:if="${file.passwordHash != null || isAppPasswordSet}">
+                    <p>
+                        By default, this link requires a password to access the file if the file is password-protected
+                        or if the app password is enabled.
+                        <br>
+                        You can generate an unrestricted link valid for a specific number of days, usable once.
+                    </p>
+                </div>
 
                 <div class="input-group mb-3">
                     <input class="form-control" id="shareLink" placeholder="Generated link will appear here" readonly type="text"

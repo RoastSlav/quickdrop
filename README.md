@@ -11,23 +11,45 @@ protection.
 
 This project is made with the self-hosting community in mind as a self-hosted file-sharing application.
 
-## Features
+# Features
 
-- **File Upload**: Users can upload files without needing to create an account.
-- **Adjustable file size limit**: The maximum file size can be ajusted in the settings.
-- **Download Links**: Generate download links for easy sharing.
-- **File Management**:
-    - Manage file availability with options to keep files indefinitely or delete them.
-    - Password-protected files can be updated (e.g. "kept indefinitely").
-    - Add hidden files that are only accessible via their unique link.
-- **Password Protection**: Optionally protect files with a password.
-- **File Encryption**: Encrypt files to ensure privacy.
-- **Shareable Links**: Share files with others via a unique link.
-    - Generate secure shareable links that bypass app-level and file password protections.
-    - Token-based access control with optional expiration times for shareable links.
-- **Whole app password protection**: Optionally protect the entire app with a password.
-- **QR Code Generation**: Generate QR codes for easy sharing.
-- **Admin Panel**: Manage users, files, and settings.
+## File Upload
+- Users can upload files without needing to create an account.  
+- Supports **Chunked Uploads** for reliable file transfers.
+  
+---
+
+## File Management
+- Manage file availability with options to keep files indefinitely or delete them.
+- Add hidden files that are only accessible via their unique link.
+- Password-protected files can be updated (e.g., "kept indefinitely").
+
+---
+
+## Whole App Password Protection
+- Protect the entire app with a password to restrict access.
+
+---
+
+## Shareable Links
+- **Two types of share links** managed through a single, streamlined modal:
+  - **Normal Links**: Require passwords if the file or app is password-protected.
+  - **Token-Based (Unrestricted) Links**: Single-use links with customizable expiration days. These bypass password requirements but provide controlled access.
+  - **QR Code Generation**: Generates QR codes for easy sharing.
+
+---
+
+## Password Protection
+- Files can be protected with a password for added security.
+- Password-protected files are encrypted to ensure privacy and secure storage.
+
+---
+
+## Admin Panel
+- Centralized management for files and settings.
+- Adjustable file size limits and file lifetime configurations in the admin panel.
+- Logs and activity tracking for enhanced oversight.
+- Disable “View Files” : Turn off the built-in file listing page for enhanced privacy (removes the "hidden" files option as it removes the need for it).
 
 ## Technologies Used
 

@@ -2,16 +2,12 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>
-        Upload
-        File</title>
-    <meta content="width=device-width, initial-scale=1"
-          name="viewport">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
-          rel="stylesheet">
-    <link href="/images/favicon.png"
-          rel="icon"
-          type="image/png">
+    <title>Upload File</title>
+    <meta content="width=device-width, initial-scale=1" name="viewport">
+    <link
+            href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+            rel="stylesheet">
+    <link href="/images/favicon.png" rel="icon" type="image/png">
 </head>
 <body>
 <!-- Navbar -->
@@ -24,10 +20,10 @@
         <button
                 class="navbar-toggler"
                 type="button"
-                aria-controls="navbarNav"
-                aria-expanded="false"
                 aria-label="Toggle navigation"
                 data-bs-target="#navbarNav"
+                aria-controls="navbarNav"
+                aria-expanded="false"
                 data-bs-toggle="collapse">
             <span class="navbar-toggler-icon"></span>
         </button>
@@ -37,7 +33,6 @@
                     <a class="nav-link" href="/file/list">View Files</a>
                 </li>
                 <li class="nav-item">
-                    <!-- Admin Dashboard Button -->
                     <a class="nav-link" href="/admin/dashboard">Admin Dashboard</a>
                 </li>
             </ul>
@@ -45,51 +40,38 @@
     </div>
 </nav>
 
-
 <!-- Main Content -->
 <div class="container">
-    <h1 class="text-center mb-4">
-        Upload
-        a
-        File</h1>
+    <h1 class="text-center mb-4">Upload a File</h1>
+
+    <!-- Instructions -->
     <p class="text-center mb-2">
-        Max
-        file
-        size:
-        <span class="maxFileSize"
-              th:text="${maxFileSize}">1GB</span>
+        Max file size:
+        <span class="maxFileSize" th:text="${maxFileSize}">1GB</span>
     </p>
     <p class="text-center mb-4">
-        Files
-        are
-        deleted
-        after
-        <span class="maxFileLifeTime"
-              th:text="${maxFileLifeTime}">30</span>
-        days
-        if
-        the
-        option
-        for
-        indefinite
-        upload
-        is
-        not
-        selected
+        Files are deleted after
+        <span class="maxFileLifeTime" th:text="${maxFileLifeTime}">30</span>
+        days unless “Keep indefinitely” is selected.
     </p>
+
     <div class="row justify-content-center">
         <div class="col-12 col-md-8 col-lg-6">
+            <!-- CARD -->
             <form
-                    class="card p-4 shadow"
-                    enctype="multipart/form-data"
                     id="uploadForm"
+                    class="card p-4 shadow"
                     method="post"
+                    enctype="multipart/form-data"
                     th:action="@{/file/upload}"
             >
+                <!-- A place to show success/error messages inline -->
+                <div id="messageContainer"></div>
+
                 <!-- CSRF Token -->
                 <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden"/>
 
-                <!-- UUID -->
+                <!-- UUID (if needed) -->
                 <input name="uuid" th:value="${uuid}" type="hidden"/>
 
                 <!-- File Input -->
@@ -99,15 +81,19 @@
                             class="form-control"
                             id="file"
                             name="file"
+                            type="file"
                             onchange="validateFileSize()"
                             required
-                            type="file"
                     />
-                </div>
-
-                <!-- File Size Alert -->
-                <div class="alert alert-danger" id="fileSizeAlert" role="alert" style="display: none;">
-                    File size exceeds the <span th:text="${maxFileSize}">1GB</span> limit.
+                    <!-- File Size Alert (hidden by default) -->
+                    <div
+                            class="alert alert-danger mt-2"
+                            id="fileSizeAlert"
+                            role="alert"
+                            style="display: none;"
+                    >
+                        File size exceeds the <span th:text="${maxFileSize}">1GB</span> limit.
+                    </div>
                 </div>
 
                 <!-- Description Input -->
@@ -118,14 +104,28 @@
 
                 <!-- Keep Indefinitely Checkbox -->
                 <div class="form-check mb-3">
-                    <input class="form-check-input" id="keepIndefinitely" name="keepIndefinitely" type="checkbox"/>
-                    <label class="form-check-label" for="keepIndefinitely">Keep indefinitely</label>
+                    <input
+                            class="form-check-input"
+                            id="keepIndefinitely"
+                            name="keepIndefinitely"
+                            type="checkbox"
+                    />
+                    <label class="form-check-label" for="keepIndefinitely">
+                        Keep indefinitely
+                    </label>
                 </div>
 
                 <!-- Hidden File Checkbox -->
                 <div class="form-check mb-3" th:if="${isFileListPageEnabled}">
-                    <input class="form-check-input" id="hidden" name="hidden" type="checkbox"/>
-                    <label class="form-check-label" for="hidden">Hide from file list</label>
+                    <input
+                            class="form-check-input"
+                            id="hidden"
+                            name="hidden"
+                            type="checkbox"
+                    />
+                    <label class="form-check-label" for="hidden">
+                        Hide from file list
+                    </label>
                 </div>
 
                 <!-- Password Input -->
@@ -141,43 +141,29 @@
             </form>
         </div>
     </div>
+
     <!-- Upload Indicator -->
-    <div class="mt-3 text-center">
-        <div id="uploadIndicator"
-             style="display: none;">
-            <p class="text-info"
-               id="uploadStatus">
-                Upload
-                started...</p>
-            <div class="progress"
-                 style="width: 50%; margin: 0 auto;">
-                <div
-                        aria-valuemax="100"
-                        aria-valuemin="0"
-                        aria-valuenow="0"
-                        class="progress-bar progress-bar-striped progress-bar-animated"
-                        id="uploadProgress"
-                        role="progressbar"
-                        style="width: 0%;"
-                ></div>
+    <div class="mt-3 text-center" id="uploadIndicator" style="display: none;">
+        <p class="text-info" id="uploadStatus">Upload started...</p>
+        <div class="progress" style="width: 50%; margin: 0 auto;">
+            <div
+                    aria-valuemax="100"
+                    aria-valuemin="0"
+                    aria-valuenow="0"
+                    class="progress-bar progress-bar-striped progress-bar-animated"
+                    id="uploadProgress"
+                    role="progressbar"
+                    style="width: 0%;">
             </div>
         </div>
     </div>
+
     <div class="container mt-4">
         <p class="text-center text-muted">
-            Note:
-            All
-            password-protected
-            files
-            are
-            also
-            encrypted
-            for
-            additional
-            security.
+            Note: All password-protected files are also encrypted for additional security.
         </p>
     </div>
-</div>
+</div> <!-- .container -->
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script src="/js/upload.js"></script>

@@ -1,0 +1,9 @@
+services:
+    quickdrop:
+        image: roastslav/quickdrop:latest
+        ports:
+            - 8080:8080
+        volumes:
+            - ./db:/app/db
+            - ./log:/app/log
+            - ./files:/app/files

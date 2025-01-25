@@ -1,0 +1,14 @@
+services:
+    quickdrop:
+        image: roastslav/quickdrop:latest
+        ports:
+            - 8080:8080
+        environment:
+            - PUID=1000
+            - PGID=1000
+            - TZ=/etc/UTC
+        volumes:
+            - ./db:/app/db
+            - ./log:/app/log
+            - ./files:/app/files
+        restart: unless-stopped

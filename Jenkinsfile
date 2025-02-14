@@ -31,15 +31,19 @@ pipeline {
                           docker buildx use \$BUILDER_NAME
                           docker buildx inspect --bootstrap
 
+                          # Login
                           echo "\$DOCKER_PASS" | docker login -u "\$DOCKER_USER" --password-stdin
 
+                          # Build & push multi-arch
                           docker buildx build \\
                               --platform linux/amd64,linux/arm64 \\
                               -t ${DOCKER_IMAGE} \\
                               --push .
 
+                          # Logout
                           docker logout
 
+                          # Remove the ephemeral builder
                           docker buildx rm \$BUILDER_NAME || true
                         """
                     }

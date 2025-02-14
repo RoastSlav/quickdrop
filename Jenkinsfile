@@ -4,7 +4,6 @@ pipeline {
         MAVEN_HOME = tool(name: 'Maven', type: 'hudson.tasks.Maven$MavenInstallation')
         DOCKER_IMAGE = "roastslav/quickdrop"
         DOCKER_CREDENTIALS_ID = 'dockerhub-credentials'
-        IMAGE_TAG = "build-${env.BUILD_NUMBER}"
     }
     stages {
         stage('Checkout') {
@@ -23,7 +22,7 @@ pipeline {
                     def builder = sh(script: "docker buildx create --driver docker-container", returnStdout: true).trim()
                     sh "docker buildx use ${builder}"
                     sh "docker buildx inspect --bootstrap"
-                    sh "docker buildx build --platform linux/amd64 -t ${DOCKER_IMAGE}:${IMAGE_TAG} -o type=docker ."
+                    sh "docker buildx build --platform linux/amd64 -t ${DOCKER_IMAGE} -o type=docker ."
                     sh "docker buildx rm ${builder} || true"
                 }
             }
@@ -34,7 +33,7 @@ pipeline {
                     withCredentials([usernamePassword(credentialsId: DOCKER_CREDENTIALS_ID, passwordVariable: 'DOCKER_PASS', usernameVariable: 'DOCKER_USER')]) {
                         sh 'echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin'
                     }
-                    sh "docker push ${DOCKER_IMAGE}:${IMAGE_TAG}"
+                    sh "docker push ${DOCKER_IMAGE}"
                     sh "docker logout"
                 }
             }

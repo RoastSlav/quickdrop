@@ -20,28 +20,27 @@ pipeline {
             }
         }
 
-        stage('Docker Buildx Setup') {
-            steps {
-                script {
-                    sh """
-                    docker buildx create --use || echo 'Buildx already created'
-                    docker buildx inspect --bootstrap
-                    """
-                }
-            }
-        }
-
         stage('Docker Build and Push Multi-Arch') {
             steps {
                 script {
-                    withCredentials([usernamePassword(credentialsId: DOCKER_CREDENTIALS_ID, passwordVariable: 'DOCKER_PASS', usernameVariable: 'DOCKER_USER')]) {
+                    withCredentials([usernamePassword(credentialsId: DOCKER_CREDENTIALS_ID,
+                        passwordVariable: 'DOCKER_PASS', usernameVariable: 'DOCKER_USER')]) {
+
                         sh """
-                        echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
-                        docker buildx build \
-                            --platform linux/amd64,linux/arm64 \
-                            -t ${DOCKER_IMAGE} \
-                            --push .
-                        docker logout
+                          BUILDER_NAME=\$(docker buildx create --driver docker-container)
+                          docker buildx use \$BUILDER_NAME
+                          docker buildx inspect --bootstrap
+
+                          echo "\$DOCKER_PASS" | docker login -u "\$DOCKER_USER" --password-stdin
+
+                          docker buildx build \\
+                              --platform linux/amd64,linux/arm64 \\
+                              -t ${DOCKER_IMAGE} \\
+                              --push .
+
+                          docker logout
+
+                          docker buildx rm \$BUILDER_NAME || true
                         """
                     }
                 }

@@ -118,7 +118,7 @@ function startChunkUpload() {
                 }
             } else {
                 console.error("Upload error:", xhr.responseText);
-                showMessage("danger", "Chunk upload failed. Please try again.");
+                showMessage("danger", "Upload failed. Please try again.");
                 resetUploadUI();
             }
         };

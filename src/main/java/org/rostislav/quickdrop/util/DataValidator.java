@@ -8,11 +8,9 @@ public class DataValidator {
     public static boolean validateObjects(Object... objs) {
         for (Object temp : objs) {
             if (temp != null) {
-                if (temp instanceof String value) {
-                    if (value.trim().isEmpty()) {
+                if (temp instanceof String value && value.trim().isEmpty()) {
                         return false;
                     }
-                }
             } else {
                 return false;
             }

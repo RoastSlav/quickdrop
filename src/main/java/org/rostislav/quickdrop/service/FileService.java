@@ -40,8 +40,6 @@ import java.util.UUID;
 
 import static org.rostislav.quickdrop.util.DataValidator.nullToZero;
 import static org.rostislav.quickdrop.util.DataValidator.validateObjects;
-import static org.rostislav.quickdrop.util.FileEncryptionUtils.decryptFile;
-import static org.rostislav.quickdrop.util.FileEncryptionUtils.encryptFile;
 
 @Service
 public class FileService {
@@ -53,15 +51,17 @@ public class FileService {
     private final File tempDir = Paths.get(System.getProperty("java.io.tmpdir")).toFile();
     private final SessionService sessionService;
     private final RenewalLogRepository renewalLogRepository;
+    private final FileEncryptionService fileEncryptionService;
 
     @Lazy
-    public FileService(FileRepository fileRepository, PasswordEncoder passwordEncoder, ApplicationSettingsService applicationSettingsService, DownloadLogRepository downloadLogRepository, SessionService sessionService, RenewalLogRepository renewalLogRepository) {
+    public FileService(FileRepository fileRepository, PasswordEncoder passwordEncoder, ApplicationSettingsService applicationSettingsService, DownloadLogRepository downloadLogRepository, SessionService sessionService, RenewalLogRepository renewalLogRepository, FileEncryptionService fileEncryptionService) {
         this.fileRepository = fileRepository;
         this.passwordEncoder = passwordEncoder;
         this.applicationSettingsService = applicationSettingsService;
         this.downloadLogRepository = downloadLogRepository;
         this.sessionService = sessionService;
         this.renewalLogRepository = renewalLogRepository;
+        this.fileEncryptionService = fileEncryptionService;
     }
 
     private static StreamingResponseBody getStreamingResponseBody(Path outputFile, FileEntity fileEntity) {
@@ -427,7 +427,7 @@ public class FileService {
         try {
             Path encryptedFile = Files.createFile(savePath);
             logger.info("Encrypting file: {}", encryptedFile);
-            encryptFile(file, encryptedFile.toFile(), fileUploadRequest.password);
+            fileEncryptionService.encryptFile(file, encryptedFile.toFile(), fileUploadRequest.password);
             logger.info("Encrypted file saved: {}", encryptedFile);
         } catch (
                 Exception e) {
@@ -520,7 +520,7 @@ public class FileService {
         if (file.passwordHash != null && !Files.exists(decryptedFilePath)) {
             try {
                 String password = sessionService.getPasswordForFileSessionToken(sessionToken).getPassword();
-                decryptFile(encryptedFilePath.toFile(), decryptedFilePath.toFile(), password);
+                fileEncryptionService.decryptFile(encryptedFilePath.toFile(), decryptedFilePath.toFile(), password);
                 logger.info("Decrypted file created alongside encrypted file: {}", decryptedFilePath);
             } catch (Exception e) {
                 logger.error("Error decrypting file for sharing: {}", e.getMessage());
@@ -552,7 +552,7 @@ public class FileService {
         try {
             Path tempFile = File.createTempFile("Decrypted", "tmp").toPath();
             logger.info("Decrypting file: {}", filePath);
-            decryptFile(filePath.toFile(), tempFile.toFile(), password);
+            fileEncryptionService.decryptFile(filePath.toFile(), tempFile.toFile(), password);
             logger.info("File decrypted: {}", tempFile);
             return tempFile;
         } catch (Exception e) {

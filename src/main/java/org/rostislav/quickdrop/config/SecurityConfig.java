@@ -1,6 +1,8 @@
 package org.rostislav.quickdrop.config;
 
 import org.rostislav.quickdrop.service.ApplicationSettingsService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -29,6 +31,7 @@ import java.util.List;
 @EnableWebSecurity
 public class SecurityConfig {
     private final ApplicationSettingsService applicationSettingsService;
+    private static final Logger logger = LoggerFactory.getLogger(SecurityConfig.class);
 
     public SecurityConfig(ApplicationSettingsService applicationSettingsService) {
         this.applicationSettingsService = applicationSettingsService;
@@ -84,8 +87,10 @@ public class SecurityConfig {
             public Authentication authenticate(Authentication authentication) throws AuthenticationException {
                 String providedPassword = (String) authentication.getCredentials();
                 if (BCrypt.checkpw(providedPassword, applicationSettingsService.getAppPasswordHash())) {
-                    return new UsernamePasswordAuthenticationToken(null, providedPassword, List.of());
+                    logger.info("Valid login - {}", authentication.getDetails());
+                    return new UsernamePasswordAuthenticationToken("appUser", providedPassword, List.of());
                 } else {
+                    logger.warn("Invalid password provided - {}", authentication.getDetails());
                     throw new BadCredentialsException("Invalid password");
                 }
             }

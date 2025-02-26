@@ -31,15 +31,15 @@ public class FileEncryptionService {
         return new SecretKeySpec(keyFactory.generateSecret(spec).getEncoded(), "AES");
     }
 
-    private byte[] generateRandomBytes(int size) {
-        byte[] bytes = new byte[size];
+    private byte[] generateRandomBytes() {
+        byte[] bytes = new byte[16];
         new SecureRandom().nextBytes(bytes);
         return bytes;
     }
 
     public void encryptFile(File inputFile, File outputFile, String password) throws NoSuchAlgorithmException, InvalidKeySpecException, NoSuchPaddingException, IOException, InvalidAlgorithmParameterException, InvalidKeyException {
-        byte[] salt = generateRandomBytes(16);
-        byte[] iv = generateRandomBytes(16);
+        byte[] salt = generateRandomBytes();
+        byte[] iv = generateRandomBytes();
         SecretKey secretKey = generateKeyFromPassword(password, salt);
         IvParameterSpec ivSpec = new IvParameterSpec(iv);
 
@@ -61,6 +61,7 @@ public class FileEncryptionService {
         }
     }
 
+    @SuppressWarnings("ResultOfMethodCallIgnored")
     public void decryptFile(File inputFile, File outputFile, String password) throws IOException, NoSuchAlgorithmException, InvalidKeySpecException, NoSuchPaddingException, InvalidAlgorithmParameterException, InvalidKeyException {
         try (FileInputStream fis = new FileInputStream(inputFile)) {
             byte[] salt = new byte[16];

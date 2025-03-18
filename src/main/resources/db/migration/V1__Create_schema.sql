@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS application_settings_entity
     app_password_hash     VARCHAR(255),
     admin_password_hash   VARCHAR(255),
     sessionLifetime       BIGINT  DEFAULT 30,
-    isFileListPageEnabled BOOLEAN DEFAULT TRUE
+    is_file_list_page_enabled BOOLEAN DEFAULT TRUE
 );
 
 CREATE TABLE IF NOT EXISTS file_entity
@@ -20,9 +20,9 @@ CREATE TABLE IF NOT EXISTS file_entity
     uuid             VARCHAR(255),
     description      VARCHAR(255),
     size             BIGINT,
-    keepIndefinitely BOOLEAN,
-    uploadDate       DATE,
-    passwordHash     VARCHAR(255),
+    keep_indefinitely BOOLEAN,
+    upload_date       DATE,
+    password_hash     VARCHAR(255),
     hidden           BOOLEAN DEFAULT FALSE
 );
 
@@ -31,25 +31,17 @@ CREATE TABLE IF NOT EXISTS download_log
     id            INTEGER PRIMARY KEY AUTOINCREMENT,
     download_date TIMESTAMP,
     user_agent    VARCHAR(255),
-    ip            VARCHAR(255),
+    downloader_ip VARCHAR(255),
     file_id       INTEGER,
     FOREIGN KEY (file_id) REFERENCES file_entity (id)
-);
-
-CREATE TABLE IF NOT EXISTS upload_log
-(
-    id           INTEGER PRIMARY KEY AUTOINCREMENT,
-    upload_date  TIMESTAMP,
-    download_ref INTEGER,
-    user_agent   VARCHAR(255),
-    ip           VARCHAR(255)
 );
 
 CREATE TABLE IF NOT EXISTS file_renewal_log
 (
     id           INTEGER PRIMARY KEY AUTOINCREMENT,
-    renewal_date TIMESTAMP,
+    file_id    INTEGER NOT NULL,
     action_date  TIMESTAMP,
     user_agent   VARCHAR(255),
-    ip           VARCHAR(255)
+    ip_address VARCHAR(255),
+    FOREIGN KEY (file_id) REFERENCES file_entity (id)
 );

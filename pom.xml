@@ -104,6 +104,10 @@
             </artifactId>
         </dependency>
         <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-core</artifactId>
+        </dependency>
+        <dependency>
             <groupId>
                 org.springframework.boot
             </groupId>
@@ -226,7 +230,7 @@
                     <source>21</source>
                     <target>21</target>
                 </configuration>
-             </plugin>
+            </plugin>
         </plugins>
     </build>
 

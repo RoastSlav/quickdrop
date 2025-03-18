@@ -122,6 +122,31 @@
             <button class="btn btn-primary" type="submit">Save Settings</button>
         </div>
     </form>
+
+    <div class="card mb-4 mt-5">
+        <div class="card-header bg-primary text-white">
+            <h5>About QuickDrop</h5>
+        </div>
+        <div class="card-body">
+            <p>
+                <strong>Version:</strong>
+                <span th:text="${aboutInfo.appVersion}">1.0.0</span>
+            </p>
+            <p>
+                <strong>Database:</strong>
+                SQLite
+                <span th:text="${aboutInfo.sqliteVersion}">Unknown</span>
+            </p>
+            <p>
+                <strong>Java Version:</strong>
+                <span th:text="${aboutInfo.javaVersion}">N/A</span>
+            </p>
+            <p>
+                <strong>OS Info:</strong>
+                <span th:text="${aboutInfo.osInfo}">N/A</span>
+            </p>
+        </div>
+    </div>
 </div>
 <script src="/js/settings.js"></script>
 </body>

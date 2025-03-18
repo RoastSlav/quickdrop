@@ -6,10 +6,7 @@ import org.rostislav.quickdrop.entity.ApplicationSettingsEntity;
 import org.rostislav.quickdrop.model.AnalyticsDataView;
 import org.rostislav.quickdrop.model.ApplicationSettingsViewModel;
 import org.rostislav.quickdrop.model.FileEntityView;
-import org.rostislav.quickdrop.service.AnalyticsService;
-import org.rostislav.quickdrop.service.ApplicationSettingsService;
-import org.rostislav.quickdrop.service.FileService;
-import org.rostislav.quickdrop.service.SessionService;
+import org.rostislav.quickdrop.service.*;
 import org.springframework.security.crypto.bcrypt.BCrypt;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -28,12 +25,14 @@ public class AdminViewController {
     private final AnalyticsService analyticsService;
     private final FileService fileService;
     private final SessionService sessionService;
+    private final SystemInfoService systemInfoService;
 
-    public AdminViewController(ApplicationSettingsService applicationSettingsService, AnalyticsService analyticsService, FileService fileService, SessionService sessionService) {
+    public AdminViewController(ApplicationSettingsService applicationSettingsService, AnalyticsService analyticsService, FileService fileService, SessionService sessionService, SystemInfoService systemInfoService) {
         this.applicationSettingsService = applicationSettingsService;
         this.analyticsService = analyticsService;
         this.fileService = fileService;
         this.sessionService = sessionService;
+        this.systemInfoService = systemInfoService;
     }
 
     @GetMapping("/dashboard")
@@ -69,6 +68,7 @@ public class AdminViewController {
         applicationSettingsViewModel.setMaxFileSize(bytesToMegabytes(settings.getMaxFileSize()));
 
         model.addAttribute("settings", applicationSettingsViewModel);
+        model.addAttribute("aboutInfo", systemInfoService.getAboutInfo());
         return "settings";
     }
 

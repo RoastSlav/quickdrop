@@ -6,22 +6,13 @@ import java.time.LocalDateTime;
 
 @Entity
 public class DownloadLog {
-
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "file_id", nullable = false)
     private FileEntity file;
-
-    @Column(name = "downloader_ip", nullable = false)
     private String downloaderIp;
-
-    @Column(name = "download_date", nullable = false)
     private LocalDateTime downloadDate;
-
-    @Column(name = "user_agent", nullable = true)
     private String userAgent;
 
     public DownloadLog() {

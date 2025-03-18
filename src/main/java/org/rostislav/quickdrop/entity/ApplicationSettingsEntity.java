@@ -1,14 +1,13 @@
 package org.rostislav.quickdrop.entity;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
 import org.rostislav.quickdrop.model.ApplicationSettingsViewModel;
 
 @Entity
 public class ApplicationSettingsEntity {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
     private long maxFileSize;
     private long maxFileLifeTime;
     private String fileStoragePath;
@@ -17,9 +16,7 @@ public class ApplicationSettingsEntity {
     private boolean appPasswordEnabled;
     private String appPasswordHash;
     private String adminPasswordHash;
-    @Column(name = "sessionLifetime", nullable = false, columnDefinition = "BIGINT DEFAULT 30")
     private long sessionLifetime;
-    @Column(name = "isFileListPageEnabled", nullable = false, columnDefinition = "BOOLEAN DEFAULT TRUE")
     private boolean isFileListPageEnabled;
     private boolean isAdminDashboardButtonEnabled;
 

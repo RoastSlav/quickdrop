@@ -6,18 +6,14 @@ import java.time.LocalDate;
 
 @Entity
 public class ShareTokenEntity {
+    @Id
+    private Long id;
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "file_id", nullable = false)
     public FileEntity file;
-    @Column(nullable = true)
     public String shareToken;
-    @Column(nullable = true)
     public LocalDate tokenExpirationDate;
-    @Column(nullable = true)
     public Integer numberOfAllowedDownloads;
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
 
     public ShareTokenEntity() {
     }

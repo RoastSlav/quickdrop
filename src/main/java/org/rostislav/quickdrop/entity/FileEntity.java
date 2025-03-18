@@ -1,15 +1,15 @@
 package org.rostislav.quickdrop.entity;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.PrePersist;
 
 import java.time.LocalDate;
 
 @Entity
 public class FileEntity {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     public Long id;
-
     public String name;
     public String uuid;
     public String description;
@@ -17,7 +17,6 @@ public class FileEntity {
     public boolean keepIndefinitely;
     public LocalDate uploadDate;
     public String passwordHash;
-    @Column(columnDefinition = "boolean default false")
     public boolean hidden;
 
     @PrePersist

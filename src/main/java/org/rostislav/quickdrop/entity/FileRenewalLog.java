@@ -6,22 +6,13 @@ import java.time.LocalDateTime;
 
 @Entity
 public class FileRenewalLog {
-
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "file_id", nullable = false)
     private FileEntity file;
-
-    @Column(name = "action_date", nullable = false)
     private LocalDateTime actionDate;
-
-    @Column(name = "ip_address", nullable = false)
     private String ipAddress;
-
-    @Column(name = "user_agent", nullable = true)
     private String userAgent;
 
     public FileRenewalLog() {

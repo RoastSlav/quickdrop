@@ -33,7 +33,9 @@
                     <a class="nav-link" href="/file/list">View Files</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="/admin/dashboard">Admin Dashboard</a>
+                    <a class="nav-link" href="/admin/dashboard" th:if="${isAdminDashboardButtonEnabled}">
+                        Admin Dashboard
+                    </a>
                 </li>
             </ul>
         </div>

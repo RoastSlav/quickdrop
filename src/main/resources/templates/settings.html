@@ -83,6 +83,16 @@
                            type="checkbox">
                     <label class="form-check-label" for="fileListPageEnabled">Enable File List Page</label>
                 </div>
+
+                <!-- Enable Admin Dashboard Button -->
+                <div class="form-check mb-3">
+                    <input class="form-check-input" id="adminDashboardButtonEnabled"
+                           th:field="*{adminDashboardButtonEnabled}" type="checkbox">
+                    <label class="form-check-label" for="adminDashboardButtonEnabled">Show Admin Dashboard
+                        Button</label>
+                    <br>
+                    <small class="text-muted">The Admin dashboard will still be available at /admin/dashboard</small>
+                </div>
             </div>
         </div>
 

@@ -21,6 +21,8 @@ public class ApplicationSettingsEntity {
     private long sessionLifetime;
     @Column(name = "isFileListPageEnabled", nullable = false, columnDefinition = "BOOLEAN DEFAULT TRUE")
     private boolean isFileListPageEnabled;
+    @Column(name = "isAdminDashboardButtonEnabled", nullable = false, columnDefinition = "BOOLEAN DEFAULT TRUE")
+    private boolean isAdminDashboardButtonEnabled;
 
     public ApplicationSettingsEntity() {
     }
@@ -34,6 +36,7 @@ public class ApplicationSettingsEntity {
         this.fileDeletionCron = settings.getFileDeletionCron();
         this.appPasswordEnabled = settings.isAppPasswordEnabled();
         this.isFileListPageEnabled = settings.isFileListPageEnabled();
+        this.isAdminDashboardButtonEnabled = settings.isAdminDashboardButtonEnabled();
     }
 
     public long getMaxFileSize() {
@@ -122,5 +125,13 @@ public class ApplicationSettingsEntity {
 
     public void setFileListPageEnabled(boolean fileListPageEnabled) {
         isFileListPageEnabled = fileListPageEnabled;
+    }
+
+    public boolean isAdminDashboardButtonEnabled() {
+        return isAdminDashboardButtonEnabled;
+    }
+
+    public void setAdminDashboardButtonEnabled(boolean adminDashboardButtonEnabled) {
+        isAdminDashboardButtonEnabled = adminDashboardButtonEnabled;
     }
 }

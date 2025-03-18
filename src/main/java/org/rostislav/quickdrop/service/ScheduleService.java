@@ -4,6 +4,7 @@ import jakarta.transaction.Transactional;
 import org.rostislav.quickdrop.entity.FileEntity;
 import org.rostislav.quickdrop.repository.DownloadLogRepository;
 import org.rostislav.quickdrop.repository.FileRepository;
+import org.rostislav.quickdrop.repository.ShareTokenRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -22,14 +23,16 @@ public class ScheduleService {
     private final FileService fileService;
     private final ThreadPoolTaskScheduler taskScheduler = new ThreadPoolTaskScheduler();
     private final DownloadLogRepository downloadLogRepository;
+    private final ShareTokenRepository shareTokenRepository;
     private ScheduledFuture<?> scheduledTask;
 
-    public ScheduleService(FileRepository fileRepository, FileService fileService, DownloadLogRepository downloadLogRepository) {
+    public ScheduleService(FileRepository fileRepository, FileService fileService, DownloadLogRepository downloadLogRepository, ShareTokenRepository shareTokenRepository) {
         this.fileRepository = fileRepository;
         this.fileService = fileService;
         taskScheduler.setPoolSize(1);
         taskScheduler.initialize();
         this.downloadLogRepository = downloadLogRepository;
+        this.shareTokenRepository = shareTokenRepository;
     }
 
     @Transactional
@@ -72,5 +75,16 @@ public class ScheduleService {
                 .toList();
 
         toDelete.forEach(file -> fileService.removeFileFromDatabase(file.uuid));
+    }
+
+    @Transactional
+    @Scheduled(cron = "0 30 3 * * *")
+    public void cleanShareTokens() {
+        logger.info("Cleaning invalid share tokens");
+        shareTokenRepository.getShareTokenEntitiesForDeletion().forEach(e -> {
+                    logger.info("Deleting share token: {}", e);
+                    shareTokenRepository.delete(e);
+                }
+        );
     }
 }

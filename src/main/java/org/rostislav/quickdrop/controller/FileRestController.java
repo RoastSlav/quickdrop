@@ -90,7 +90,7 @@ public class FileRestController {
     @GetMapping("/download/{uuid}/{token}")
     public ResponseEntity<StreamingResponseBody> downloadFile(@PathVariable String uuid, @PathVariable String token, HttpServletRequest request) {
         try {
-            StreamingResponseBody responseBody = fileService.streamFileAndInvalidateToken(uuid, token, request);
+            StreamingResponseBody responseBody = fileService.streamFileAndUpdateToken(uuid, token, request);
             if (responseBody == null) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
             }

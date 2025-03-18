@@ -25,10 +25,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -353,7 +350,7 @@ public class FileService {
         return passwordEncoder.matches(password, fileEntity.passwordHash);
     }
 
-    public StreamingResponseBody streamFileAndInvalidateToken(String uuid, String token, HttpServletRequest request) {
+    public StreamingResponseBody streamFileAndUpdateToken(String uuid, String token, HttpServletRequest request) {
         Optional<FileEntity> optionalFile = fileRepository.findByUUID(uuid);
         ShareTokenEntity shareTokenEntity = shareTokenRepository.getShareTokenEntityByToken(token);
 
@@ -363,50 +360,51 @@ public class FileService {
 
         FileEntity fileEntity = optionalFile.get();
         Path decryptedFilePath = Path.of(applicationSettingsService.getFileStoragePath(), fileEntity.uuid + "-decrypted");
-        Path filePathToStream;
-
-        // Decide whether to stream the decrypted file or the encrypted file
-        if (Files.exists(decryptedFilePath)) {
-            filePathToStream = decryptedFilePath;
-        } else {
-            filePathToStream = Path.of(applicationSettingsService.getFileStoragePath(), fileEntity.uuid);
-        }
+        Path filePathToStream = Files.exists(decryptedFilePath) ? decryptedFilePath : Path.of(applicationSettingsService.getFileStoragePath(), fileEntity.uuid);
 
         logDownload(fileEntity, request);
 
         return outputStream -> {
-            try (FileInputStream inputStream = new FileInputStream(filePathToStream.toFile())) {
-                byte[] buffer = new byte[1024];
-                int bytesRead;
-                while ((bytesRead = inputStream.read(buffer)) != -1) {
-                    outputStream.write(buffer, 0, bytesRead);
-                }
-                outputStream.flush();
-            } catch (Exception e) {
-                logger.error("Error streaming file for UUID: {}", uuid, e);
-                throw e;
+            try {
+                streamFile(filePathToStream, decryptedFilePath, uuid, outputStream);
             } finally {
-                // Delete the decrypted file after streaming if it exists
-                if (filePathToStream.equals(decryptedFilePath)) {
-                    try {
-                        Files.deleteIfExists(decryptedFilePath);
-                        logger.info("Deleted decrypted file after download: {}", decryptedFilePath);
-                    } catch (IOException e) {
-                        logger.error("Failed to delete decrypted file: {}", decryptedFilePath, e);
-                    }
+                updateShareTokenAfterDownload(shareTokenEntity, fileEntity);
+            }
+        };
+    }
+
+    private void streamFile(Path filePathToStream, Path decryptedFilePath, String uuid, OutputStream outputStream) throws IOException {
+        try (FileInputStream inputStream = new FileInputStream(filePathToStream.toFile())) {
+            byte[] buffer = new byte[1024];
+            int bytesRead;
+            while ((bytesRead = inputStream.read(buffer)) != -1) {
+                outputStream.write(buffer, 0, bytesRead);
+            }
+            outputStream.flush();
+        } catch (Exception e) {
+            logger.error("Error streaming file for UUID: {}", uuid, e);
+            throw e;
+        } finally {
+            // If there's a decrypted file, remove it after streaming
+            if (filePathToStream.equals(decryptedFilePath)) {
+                try {
+                    Files.deleteIfExists(decryptedFilePath);
+                    logger.info("Deleted decrypted file after download: {}", decryptedFilePath);
+                } catch (IOException e) {
+                    logger.error("Failed to delete decrypted file: {}", decryptedFilePath, e);
                 }
             }
+        }
+    }
 
-            // Update and/or delete the share token
-            shareTokenEntity.numberOfAllowedDownloads--;
-            if (!validateShareToken(shareTokenEntity)) {
-                shareTokenRepository.delete(shareTokenEntity);
-            } else {
-                shareTokenRepository.save(shareTokenEntity);
-            }
-
-            logger.info("Share token invalidated and file streamed successfully: {}", fileEntity.name);
-        };
+    private void updateShareTokenAfterDownload(ShareTokenEntity shareTokenEntity, FileEntity fileEntity) {
+        shareTokenEntity.numberOfAllowedDownloads--;
+        if (!validateShareToken(shareTokenEntity)) {
+            shareTokenRepository.delete(shareTokenEntity);
+        } else {
+            shareTokenRepository.save(shareTokenEntity);
+        }
+        logger.info("Share token updated/invalidated. File streamed successfully: {}", fileEntity.name);
     }
 
     public ResponseEntity<?> finalizeFile(String fileName, int totalChunks, String description,

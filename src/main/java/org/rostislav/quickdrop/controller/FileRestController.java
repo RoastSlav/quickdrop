@@ -2,6 +2,7 @@ package org.rostislav.quickdrop.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
 import org.rostislav.quickdrop.entity.FileEntity;
+import org.rostislav.quickdrop.entity.ShareTokenEntity;
 import org.rostislav.quickdrop.service.FileService;
 import org.rostislav.quickdrop.service.SessionService;
 import org.rostislav.quickdrop.util.FileUtils;
@@ -66,23 +67,23 @@ public class FileRestController {
     }
 
     @PostMapping("/share/{uuid}")
-    public ResponseEntity<String> generateShareableLink(@PathVariable String uuid, @RequestParam("expirationDate") LocalDate expirationDate, HttpServletRequest request) {
+    public ResponseEntity<String> generateShareableLink(@PathVariable String uuid, @RequestParam("expirationDate") LocalDate expirationDate, @RequestParam("nOfDownloads") int numberOfDownloads, HttpServletRequest request) {
         FileEntity fileEntity = fileService.getFile(uuid);
         if (fileEntity == null) {
             return ResponseEntity.badRequest().body("File not found.");
         }
 
-        String token;
+        ShareTokenEntity token;
         if (fileEntity.passwordHash != null && !fileEntity.passwordHash.isEmpty()) {
             String sessionToken = (String) request.getSession().getAttribute("file-session-token");
             if (sessionToken == null || !sessionService.validateFileSessionToken(sessionToken, uuid)) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
             }
-            token = fileService.generateShareToken(uuid, expirationDate, sessionToken);
+            token = fileService.generateShareToken(uuid, expirationDate, sessionToken, numberOfDownloads);
         } else {
-            token = fileService.generateShareToken(uuid, expirationDate);
+            token = fileService.generateShareToken(uuid, expirationDate, numberOfDownloads);
         }
-        String shareLink = FileUtils.getShareLink(request, fileEntity, token);
+        String shareLink = FileUtils.getShareLink(request, token.shareToken);
         return ResponseEntity.ok(shareLink);
     }
 

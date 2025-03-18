@@ -181,7 +181,8 @@
                         By default, this link requires a password to access the file if the file is password-protected
                         or if the app password is enabled.
                         <br>
-                        You can generate an unrestricted link valid for a specific number of days, usable once.
+                        You can generate an unrestricted link valid for a specific number of days and specific number of
+                        downloads.
                     </p>
                 </div>
 
@@ -200,9 +201,38 @@
                     <label class="form-check-label" for="unrestrictedLink">Generate an unrestricted link</label>
                 </div>
 
-                <div class="mb-3" id="daysValidContainer" style="display: none;">
-                    <label class="form-label" for="daysValid">Number of days the link will be valid:</label>
-                    <input class="form-control" id="daysValid" min="1" type="number" value="30">
+                <div class="row">
+                    <!-- Days Valid -->
+                    <div class="col-md-6">
+                        <div class="mb-3" id="daysValidContainer" style="display: none;">
+                            <label class="form-label" for="daysValid">
+                                Days the link will be valid:
+                            </label>
+                            <input
+                                    class="form-control"
+                                    id="daysValid"
+                                    min="1"
+                                    type="number"
+                                    value="30"
+                            >
+                        </div>
+                    </div>
+
+                    <!-- Allowed Downloads -->
+                    <div class="col-md-6">
+                        <div class="mb-3" id="allowedNumberOfDownloads" style="display: none;">
+                            <label class="form-label" for="allowedNumberOfDownloadsCount">
+                                Number of allowed downloads:
+                            </label>
+                            <input
+                                    class="form-control"
+                                    id="allowedNumberOfDownloadsCount"
+                                    min="1"
+                                    type="number"
+                                    value="1"
+                            >
+                        </div>
+                    </div>
                 </div>
             </div>
             <div class="modal-footer" th:if="${file.passwordHash != null || isAppPasswordSet == true}">

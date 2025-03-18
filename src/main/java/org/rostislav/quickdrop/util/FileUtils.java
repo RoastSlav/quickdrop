@@ -30,8 +30,8 @@ public class FileUtils {
         return scheme + "://" + request.getServerName() + "/file/" + fileEntity.uuid;
     }
 
-    public static String getShareLink(HttpServletRequest request, FileEntity fileEntity, String token) {
-        return request.getScheme() + "://" + request.getServerName() + "/file/share/" + fileEntity.uuid + "/" + token;
+    public static String getShareLink(HttpServletRequest request, String token) {
+        return request.getScheme() + "://" + request.getServerName() + "/file/share/" + token;
     }
 
     public static long bytesToMegabytes(long bytes) {

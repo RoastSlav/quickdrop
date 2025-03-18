@@ -19,11 +19,6 @@ public class FileEntity {
     public String passwordHash;
     @Column(columnDefinition = "boolean default false")
     public boolean hidden;
-    @Column(nullable = true)
-    public String shareToken;
-
-    @Column(nullable = true)
-    public LocalDate tokenExpirationDate;
 
     @PrePersist
     public void prePersist() {
@@ -40,7 +35,7 @@ public class FileEntity {
                 ", size=" + size +
                 ", keepIndefinitely=" + keepIndefinitely +
                 ", uploadDate=" + uploadDate +
-                ", passwordHash='" + passwordHash + '\'' +
+                ", hidden=" + hidden +
                 '}';
     }
 }

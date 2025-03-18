@@ -41,13 +41,13 @@ function openShareModal() {
     shareModal.show();
 }
 
-function generateShareLink(fileUuid, daysValid) {
+function generateShareLink(fileUuid, daysValid, allowedNumberOfDownloads) {
     const csrfToken = document.querySelector('meta[name="_csrf"]').content;
     const expirationDate = new Date();
     expirationDate.setDate(expirationDate.getDate() + daysValid);
     const expirationDateStr = expirationDate.toISOString().split('T')[0];
 
-    return fetch(`/api/file/share/${fileUuid}?expirationDate=${expirationDateStr}`, {
+    return fetch(`/api/file/share/${fileUuid}?expirationDate=${expirationDateStr}&nOfDownloads=${allowedNumberOfDownloads}`, {
         method: 'POST',
         credentials: 'same-origin',
         headers: {
@@ -77,9 +77,16 @@ function createShareLink() {
     const fileUuid = document.getElementById('fileUuid').textContent.trim();
     const daysValidInput = document.getElementById('daysValid');
     const daysValid = parseInt(daysValidInput.value, 10);
+    const allowedNumberOfDownloadsInput = document.getElementById('allowedNumberOfDownloadsCount');
+    const allowedNumberOfDownloads = parseInt(allowedNumberOfDownloadsInput.value, 10);
 
     if (isNaN(daysValid) || daysValid < 1) {
         alert("Please enter a valid number of days.");
+        return;
+    }
+
+    if (isNaN(allowedNumberOfDownloads) || allowedNumberOfDownloads < 1) {
+        alert("Please enter a valid number of downloads.");
         return;
     }
 
@@ -89,7 +96,7 @@ function createShareLink() {
     spinner.style.display = 'inline-block';
     generateLinkButton.disabled = true;
 
-    generateShareLink(fileUuid, daysValid)
+    generateShareLink(fileUuid, daysValid, allowedNumberOfDownloads)
         .then((shareLink) => {
             updateShareLink(shareLink); // Update with the token-based link
         })
@@ -116,12 +123,15 @@ function toggleLinkType() {
     const unrestrictedLinkCheckbox = document.getElementById('unrestrictedLink');
     const daysValidContainer = document.getElementById('daysValidContainer');
     const generateLinkButton = document.getElementById('generateLinkButton');
+    const allowedNumberOfDownloads = document.getElementById('allowedNumberOfDownloads');
 
     if (unrestrictedLinkCheckbox.checked) {
         daysValidContainer.style.display = 'block';
+        allowedNumberOfDownloads.style.display = 'block';
         generateLinkButton.disabled = false;
     } else {
         daysValidContainer.style.display = 'none';
+        allowedNumberOfDownloads.style.display = 'none';
         generateLinkButton.disabled = true;
         initializeModal();
     }

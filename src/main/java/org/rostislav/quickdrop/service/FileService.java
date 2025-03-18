@@ -5,11 +5,13 @@ import jakarta.transaction.Transactional;
 import org.rostislav.quickdrop.entity.DownloadLog;
 import org.rostislav.quickdrop.entity.FileEntity;
 import org.rostislav.quickdrop.entity.FileRenewalLog;
+import org.rostislav.quickdrop.entity.ShareTokenEntity;
 import org.rostislav.quickdrop.model.FileEntityView;
 import org.rostislav.quickdrop.model.FileUploadRequest;
 import org.rostislav.quickdrop.repository.DownloadLogRepository;
 import org.rostislav.quickdrop.repository.FileRepository;
 import org.rostislav.quickdrop.repository.RenewalLogRepository;
+import org.rostislav.quickdrop.repository.ShareTokenRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Lazy;
@@ -52,9 +54,10 @@ public class FileService {
     private final SessionService sessionService;
     private final RenewalLogRepository renewalLogRepository;
     private final FileEncryptionService fileEncryptionService;
+    private final ShareTokenRepository shareTokenRepository;
 
     @Lazy
-    public FileService(FileRepository fileRepository, PasswordEncoder passwordEncoder, ApplicationSettingsService applicationSettingsService, DownloadLogRepository downloadLogRepository, SessionService sessionService, RenewalLogRepository renewalLogRepository, FileEncryptionService fileEncryptionService) {
+    public FileService(FileRepository fileRepository, PasswordEncoder passwordEncoder, ApplicationSettingsService applicationSettingsService, DownloadLogRepository downloadLogRepository, SessionService sessionService, RenewalLogRepository renewalLogRepository, FileEncryptionService fileEncryptionService, ShareTokenRepository shareTokenRepository) {
         this.fileRepository = fileRepository;
         this.passwordEncoder = passwordEncoder;
         this.applicationSettingsService = applicationSettingsService;
@@ -62,6 +65,7 @@ public class FileService {
         this.sessionService = sessionService;
         this.renewalLogRepository = renewalLogRepository;
         this.fileEncryptionService = fileEncryptionService;
+        this.shareTokenRepository = shareTokenRepository;
     }
 
     private static StreamingResponseBody getStreamingResponseBody(Path outputFile, FileEntity fileEntity) {
@@ -335,18 +339,8 @@ public class FileService {
     }
 
 
-    public boolean validateShareToken(String uuid, String token) {
-        Optional<FileEntity> optionalFile = fileRepository.findByUUID(uuid);
-        if (optionalFile.isEmpty()) {
-            return false;
-        }
-
-        FileEntity file = optionalFile.get();
-        if (!token.equals(file.shareToken)) {
-            return false;
-        }
-
-        return file.tokenExpirationDate == null || !LocalDate.now().isAfter(file.tokenExpirationDate);
+    public boolean validateShareToken(ShareTokenEntity token) {
+        return (token.tokenExpirationDate == null || !LocalDate.now().isAfter(token.tokenExpirationDate)) && token.numberOfAllowedDownloads > 0;
     }
 
     public boolean checkFilePassword(String uuid, String password) {
@@ -361,8 +355,9 @@ public class FileService {
 
     public StreamingResponseBody streamFileAndInvalidateToken(String uuid, String token, HttpServletRequest request) {
         Optional<FileEntity> optionalFile = fileRepository.findByUUID(uuid);
+        ShareTokenEntity shareTokenEntity = shareTokenRepository.getShareTokenEntityByToken(token);
 
-        if (optionalFile.isEmpty() || !validateShareToken(uuid, token)) {
+        if (optionalFile.isEmpty() || !validateShareToken(shareTokenEntity)) {
             return null;
         }
 
@@ -402,10 +397,13 @@ public class FileService {
                 }
             }
 
-            // Invalidate the share token
-            fileEntity.shareToken = null;
-            fileEntity.tokenExpirationDate = null;
-            fileRepository.save(fileEntity);
+            // Update and/or delete the share token
+            shareTokenEntity.numberOfAllowedDownloads--;
+            if (!validateShareToken(shareTokenEntity)) {
+                shareTokenRepository.delete(shareTokenEntity);
+            } else {
+                shareTokenRepository.save(shareTokenEntity);
+            }
 
             logger.info("Share token invalidated and file streamed successfully: {}", fileEntity.name);
         };
@@ -491,7 +489,7 @@ public class FileService {
         renewalLogRepository.save(fileRenewalLog);
     }
 
-    public String generateShareToken(String uuid, LocalDate tokenExpirationDate) {
+    public ShareTokenEntity generateShareToken(String uuid, LocalDate tokenExpirationDate, int numberOfDownloads) {
         Optional<FileEntity> optionalFile = fileRepository.findByUUID(uuid);
         if (optionalFile.isEmpty()) {
             throw new IllegalArgumentException("File not found");
@@ -499,14 +497,13 @@ public class FileService {
         FileEntity file = optionalFile.get();
 
         String token = UUID.randomUUID().toString();
-        file.shareToken = token;
-        file.tokenExpirationDate = tokenExpirationDate;
-        fileRepository.save(file);
+        ShareTokenEntity shareToken = new ShareTokenEntity(token, file, tokenExpirationDate, numberOfDownloads);
+        shareTokenRepository.save(shareToken);
 
-        return token;
+        return shareToken;
     }
 
-    public String generateShareToken(String uuid, LocalDate tokenExpirationDate, String sessionToken) {
+    public ShareTokenEntity generateShareToken(String uuid, LocalDate tokenExpirationDate, String sessionToken, int numberOfDownloads) {
         Optional<FileEntity> optionalFile = fileRepository.findByUUID(uuid);
         if (optionalFile.isEmpty()) {
             throw new IllegalArgumentException("File not found");
@@ -529,13 +526,15 @@ public class FileService {
         }
 
         // Generate the share token
-        String token = UUID.randomUUID().toString();
-        file.shareToken = token;
-        file.tokenExpirationDate = tokenExpirationDate;
-        fileRepository.save(file);
+        ShareTokenEntity shareToken = generateShareToken(uuid, tokenExpirationDate, numberOfDownloads);
+        shareTokenRepository.save(shareToken);
 
         logger.info("Share token generated for file: {}", file.name);
-        return token;
+        return shareToken;
+    }
+
+    public ShareTokenEntity getShareTokenEntityByToken(String token) {
+        return shareTokenRepository.getShareTokenEntityByToken(token);
     }
 
     private record RequesterInfo(String ipAddress, String userAgent) {

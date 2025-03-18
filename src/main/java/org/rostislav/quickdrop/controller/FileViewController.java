@@ -5,6 +5,7 @@ import jakarta.servlet.http.HttpSession;
 import org.rostislav.quickdrop.entity.DownloadLog;
 import org.rostislav.quickdrop.entity.FileEntity;
 import org.rostislav.quickdrop.entity.FileRenewalLog;
+import org.rostislav.quickdrop.entity.ShareTokenEntity;
 import org.rostislav.quickdrop.model.FileActionLogDTO;
 import org.rostislav.quickdrop.model.FileEntityView;
 import org.rostislav.quickdrop.service.AnalyticsService;
@@ -158,19 +159,21 @@ public class FileViewController {
         return "redirect:/file/list";
     }
 
-    @GetMapping("/share/{uuid}/{token}")
-    public String viewSharedFile(@PathVariable String uuid, @PathVariable String token, Model model) {
-        if (!fileService.validateShareToken(uuid, token)) {
+    @GetMapping("/share/{token}")
+    public String viewSharedFile(@PathVariable String token, Model model) {
+        ShareTokenEntity tokenEntity = fileService.getShareTokenEntityByToken(token);
+
+        if (!fileService.validateShareToken(tokenEntity)) {
             return "invalid-share-link";
         }
 
-        FileEntity file = fileService.getFile(uuid);
+        FileEntity file = fileService.getFile(tokenEntity.file.uuid);
         if (file == null) {
             return "redirect:/file/list";
         }
 
-        model.addAttribute("file", new FileEntityView(file, analyticsService.getTotalDownloadsByFile(uuid)));
-        model.addAttribute("downloadLink", "/api/file/download/" + uuid + "/" + token);
+        model.addAttribute("file", new FileEntityView(file, analyticsService.getTotalDownloadsByFile(file.uuid)));
+        model.addAttribute("downloadLink", "/api/file/download/" + file.uuid + "/" + token);
 
         return "file-share-view";
     }

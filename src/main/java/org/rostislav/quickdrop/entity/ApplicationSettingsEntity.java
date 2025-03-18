@@ -21,7 +21,6 @@ public class ApplicationSettingsEntity {
     private long sessionLifetime;
     @Column(name = "isFileListPageEnabled", nullable = false, columnDefinition = "BOOLEAN DEFAULT TRUE")
     private boolean isFileListPageEnabled;
-    @Column(name = "isAdminDashboardButtonEnabled", nullable = false, columnDefinition = "BOOLEAN DEFAULT TRUE")
     private boolean isAdminDashboardButtonEnabled;
 
     public ApplicationSettingsEntity() {

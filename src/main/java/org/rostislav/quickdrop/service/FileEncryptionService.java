@@ -22,13 +22,14 @@ public class FileEncryptionService {
     private static final String ALGORITHM = "AES/CBC/PKCS5Padding";
     private static final String KEY_DERIVATION_ALGORITHM = "PBKDF2WithHmacSHA256";
     private static final int ITERATION_COUNT = 65536;
-    private static final int KEY_LENGTH = 256;
+    private static final int KEY_LENGTH = 128;
 
     public SecretKey generateKeyFromPassword(String password, byte[] salt)
             throws NoSuchAlgorithmException, InvalidKeySpecException {
         PBEKeySpec spec = new PBEKeySpec(password.toCharArray(), salt, ITERATION_COUNT, KEY_LENGTH);
-        SecretKeyFactory keyFactory = SecretKeyFactory.getInstance(KEY_DERIVATION_ALGORITHM);
-        return new SecretKeySpec(keyFactory.generateSecret(spec).getEncoded(), "AES");
+        SecretKeyFactory keyFactory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
+        byte[] keyBytes = keyFactory.generateSecret(spec).getEncoded();
+        return new SecretKeySpec(keyBytes, "AES");
     }
 
     private byte[] generateRandomBytes() {

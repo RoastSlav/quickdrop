@@ -568,6 +568,7 @@ public class FileService {
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + URLEncoder.encode(fileEntity.name, StandardCharsets.UTF_8) + "\"")
                 .header(HttpHeaders.CONTENT_TYPE, "application/octet-stream")
                 .header(HttpHeaders.CONTENT_LENGTH, String.valueOf(resource.contentLength()))
+                .header("X-Accel-Buffering", "no")
                 .body(responseBody);
     }
 

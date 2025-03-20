@@ -19,5 +19,6 @@ public class GlobalControllerAdvice {
         model.addAttribute("isFileListPageEnabled", applicationSettingsService.isFileListPageEnabled());
         model.addAttribute("isAppPasswordSet", applicationSettingsService.isAppPasswordEnabled());
         model.addAttribute("isAdminDashboardButtonEnabled", applicationSettingsService.isAdminDashboardButtonEnabled());
+        model.addAttribute("isEncryptionEnabled", applicationSettingsService.isEncryptionEnabled());
     }
 }

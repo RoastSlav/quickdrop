@@ -1,12 +1,15 @@
 package org.rostislav.quickdrop.entity;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import org.rostislav.quickdrop.model.ApplicationSettingsViewModel;
 
 @Entity
 public class ApplicationSettingsEntity {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private long maxFileSize;
     private long maxFileLifeTime;
@@ -19,6 +22,7 @@ public class ApplicationSettingsEntity {
     private long sessionLifetime;
     private boolean isFileListPageEnabled;
     private boolean isAdminDashboardButtonEnabled;
+    private boolean disableEncryption;
 
     public ApplicationSettingsEntity() {
     }
@@ -33,6 +37,7 @@ public class ApplicationSettingsEntity {
         this.appPasswordEnabled = settings.isAppPasswordEnabled();
         this.isFileListPageEnabled = settings.isFileListPageEnabled();
         this.isAdminDashboardButtonEnabled = settings.isAdminDashboardButtonEnabled();
+        this.disableEncryption = settings.isEncryptionDisabled();
     }
 
     public long getMaxFileSize() {
@@ -129,5 +134,13 @@ public class ApplicationSettingsEntity {
 
     public void setAdminDashboardButtonEnabled(boolean adminDashboardButtonEnabled) {
         isAdminDashboardButtonEnabled = adminDashboardButtonEnabled;
+    }
+
+    public boolean isDisableEncryption() {
+        return disableEncryption;
+    }
+
+    public void setDisableEncryption(boolean disableEncryption) {
+        this.disableEncryption = disableEncryption;
     }
 }

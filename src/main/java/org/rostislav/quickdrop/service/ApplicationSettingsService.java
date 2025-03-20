@@ -36,6 +36,7 @@ public class ApplicationSettingsService {
             settings.setSessionLifetime(30);
             settings.setFileListPageEnabled(true);
             settings.setAdminDashboardButtonEnabled(true);
+            settings.setDisableEncryption(false);
             settings = applicationSettingsRepository.save(settings);
             scheduleService.updateSchedule(settings.getFileDeletionCron(), settings.getMaxFileLifeTime());
             return settings;
@@ -56,6 +57,7 @@ public class ApplicationSettingsService {
         applicationSettingsEntity.setSessionLifetime(settings.getSessionLifeTime());
         applicationSettingsEntity.setFileListPageEnabled(settings.isFileListPageEnabled());
         applicationSettingsEntity.setAdminDashboardButtonEnabled(settings.isAdminDashboardButtonEnabled());
+        applicationSettingsEntity.setDisableEncryption(settings.isEncryptionDisabled());
 
         if (appPassword != null && !appPassword.isEmpty()) {
             applicationSettingsEntity.setAppPasswordEnabled(settings.isAppPasswordEnabled());
@@ -134,5 +136,9 @@ public class ApplicationSettingsService {
 
     public boolean isAdminDashboardButtonEnabled() {
         return applicationSettings.isAdminDashboardButtonEnabled();
+    }
+
+    public boolean isEncryptionEnabled() {
+        return !applicationSettings.isDisableEncryption();
     }
 }

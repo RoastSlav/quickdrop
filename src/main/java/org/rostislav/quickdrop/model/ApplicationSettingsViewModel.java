@@ -15,6 +15,7 @@ public class ApplicationSettingsViewModel {
     private long sessionLifeTime;
     private boolean isFileListPageEnabled;
     private boolean isAdminDashboardButtonEnabled;
+    private boolean encryptionDisabled;
 
     public ApplicationSettingsViewModel() {
     }
@@ -30,6 +31,7 @@ public class ApplicationSettingsViewModel {
         this.sessionLifeTime = settings.getSessionLifetime();
         this.isFileListPageEnabled = settings.isFileListPageEnabled();
         this.isAdminDashboardButtonEnabled = settings.isAdminDashboardButtonEnabled();
+        this.encryptionDisabled = settings.isDisableEncryption();
     }
 
     public Long getId() {
@@ -118,5 +120,13 @@ public class ApplicationSettingsViewModel {
 
     public void setAdminDashboardButtonEnabled(boolean adminDashboardButtonEnabled) {
         isAdminDashboardButtonEnabled = adminDashboardButtonEnabled;
+    }
+
+    public boolean isEncryptionDisabled() {
+        return encryptionDisabled;
+    }
+
+    public void setEncryptionDisabled(boolean encryptionDisabled) {
+        this.encryptionDisabled = encryptionDisabled;
     }
 }

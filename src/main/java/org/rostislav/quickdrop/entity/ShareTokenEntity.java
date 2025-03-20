@@ -7,6 +7,7 @@ import java.time.LocalDate;
 @Entity
 public class ShareTokenEntity {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "file_id", nullable = false)

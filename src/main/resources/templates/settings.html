@@ -107,12 +107,27 @@
                     <input class="form-check-input" id="appPasswordEnabled" onclick="togglePasswordField()"
                            th:field="*{appPasswordEnabled}" type="checkbox">
                     <label class="form-check-label">Enable Password Protection</label>
+                    <br>
+                    <small class="text-muted">
+                        Protect the whole app with a password
+                    </small>
                 </div>
 
                 <!-- App Password -->
                 <div class="mb-3" id="passwordInputGroup" style="display: none;">
                     <label class="form-label">App Password</label>
                     <input class="form-control" th:field="*{appPassword}" type="password">
+                </div>
+
+                <!-- Disable Encryption -->
+                <div class="form-check mb-3">
+                    <input class="form-check-input" id="encryptionDisabled" th:field="*{encryptionDisabled}"
+                           type="checkbox">
+                    <label class="form-check-label" for="encryptionDisabled">Disable File Encryption</label>
+                    <br>
+                    <small class="text-muted">
+                        If checked, files will not be encrypted even if the file is password protected is enabled.
+                    </small>
                 </div>
             </div>
         </div>

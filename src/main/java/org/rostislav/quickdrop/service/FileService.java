@@ -166,8 +166,7 @@ public class FileService {
 
         FileEntity fileEntity = populateFileEntity(file, fileUploadRequest, uuid);
 
-        boolean isEncrypted = fileUploadRequest.password != null && !fileUploadRequest.password.isBlank();
-        if (isEncrypted) {
+        if (fileEntity.encrypted) {
             if (!saveEncryptedFile(targetPath, file, fileUploadRequest)) return null;
         } else {
             if (!moveAndRenameUnencryptedFile(file, targetPath)) return null;
@@ -189,6 +188,7 @@ public class FileService {
         fileEntity.size = file.length();
         fileEntity.keepIndefinitely = request.keepIndefinitely;
         fileEntity.hidden = request.hidden;
+        fileEntity.encrypted = request.password != null && !request.password.isBlank() && applicationSettingsService.isEncryptionEnabled();
 
         if (request.password != null && !request.password.isBlank()) {
             fileEntity.passwordHash = passwordEncoder.encode(request.password);
@@ -543,7 +543,7 @@ public class FileService {
     }
 
     private Path decryptFileIfNeeded(FileEntity fileEntity, Path filePath, String password) {
-        if (fileEntity.passwordHash == null) {
+        if (!fileEntity.encrypted) {
             return filePath;
         }
         try {

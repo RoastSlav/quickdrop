@@ -119,7 +119,7 @@ To update the app, you need to:
 2. Pull the new image.
 3. Start the updated container.
 
-If you want to ensure file and database persistence between updates, you can use Docker volumes. (Check docker instalation above)
+If you want to ensure file and database persistence between updates, you can use Docker volumes. (Check docker installation above)
 
 ## License
 

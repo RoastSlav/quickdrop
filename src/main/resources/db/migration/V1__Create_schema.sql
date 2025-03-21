@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS application_settings_entity
     app_password_enabled  BOOLEAN,
     app_password_hash     VARCHAR(255),
     admin_password_hash   VARCHAR(255),
-    sessionLifetime       BIGINT  DEFAULT 30,
+    session_lifetime BIGINT DEFAULT 30,
     is_file_list_page_enabled BOOLEAN DEFAULT TRUE
 );
 

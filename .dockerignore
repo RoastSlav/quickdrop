@@ -1,0 +1,8 @@
+README.md
+LICENSE
+target
+docker-compose.yml
+Jenkinsfile
+Dockerfile
+mvnw
+mvnw.cmd

@@ -1,5 +1,6 @@
 package org.rostislav.quickdrop.repository;
 
+import jakarta.transaction.Transactional;
 import org.rostislav.quickdrop.entity.DownloadLog;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -17,6 +18,7 @@ public interface DownloadLogRepository extends JpaRepository<DownloadLog, Long> 
     List<DownloadLog> findByFileUuid(String fileUUID);
 
     @Modifying
+    @Transactional
     @Query("DELETE FROM DownloadLog dl WHERE dl.file.id = :id")
     void deleteByFileId(Long id);
 }

@@ -56,8 +56,8 @@ public class ScheduleService {
             logger.info("Deleting file: {}", file);
             boolean deleted = fileService.deleteFileFromFileSystem(file.uuid);
             if (deleted) {
-                fileRepository.delete(file);
                 downloadLogRepository.deleteByFileId(file.id);
+                fileRepository.delete(file);
             } else {
                 logger.error("Failed to delete file: {}", file);
             }

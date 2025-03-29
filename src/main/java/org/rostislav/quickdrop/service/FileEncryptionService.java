@@ -6,10 +6,7 @@ import javax.crypto.*;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
@@ -27,7 +24,7 @@ public class FileEncryptionService {
     public SecretKey generateKeyFromPassword(String password, byte[] salt)
             throws NoSuchAlgorithmException, InvalidKeySpecException {
         PBEKeySpec spec = new PBEKeySpec(password.toCharArray(), salt, ITERATION_COUNT, KEY_LENGTH);
-        SecretKeyFactory keyFactory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
+        SecretKeyFactory keyFactory = SecretKeyFactory.getInstance(KEY_DERIVATION_ALGORITHM);
         byte[] keyBytes = keyFactory.generateSecret(spec).getEncoded();
         return new SecretKeySpec(keyBytes, "AES");
     }
@@ -36,30 +33,6 @@ public class FileEncryptionService {
         byte[] bytes = new byte[16];
         new SecureRandom().nextBytes(bytes);
         return bytes;
-    }
-
-    public void encryptFile(File inputFile, File outputFile, String password) throws NoSuchAlgorithmException, InvalidKeySpecException, NoSuchPaddingException, IOException, InvalidAlgorithmParameterException, InvalidKeyException {
-        byte[] salt = generateRandomBytes();
-        byte[] iv = generateRandomBytes();
-        SecretKey secretKey = generateKeyFromPassword(password, salt);
-        IvParameterSpec ivSpec = new IvParameterSpec(iv);
-
-        Cipher cipher = Cipher.getInstance(ALGORITHM);
-        cipher.init(Cipher.ENCRYPT_MODE, secretKey, ivSpec);
-
-        try (FileOutputStream fos = new FileOutputStream(outputFile);
-             CipherOutputStream cos = new CipherOutputStream(fos, cipher);
-             FileInputStream fis = new FileInputStream(inputFile)) {
-
-            fos.write(salt);
-            fos.write(iv);
-
-            byte[] buffer = new byte[8192];
-            int bytesRead;
-            while ((bytesRead = fis.read(buffer)) != -1) {
-                cos.write(buffer, 0, bytesRead);
-            }
-        }
     }
 
     @SuppressWarnings("ResultOfMethodCallIgnored")
@@ -86,5 +59,37 @@ public class FileEncryptionService {
                 }
             }
         }
+    }
+
+    public InputStream getDecryptedInputStream(File inputFile, String password) throws Exception {
+        FileInputStream fis = new FileInputStream(inputFile);
+        byte[] salt = new byte[16];
+        byte[] iv = new byte[16];
+
+        fis.read(salt);
+        fis.read(iv);
+        IvParameterSpec ivSpec = new IvParameterSpec(iv);
+        SecretKey secretKey = generateKeyFromPassword(password, salt);
+
+        Cipher cipher = Cipher.getInstance(ALGORITHM);
+        cipher.init(Cipher.DECRYPT_MODE, secretKey, ivSpec);
+        CipherInputStream cipherInputStream = new CipherInputStream(fis, cipher);
+        return cipherInputStream;
+    }
+
+    public OutputStream getEncryptedOutputStream(File finalFile, String password) throws Exception {
+        FileOutputStream fos = new FileOutputStream(finalFile, true);
+        byte[] salt = generateRandomBytes();
+        byte[] iv = generateRandomBytes();
+
+        fos.write(salt);
+        fos.write(iv);
+
+        SecretKey secretKey = generateKeyFromPassword(password, salt);
+        IvParameterSpec ivSpec = new IvParameterSpec(iv);
+        Cipher cipher = Cipher.getInstance(ALGORITHM);
+
+        cipher.init(Cipher.ENCRYPT_MODE, secretKey, ivSpec);
+        return new CipherOutputStream(fos, cipher);
     }
 }

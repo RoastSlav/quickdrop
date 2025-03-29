@@ -3,6 +3,8 @@ package org.rostislav.quickdrop.controller;
 import jakarta.servlet.http.HttpServletRequest;
 import org.rostislav.quickdrop.entity.FileEntity;
 import org.rostislav.quickdrop.entity.ShareTokenEntity;
+import org.rostislav.quickdrop.model.FileUploadRequest;
+import org.rostislav.quickdrop.service.AsyncFileMergeService;
 import org.rostislav.quickdrop.service.FileService;
 import org.rostislav.quickdrop.service.SessionService;
 import org.rostislav.quickdrop.util.FileUtils;
@@ -16,8 +18,8 @@ import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBo
 
 import java.io.IOException;
 import java.time.LocalDate;
-import java.util.HashMap;
-import java.util.Map;
+
+import static org.springframework.http.ResponseEntity.ok;
 
 @RestController
 @RequestMapping("/api/file")
@@ -25,10 +27,12 @@ public class FileRestController {
     private static final Logger logger = LoggerFactory.getLogger(FileRestController.class);
     private final FileService fileService;
     private final SessionService sessionService;
+    private final AsyncFileMergeService asyncFileMergeService;
 
-    public FileRestController(FileService fileService, SessionService sessionService) {
+    public FileRestController(FileService fileService, SessionService sessionService, AsyncFileMergeService asyncFileMergeService) {
         this.fileService = fileService;
         this.sessionService = sessionService;
+        this.asyncFileMergeService = asyncFileMergeService;
     }
 
     @PostMapping("/upload-chunk")
@@ -37,33 +41,27 @@ public class FileRestController {
             @RequestParam("fileName") String fileName,
             @RequestParam("chunkNumber") int chunkNumber,
             @RequestParam("totalChunks") int totalChunks,
+            @RequestParam(value = "fileSize", required = false) Long fileSize,
             @RequestParam(value = "description", required = false) String description,
             @RequestParam(value = "keepIndefinitely", defaultValue = "false") Boolean keepIndefinitely,
             @RequestParam(value = "password", required = false) String password,
             @RequestParam(value = "hidden", defaultValue = "false") Boolean hidden) {
+
         if (chunkNumber == 0) {
             logger.info("Upload started for file: {}", fileName);
         }
 
         try {
-            logger.info("Saving chunk {} of {}", chunkNumber, totalChunks);
-            fileService.saveFileChunk(file, fileName, chunkNumber);
+            logger.info("Submitting chunk {} of {} for file: {}", chunkNumber, totalChunks, fileName);
 
-            if (chunkNumber + 1 == totalChunks) {
-                logger.info("All chunks uploaded for file: {} - Finalizing", fileName);
-                return fileService.finalizeFile(fileName, totalChunks, description, keepIndefinitely, password, hidden);
-            }
-
+            FileUploadRequest fileUploadRequest = new FileUploadRequest(description, keepIndefinitely, password, hidden, fileName, totalChunks, fileSize);
+            FileEntity fileEntity = asyncFileMergeService.submitChunk(fileUploadRequest, file, chunkNumber);
+            return ResponseEntity.ok(fileEntity);
         } catch (IOException e) {
-            fileService.deleteChunkFilesFromTemp(fileName);
-            fileService.deleteFullFileFromTemp(fileName);
+            logger.error("Error processing chunk {} for file {}: {}", chunkNumber, fileName, e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("{\"error\": \"Error processing chunk\"}");
         }
-
-        Map<String, String> response = new HashMap<>();
-        response.put("message", "Chunk " + chunkNumber + " uploaded successfully");
-        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/share/{uuid}")
@@ -84,7 +82,7 @@ public class FileRestController {
             token = fileService.generateShareToken(uuid, expirationDate, numberOfDownloads);
         }
         String shareLink = FileUtils.getShareLink(request, token.shareToken);
-        return ResponseEntity.ok(shareLink);
+        return ok(shareLink);
     }
 
     @GetMapping("/download/{uuid}/{token}")
@@ -97,7 +95,7 @@ public class FileRestController {
 
             FileEntity fileEntity = fileService.getFile(uuid);
 
-            return ResponseEntity.ok()
+            return ok()
                     .header("Content-Disposition", "attachment; filename=\"" + fileEntity.name + "\"")
                     .header("Content-Type", "application/octet-stream")
                     .body(responseBody);

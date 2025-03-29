@@ -76,7 +76,7 @@ function startChunkUpload() {
         const end = Math.min(start + chunkSize, file.size);
         const chunk = file.slice(start, end);
 
-        const formData = buildChunkFormData(chunk, currentChunk, file.name, totalChunks);
+        const formData = buildChunkFormData(chunk, currentChunk, file.name, totalChunks, file.size);
 
         const xhr = new XMLHttpRequest();
         xhr.open("POST", "/api/file/upload-chunk", true);
@@ -140,7 +140,7 @@ function startChunkUpload() {
     uploadNextChunk();
 }
 
-function buildChunkFormData(chunk, chunkNumber, fileName, totalChunks) {
+function buildChunkFormData(chunk, chunkNumber, fileName, totalChunks, fileSize) {
     const uploadForm = document.getElementById("uploadForm");
     const formData = new FormData();
 
@@ -149,6 +149,7 @@ function buildChunkFormData(chunk, chunkNumber, fileName, totalChunks) {
     formData.append("fileName", fileName);
     formData.append("chunkNumber", chunkNumber);
     formData.append("totalChunks", totalChunks);
+    formData.append("fileSize", fileSize);
 
     // Keep Indefinitely + hidden
     const keepIndefinitelyCheckbox = document.getElementById("keepIndefinitely");

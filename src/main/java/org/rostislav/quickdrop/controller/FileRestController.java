@@ -41,6 +41,7 @@ public class FileRestController {
             @RequestParam("fileName") String fileName,
             @RequestParam("chunkNumber") int chunkNumber,
             @RequestParam("totalChunks") int totalChunks,
+            @RequestParam(value = "fileSize", required = false) Long fileSize,
             @RequestParam(value = "description", required = false) String description,
             @RequestParam(value = "keepIndefinitely", defaultValue = "false") Boolean keepIndefinitely,
             @RequestParam(value = "password", required = false) String password,
@@ -53,7 +54,7 @@ public class FileRestController {
         try {
             logger.info("Submitting chunk {} of {} for file: {}", chunkNumber, totalChunks, fileName);
 
-            FileUploadRequest fileUploadRequest = new FileUploadRequest(description, keepIndefinitely, password, hidden, fileName, totalChunks);
+            FileUploadRequest fileUploadRequest = new FileUploadRequest(description, keepIndefinitely, password, hidden, fileName, totalChunks, fileSize);
             FileEntity fileEntity = asyncFileMergeService.submitChunk(fileUploadRequest, file, chunkNumber);
             return ResponseEntity.ok(fileEntity);
         } catch (IOException e) {

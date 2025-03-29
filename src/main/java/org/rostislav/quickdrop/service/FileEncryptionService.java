@@ -61,6 +61,22 @@ public class FileEncryptionService {
         }
     }
 
+    public InputStream getDecryptedInputStream(File inputFile, String password) throws Exception {
+        FileInputStream fis = new FileInputStream(inputFile);
+        byte[] salt = new byte[16];
+        byte[] iv = new byte[16];
+
+        fis.read(salt);
+        fis.read(iv);
+        IvParameterSpec ivSpec = new IvParameterSpec(iv);
+        SecretKey secretKey = generateKeyFromPassword(password, salt);
+
+        Cipher cipher = Cipher.getInstance(ALGORITHM);
+        cipher.init(Cipher.DECRYPT_MODE, secretKey, ivSpec);
+        CipherInputStream cipherInputStream = new CipherInputStream(fis, cipher);
+        return cipherInputStream;
+    }
+
     public OutputStream getEncryptedOutputStream(File finalFile, String password) throws Exception {
         FileOutputStream fos = new FileOutputStream(finalFile, true);
         byte[] salt = generateRandomBytes();

@@ -50,6 +50,7 @@ function onUploadFormSubmit(event) {
     startChunkUpload();
 }
 
+
 function startChunkUpload() {
     const file = document.getElementById("file").files[0];
     if (!file) {
@@ -88,33 +89,37 @@ function startChunkUpload() {
 
         xhr.onload = () => {
             if (xhr.status === 200) {
-                try {
-                    const response = JSON.parse(xhr.responseText);
-                    currentChunk++;
-                    const percentComplete = (currentChunk / totalChunks) * 100;
-                    progressBar.style.width = percentComplete + "%";
-                    progressBar.setAttribute("aria-valuenow", percentComplete);
+                // If responseText is empty (null response), ignore it.
+                let response = null;
+                if (xhr.responseText && xhr.responseText.trim().length > 0) {
+                    try {
+                        response = JSON.parse(xhr.responseText);
+                    } catch (e) {
+                        console.warn("Failed to parse server response:", e);
+                    }
+                }
 
-                    if (currentChunk < totalChunks) {
-                        // If chunks remain, keep uploading
-                        if (currentChunk === totalChunks - 1 && document.getElementById("password").value.trim()) {
-                            document.getElementById("uploadStatus").innerText = "Upload complete. Encrypting...";
-                        }
-                        uploadNextChunk();
+                currentChunk++;
+                const percentComplete = (currentChunk / totalChunks) * 100;
+                progressBar.style.width = percentComplete + "%";
+                progressBar.setAttribute("aria-valuenow", percentComplete);
+
+                if (currentChunk < totalChunks) {
+                    // Continue uploading remaining chunks.
+                    if (currentChunk === totalChunks - 1 && document.getElementById("password").value.trim()) {
+                        document.getElementById("uploadStatus").innerText = "Upload complete. Encrypting...";
+                    }
+                    uploadNextChunk();
+                } else {
+                    // Final chunk response handling.
+                    document.getElementById("uploadStatus").innerText = "Upload complete.";
+                    if (response && response.uuid) {
+                        window.location.href = "/file/" + response.uuid;
                     } else {
-                        // Final chunk: check response
-                        document.getElementById("uploadStatus").innerText = "Upload complete.";
-                        if (response.uuid) {
-                            window.location.href = "/file/" + response.uuid;
-                        } else {
-                            showMessage("danger", "Upload finished but no UUID returned from server.");
-                        }
+                        // No file entity returned; warn the user.
+                        showMessage("warning", "Upload finished but no file information was returned from the server.");
                         isUploading = false;
                     }
-                } catch (err) {
-                    console.error(err);
-                    showMessage("danger", "Unexpected server response. Please try again.");
-                    resetUploadUI();
                 }
             } else {
                 console.error("Upload error:", xhr.responseText);
@@ -131,7 +136,7 @@ function startChunkUpload() {
         xhr.send(formData);
     }
 
-    // Begin
+    // Begin the upload process.
     uploadNextChunk();
 }
 

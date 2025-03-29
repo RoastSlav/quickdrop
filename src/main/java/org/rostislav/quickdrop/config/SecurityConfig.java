@@ -30,8 +30,8 @@ import java.util.List;
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
-    private final ApplicationSettingsService applicationSettingsService;
     private static final Logger logger = LoggerFactory.getLogger(SecurityConfig.class);
+    private final ApplicationSettingsService applicationSettingsService;
 
     public SecurityConfig(ApplicationSettingsService applicationSettingsService) {
         this.applicationSettingsService = applicationSettingsService;

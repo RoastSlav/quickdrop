@@ -9,8 +9,8 @@ public class DataValidator {
         for (Object temp : objs) {
             if (temp != null) {
                 if (temp instanceof String value && value.trim().isEmpty()) {
-                        return false;
-                    }
+                    return false;
+                }
             } else {
                 return false;
             }

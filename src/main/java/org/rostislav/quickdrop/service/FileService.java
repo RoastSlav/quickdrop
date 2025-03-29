@@ -22,16 +22,16 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -47,7 +47,6 @@ public class FileService {
     private final PasswordEncoder passwordEncoder;
     private final ApplicationSettingsService applicationSettingsService;
     private final DownloadLogRepository downloadLogRepository;
-    private final File tempDir = Paths.get(System.getProperty("java.io.tmpdir")).toFile();
     private final SessionService sessionService;
     private final RenewalLogRepository renewalLogRepository;
     private final FileEncryptionService fileEncryptionService;
@@ -68,7 +67,7 @@ public class FileService {
     private static StreamingResponseBody getStreamingResponseBody(Path outputFile, FileEntity fileEntity) {
         return outputStream -> {
             try (FileInputStream inputStream = new FileInputStream(outputFile.toFile())) {
-                byte[] buffer = new byte[1024];
+                byte[] buffer = new byte[8192];
                 int bytesRead;
                 while ((bytesRead = inputStream.read(buffer)) != -1) {
                     outputStream.write(buffer, 0, bytesRead);
@@ -88,123 +87,6 @@ public class FileService {
         };
     }
 
-    public void saveFileChunk(MultipartFile file, String fileName, int chunkNumber) throws IOException {
-        File chunkFile = new File(tempDir, getFileChunkName(fileName, chunkNumber));
-        try (FileOutputStream fos = new FileOutputStream(chunkFile)) {
-            fos.write(file.getBytes());
-        }
-    }
-
-    public FileEntity assembleChunks(String fileName, int totalChunks, FileUploadRequest fileUploadRequest) throws IOException {
-        File finalFile = new File(tempDir, fileName);
-
-        if (!finalFile.createNewFile()) {
-            throw new IOException("Failed to create new file");
-        }
-
-        mergeChunksIntoFile(finalFile, fileName, totalChunks);
-        deleteChunkFilesFromTemp(fileName);
-
-        return saveFile(finalFile, fileUploadRequest);
-    }
-
-    private void mergeChunksIntoFile(File finalFile, String fileName, int totalChunks) throws IOException {
-        try (FileOutputStream fos = new FileOutputStream(finalFile)) {
-            for (int i = 0; i < totalChunks; i++) {
-                File chunk = new File(tempDir, fileName + "_chunk_" + i);
-                try {
-                    Files.copy(chunk.toPath(), fos);
-                    Files.delete(chunk.toPath());
-                } catch (IOException ex) {
-                    logger.error("Error processing chunk {}: {}", i, ex.getMessage());
-                    throw ex;
-                }
-            }
-            logger.info("All chunks merged into file: {}", finalFile);
-        }
-    }
-
-    public void deleteChunkFilesFromTemp(String fileName) {
-        File[] tempFiles = tempDir.listFiles((dir, name) -> name.startsWith(fileName + "_chunk_"));
-
-        if (tempFiles != null) {
-            for (File tempFile : tempFiles) {
-                if (tempFile.delete()) {
-                    logger.info("Deleted temp file: {}", tempFile);
-                } else {
-                    logger.error("Failed to delete temp file: {}", tempFile);
-                }
-            }
-        }
-    }
-
-    public void deleteFullFileFromTemp(String fileName) {
-        Path assembledFilePath = Paths.get(tempDir.getAbsolutePath(), fileName);
-        try {
-            if (Files.exists(assembledFilePath)) {
-                Files.delete(assembledFilePath);
-                logger.info("Deleted assembled file: {}", assembledFilePath);
-            }
-        } catch (IOException e) {
-            logger.error("Failed to delete assembled file: {}", assembledFilePath, e);
-        }
-    }
-
-    public FileEntity saveFile(File file, FileUploadRequest fileUploadRequest) {
-        if (!validateObjects(file, fileUploadRequest)) {
-            return null;
-        }
-
-        logger.info("Saving file: {}", file.getName());
-
-        String uuid = UUID.randomUUID().toString();
-        while (fileRepository.findByUUID(uuid).isPresent()) {
-            uuid = UUID.randomUUID().toString();
-        }
-
-        Path targetPath = Path.of(applicationSettingsService.getFileStoragePath(), uuid);
-
-        FileEntity fileEntity = populateFileEntity(file, fileUploadRequest, uuid);
-
-        if (fileEntity.encrypted) {
-            if (!saveEncryptedFile(targetPath, file, fileUploadRequest)) return null;
-        } else {
-            if (!moveAndRenameUnencryptedFile(file, targetPath)) return null;
-        }
-
-        logger.info("FileEntity inserted into database: {}", fileEntity);
-        return fileRepository.save(fileEntity);
-    }
-
-    public List<FileEntity> getFiles() {
-        return fileRepository.findAll();
-    }
-
-    private FileEntity populateFileEntity(File file, FileUploadRequest request, String uuid) {
-        FileEntity fileEntity = new FileEntity();
-        fileEntity.name = file.getName();
-        fileEntity.uuid = uuid;
-        fileEntity.description = request.description;
-        fileEntity.size = file.length();
-        fileEntity.keepIndefinitely = request.keepIndefinitely;
-        fileEntity.hidden = request.hidden;
-        fileEntity.encrypted = request.password != null && !request.password.isBlank() && applicationSettingsService.isEncryptionEnabled();
-
-        if (request.password != null && !request.password.isBlank()) {
-            fileEntity.passwordHash = passwordEncoder.encode(request.password);
-        }
-
-        return fileEntity;
-    }
-
-    public FileEntity getFile(Long id) {
-        return fileRepository.findById(id).orElse(null);
-    }
-
-    public FileEntity getFile(String uuid) {
-        return fileRepository.findByUUID(uuid).orElse(null);
-    }
-
     private static RequesterInfo getRequesterInfo(HttpServletRequest request) {
         String forwardedFor = request.getHeader("X-Forwarded-For");
         String realIp = request.getHeader("X-Real-IP");
@@ -221,6 +103,48 @@ public class FileService {
 
         String userAgent = request.getHeader(HttpHeaders.USER_AGENT);
         return new RequesterInfo(ipAddress, userAgent);
+    }
+
+    public FileEntity saveFile(File file, FileUploadRequest fileUploadRequest, String uuid) {
+        if (!validateObjects(file, fileUploadRequest)) {
+            return null;
+        }
+
+        logger.info("Saving file: {}", file.getName());
+
+        FileEntity fileEntity = populateFileEntity(file, fileUploadRequest, uuid);
+
+        logger.info("FileEntity inserted into database: {}", fileEntity);
+        return fileRepository.save(fileEntity);
+    }
+
+    public List<FileEntity> getFiles() {
+        return fileRepository.findAll();
+    }
+
+    public boolean shouldEncrypt(FileUploadRequest request) {
+        return request.password != null && !request.password.isBlank() && applicationSettingsService.isEncryptionEnabled();
+    }
+
+    private FileEntity populateFileEntity(File file, FileUploadRequest request, String uuid) {
+        FileEntity fileEntity = new FileEntity();
+        fileEntity.name = request.fileName;
+        fileEntity.uuid = uuid;
+        fileEntity.description = request.description;
+        fileEntity.size = file.length();
+        fileEntity.keepIndefinitely = request.keepIndefinitely;
+        fileEntity.hidden = request.hidden;
+        fileEntity.encrypted = shouldEncrypt(request);
+
+        if (request.password != null && !request.password.isBlank()) {
+            fileEntity.passwordHash = passwordEncoder.encode(request.password);
+        }
+
+        return fileEntity;
+    }
+
+    public FileEntity getFile(String uuid) {
+        return fileRepository.findByUUID(uuid).orElse(null);
     }
 
     public boolean deleteFileFromFileSystem(String uuid) {
@@ -407,56 +331,6 @@ public class FileService {
         logger.info("Share token updated/invalidated. File streamed successfully: {}", fileEntity.name);
     }
 
-    public ResponseEntity<?> finalizeFile(String fileName, int totalChunks, String description,
-                                          Boolean keepIndefinitely, String password, Boolean hidden) throws IOException {
-        FileUploadRequest fileUploadRequest = new FileUploadRequest(description, keepIndefinitely, password, hidden);
-        FileEntity fileEntity = assembleChunks(fileName, totalChunks, fileUploadRequest);
-
-        if (fileEntity != null) {
-            return ResponseEntity.ok(fileEntity);
-        }
-
-        return ResponseEntity.badRequest().build();
-    }
-
-    private boolean saveEncryptedFile(Path savePath, File file, FileUploadRequest fileUploadRequest) {
-        try {
-            Path encryptedFile = Files.createFile(savePath);
-            logger.info("Encrypting file: {}", encryptedFile);
-            fileEncryptionService.encryptFile(file, encryptedFile.toFile(), fileUploadRequest.password);
-            logger.info("Encrypted file saved: {}", encryptedFile);
-        } catch (
-                Exception e) {
-            logger.error("Error encrypting file: {}", e.getMessage());
-            return false;
-        }
-
-        try {
-            Files.delete(file.toPath());
-            logger.info("Temp file deleted: {}", file);
-        } catch (
-                Exception e) {
-            logger.error("Error deleting temp file: {}", e.getMessage());
-            return false;
-        }
-
-        return true;
-    }
-
-    private boolean moveAndRenameUnencryptedFile(File file, Path path) {
-        for (int retry = 0; retry < 3; retry++) {
-            try {
-                Files.move(file.toPath(), path, StandardCopyOption.REPLACE_EXISTING);
-                logger.info("File moved successfully: {}", path);
-                return true;
-            } catch (IOException e) {
-                logger.error("Attempt {}/3 failed to move file {}: {}", retry + 1, file.getName(), e.getMessage());
-            }
-        }
-        logger.error("Failed to move file after 3 attempts: {}", file.getName());
-        return false;
-    }
-
     public FileEntity updateKeepIndefinitely(String uuid, boolean keepIndefinitely, HttpServletRequest request) {
         Optional<FileEntity> referenceById = fileRepository.findByUUID(uuid);
         if (referenceById.isEmpty()) {
@@ -535,13 +409,6 @@ public class FileService {
         return shareTokenRepository.getShareTokenEntityByToken(token);
     }
 
-    private record RequesterInfo(String ipAddress, String userAgent) {
-    }
-
-    private String getFileChunkName(String fileName, int chunkNumber) {
-        return fileName + "_chunk_" + chunkNumber;
-    }
-
     private Path decryptFileIfNeeded(FileEntity fileEntity, Path filePath, String password) {
         if (!fileEntity.encrypted) {
             return filePath;
@@ -574,5 +441,8 @@ public class FileService {
 
     public boolean fileExistsInFileSystem(String uuid) {
         return Files.exists(Path.of(applicationSettingsService.getFileStoragePath(), uuid));
+    }
+
+    private record RequesterInfo(String ipAddress, String userAgent) {
     }
 }

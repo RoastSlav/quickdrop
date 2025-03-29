@@ -15,8 +15,6 @@ import org.rostislav.quickdrop.repository.ShareTokenRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Lazy;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -24,10 +22,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.OutputStream;
+import java.io.*;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -64,26 +59,14 @@ public class FileService {
         this.shareTokenRepository = shareTokenRepository;
     }
 
-    private static StreamingResponseBody getStreamingResponseBody(Path outputFile, FileEntity fileEntity) {
+    private static StreamingResponseBody getStreamingResponseBody(InputStream inputStream) {
         return outputStream -> {
-            try (FileInputStream inputStream = new FileInputStream(outputFile.toFile())) {
-                byte[] buffer = new byte[8192];
-                int bytesRead;
-                while ((bytesRead = inputStream.read(buffer)) != -1) {
-                    outputStream.write(buffer, 0, bytesRead);
-                }
-                outputStream.flush();
-            } finally {
-                if (fileEntity.passwordHash != null) {
-                    try {
-                        Files.delete(outputFile);
-                        logger.info("Decrypted file deleted: {}", outputFile);
-                    } catch (
-                            Exception e) {
-                        logger.error("Error deleting decrypted file: {}", e.getMessage());
-                    }
-                }
+            byte[] buffer = new byte[8192];
+            int bytesRead;
+            while ((bytesRead = inputStream.read(buffer)) != -1) {
+                outputStream.write(buffer, 0, bytesRead);
             }
+            outputStream.flush();
         };
     }
 
@@ -112,7 +95,7 @@ public class FileService {
 
         logger.info("Saving file: {}", file.getName());
 
-        FileEntity fileEntity = populateFileEntity(file, fileUploadRequest, uuid);
+        FileEntity fileEntity = populateFileEntity(fileUploadRequest, uuid);
 
         logger.info("FileEntity inserted into database: {}", fileEntity);
         return fileRepository.save(fileEntity);
@@ -126,12 +109,12 @@ public class FileService {
         return request.password != null && !request.password.isBlank() && applicationSettingsService.isEncryptionEnabled();
     }
 
-    private FileEntity populateFileEntity(File file, FileUploadRequest request, String uuid) {
+    private FileEntity populateFileEntity(FileUploadRequest request, String uuid) {
         FileEntity fileEntity = new FileEntity();
         fileEntity.name = request.fileName;
         fileEntity.uuid = uuid;
         fileEntity.description = request.description;
-        fileEntity.size = file.length();
+        fileEntity.size = request.fileSize;
         fileEntity.keepIndefinitely = request.keepIndefinitely;
         fileEntity.hidden = request.hidden;
         fileEntity.encrypted = shouldEncrypt(request);
@@ -194,13 +177,26 @@ public class FileService {
 
         Path filePath = Path.of(applicationSettingsService.getFileStoragePath(), fileEntity.uuid);
         String password = getFilePasswordFromSessionToken(request);
-        Path decryptedFilePath = decryptFileIfNeeded(fileEntity, filePath, password);
-        if (decryptedFilePath == null) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+
+        InputStream inputStream;
+        if (fileEntity.encrypted) {
+            try {
+                inputStream = fileEncryptionService.getDecryptedInputStream(filePath.toFile(), password);
+            } catch (Exception e) {
+                logger.error("Error decrypting file: {}", e.getMessage());
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            }
+        } else {
+            try {
+                inputStream = new FileInputStream(filePath.toFile());
+            } catch (FileNotFoundException e) {
+                logger.error("File not found: {}", filePath);
+                return ResponseEntity.notFound().build();
+            }
         }
 
         try {
-            return createFileDownloadResponse(decryptedFilePath, fileEntity, request);
+            return createFileDownloadResponse(inputStream, fileEntity, request);
         } catch (Exception e) {
             logger.error("Error preparing file download response: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
@@ -386,7 +382,7 @@ public class FileService {
         Path decryptedFilePath = encryptedFilePath.resolveSibling(file.uuid + "-decrypted");
 
         // Decrypt the file if necessary
-        if (file.passwordHash != null && !Files.exists(decryptedFilePath)) {
+        if (file.encrypted && !Files.exists(decryptedFilePath)) {
             try {
                 String password = sessionService.getPasswordForFileSessionToken(sessionToken).getPassword();
                 fileEncryptionService.decryptFile(encryptedFilePath.toFile(), decryptedFilePath.toFile(), password);
@@ -409,32 +405,15 @@ public class FileService {
         return shareTokenRepository.getShareTokenEntityByToken(token);
     }
 
-    private Path decryptFileIfNeeded(FileEntity fileEntity, Path filePath, String password) {
-        if (!fileEntity.encrypted) {
-            return filePath;
-        }
-        try {
-            Path tempFile = File.createTempFile("Decrypted", "tmp").toPath();
-            logger.info("Decrypting file: {}", filePath);
-            fileEncryptionService.decryptFile(filePath.toFile(), tempFile.toFile(), password);
-            logger.info("File decrypted: {}", tempFile);
-            return tempFile;
-        } catch (Exception e) {
-            logger.error("Error decrypting file: {}", e.getMessage());
-            return null;
-        }
-    }
-
-    private ResponseEntity<StreamingResponseBody> createFileDownloadResponse(Path filePath, FileEntity fileEntity, HttpServletRequest request) throws IOException {
-        StreamingResponseBody responseBody = getStreamingResponseBody(filePath, fileEntity);
-        Resource resource = new UrlResource(filePath.toUri());
+    private ResponseEntity<StreamingResponseBody> createFileDownloadResponse(InputStream inputStream, FileEntity fileEntity, HttpServletRequest request) throws IOException {
+        StreamingResponseBody responseBody = getStreamingResponseBody(inputStream);
         logger.info("Sending file: {}", fileEntity);
         logDownload(fileEntity, request);
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + URLEncoder.encode(fileEntity.name, StandardCharsets.UTF_8) + "\"")
                 .header(HttpHeaders.CONTENT_TYPE, "application/octet-stream")
-                .header(HttpHeaders.CONTENT_LENGTH, String.valueOf(resource.contentLength()))
+                .header(HttpHeaders.CONTENT_LENGTH, String.valueOf(fileEntity.size))
                 .header("X-Accel-Buffering", "no")
                 .body(responseBody);
     }

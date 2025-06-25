@@ -16,6 +16,7 @@ public class ApplicationSettingsViewModel {
     private boolean isFileListPageEnabled;
     private boolean isAdminDashboardButtonEnabled;
     private boolean encryptionDisabled;
+    private String defaultHomePage;
 
     public ApplicationSettingsViewModel() {
     }
@@ -32,6 +33,7 @@ public class ApplicationSettingsViewModel {
         this.isFileListPageEnabled = settings.isFileListPageEnabled();
         this.isAdminDashboardButtonEnabled = settings.isAdminDashboardButtonEnabled();
         this.encryptionDisabled = settings.isDisableEncryption();
+        this.defaultHomePage = settings.getDefaultHomePage();
     }
 
     public Long getId() {
@@ -128,5 +130,13 @@ public class ApplicationSettingsViewModel {
 
     public void setEncryptionDisabled(boolean encryptionDisabled) {
         this.encryptionDisabled = encryptionDisabled;
+    }
+
+    public String getDefaultHomePage() {
+        return defaultHomePage;
+    }
+
+    public void setDefaultHomePage(String defaultHomePage) {
+        this.defaultHomePage = defaultHomePage;
     }
 }

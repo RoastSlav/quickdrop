@@ -23,6 +23,7 @@ public class ApplicationSettingsEntity {
     private boolean isFileListPageEnabled;
     private boolean isAdminDashboardButtonEnabled;
     private boolean disableEncryption;
+    private String defaultHomePage;
 
     public ApplicationSettingsEntity() {
     }
@@ -38,6 +39,7 @@ public class ApplicationSettingsEntity {
         this.isFileListPageEnabled = settings.isFileListPageEnabled();
         this.isAdminDashboardButtonEnabled = settings.isAdminDashboardButtonEnabled();
         this.disableEncryption = settings.isEncryptionDisabled();
+        this.defaultHomePage = settings.getDefaultHomePage();
     }
 
     public long getMaxFileSize() {
@@ -142,5 +144,13 @@ public class ApplicationSettingsEntity {
 
     public void setDisableEncryption(boolean disableEncryption) {
         this.disableEncryption = disableEncryption;
+    }
+
+    public String getDefaultHomePage() {
+        return defaultHomePage;
+    }
+
+    public void setDefaultHomePage(String defaultHomePage) {
+        this.defaultHomePage = defaultHomePage;
     }
 }

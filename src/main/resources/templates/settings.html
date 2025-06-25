@@ -84,6 +84,15 @@
                     <label class="form-check-label" for="fileListPageEnabled">Enable File List Page</label>
                 </div>
 
+                <!-- Default Home Page -->
+                <div class="mb-3">
+                    <label class="form-label" for="defaultHomePage">Default Home Page</label>
+                    <select class="form-select" id="defaultHomePage" th:field="*{defaultHomePage}">
+                        <option value="upload">Upload Page</option>
+                        <option value="list">File List Page</option>
+                    </select>
+                </div>
+
                 <!-- Enable Admin Dashboard Button -->
                 <div class="form-check mb-3">
                     <input class="form-check-input" id="adminDashboardButtonEnabled"

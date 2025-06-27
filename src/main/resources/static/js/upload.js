@@ -10,6 +10,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const dropZone = document.getElementById("dropZone");
     const fileInput = document.getElementById("file");
     const fileNameEl = document.getElementById("selectedFile");
+    const dropZoneText = document.getElementById("dropZoneInstructions");
     if (dropZone) {
         dropZone.addEventListener("click", () => fileInput.click());
         ["dragenter", "dragover"].forEach((eventName) => {
@@ -43,11 +44,14 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!fileNameEl) return;
         const file = fileInput.files[0];
         if (file) {
-            fileNameEl.textContent = file.name;
+            const size = (file.size / (1024 * 1024)).toFixed(2) + ' MB';
+            fileNameEl.textContent = `${file.name} (${size})`;
             fileNameEl.classList.remove("hidden");
+            if (dropZoneText) dropZoneText.classList.add("hidden");
         } else {
             fileNameEl.textContent = "";
             fileNameEl.classList.add("hidden");
+            if (dropZoneText) dropZoneText.classList.remove("hidden");
         }
     }
 });

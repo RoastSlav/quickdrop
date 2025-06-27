@@ -43,11 +43,11 @@
         <p>Start by <a href="/file/upload" class="text-sky-600 dark:text-sky-400 hover:underline">uploading a file</a>.</p>
     </div>
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
-        <div th:each="file : ${files}">
-            <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-lg flex flex-col aspect-video p-6 md:p-8 space-y-4">
+        <div th:each="file : ${files}" class="aspect-video">
+            <div class="w-full h-full bg-white dark:bg-slate-800 rounded-2xl shadow-lg flex flex-col p-6 md:p-8 space-y-4 overflow-hidden">
                 <div class="flex-1 space-y-2">
-                    <h2 class="text-lg font-semibold tracking-tight" th:text="${file.name}">File Name</h2>
-                    <p th:if="${!#strings.isEmpty(file.description)}" class="text-sm" th:text="${file.description}"></p>
+                    <h2 class="text-lg font-semibold tracking-tight whitespace-nowrap overflow-hidden [mask-image:linear-gradient(to_right,black,transparent)]" th:text="${file.name}">File Name</h2>
+                    <p th:if="${!#strings.isEmpty(file.description)}" class="text-sm overflow-hidden [mask-image:linear-gradient(to_bottom,black,transparent)] line-clamp-2" th:text="${file.description}"></p>
                     <p class="text-sm text-gray-600 dark:text-gray-400" th:text="'Keep indefinitely: ' + (${file.keepIndefinitely} ? 'Yes' : 'No')"></p>
                     <p class="text-sm text-gray-600 dark:text-gray-400" th:text="'Password protected: ' + (${file.passwordHash != null} ? 'Yes' : 'No')"></p>
                     <p class="text-sm text-gray-600 dark:text-gray-400" th:text="${file.keepIndefinitely} ? 'Uploaded: ' + ${#temporals.format(file.uploadDate, 'dd.MM.yyyy')} : 'Uploaded/Renewed: ' + ${#temporals.format(file.uploadDate, 'dd.MM.yyyy')}"></p>

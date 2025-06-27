@@ -47,11 +47,17 @@
                     <span class="sr-only">Description</span>
                     <input id="description" name="description" type="text" placeholder="Description" class="mt-1 w-full rounded-lg border-gray-500 dark:border-gray-600 bg-gray-100 dark:bg-slate-700 p-2 focus:outline-none focus:ring-2 focus:ring-sky-500"/>
                 </label>
-                <div class="flex items-start gap-2">
-                    <input id="keepIndefinitely" name="keepIndefinitely" type="checkbox" class="rounded border-gray-500 dark:border-gray-600 text-sky-500 focus:ring-sky-500">
-                    <label for="keepIndefinitely" class="text-sm">Keep indefinitely</label>
+                <div>
+                    <div class="flex items-start gap-2">
+                        <input class="rounded border-gray-500 dark:border-gray-600 text-sky-500 focus:ring-sky-500"
+                               id="keepIndefinitely" name="keepIndefinitely"
+                               type="checkbox">
+                        <label class="text-sm" for="keepIndefinitely">Keep indefinitely</label>
+                    </div>
+                    <small class="text-sm text-gray-600 dark:text-gray-300 mb-2 ml-7">If checked, this file will not be
+                        auto-deleted after <span class="maxFileLifeTime" th:text="${maxFileLifeTime}">30</span>
+                        days.</small>
                 </div>
-                <small class="text-sm text-gray-600 dark:text-gray-300 mb-2 ml-7">If checked, this file will not be auto-deleted after <span class="maxFileLifeTime" th:text="${maxFileLifeTime}">30</span> days.</small>
                 <div th:if="${isFileListPageEnabled}">
                     <div class="flex items-start gap-2">
                         <input id="hidden" name="hidden" type="checkbox" class="rounded border-gray-500 dark:border-gray-600 text-sky-500 focus:ring-sky-500">

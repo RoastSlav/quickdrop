@@ -80,13 +80,8 @@ document.addEventListener("DOMContentLoaded", () => {
             fileNameEl.textContent = "";
             fileNameEl.classList.add("hidden");
             fileInput.value = "";
-            const fileSizeAlert = document.getElementById('fileSizeAlert');
-            if (fileSizeAlert) fileSizeAlert.classList.remove('hidden');
             return;
         }
-
-        const fileSizeAlert = document.getElementById('fileSizeAlert');
-        if (fileSizeAlert) fileSizeAlert.classList.add('hidden');
         const size = (file.size / (1024 * 1024)).toFixed(2) + ' MB';
         fileNameEl.textContent = `${file.name} (${size})`;
         fileNameEl.classList.remove("hidden");

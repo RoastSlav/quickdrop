@@ -28,29 +28,32 @@
     <header class="text-center mb-8 space-y-1">
         <h1 class="text-3xl md:text-4xl font-semibold tracking-tight">All files</h1>
     </header>
-    <div class="max-w-lg mx-auto mb-8">
-        <form action="/file/search" method="GET" class="flex gap-2">
+    <div class="mx-auto w-full max-w-md mb-8">
+        <form action="/file/search" method="GET" class="w-full">
             <label for="searchInput" class="sr-only">Search files</label>
-            <input id="searchInput" aria-describedby="search-button" name="query" type="text" placeholder="Search for files..." class="w-full rounded-lg border border-gray-400 dark:border-gray-600 bg-white dark:bg-slate-700 p-2 focus:outline-none focus:ring-2 focus:ring-sky-500" />
-            <button id="search-button" type="submit" class="rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white px-4 transition-colors active:scale-95 focus:outline-none focus:ring-2 focus:ring-sky-500">Search</button>
+            <div class="h-14 flex items-center space-x-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-gray-800 rounded-full px-4 shadow-sm focus-within:border-sky-500 focus-within:ring-2 focus-within:ring-sky-500">
+                <svg class="w-5 h-5 text-gray-500 dark:text-gray-400" aria-hidden="true" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M12.9 14.32a8 8 0 111.414-1.414l4.387 4.387a1 1 0 01-1.414 1.414l-4.387-4.387zM14 8a6 6 0 11-12 0 6 6 0 0112 0z" clip-rule="evenodd"/></svg>
+                <input id="searchInput" name="query" type="text" placeholder="Search files by name or date…" class="flex-grow bg-transparent focus:outline-none focus-visible:ring-0" />
+                <button id="search-button" type="submit" class="rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium px-4 py-2 transition-colors active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500">Search</button>
+            </div>
         </form>
     </div>
     <div th:if="${#lists.isEmpty(files)}" class="text-center text-gray-600 dark:text-gray-300 my-5">
         <h3 class="mb-2">No files have been uploaded yet.</h3>
         <p>Start by <a href="/file/upload" class="text-sky-600 dark:text-sky-400 hover:underline">uploading a file</a>.</p>
     </div>
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
         <div th:each="file : ${files}">
-            <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-lg flex flex-col aspect-video p-6 md:p-8">
-                <div class="flex-grow">
-                    <h2 class="text-xl font-semibold tracking-tight" th:text="${file.name}">File Name</h2>
-                    <p class="mt-2" th:if="${!#strings.isEmpty(file.description)}" th:text="${file.description}"></p>
-                    <p class="mt-2 border-t pt-3 text-sm text-gray-600 dark:text-gray-300" th:text="'Keep indefinitely: ' + (${file.keepIndefinitely} ? 'Yes' : 'No')"></p>
-                    <p class="text-sm text-gray-600 dark:text-gray-300" th:text="'Password protected: ' + (${file.passwordHash != null} ? 'Yes' : 'No')"></p>
-                    <p class="border-t pt-3 text-sm text-gray-600 dark:text-gray-300" th:text="${file.keepIndefinitely} ? 'Uploaded: ' + ${#temporals.format(file.uploadDate, 'dd.MM.yyyy')} : 'Uploaded/Renewed: ' + ${#temporals.format(file.uploadDate, 'dd.MM.yyyy')}"></p>
+            <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-lg flex flex-col aspect-video p-6 md:p-8 space-y-4">
+                <div class="flex-1 space-y-2">
+                    <h2 class="text-lg font-semibold tracking-tight" th:text="${file.name}">File Name</h2>
+                    <p th:if="${!#strings.isEmpty(file.description)}" class="text-sm" th:text="${file.description}"></p>
+                    <p class="text-sm text-gray-600 dark:text-gray-400" th:text="'Keep indefinitely: ' + (${file.keepIndefinitely} ? 'Yes' : 'No')"></p>
+                    <p class="text-sm text-gray-600 dark:text-gray-400" th:text="'Password protected: ' + (${file.passwordHash != null} ? 'Yes' : 'No')"></p>
+                    <p class="text-sm text-gray-600 dark:text-gray-400" th:text="${file.keepIndefinitely} ? 'Uploaded: ' + ${#temporals.format(file.uploadDate, 'dd.MM.yyyy')} : 'Uploaded/Renewed: ' + ${#temporals.format(file.uploadDate, 'dd.MM.yyyy')}"></p>
                 </div>
-                <div class="mt-4 text-center">
-                    <a th:href="@{/file/{UUID}(UUID=${file.uuid})}" class="inline-block rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium px-4 py-2 transition-colors active:scale-95 focus:outline-none focus:ring-2 focus:ring-sky-500">Go to file page</a>
+                <div class="text-center mt-auto">
+                    <a th:href="@{/file/{UUID}(UUID=${file.uuid})}" class="inline-block rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium px-4 py-2 transition-colors active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500">Go to file page</a>
                 </div>
             </div>
         </div>

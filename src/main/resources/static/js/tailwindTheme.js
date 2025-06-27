@@ -1,20 +1,19 @@
 // tailwindTheme.js
 (function(){
-const html=document.documentElement;
-const current=localStorage.getItem('theme')||'light';
-html.classList.toggle('dark',current==='dark');
-let btn;
-function apply(m){
- html.classList.toggle('dark',m==='dark');
- localStorage.setItem('theme',m);
- if(btn)btn.textContent=m==='dark'?'☀️':'🌙';
-}
-function init(){
- btn=document.getElementById('themeToggle');
- if(!btn)return;
- btn.addEventListener('click',()=>apply(html.classList.contains('dark')?'light':'dark'));
- btn.textContent=html.classList.contains('dark')?'☀️':'🌙';
-}
-if(document.readyState!=='loading')init();
-else document.addEventListener('DOMContentLoaded',init);
+    const html = document.documentElement;
+    const stored = localStorage.getItem('theme');
+    const initial = stored || 'light';
+    html.classList.toggle('dark', initial === 'dark');
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const btn = document.getElementById('themeToggle');
+        if(!btn) return;
+        btn.textContent = html.classList.contains('dark') ? '☀️' : '🌙';
+        btn.addEventListener('click', () => {
+            const newTheme = html.classList.contains('dark') ? 'light' : 'dark';
+            html.classList.toggle('dark', newTheme === 'dark');
+            localStorage.setItem('theme', newTheme);
+            btn.textContent = newTheme === 'dark' ? '☀️' : '🌙';
+        });
+    });
 })();

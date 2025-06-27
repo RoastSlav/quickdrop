@@ -77,9 +77,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (file.size > maxSize) {
             dropZoneText.textContent = `File exceeds the ${maxSizeSpan.innerText} limit.`;
+            dropZoneText.classList.remove("hidden");
             fileNameEl.textContent = "";
             fileNameEl.classList.add("hidden");
-            fileInput.value = "";
+            if (fileInput) fileInput.value = "";
             return;
         }
         const size = (file.size / (1024 * 1024)).toFixed(2) + ' MB';

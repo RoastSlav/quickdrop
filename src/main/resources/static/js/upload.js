@@ -11,6 +11,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const fileInput = document.getElementById("file");
     const fileNameEl = document.getElementById("selectedFile");
     const dropZoneText = document.getElementById("dropZoneInstructions");
+    const defaultText = dropZoneText ? dropZoneText.dataset.defaultText || dropZoneText.textContent : "";
     if (dropZone) {
         dropZone.addEventListener("click", () => fileInput.click());
         ["dragenter", "dragover"].forEach((eventName) => {
@@ -26,33 +27,66 @@ document.addEventListener("DOMContentLoaded", () => {
             });
         });
         dropZone.addEventListener("drop", (e) => {
-            fileInput.files = e.dataTransfer.files;
-            updateFileName();
-            validateFileSize();
+            const items = e.dataTransfer.items;
+            const files = e.dataTransfer.files;
+            handleFiles(files, items);
         });
     }
 
     if (fileInput) {
         fileInput.addEventListener("change", () => {
-            updateFileName();
-            validateFileSize();
+            handleFiles(fileInput.files);
         });
-        updateFileName();
+        handleFiles(fileInput.files);
     }
 
-    function updateFileName() {
-        if (!fileNameEl) return;
-        const file = fileInput.files[0];
-        if (file) {
-            const size = (file.size / (1024 * 1024)).toFixed(2) + ' MB';
-            fileNameEl.textContent = `${file.name} (${size})`;
-            fileNameEl.classList.remove("hidden");
-            if (dropZoneText) dropZoneText.classList.add("hidden");
-        } else {
+    function handleFiles(files, items) {
+        if (!fileNameEl || !dropZoneText) return;
+        if (!files || files.length === 0) {
             fileNameEl.textContent = "";
             fileNameEl.classList.add("hidden");
-            if (dropZoneText) dropZoneText.classList.remove("hidden");
+            dropZoneText.textContent = defaultText;
+            dropZoneText.classList.remove("hidden");
+            return;
         }
+
+        const file = files[0];
+        let isFolder = false;
+        if (items && items.length > 0 && items[0].webkitGetAsEntry) {
+            const entry = items[0].webkitGetAsEntry();
+            if (entry && entry.isDirectory) isFolder = true;
+        } else if (file.webkitRelativePath && file.webkitRelativePath !== "") {
+            isFolder = true;
+        }
+
+        const maxSizeSpan = document.querySelector('.maxFileSize');
+        const maxSize = maxSizeSpan ? parseSize(maxSizeSpan.innerText) : Infinity;
+
+        if (isFolder) {
+            dropZoneText.textContent = "Folders cannot be uploaded.";
+            fileNameEl.textContent = "";
+            fileNameEl.classList.add("hidden");
+            fileInput.value = "";
+            return;
+        }
+
+        if (file.size > maxSize) {
+            dropZoneText.textContent = `File exceeds the ${maxSizeSpan.innerText} limit.`;
+            fileNameEl.textContent = "";
+            fileNameEl.classList.add("hidden");
+            fileInput.value = "";
+            const fileSizeAlert = document.getElementById('fileSizeAlert');
+            if (fileSizeAlert) fileSizeAlert.classList.remove('hidden');
+            return;
+        }
+
+        const fileSizeAlert = document.getElementById('fileSizeAlert');
+        if (fileSizeAlert) fileSizeAlert.classList.add('hidden');
+        const size = (file.size / (1024 * 1024)).toFixed(2) + ' MB';
+        fileNameEl.textContent = `${file.name} (${size})`;
+        fileNameEl.classList.remove("hidden");
+        dropZoneText.textContent = defaultText;
+        dropZoneText.classList.add("hidden");
     }
 });
 
@@ -224,21 +258,6 @@ function resetUploadUI() {
     isUploading = false;
 }
 
-function validateFileSize() {
-    const fileSizeSpan = document.querySelector('.maxFileSize');
-    const file = document.getElementById('file').files[0];
-    if (!file || !fileSizeSpan) return;
-
-    const maxSize = parseSize(fileSizeSpan.innerText);
-    const fileSizeAlert = document.getElementById('fileSizeAlert');
-
-    if (file.size > maxSize) {
-        fileSizeAlert.classList.remove('hidden');
-        document.getElementById('file').value = '';
-    } else {
-        fileSizeAlert.classList.add('hidden');
-    }
-}
 
 function parseSize(size) {
     // Example: "1GB" -> parse

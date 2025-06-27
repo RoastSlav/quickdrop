@@ -37,8 +37,8 @@
                 <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden"/>
                 <input name="uuid" th:value="${uuid}" type="hidden"/>
                 <label id="dropZone" for="file" class="relative border-2 border-dashed border-gray-500 dark:border-gray-600 rounded-lg p-6 text-center cursor-pointer focus:outline-none focus:ring-2 focus:ring-sky-500">
-                    <span id="dropZoneInstructions" class="block text-gray-600 dark:text-gray-300">Drop file here or click to browse</span>
-                    <input id="file" name="file" type="file" class="absolute inset-0 opacity-0 cursor-pointer" onchange="validateFileSize()" required/>
+                    <span id="dropZoneInstructions" data-default-text="Drop file here or click to browse" class="block text-gray-600 dark:text-gray-300">Drop file here or click to browse</span>
+                    <input id="file" name="file" type="file" class="absolute inset-0 opacity-0 cursor-pointer" required/>
                     <div id="fileSizeAlert" class="hidden mt-2 text-red-600 text-sm" role="alert">File size exceeds the <span th:text="${maxFileSize}">1GB</span> limit.</div>
                     <p id="selectedFile" class="hidden mt-2 text-sm text-gray-700 dark:text-gray-300"></p>
                 </label>

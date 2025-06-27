@@ -6,17 +6,40 @@ let indefiniteNoPwWarningShown = false;
 document.addEventListener("DOMContentLoaded", () => {
     const uploadForm = document.getElementById("uploadForm");
     uploadForm.addEventListener("submit", onUploadFormSubmit);
+
+    const dropZone = document.getElementById("dropZone");
+    if (dropZone) {
+        const fileInput = document.getElementById("file");
+        dropZone.addEventListener("click", () => fileInput.click());
+        ["dragenter", "dragover"].forEach((eventName) => {
+            dropZone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                dropZone.classList.add("ring-2", "ring-sky-500");
+            });
+        });
+        ["dragleave", "drop"].forEach((eventName) => {
+            dropZone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                dropZone.classList.remove("ring-2", "ring-sky-500");
+            });
+        });
+        dropZone.addEventListener("drop", (e) => {
+            fileInput.files = e.dataTransfer.files;
+            validateFileSize();
+        });
+    }
 });
 
 // Unified way to show an inline message in our #messageContainer
 function showMessage(type, text) {
-    // type: "success", "info", "danger", "warning"
+    const styles = {
+        success: "bg-sky-100 text-sky-700 dark:bg-sky-900 dark:text-sky-100",
+        info: "bg-sky-100 text-sky-700 dark:bg-sky-900 dark:text-sky-100",
+        danger: "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-100",
+        warning: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-100"
+    };
     const container = document.getElementById("messageContainer");
-    container.innerHTML = `
-    <div class="alert alert-${type} alert-dismissible fade show" role="alert">
-      ${text}
-      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>`;
+    container.innerHTML = `<div class="rounded-lg p-4 mb-4 ${styles[type] || styles.info}">${text}</div>`;
 }
 
 // Called when user hits "Upload"
@@ -60,7 +83,7 @@ function startChunkUpload() {
     }
 
     // Initialize progress bar
-    document.getElementById("uploadIndicator").style.display = "block";
+    document.getElementById("uploadIndicator").classList.remove("hidden");
     const progressBar = document.getElementById("uploadProgress");
     progressBar.style.width = "0%";
     progressBar.setAttribute("aria-valuenow", 0);
@@ -171,7 +194,7 @@ function buildChunkFormData(chunk, chunkNumber, fileName, totalChunks, fileSize)
 
 // Reset UI if something fails
 function resetUploadUI() {
-    document.getElementById("uploadIndicator").style.display = "none";
+    document.getElementById("uploadIndicator").classList.add("hidden");
     isUploading = false;
 }
 
@@ -184,10 +207,10 @@ function validateFileSize() {
     const fileSizeAlert = document.getElementById('fileSizeAlert');
 
     if (file.size > maxSize) {
-        fileSizeAlert.style.display = 'block';
+        fileSizeAlert.classList.remove('hidden');
         document.getElementById('file').value = '';
     } else {
-        fileSizeAlert.style.display = 'none';
+        fileSizeAlert.classList.add('hidden');
     }
 }
 

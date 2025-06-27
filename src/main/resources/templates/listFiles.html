@@ -28,11 +28,11 @@
     <header class="text-center mb-8 space-y-1">
         <h1 class="text-3xl md:text-4xl font-semibold tracking-tight">All files</h1>
     </header>
-    <div class="max-w-2xl mx-auto my-8 px-4">
-        <form action="/file/search" method="GET" class="flex gap-2">
+    <div class="max-w-3xl mx-auto my-8">
+        <form action="/file/search" method="GET" class="bg-white dark:bg-slate-800 p-6 md:p-8 rounded-2xl shadow-lg flex gap-4">
             <label for="searchInput" class="sr-only">Search files</label>
-            <input id="searchInput" aria-describedby="search-button" name="query" type="text" placeholder="Search for files..." class="w-full flex-grow rounded-l-lg border border-gray-400 dark:border-gray-600 bg-white dark:bg-slate-700 p-2 focus:outline-none focus:ring-2 focus:ring-sky-500" />
-            <button id="search-button" type="submit" class="rounded-r-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white px-4 transition-colors active:scale-95 focus:outline-none focus:ring-2 focus:ring-sky-500">Search</button>
+            <input id="searchInput" aria-describedby="search-button" name="query" type="text" placeholder="Search for files..." class="w-full flex-grow rounded-lg border border-gray-400 dark:border-gray-600 bg-white dark:bg-slate-700 p-2 focus:outline-none focus:ring-2 focus:ring-sky-500" />
+            <button id="search-button" type="submit" class="rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white px-4 transition-colors active:scale-95 focus:outline-none focus:ring-2 focus:ring-sky-500">Search</button>
         </form>
     </div>
     <div th:if="${#lists.isEmpty(files)}" class="text-center text-gray-600 dark:text-gray-300 my-5">
@@ -40,8 +40,8 @@
         <p>Start by <a href="/file/upload" class="text-sky-600 dark:text-sky-400 hover:underline">uploading a file</a>.</p>
     </div>
     <div class="grid grid-cols-12 gap-6">
-        <div th:each="file : ${files}" class="col-span-12 sm:col-span-6 md:col-span-4 lg:col-span-3">
-            <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-lg flex flex-col h-full p-6 md:p-8">
+        <div th:each="file : ${files}" class="col-span-12 sm:col-span-6 lg:col-span-4">
+            <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-lg flex flex-col aspect-video p-6 md:p-8">
                 <div class="flex-grow">
                     <h2 class="text-xl font-semibold tracking-tight" th:text="${file.name}">File Name</h2>
                     <p class="mt-2" th:if="${!#strings.isEmpty(file.description)}" th:text="${file.description}"></p>

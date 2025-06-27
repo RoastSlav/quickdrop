@@ -8,12 +8,14 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!disableToggle) {
         const toggleButton = document.createElement('button');
         toggleButton.id = 'themeToggle';
-        toggleButton.className = 'btn btn-sm btn-outline-light ms-2';
+        toggleButton.className = 'btn btn-sm ms-2';
+        applyButtonStyle(toggleButton, storedTheme);
         toggleButton.textContent = storedTheme === 'dark' ? 'Light Mode' : 'Dark Mode';
         toggleButton.addEventListener('click', () => {
             const currentTheme = document.documentElement.getAttribute('data-bs-theme') || 'light';
             const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
             setTheme(newTheme);
+            applyButtonStyle(toggleButton, newTheme);
             toggleButton.textContent = newTheme === 'dark' ? 'Light Mode' : 'Dark Mode';
         });
 
@@ -31,9 +33,32 @@ document.addEventListener('DOMContentLoaded', () => {
             document.body.appendChild(toggleButton);
         }
     }
+
+    updateTableHeaders(storedTheme);
 });
 
 function setTheme(theme) {
     document.documentElement.setAttribute('data-bs-theme', theme);
     localStorage.setItem('theme', theme);
+    updateTableHeaders(theme);
+}
+
+function applyButtonStyle(button, theme) {
+    button.classList.remove('btn-outline-light', 'btn-outline-dark');
+    if (theme === 'dark') {
+        button.classList.add('btn-outline-light');
+    } else {
+        button.classList.add('btn-outline-dark');
+    }
+}
+
+function updateTableHeaders(theme) {
+    document.querySelectorAll('thead.table-dark, thead.table-light').forEach((thead) => {
+        thead.classList.remove('table-dark', 'table-light');
+        if (theme === 'dark') {
+            thead.classList.add('table-dark');
+        } else {
+            thead.classList.add('table-light');
+        }
+    });
 }

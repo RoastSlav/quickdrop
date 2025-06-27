@@ -29,7 +29,12 @@ document.addEventListener("DOMContentLoaded", () => {
         dropZone.addEventListener("drop", (e) => {
             const items = e.dataTransfer.items;
             const files = e.dataTransfer.files;
-            handleFiles(files, items);
+            if (fileInput) {
+                const dt = new DataTransfer();
+                for (const f of files) dt.items.add(f);
+                fileInput.files = dt.files;
+            }
+            handleFiles(fileInput.files, items);
         });
     }
 

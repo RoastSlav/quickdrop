@@ -8,8 +8,9 @@ document.addEventListener("DOMContentLoaded", () => {
     uploadForm.addEventListener("submit", onUploadFormSubmit);
 
     const dropZone = document.getElementById("dropZone");
+    const fileInput = document.getElementById("file");
+    const fileNameEl = document.getElementById("selectedFile");
     if (dropZone) {
-        const fileInput = document.getElementById("file");
         dropZone.addEventListener("click", () => fileInput.click());
         ["dragenter", "dragover"].forEach((eventName) => {
             dropZone.addEventListener(eventName, (e) => {
@@ -25,8 +26,29 @@ document.addEventListener("DOMContentLoaded", () => {
         });
         dropZone.addEventListener("drop", (e) => {
             fileInput.files = e.dataTransfer.files;
+            updateFileName();
             validateFileSize();
         });
+    }
+
+    if (fileInput) {
+        fileInput.addEventListener("change", () => {
+            updateFileName();
+            validateFileSize();
+        });
+        updateFileName();
+    }
+
+    function updateFileName() {
+        if (!fileNameEl) return;
+        const file = fileInput.files[0];
+        if (file) {
+            fileNameEl.textContent = file.name;
+            fileNameEl.classList.remove("hidden");
+        } else {
+            fileNameEl.textContent = "";
+            fileNameEl.classList.add("hidden");
+        }
     }
 });
 

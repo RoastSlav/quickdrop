@@ -1,51 +1,21 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="h-full">
 <head>
-    <script src="/js/darkMode.js"></script>
+    <script src="/js/theme-toggle.js"></script>
     <meta charset="UTF-8">
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <title>Share Link Invalid</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/tailwind.css" rel="stylesheet">
     <link href="/images/favicon.png" rel="icon" type="image/png">
-    <style>
-        body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            background-color: #f8f9fa;
-        }
-
-        .card {
-            max-width: 500px;
-            width: 100%;
-            border: none;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-
-        .card-body {
-            text-align: center;
-        }
-
-        .btn-home {
-            margin-top: 20px;
-        }
-    </style>
+    <style>/* no styles */</style>
 </head>
 <body>
-<div class="container d-flex justify-content-center align-items-center">
-    <div class="card">
-        <div class="card-body">
-            <h1 class="card-title">Link Expired</h1>
-            <p class="card-text text-muted">
-                This share link is no longer valid. The file you are trying to access has expired or the link has been
-                used.
-            </p>
-            <a class="btn btn-primary btn-home" href="/">Return to Homepage</a>
-        </div>
+<div class="flex items-center justify-center h-full">
+    <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-6 md:p-8 max-w-md text-center">
+        <h1 class="font-semibold tracking-tight mb-2">Link Expired</h1>
+        <p class="text-gray-600 dark:text-gray-400 mb-4">This share link is no longer valid. The file you are trying to access has expired or the link has been used.</p>
+        <a href="/" class="bg-brand-light dark:bg-brand-dark text-white px-4 py-2 rounded-lg font-semibold focus:outline-none focus:ring-2 focus:ring-brand-light dark:focus:ring-brand-dark">Return to Homepage</a>
     </div>
 </div>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

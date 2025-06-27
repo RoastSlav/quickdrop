@@ -34,4 +34,4 @@ build/
 /db/
 /log/
 /files/
-.qodo
+node_modules/

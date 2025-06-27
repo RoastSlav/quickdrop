@@ -1,91 +1,51 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="h-full">
 <head>
-    <script src="/js/darkMode.js"></script>
+    <script src="/js/theme-toggle.js"></script>
     <meta charset="UTF-8">
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <title>Download History</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        .file-info {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1rem;
-        }
-
-        .file-info-item {
-            background-color: #f8f9fa;
-            padding: 1rem;
-            border: 1px solid #ddd;
-            border-radius: 0.5rem;
-            text-align: center;
-        }
-
-        .file-name {
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: #007bff;
-            margin-bottom: 0.5rem;
-        }
-
-        .file-description {
-            font-size: 1.1rem;
-            color: #6c757d;
-            margin-bottom: 1rem;
-        }
-    </style>
+    <link href="/css/tailwind.css" rel="stylesheet">
 </head>
 <body>
 <!-- Navbar -->
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-    <div class="container">
-        <a class="navbar-brand" href="/">
-            <img alt="QuickDrop Logo" class="me-2" height="40" src="/images/favicon.png">
+<nav class="bg-slate-800 dark:bg-slate-900 mb-6">
+    <div class="container mx-auto flex items-center justify-between p-4">
+        <a href="/" class="flex items-center text-white font-semibold">
+            <img src="/images/favicon.png" alt="QuickDrop Logo" class="h-10 mr-2">
             QuickDrop Admin
         </a>
-        <button aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation" class="navbar-toggler"
-                data-bs-target="#navbarNav" data-bs-toggle="collapse" type="button">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav ms-auto">
-                <li class="nav-item">
-                    <a class="nav-link" href="/admin/dashboard">Dashboard</a>
-                </li>
-                <li class="nav-item">
-                    <button id="themeToggle" type="button" class="btn btn-sm ms-2">🌙</button>
-                </li>
-            </ul>
+        <div class="flex items-center space-x-4">
+            <a href="/admin/dashboard" class="text-white hover:underline">Dashboard</a>
+            <button id="themeToggle" type="button" class="text-white rounded-full p-1 focus:outline-none focus:ring-2 focus:ring-brand-light dark:focus:ring-brand-dark">🌙</button>
         </div>
     </div>
 </nav>
 
 <!-- Main Content -->
-<div class="container mt-5">
-    <h1 class="text-center mb-4">History</h1>
+<div class="container mx-auto mt-5">
+    <h1 class="text-center mb-4 font-semibold tracking-tight">History</h1>
 
     <!-- File Name and Description -->
     <div class="text-center">
-        <p class="file-name" th:text="${file.name}">File Name</p>
-        <p class="file-description" th:text="${file.description ?: 'No description provided'}">File Description</p>
+        <p class="text-2xl font-semibold text-sky-600 mb-2" th:text="${file.name}">File Name</p>
+        <p class="text-gray-600 dark:text-gray-400 mb-4" th:text="${file.description ?: 'No description provided'}">File Description</p>
     </div>
 
     <!-- File Details Grid -->
-    <div class="card mb-4">
-        <div class="card-header bg-info text-white text-center">
-            File Details
-        </div>
-        <div class="card-body">
-            <div class="file-info">
-                <div class="file-info-item">
+    <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-6 md:p-8 mb-4">
+        <h2 class="font-semibold tracking-tight text-center mb-4">File Details</h2>
+        <div>
+            <div class="grid gap-4 sm:grid-cols-3">
+                <div class="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg text-center">
                     <strong th:text="${file.size}"></strong>
                     <span>Size</span>
                 </div>
-                <div class="file-info-item">
+                <div class="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg text-center">
                     <strong th:text="${#temporals.format(file.uploadDate, 'dd.MM.yyyy')}"></strong>
                     <span>Upload Date</span>
                 </div>
-                <div class="file-info-item">
+                <div class="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg text-center">
                     <strong th:text="${file.totalDownloads}"></strong>
                     <span>Total Downloads</span>
                 </div>
@@ -94,7 +54,7 @@
     </div>
 
     <!-- History Table -->
-    <table class="table table-striped text-center">
+    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-center">
         <thead>
         <tr>
             <th>Date</th>
@@ -114,7 +74,5 @@
     </table>
 </div>
 
-<!-- Bootstrap Bundle -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

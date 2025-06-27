@@ -1,14 +1,12 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="h-full">
 <head>
-    <script src="/js/darkMode.js"></script>
+    <script src="/js/theme-toggle.js"></script>
     <meta charset="UTF-8">
     <meta name="_csrf" th:content="${_csrf.token}"/>
     <title>File View</title>
     <meta content="width=device-width, initial-scale=1" name="viewport">
-    <link
-            href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
-            rel="stylesheet">
+    <link href="/css/tailwind.css" rel="stylesheet">
     <link href="/images/favicon.png" rel="icon" type="image/png">
     <script src="https://cdn.jsdelivr.net/npm/qrcode@1.4.4/build/qrcode.min.js"></script>
     <style>
@@ -22,40 +20,17 @@
 <body>
 
 <!-- Navbar -->
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
-    <div class="container">
-        <a class="navbar-brand d-flex align-items-center" href="/">
-            <img alt="Website Logo" class="me-2" height="40" src="/images/favicon.png">
+<nav class="bg-slate-800 dark:bg-slate-900 mb-6">
+    <div class="container mx-auto flex items-center justify-between p-4">
+        <a href="/" class="flex items-center text-white font-semibold">
+            <img src="/images/favicon.png" alt="Website Logo" class="h-10 mr-2">
             QuickDrop
         </a>
-        <button
-                class="navbar-toggler"
-                type="button"
-                aria-label="Toggle navigation"
-                data-bs-target="#navbarNav"
-                aria-controls="navbarNav"
-                aria-expanded="false"
-                data-bs-toggle="collapse">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav ms-auto">
-                <li class="nav-item" th:if="${isFileListPageEnabled}">
-                    <a class="nav-link" href="/file/list">View Files</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/file/upload">Upload File</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/admin/dashboard" onclick="requestAdminPassword()"
-                       th:if="${isAdminDashboardButtonEnabled}">
-                        Admin Dashboard
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <button id="themeToggle" type="button" class="btn btn-sm ms-2">🌙</button>
-                </li>
-            </ul>
+        <div class="flex items-center space-x-4">
+            <a th:if="${isFileListPageEnabled}" href="/file/list" class="text-white hover:underline">View Files</a>
+            <a href="/file/upload" class="text-white hover:underline">Upload File</a>
+            <a href="/admin/dashboard" onclick="requestAdminPassword()" th:if="${isAdminDashboardButtonEnabled}" class="text-white hover:underline">Admin Dashboard</a>
+            <button id="themeToggle" type="button" class="text-white rounded-full p-1 focus:outline-none focus:ring-2 focus:ring-brand-light dark:focus:ring-brand-dark">🌙</button>
         </div>
     </div>
 </nav>
@@ -65,19 +40,17 @@
 <span hidden id="downloadLink" th:text='${downloadLink}'></span>
 
 <!-- Main Content -->
-<div class="container mt-5">
-    <h1 class="text-center mb-4">File View</h1>
-    <div class="row justify-content-center">
-        <div class="col-12 col-md-8 col-lg-6">
-            <div class="card shadow">
-                <div class="card-body">
-                    <h5 class="card-title text-center" th:text="${file.name}">File Name</h5>
+<div class="container mx-auto mt-5">
+    <h1 class="text-center mb-4 font-semibold tracking-tight">File View</h1>
+    <div class="max-w-xl mx-auto">
+        <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-6 md:p-8">
+                    <h5 class="text-center font-semibold" th:text="${file.name}">File Name</h5>
                     <div th:if="${!#strings.isEmpty(file.description)}">
-                        <p class="card-text text-center mb-3" th:text="${file.description}"></p>
+                        <p class="text-center mb-3 text-gray-600 dark:text-gray-400" th:text="${file.description}"></p>
                     </div>
 
                     <!-- File info -->
-                    <div class="d-flex justify-content-between align-items-center border-top pt-3">
+                    <div class="flex justify-between items-center border-t pt-3">
                         <h5 class="card-title mb-0"
                             th:text="${file.keepIndefinitely} ? 'Uploaded At:' : 'Uploaded/Renewed At:'"></h5>
                         <p class="card-text mb-0" th:text="${#temporals.format(file.uploadDate, 'dd.MM.yyyy')}"></p>
@@ -86,46 +59,31 @@
                         Files are kept only for <span th:text="${maxFileLifeTime}">30</span> days after this date.
                     </small>
 
-                    <div class="d-flex justify-content-between align-items-center pt-3">
+                    <div class="flex justify-between items-center pt-3">
                         <h5 class="card-title">Keep Indefinitely:</h5>
                         <form class="d-inline" method="post"
                               th:action="@{/file/keep-indefinitely/{uuid}(uuid=${file.uuid})}">
                             <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden">
                             <input name="keepIndefinitely" type="hidden" value="false">
-                            <div class="form-check form-switch">
-                                <input
-                                        class="form-check-input"
-                                        onchange="updateCheckboxState(event, this)"
-                                        id="keepIndefinitely"
-                                        name="keepIndefinitely"
-                                        type="checkbox"
-                                        th:checked="${file.keepIndefinitely}"
-                                        th:disabled="${file.passwordHash == null}"
-                                        value="true">
+                            <div>
+                                <input class="rounded focus:outline-none focus:ring-2 focus:ring-brand-light dark:focus:ring-brand-dark" onchange="updateCheckboxState(event, this)" id="keepIndefinitely" name="keepIndefinitely" type="checkbox" th:checked="${file.keepIndefinitely}" th:disabled="${file.passwordHash == null}" value="true">
                             </div>
                         </form>
                     </div>
 
-                    <div class="d-flex justify-content-between align-items-center" th:if="${file.passwordHash != null}">
+                    <div class="flex justify-between items-center" th:if="${file.passwordHash != null}">
                         <h5 class="card-title">Hide File From List:</h5>
                         <form class="d-inline" method="post"
                               th:action="@{/file/toggle-hidden/{uuid}(uuid=${file.uuid})}">
                             <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden">
                             <input name="hidden" type="hidden" value="false">
-                            <div class="form-check form-switch">
-                                <input
-                                        class="form-check-input"
-                                        onchange="updateCheckboxState(event, this)"
-                                        id="hidden"
-                                        name="hidden"
-                                        type="checkbox"
-                                        th:checked="${file.hidden}"
-                                        value="true">
+                            <div>
+                                <input class="rounded focus:outline-none focus:ring-2 focus:ring-brand-light dark:focus:ring-brand-dark" onchange="updateCheckboxState(event, this)" id="hidden" name="hidden" type="checkbox" th:checked="${file.hidden}" value="true">
                             </div>
                         </form>
                     </div>
 
-                    <div class="d-flex justify-content-between align-items-center pt-3">
+                    <div class="flex justify-between items-center pt-3">
                         <h5 class="card-title">File Size:</h5>
                         <p class="card-text" th:text="${fileSize}"></p>
                     </div>
@@ -137,33 +95,25 @@
                         Your file is being prepared for download. Please wait...
                     </div>
 
-                    <div class="d-flex justify-content-between mt-3 border-top pt-3">
-                        <a
-                                class="btn btn-success"
-                                id="downloadButton"
-                                th:href="@{/file/download/{uuid}(uuid=${file.uuid})}"
-                                th:onclick="${file.passwordHash != null} ? 'showPreparingMessage()' : ''">
-                            Download
-                        </a>
+                    <div class="flex justify-between mt-3 border-t pt-3">
+                        <a class="bg-green-600 text-white px-3 py-1 rounded font-semibold focus:outline-none focus:ring-2 focus:ring-brand-light dark:focus:ring-brand-dark" id="downloadButton" th:href="@{/file/download/{uuid}(uuid=${file.uuid})}" th:onclick="${file.passwordHash != null} ? 'showPreparingMessage()' : ''">Download</a>
 
                         <form method="post"
                               onsubmit="return confirmDelete();"
                               th:action="@{/file/delete/{uuid}(uuid=${file.uuid})}"
                               th:if="${file.passwordHash != null}">
                             <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden">
-                            <button class="btn btn-danger" type="submit">Delete File</button>
+                            <button class="bg-red-600 text-white px-3 py-1 rounded font-semibold focus:outline-none focus:ring-2 focus:ring-brand-light dark:focus:ring-brand-dark" type="submit">Delete File</button>
                         </form>
 
                         <form method="post"
                               th:action="@{/file/extend/{uuid}(uuid=${file.uuid})}"
                               th:if="${file.keepIndefinitely == false}">
                             <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden">
-                            <button class="btn btn-primary" type="submit">Renew File Lifetime</button>
+                            <button class="bg-brand-light dark:bg-brand-dark text-white px-3 py-1 rounded font-semibold focus:outline-none focus:ring-2 focus:ring-brand-light dark:focus:ring-brand-dark" type="submit">Renew File Lifetime</button>
                         </form>
 
-                        <button class="btn btn-secondary" onclick="openShareModal()"
-                                type="button">Share
-                        </button>
+                        <button class="bg-gray-600 text-white px-3 py-1 rounded font-semibold focus:outline-none focus:ring-2 focus:ring-brand-light dark:focus:ring-brand-dark" onclick="openShareModal()" type="button">Share</button>
                     </div>
                 </div>
             </div>
@@ -172,14 +122,13 @@
 </div>
 
 <!-- Share Modal -->
-<div aria-hidden="true" aria-labelledby="shareModalLabel" class="modal fade" id="shareModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h1 class="modal-title fs-5" id="shareModalLabel">Share File</h1>
-                <button aria-label="Close" class="btn-close" data-bs-dismiss="modal" type="button"></button>
-            </div>
-            <div class="modal-body">
+<div id="shareModal" aria-labelledby="shareModalLabel" aria-hidden="true" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 hidden">
+    <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-6 md:p-8 w-full max-w-md">
+        <div class="flex justify-between items-center mb-4">
+            <h1 class="font-semibold tracking-tight text-lg" id="shareModalLabel">Share File</h1>
+            <button type="button" onclick="closeShareModal()" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">✕</button>
+        </div>
+        <div>
                 <div th:if="${file.passwordHash != null || isAppPasswordSet}">
                     <p>
                         By default, this link requires a password to access the file if the file is password-protected
@@ -205,56 +154,33 @@
                     <label class="form-check-label" for="unrestrictedLink">Generate an unrestricted link</label>
                 </div>
 
-                <div class="row">
+                <div class="md:flex md:space-x-4">
                     <!-- Days Valid -->
-                    <div class="col-md-6">
+                    <div class="md:w-1/2">
                         <div class="mb-3" id="daysValidContainer" style="display: none;">
-                            <label class="form-label" for="daysValid">
-                                Days the link will be valid:
-                            </label>
-                            <input
-                                    class="form-control"
-                                    id="daysValid"
-                                    min="1"
-                                    type="number"
-                                    value="30"
-                            >
+                            <label class="block mb-1" for="daysValid">Days the link will be valid:</label>
+                            <input class="w-full p-2 border rounded-lg" id="daysValid" min="1" type="number" value="30">
                         </div>
                     </div>
 
                     <!-- Allowed Downloads -->
-                    <div class="col-md-6">
+                    <div class="md:w-1/2">
                         <div class="mb-3" id="allowedNumberOfDownloads" style="display: none;">
-                            <label class="form-label" for="allowedNumberOfDownloadsCount">
-                                Number of allowed downloads:
-                            </label>
-                            <input
-                                    class="form-control"
-                                    id="allowedNumberOfDownloadsCount"
-                                    min="1"
-                                    type="number"
-                                    value="1"
-                            >
+                            <label class="block mb-1" for="allowedNumberOfDownloadsCount">Number of allowed downloads:</label>
+                            <input class="w-full p-2 border rounded-lg" id="allowedNumberOfDownloadsCount" min="1" type="number" value="1">
                         </div>
                     </div>
                 </div>
+        </div>
+        <div class="mt-4 flex justify-end space-x-2" th:if="${file.passwordHash != null || isAppPasswordSet == true}">
+            <div id="spinner" class="hidden text-brand-light" role="status">
+                <svg class="animate-spin h-5 w-5" viewBox="0 0 24 24"></svg>
             </div>
-            <div class="modal-footer" th:if="${file.passwordHash != null || isAppPasswordSet == true}">
-                <div class="spinner-border text-primary"
-                     id="spinner"
-                     role="status"
-                     style="display: none; margin-bottom: 1rem;">
-                    <span class="visually-hidden">Loading...</span>
-                </div>
-                <button class="btn btn-primary" id="generateLinkButton" onclick="createShareLink()" type="button">
-                    Generate
-                </button>
-            </div>
+            <button id="generateLinkButton" onclick="createShareLink()" type="button" class="bg-brand-light dark:bg-brand-dark text-white px-3 py-1 rounded font-semibold focus:outline-none focus:ring-2 focus:ring-brand-light dark:focus:ring-brand-dark">Generate</button>
         </div>
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script src="/js/fileView.js"></script>
 </body>
 </html>

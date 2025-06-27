@@ -1,0 +1,12 @@
+{
+  "name": "quickdrop",
+  "version": "1.0.0",
+  "scripts": {
+    "build:css": "tailwindcss -i ./src/main/tailwind.css -o ./src/main/resources/static/css/tailwind.css --minify"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.4",
+    "postcss": "^8.4.32",
+    "autoprefixer": "^10.4.16"
+  }
+}

@@ -1,122 +1,62 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="h-full">
 <head>
-    <script src="/js/darkMode.js"></script>
+    <script src="/js/theme-toggle.js"></script>
     <meta charset="UTF-8">
     <title>
         All
         Files</title>
     <meta content="width=device-width, initial-scale=1"
           name="viewport">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
-          rel="stylesheet">
+    <link href="/css/tailwind.css" rel="stylesheet">
     <link href="/images/favicon.png"
           rel="icon"
           type="image/png">
 </head>
 <body>
 <!-- Navbar -->
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
-    <div class="container">
-        <a class="navbar-brand d-flex align-items-center" href="/">
-            <img alt="Website Logo" class="me-2" height="40" src="/images/favicon.png">
+<nav class="bg-slate-800 dark:bg-slate-900 mb-6">
+    <div class="container mx-auto flex items-center justify-between p-4">
+        <a href="/" class="flex items-center text-white font-semibold">
+            <img src="/images/favicon.png" alt="Website Logo" class="h-10 mr-2">
             QuickDrop
         </a>
-        <button
-                class="navbar-toggler"
-                type="button"
-                aria-controls="navbarNav"
-                aria-expanded="false"
-                aria-label="Toggle navigation"
-                data-bs-target="#navbarNav"
-                data-bs-toggle="collapse">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav ms-auto">
-                <li class="nav-item">
-                    <a class="nav-link" href="/file/upload">Upload File</a>
-                </li>
-                <li class="nav-item">
-                    <!-- Admin Dashboard Button -->
-                    <a class="nav-link" href="/admin/dashboard" onclick="requestAdminPassword()"
-                       th:if="${isAdminDashboardButtonEnabled}">
-                        Admin Dashboard
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <button id="themeToggle" type="button" class="btn btn-sm ms-2">🌙</button>
-                </li>
-            </ul>
+        <div class="flex items-center space-x-4">
+            <a href="/file/upload" class="text-white hover:underline">Upload File</a>
+            <a href="/admin/dashboard" onclick="requestAdminPassword()" th:if="${isAdminDashboardButtonEnabled}" class="text-white hover:underline">Admin Dashboard</a>
+            <button id="themeToggle" type="button" class="text-white rounded-full p-1 focus:outline-none focus:ring-2 focus:ring-brand-light dark:focus:ring-brand-dark">🌙</button>
         </div>
     </div>
 </nav>
 
 
 <!-- Main Content -->
-<div class="container mt-5">
-    <h1 class="text-center mb-4">
-        All
-        Files</h1>
+<div class="container mx-auto mt-5">
+    <h1 class="text-center mb-4 font-semibold tracking-tight">All Files</h1>
     <!-- Search Bar Section -->
-    <div class="row mb-4">
-        <div class="col-12 col-md-8 offset-md-2">
-            <form action="/file/search"
-                  method="GET">
-                <div class="input-group">
-                    <input aria-describedby="search-button"
-                           aria-label="Search for files"
-                           class="form-control"
-                           name="query"
-                           placeholder="Search for files..."
-                           type="text">
-                    <button class="btn btn-primary"
-                            id="search-button"
-                            type="submit">
-                        Search
-                    </button>
-                </div>
-            </form>
-        </div>
+    <div class="mb-4 max-w-xl mx-auto">
+        <form action="/file/search" method="GET" class="flex">
+            <input aria-describedby="search-button" aria-label="Search for files" class="flex-grow p-2 border rounded-l-lg bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-brand-light dark:focus:ring-brand-dark" name="query" placeholder="Search for files..." type="text">
+            <button class="bg-brand-light dark:bg-brand-dark text-white px-4 rounded-r-lg font-semibold focus:outline-none focus:ring-2 focus:ring-brand-light dark:focus:ring-brand-dark" id="search-button" type="submit">Search</button>
+        </form>
     </div>
-    <div class="row" th:if="${#lists.isEmpty(files)}">
-        <div class="col-12 text-center my-5">
-            <h3 class="text-muted">No files have been uploaded yet.</h3>
-            <p>Start by <a href="/file/upload">uploading a file</a>.</p>
-        </div>
+    <div th:if="${#lists.isEmpty(files)}" class="text-center my-5">
+        <h3 class="text-gray-600 dark:text-gray-400">No files have been uploaded yet.</h3>
+        <p>Start by <a href="/file/upload" class="underline">uploading a file</a>.</p>
     </div>
 
-    <div class="row">
-        <div class="col-12 col-sm-6 col-md-4 col-lg-3 mb-4"
-             th:each="file : ${files}">
-            <div class="card h-100 shadow">
-                <div class="card-body">
-                    <h5 class="card-title"
-                        th:text="${file.name}">
-                        File
-                        Name</h5>
-                    <p class="card-text"
-                       th:if="${!#strings.isEmpty(file.description)}"
-                       th:text="${file.description}"></p>
-                    <p class="card-text border-top pt-3"
-                       th:text="'Keep Indefinitely: ' + (${file.keepIndefinitely} ? 'Yes' : 'No')">
-                        Keep
-                        Indefinitely</p>
-                    <p class="card-text"
-                       th:text="'Password Protected: ' + (${file.passwordHash != null} ? 'Yes' : 'No')">
-                        Password
-                        Protected</p>
-                    <p class="card-text border-top pt-3"
-                       th:text="${file.keepIndefinitely} ? 'Uploaded: ' + ${#temporals.format(file.uploadDate, 'dd.MM.yyyy')} : 'Uploaded/Renewed: ' + ${#temporals.format(file.uploadDate, 'dd.MM.yyyy')}"></p>
-                </div>
-                <div class="card-footer">
-                    <a class="btn btn-primary w-100"
-                       th:href="@{/file/{UUID}(UUID=${file.uuid})}">Go to File Page</a>
-                </div>
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div th:each="file : ${files}" class="bg-white dark:bg-gray-900 rounded-2xl shadow-lg flex flex-col p-4">
+            <h5 class="font-semibold mb-2" th:text="${file.name}">File Name</h5>
+            <p th:if="${!#strings.isEmpty(file.description)}" th:text="${file.description}" class="mb-2"></p>
+            <p class="border-t pt-2" th:text="'Keep Indefinitely: ' + (${file.keepIndefinitely} ? 'Yes' : 'No')"></p>
+            <p th:text="'Password Protected: ' + (${file.passwordHash != null} ? 'Yes' : 'No')"></p>
+            <p class="border-t pt-2" th:text="${file.keepIndefinitely} ? 'Uploaded: ' + ${#temporals.format(file.uploadDate, 'dd.MM.yyyy')} : 'Uploaded/Renewed: ' + ${#temporals.format(file.uploadDate, 'dd.MM.yyyy')}"></p>
+            <div class="mt-auto pt-4">
+                <a class="block bg-brand-light dark:bg-brand-dark text-white text-center py-2 rounded-lg font-semibold focus:outline-none focus:ring-2 focus:ring-brand-light dark:focus:ring-brand-dark" th:href="@{/file/{UUID}(UUID=${file.uuid})}">Go to File Page</a>
             </div>
         </div>
     </div>
 </div>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

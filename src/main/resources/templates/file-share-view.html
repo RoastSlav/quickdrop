@@ -1,45 +1,36 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="h-full">
 <head>
-    <script src="/js/darkMode.js"></script>
+    <script src="/js/theme-toggle.js"></script>
     <meta charset="UTF-8">
     <title>Shared File View</title>
     <meta content="width=device-width, initial-scale=1" name="viewport">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/tailwind.css" rel="stylesheet">
 </head>
 <body>
-<div class="container mt-5">
-    <h1 class="text-center mb-4">Shared File</h1>
-    <div class="row justify-content-center">
-        <div class="col-12 col-md-8 col-lg-6">
-            <div class="card shadow">
-                <div class="card-body">
-                    <h5 class="card-title text-center" th:text="${file.name}">File Name</h5>
+<div class="container mx-auto mt-5">
+    <h1 class="text-center mb-4 font-semibold tracking-tight">Shared File</h1>
+    <div class="max-w-xl mx-auto">
+        <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-6 md:p-8">
+            <h5 class="text-center font-semibold" th:text="${file.name}">File Name</h5>
 
-                    <p class="card-text text-center" th:text="${file.description}">Description</p>
+            <p class="text-center text-gray-600 dark:text-gray-400" th:text="${file.description}">Description</p>
 
-                    <div class="d-flex justify-content-between align-items-center border-top pt-3">
-                        <h5 class="card-title mb-0">Uploaded At:</h5>
-                        <p class="card-text mb-0" th:text="${#temporals.format(file.uploadDate, 'dd.MM.yyyy')}"></p>
-                    </div>
-
-                    <div class="d-flex justify-content-between align-items-center pt-3">
-                        <h5 class="card-title">File Size:</h5>
-                        <p class="card-text" th:text="${file.size}"></p>
-                    </div>
-
-                    <h5 class="card-title border-top pt-3"></h5>
-                    <a
-                            class="btn btn-success w-100"
-                            id="downloadButton"
-                            th:href="${downloadLink}">
-                        Download
-                    </a>
-                </div>
+            <div class="flex justify-between items-center border-t pt-3">
+                <h5 class="mb-0">Uploaded At:</h5>
+                <p class="mb-0" th:text="${#temporals.format(file.uploadDate, 'dd.MM.yyyy')}"></p>
             </div>
+
+            <div class="flex justify-between items-center pt-3">
+                <h5>File Size:</h5>
+                <p th:text="${file.size}"></p>
+            </div>
+
+            <h5 class="border-t pt-3"></h5>
+            <a class="block w-full bg-green-600 text-white text-center py-2 rounded-lg font-semibold focus:outline-none focus:ring-2 focus:ring-brand-light dark:focus:ring-brand-dark" id="downloadButton" th:href="${downloadLink}">Download</a>
         </div>
     </div>
 </div>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
 </body>
 </html>

@@ -46,8 +46,8 @@
         <div th:each="file : ${files}" class="aspect-video">
             <div class="w-full h-full bg-white dark:bg-slate-800 rounded-2xl shadow-lg flex flex-col p-6 md:p-8 space-y-4 overflow-hidden">
                 <div class="flex-1 space-y-2">
-                    <h2 class="text-lg font-semibold tracking-tight whitespace-nowrap overflow-hidden [mask-image:linear-gradient(to_right,black,transparent)]" th:text="${file.name}">File Name</h2>
-                    <p th:if="${!#strings.isEmpty(file.description)}" class="text-sm overflow-hidden [mask-image:linear-gradient(to_bottom,black,transparent)] line-clamp-2" th:text="${file.description}"></p>
+                    <h2 class="text-lg font-semibold tracking-tight whitespace-nowrap overflow-hidden [mask-image:linear-gradient(to_right,black_85%,transparent)]" th:text="${file.name}">File Name</h2>
+                    <p th:if="${!#strings.isEmpty(file.description)}" class="text-sm overflow-hidden line-clamp-2 [mask-image:linear-gradient(to_right,black_85%,transparent)]" th:text="${file.description}"></p>
                     <p class="text-sm text-gray-600 dark:text-gray-400" th:text="'Keep indefinitely: ' + (${file.keepIndefinitely} ? 'Yes' : 'No')"></p>
                     <p class="text-sm text-gray-600 dark:text-gray-400" th:text="'Password protected: ' + (${file.passwordHash != null} ? 'Yes' : 'No')"></p>
                     <p class="text-sm text-gray-600 dark:text-gray-400" th:text="${file.keepIndefinitely} ? 'Uploaded: ' + ${#temporals.format(file.uploadDate, 'dd.MM.yyyy')} : 'Uploaded/Renewed: ' + ${#temporals.format(file.uploadDate, 'dd.MM.yyyy')}"></p>

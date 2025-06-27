@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>All Files</title>
+    <title>All files</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link href="/css/tailwind.css" rel="stylesheet">
     <link rel="icon" type="image/png" href="/images/favicon.png">
@@ -26,12 +26,12 @@
 
 <main class="max-w-7xl mx-auto px-4 py-6 md:py-8">
     <header class="text-center mb-8 space-y-1">
-        <h1 class="text-3xl md:text-4xl font-semibold tracking-tight">All Files</h1>
+        <h1 class="text-3xl md:text-4xl font-semibold tracking-tight">All files</h1>
     </header>
-    <div class="max-w-lg mx-auto mb-6">
-        <form action="/file/search" method="GET" class="flex">
+    <div class="max-w-2xl mx-auto my-8 px-4">
+        <form action="/file/search" method="GET" class="flex gap-2">
             <label for="searchInput" class="sr-only">Search files</label>
-            <input id="searchInput" aria-describedby="search-button" name="query" type="text" placeholder="Search for files..." class="flex-grow rounded-l-lg border border-gray-400 dark:border-gray-600 bg-white dark:bg-slate-700 p-2 focus:outline-none focus:ring-2 focus:ring-sky-500" />
+            <input id="searchInput" aria-describedby="search-button" name="query" type="text" placeholder="Search for files..." class="w-full flex-grow rounded-l-lg border border-gray-400 dark:border-gray-600 bg-white dark:bg-slate-700 p-2 focus:outline-none focus:ring-2 focus:ring-sky-500" />
             <button id="search-button" type="submit" class="rounded-r-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white px-4 transition-colors active:scale-95 focus:outline-none focus:ring-2 focus:ring-sky-500">Search</button>
         </form>
     </div>
@@ -45,12 +45,12 @@
                 <div class="flex-grow">
                     <h2 class="text-xl font-semibold tracking-tight" th:text="${file.name}">File Name</h2>
                     <p class="mt-2" th:if="${!#strings.isEmpty(file.description)}" th:text="${file.description}"></p>
-                    <p class="mt-2 border-t pt-3 text-sm text-gray-600 dark:text-gray-300" th:text="'Keep Indefinitely: ' + (${file.keepIndefinitely} ? 'Yes' : 'No')"></p>
-                    <p class="text-sm text-gray-600 dark:text-gray-300" th:text="'Password Protected: ' + (${file.passwordHash != null} ? 'Yes' : 'No')"></p>
+                    <p class="mt-2 border-t pt-3 text-sm text-gray-600 dark:text-gray-300" th:text="'Keep indefinitely: ' + (${file.keepIndefinitely} ? 'Yes' : 'No')"></p>
+                    <p class="text-sm text-gray-600 dark:text-gray-300" th:text="'Password protected: ' + (${file.passwordHash != null} ? 'Yes' : 'No')"></p>
                     <p class="border-t pt-3 text-sm text-gray-600 dark:text-gray-300" th:text="${file.keepIndefinitely} ? 'Uploaded: ' + ${#temporals.format(file.uploadDate, 'dd.MM.yyyy')} : 'Uploaded/Renewed: ' + ${#temporals.format(file.uploadDate, 'dd.MM.yyyy')}"></p>
                 </div>
-                <div class="mt-4">
-                    <a th:href="@{/file/{UUID}(UUID=${file.uuid})}" class="block text-center rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium py-2 transition-colors active:scale-95 focus:outline-none focus:ring-2 focus:ring-sky-500">Go to File Page</a>
+                <div class="mt-4 text-center">
+                    <a th:href="@{/file/{UUID}(UUID=${file.uuid})}" class="inline-block rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium px-4 py-2 transition-colors active:scale-95 focus:outline-none focus:ring-2 focus:ring-sky-500">Go to file page</a>
                 </div>
             </div>
         </div>

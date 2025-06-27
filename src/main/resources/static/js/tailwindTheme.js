@@ -4,7 +4,8 @@ const html=document.documentElement;
 const stored=localStorage.getItem('theme');
 let btn;
 const apply=m=>{html.classList.toggle('dark',m==='dark');localStorage.setItem('theme',m);if(btn)btn.textContent=m==='dark'?'☀️':'🌙';};
-const current=stored||'light';
+const system=window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';
+const current=stored||system;
 html.classList.toggle('dark',current==='dark');
 const init=()=>{
 btn=document.getElementById('themeToggle');

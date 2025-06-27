@@ -1,6 +1,9 @@
+// Apply the saved theme as soon as this file is parsed to prevent a
+// flash of the default light theme during navigation.
+const storedTheme = localStorage.getItem('theme') || 'light';
+document.documentElement.setAttribute('data-bs-theme', storedTheme);
+
 document.addEventListener('DOMContentLoaded', () => {
-    const storedTheme = localStorage.getItem('theme') || 'light';
-    setTheme(storedTheme);
 
     const toggleButton = document.createElement('button');
     toggleButton.id = 'themeToggle';

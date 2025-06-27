@@ -6,9 +6,7 @@
     <meta name="_csrf" th:content="${_csrf.token}"/>
     <title>File View</title>
     <meta content="width=device-width, initial-scale=1" name="viewport">
-    <link
-            href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
-            rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
     <link href="/images/favicon.png" rel="icon" type="image/png">
     <script src="https://cdn.jsdelivr.net/npm/qrcode@1.4.4/build/qrcode.min.js"></script>
     <style>
@@ -22,41 +20,19 @@
 <body>
 
 <!-- Navbar -->
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
-    <div class="container">
-        <a class="navbar-brand d-flex align-items-center" href="/">
-            <img alt="Website Logo" class="me-2" height="40" src="/images/favicon.png">
-            QuickDrop
+<nav class="bg-gray-800 text-white mb-4">
+    <div class="max-w-5xl mx-auto px-4 flex items-center justify-between h-16">
+        <a class="flex items-center" href="/">
+            <img alt="Website Logo" class="h-10 mr-2" src="/images/favicon.png">
+            <span class="font-semibold">QuickDrop</span>
         </a>
-        <button
-                class="navbar-toggler"
-                type="button"
-                aria-label="Toggle navigation"
-                data-bs-target="#navbarNav"
-                aria-controls="navbarNav"
-                aria-expanded="false"
-                data-bs-toggle="collapse">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav ms-auto">
-                <li class="nav-item" th:if="${isFileListPageEnabled}">
-                    <a class="nav-link" href="/file/list">View Files</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/file/upload">Upload File</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/admin/dashboard" onclick="requestAdminPassword()"
-                       th:if="${isAdminDashboardButtonEnabled}">
-                        Admin Dashboard
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <button id="themeToggle" type="button" class="btn btn-sm ms-2">🌙</button>
-                </li>
-            </ul>
-        </div>
+        <button id="navToggle" class="lg:hidden p-2" aria-label="Toggle navigation">☰</button>
+        <ul id="navMenu" class="hidden lg:flex space-x-4 items-center">
+            <li th:if="${isFileListPageEnabled}"><a class="hover:underline" href="/file/list">View Files</a></li>
+            <li><a class="hover:underline" href="/file/upload">Upload File</a></li>
+            <li th:if="${isAdminDashboardButtonEnabled}"><a class="hover:underline" href="/admin/dashboard" onclick="requestAdminPassword()">Admin Dashboard</a></li>
+            <li><button id="themeToggle" type="button" class="ml-2 px-2 py-1 border rounded text-sm">🌙</button></li>
+        </ul>
     </div>
 </nav>
 
@@ -65,12 +41,12 @@
 <span hidden id="downloadLink" th:text='${downloadLink}'></span>
 
 <!-- Main Content -->
-<div class="container mt-5">
+<div class="max-w-3xl mx-auto mt-5 px-4">
     <h1 class="text-center mb-4">File View</h1>
     <div class="row justify-content-center">
         <div class="col-12 col-md-8 col-lg-6">
-            <div class="card shadow">
-                <div class="card-body">
+            <div class="bg-white dark:bg-gray-800 shadow rounded">
+                <div class="p-4">
                     <h5 class="card-title text-center" th:text="${file.name}">File Name</h5>
                     <div th:if="${!#strings.isEmpty(file.description)}">
                         <p class="card-text text-center mb-3" th:text="${file.description}"></p>
@@ -172,14 +148,13 @@
 </div>
 
 <!-- Share Modal -->
-<div aria-hidden="true" aria-labelledby="shareModalLabel" class="modal fade" id="shareModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h1 class="modal-title fs-5" id="shareModalLabel">Share File</h1>
-                <button aria-label="Close" class="btn-close" data-bs-dismiss="modal" type="button"></button>
-            </div>
-            <div class="modal-body">
+<div id="shareModal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 hidden">
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg w-full max-w-md p-4">
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-lg font-semibold" id="shareModalLabel">Share File</h2>
+            <button onclick="closeShareModal()">✕</button>
+        </div>
+        <div>
                 <div th:if="${file.passwordHash != null || isAppPasswordSet}">
                     <p>
                         By default, this link requires a password to access the file if the file is password-protected
@@ -254,7 +229,12 @@
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    document.getElementById('navToggle').addEventListener('click', function () {
+        const menu = document.getElementById('navMenu');
+        menu.classList.toggle('hidden');
+    });
+</script>
 <script src="/js/fileView.js"></script>
 </body>
 </html>

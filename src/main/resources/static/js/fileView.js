@@ -37,8 +37,11 @@ function openShareModal() {
         }
     });
 
-    const shareModal = new bootstrap.Modal(document.getElementById('shareModal'));
-    shareModal.show();
+    document.getElementById('shareModal').classList.remove('hidden');
+}
+
+function closeShareModal() {
+    document.getElementById('shareModal').classList.add('hidden');
 }
 
 function generateShareLink(fileUuid, daysValid, allowedNumberOfDownloads) {

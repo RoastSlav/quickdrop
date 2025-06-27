@@ -50,13 +50,13 @@
                     <input id="keepIndefinitely" name="keepIndefinitely" type="checkbox" class="rounded border-gray-300 dark:border-gray-600 text-sky-500 focus:ring-sky-500">
                     <label for="keepIndefinitely" class="text-sm">Keep indefinitely</label>
                 </div>
-                <small class="text-gray-600 dark:text-gray-300 block -mt-4 mb-2">If checked, this file will not be auto-deleted after <span class="maxFileLifeTime" th:text="${maxFileLifeTime}">30</span> days.</small>
+                <small class="text-sm text-gray-600 dark:text-gray-300 mb-2 ml-7">If checked, this file will not be auto-deleted after <span class="maxFileLifeTime" th:text="${maxFileLifeTime}">30</span> days.</small>
                 <div th:if="${isFileListPageEnabled}">
                     <div class="flex items-start gap-2">
                         <input id="hidden" name="hidden" type="checkbox" class="rounded border-gray-300 dark:border-gray-600 text-sky-500 focus:ring-sky-500">
                         <label for="hidden" class="text-sm">Hide from file list</label>
                     </div>
-                    <small class="text-gray-600 dark:text-gray-300 block -mt-4 mb-2">If checked, this file won’t appear on the “View Files” page.</small>
+                    <small class="text-sm text-gray-600 dark:text-gray-300 mb-2 ml-7">If checked, this file won’t appear on the “View Files” page.</small>
                 </div>
                 <label class="block">
                     <span class="sr-only">Password (Optional)</span>

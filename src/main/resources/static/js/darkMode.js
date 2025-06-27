@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!toggleButton) {
             toggleButton = document.createElement('button');
             toggleButton.id = 'themeToggle';
-            toggleButton.className = 'btn btn-sm ms-2';
+            styleButton(toggleButton);
 
             const navContainer = document.querySelector('.navbar .navbar-nav.ms-auto');
             if (navContainer) {
@@ -25,21 +25,32 @@ document.addEventListener('DOMContentLoaded', () => {
                 toggleButton.style.zIndex = '1030';
                 document.body.appendChild(toggleButton);
             }
+        } else {
+            styleButton(toggleButton);
         }
 
-        applyButtonStyle(toggleButton, storedTheme);
-        toggleButton.textContent = storedTheme === 'dark' ? 'Light Mode' : 'Dark Mode';
+        applyButtonStyle(toggleButton);
+        toggleButton.textContent = storedTheme === 'dark' ? '☀️' : '🌙';
+        toggleButton.setAttribute('aria-label', storedTheme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme');
         toggleButton.addEventListener('click', () => {
             const currentTheme = document.documentElement.getAttribute('data-bs-theme') || 'light';
             const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
             setTheme(newTheme);
-            applyButtonStyle(toggleButton, newTheme);
-            toggleButton.textContent = newTheme === 'dark' ? 'Light Mode' : 'Dark Mode';
+            applyButtonStyle(toggleButton);
+            toggleButton.textContent = newTheme === 'dark' ? '☀️' : '🌙';
+            toggleButton.setAttribute('aria-label', newTheme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme');
         });
     }
 
     updateTableHeaders(storedTheme);
 });
+
+function styleButton(button) {
+    button.classList.add('btn', 'btn-sm', 'ms-2', 'd-flex', 'align-items-center', 'justify-content-center');
+    button.style.width = '2rem';
+    button.style.height = '2rem';
+    button.style.padding = '0';
+}
 
 function setTheme(theme) {
     document.documentElement.setAttribute('data-bs-theme', theme);
@@ -47,9 +58,11 @@ function setTheme(theme) {
     updateTableHeaders(theme);
 }
 
-function applyButtonStyle(button, theme) {
+function applyButtonStyle(button) {
     button.classList.remove('btn-outline-light', 'btn-outline-dark');
-    if (theme === 'dark') {
+    const theme = document.documentElement.getAttribute('data-bs-theme') || 'light';
+    const navbarDark = button.closest('.navbar')?.classList.contains('navbar-dark');
+    if (theme === 'dark' || navbarDark) {
         button.classList.add('btn-outline-light');
     } else {
         button.classList.add('btn-outline-dark');

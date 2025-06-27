@@ -5,44 +5,28 @@
     <meta charset="UTF-8">
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <title>Welcome to QuickDrop</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            background-color: #f8f9fa;
-        }
-
-        .welcome-card {
-            max-width: 500px;
-            width: 100%;
-        }
-    </style>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-<div class="card welcome-card shadow">
-    <div class="card-header bg-primary text-white text-center">
-        <h1>Welcome to QuickDrop</h1>
+<body class="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900">
+<div class="max-w-md w-full bg-white dark:bg-gray-800 rounded-lg shadow-lg">
+    <div class="bg-indigo-600 text-white text-center rounded-t-lg p-4">
+        <h1 class="text-xl font-semibold">Welcome to QuickDrop</h1>
     </div>
-    <div class="card-body">
+    <div class="p-6">
         <p class="text-center">
             Thank you for setting up QuickDrop! Before you get started, please set an admin password for the dashboard.
         </p>
         <form id="setupForm" method="post" th:action="@{/admin/setup}">
-            <div class="mb-3">
-                <label class="form-label" for="adminPassword">Admin Password</label>
-                <input class="form-control" id="adminPassword" minlength="8" name="adminPassword" required
-                       type="password">
+            <div class="mb-4">
+                <label class="block text-sm font-medium mb-1" for="adminPassword">Admin Password</label>
+                <input class="w-full border rounded px-3 py-2" id="adminPassword" minlength="8" name="adminPassword" required type="password">
             </div>
-            <div class="mb-3">
-                <label class="form-label" for="confirmPassword">Confirm Password</label>
-                <input class="form-control" id="confirmPassword" minlength="8" name="confirmPassword" required
-                       type="password">
+            <div class="mb-4">
+                <label class="block text-sm font-medium mb-1" for="confirmPassword">Confirm Password</label>
+                <input class="w-full border rounded px-3 py-2" id="confirmPassword" minlength="8" name="confirmPassword" required type="password">
             </div>
-            <div class="text-danger mb-3" id="error-message" style="display: none;">Passwords do not match.</div>
-            <button class="btn btn-primary w-100" type="submit">Set Admin Password</button>
+            <div class="text-red-600 mb-3" id="error-message" style="display: none;">Passwords do not match.</div>
+            <button class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 rounded" type="submit">Set Admin Password</button>
         </form>
     </div>
 </div>

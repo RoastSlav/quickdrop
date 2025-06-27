@@ -10,12 +10,19 @@ document.addEventListener("DOMContentLoaded", () => {
 
 // Unified way to show an inline message in our #messageContainer
 function showMessage(type, text) {
-    // type: "success", "info", "danger", "warning"
+    const colors = {
+        success: 'bg-green-100 text-green-800 border-green-200',
+        info: 'bg-blue-100 text-blue-800 border-blue-200',
+        danger: 'bg-red-100 text-red-800 border-red-200',
+        warning: 'bg-yellow-100 text-yellow-800 border-yellow-200'
+    };
     const container = document.getElementById("messageContainer");
     container.innerHTML = `
-    <div class="alert alert-${type} alert-dismissible fade show" role="alert">
-      ${text}
-      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    <div class="mb-4 p-3 rounded border ${colors[type] || colors.info}">
+      <div class="flex justify-between items-start">
+        <span>${text}</span>
+        <button onclick="this.parentElement.parentElement.remove()" class="ml-2">✕</button>
+      </div>
     </div>`;
 }
 

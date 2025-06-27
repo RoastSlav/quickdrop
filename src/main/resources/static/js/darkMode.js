@@ -1,7 +1,9 @@
 // Apply the saved theme as soon as this file is parsed to prevent a
 // flash of the default light theme during navigation.
 const storedTheme = localStorage.getItem('theme') || 'light';
-document.documentElement.setAttribute('data-bs-theme', storedTheme);
+if (storedTheme === 'dark') {
+    document.documentElement.classList.add('dark');
+}
 
 document.addEventListener('DOMContentLoaded', () => {
     const disableToggle = document.documentElement.hasAttribute('data-disable-theme-toggle');
@@ -12,10 +14,9 @@ document.addEventListener('DOMContentLoaded', () => {
             toggleButton.id = 'themeToggle';
             styleButton(toggleButton);
 
-            const navContainer = document.querySelector('.navbar .navbar-nav.ms-auto');
+            const navContainer = document.querySelector('.navbar-nav');
             if (navContainer) {
                 const li = document.createElement('li');
-                li.className = 'nav-item';
                 li.appendChild(toggleButton);
                 navContainer.appendChild(li);
             } else {
@@ -29,53 +30,28 @@ document.addEventListener('DOMContentLoaded', () => {
             styleButton(toggleButton);
         }
 
-        applyButtonStyle(toggleButton);
         toggleButton.textContent = storedTheme === 'dark' ? '☀️' : '🌙';
         toggleButton.setAttribute('aria-label', storedTheme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme');
         toggleButton.addEventListener('click', () => {
-            const currentTheme = document.documentElement.getAttribute('data-bs-theme') || 'light';
+            const currentTheme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
             const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
             setTheme(newTheme);
-            applyButtonStyle(toggleButton);
             toggleButton.textContent = newTheme === 'dark' ? '☀️' : '🌙';
             toggleButton.setAttribute('aria-label', newTheme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme');
         });
     }
-
-    updateTableHeaders(storedTheme);
 });
 
 function styleButton(button) {
-    button.classList.add('btn', 'btn-sm', 'ms-2', 'd-flex', 'align-items-center', 'justify-content-center');
-    button.style.width = '2rem';
-    button.style.height = '2rem';
-    button.style.padding = '0';
+    button.classList.add('ml-2', 'px-2', 'py-1', 'border', 'rounded', 'text-sm');
 }
 
 function setTheme(theme) {
-    document.documentElement.setAttribute('data-bs-theme', theme);
-    localStorage.setItem('theme', theme);
-    updateTableHeaders(theme);
-}
-
-function applyButtonStyle(button) {
-    button.classList.remove('btn-outline-light', 'btn-outline-dark');
-    const theme = document.documentElement.getAttribute('data-bs-theme') || 'light';
-    const navbarDark = button.closest('.navbar')?.classList.contains('navbar-dark');
-    if (theme === 'dark' || navbarDark) {
-        button.classList.add('btn-outline-light');
+    if (theme === 'dark') {
+        document.documentElement.classList.add('dark');
     } else {
-        button.classList.add('btn-outline-dark');
+        document.documentElement.classList.remove('dark');
     }
+    localStorage.setItem('theme', theme);
 }
 
-function updateTableHeaders(theme) {
-    document.querySelectorAll('thead.table-dark, thead.table-light').forEach((thead) => {
-        thead.classList.remove('table-dark', 'table-light');
-        if (theme === 'dark') {
-            thead.classList.add('table-dark');
-        } else {
-            thead.classList.add('table-light');
-        }
-    });
-}

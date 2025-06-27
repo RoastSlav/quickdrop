@@ -5,50 +5,35 @@
     <meta charset="UTF-8">
     <title>Upload File</title>
     <meta content="width=device-width, initial-scale=1" name="viewport">
-    <link
-            href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
-            rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
     <link href="/images/favicon.png" rel="icon" type="image/png">
 </head>
 <body>
 <!-- Navbar -->
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
-    <div class="container">
-        <a class="navbar-brand d-flex align-items-center" href="/">
-            <img alt="Website Logo" class="me-2" height="40" src="/images/favicon.png">
-            QuickDrop
+<nav class="bg-gray-800 text-white mb-4">
+    <div class="max-w-5xl mx-auto px-4 flex items-center justify-between h-16">
+        <a class="flex items-center" href="/">
+            <img alt="Website Logo" class="h-10 mr-2" src="/images/favicon.png">
+            <span class="font-semibold">QuickDrop</span>
         </a>
-        <button
-                class="navbar-toggler"
-                type="button"
-                aria-label="Toggle navigation"
-                data-bs-target="#navbarNav"
-                aria-controls="navbarNav"
-                aria-expanded="false"
-                data-bs-toggle="collapse">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav ms-auto">
-                <li class="nav-item" th:if="${isFileListPageEnabled}">
-                    <a class="nav-link" href="/file/list">View Files</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/admin/dashboard" th:if="${isAdminDashboardButtonEnabled}">
-                        Admin Dashboard
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <button id="themeToggle" type="button" class="btn btn-sm ms-2">🌙</button>
-                </li>
-            </ul>
-        </div>
+        <button id="navToggle" class="lg:hidden p-2" aria-label="Toggle navigation">☰</button>
+        <ul id="navMenu" class="hidden lg:flex space-x-4 items-center">
+            <li th:if="${isFileListPageEnabled}">
+                <a class="hover:underline" href="/file/list">View Files</a>
+            </li>
+            <li>
+                <a class="hover:underline" href="/admin/dashboard" th:if="${isAdminDashboardButtonEnabled}">Admin Dashboard</a>
+            </li>
+            <li>
+                <button id="themeToggle" type="button" class="ml-2 px-2 py-1 border rounded text-sm">🌙</button>
+            </li>
+        </ul>
     </div>
 </nav>
 
 <!-- Main Content -->
-<div class="container">
-    <h1 class="text-center mb-4">Upload a File</h1>
+<div class="max-w-3xl mx-auto px-4">
+    <h1 class="text-center text-2xl font-semibold mb-4">Upload a File</h1>
 
     <!-- Instructions -->
     <p class="text-center mb-2">
@@ -61,8 +46,8 @@
         days unless “Keep indefinitely” is selected.
     </p>
 
-    <div class="row justify-content-center">
-        <div class="col-12 col-md-8 col-lg-6">
+    <div class="flex justify-center">
+        <div class="w-full max-w-lg">
             <!-- CARD -->
             <form
                     id="uploadForm"
@@ -81,10 +66,10 @@
                 <input name="uuid" th:value="${uuid}" type="hidden"/>
 
                 <!-- File Input -->
-                <div class="mb-3">
-                    <label class="form-label" for="file">Select a file:</label>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-1" for="file">Select a file:</label>
                     <input
-                            class="form-control"
+                            class="w-full border rounded px-3 py-2"
                             id="file"
                             name="file"
                             type="file"
@@ -93,9 +78,8 @@
                     />
                     <!-- File Size Alert (hidden by default) -->
                     <div
-                            class="alert alert-danger mt-2"
+                            class="mt-2 text-red-600 text-sm"
                             id="fileSizeAlert"
-                            role="alert"
                             style="display: none;"
                     >
                         File size exceeds the <span th:text="${maxFileSize}">1GB</span> limit.
@@ -103,56 +87,56 @@
                 </div>
 
                 <!-- Description Input -->
-                <div class="mb-3">
-                    <label class="form-label" for="description">Description:</label>
-                    <input class="form-control" id="description" name="description" type="text"/>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-1" for="description">Description:</label>
+                    <input class="w-full border rounded px-3 py-2" id="description" name="description" type="text"/>
                 </div>
 
                 <!-- Keep Indefinitely Checkbox -->
-                <div class="mb-3">
-                    <div class="form-check">
+                <div class="mb-4">
+                    <div class="flex items-center space-x-2">
                         <input
-                                class="form-check-input"
+                                class="h-4 w-4"
                                 id="keepIndefinitely"
                                 name="keepIndefinitely"
                                 type="checkbox"
                         />
-                        <label class="form-check-label" for="keepIndefinitely">
+                        <label for="keepIndefinitely" class="text-sm">
                             Keep indefinitely
                         </label>
                     </div>
-                    <small class="text-muted">
+                    <small class="text-gray-600">
                         If checked, this file will not be auto-deleted after
                         <span class="maxFileLifeTime" th:text="${maxFileLifeTime}">30</span> days.
                     </small>
                 </div>
 
                 <!-- Hidden File Checkbox -->
-                <div class="mb-3" th:if="${isFileListPageEnabled}">
-                    <div class="form-check">
+                <div class="mb-4" th:if="${isFileListPageEnabled}">
+                    <div class="flex items-center space-x-2">
                         <input
-                                class="form-check-input"
+                                class="h-4 w-4"
                                 id="hidden"
                                 name="hidden"
                                 type="checkbox"
                         />
-                        <label class="form-check-label" for="hidden">
+                        <label class="text-sm" for="hidden">
                             Hide from file list
                         </label>
                     </div>
-                    <small class="text-muted">
+                    <small class="text-gray-600">
                         If checked, this file won’t appear on the “View Files” page.
                     </small>
                 </div>
 
                 <!-- Password Input -->
-                <div class="mb-3">
-                    <label class="form-label" for="password">Password (Optional):</label>
-                    <input class="form-control" id="password" name="password" type="password"/>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-1" for="password">Password (Optional):</label>
+                    <input class="w-full border rounded px-3 py-2" id="password" name="password" type="password"/>
                 </div>
 
                 <!-- Submit Button -->
-                <button class="btn btn-primary w-100" type="submit">
+                <button class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 rounded" type="submit">
                     Upload
                 </button>
             </form>
@@ -161,13 +145,13 @@
 
     <!-- Upload Indicator -->
     <div class="mt-3 text-center" id="uploadIndicator" style="display: none;">
-        <p class="text-info" id="uploadStatus">Upload started...</p>
-        <div class="progress" style="width: 50%; margin: 0 auto;">
+        <p class="text-blue-600" id="uploadStatus">Upload started...</p>
+        <div class="w-1/2 bg-gray-200 rounded h-2 mx-auto">
             <div
                     aria-valuemax="100"
                     aria-valuemin="0"
                     aria-valuenow="0"
-                    class="progress-bar progress-bar-striped progress-bar-animated"
+                    class="bg-blue-600 h-full"
                     id="uploadProgress"
                     role="progressbar"
                     style="width: 0%;">
@@ -175,14 +159,19 @@
         </div>
     </div>
 
-    <div class="container mt-4" th:if="${isEncryptionEnabled}">
-        <p class="text-center text-muted">
+    <div class="max-w-3xl mx-auto mt-4 px-4" th:if="${isEncryptionEnabled}">
+        <p class="text-center text-gray-600">
             All password-protected files are also encrypted for additional security.
         </p>
     </div>
 </div> <!-- .container -->
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    document.getElementById('navToggle').addEventListener('click', function () {
+        const menu = document.getElementById('navMenu');
+        menu.classList.toggle('hidden');
+    });
+</script>
 <script src="/js/upload.js"></script>
 </body>
 </html>

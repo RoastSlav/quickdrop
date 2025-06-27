@@ -30,7 +30,8 @@
     </header>
     <div class="max-w-lg mx-auto mb-6">
         <form action="/file/search" method="GET" class="flex">
-            <input aria-describedby="search-button" aria-label="Search for files" name="query" type="text" placeholder="Search for files..." class="flex-grow rounded-l-lg border border-gray-400 dark:border-gray-600 bg-white dark:bg-slate-700 p-2 focus:outline-none focus:ring-2 focus:ring-sky-500">
+            <label for="searchInput" class="sr-only">Search files</label>
+            <input id="searchInput" aria-describedby="search-button" name="query" type="text" placeholder="Search for files..." class="flex-grow rounded-l-lg border border-gray-400 dark:border-gray-600 bg-white dark:bg-slate-700 p-2 focus:outline-none focus:ring-2 focus:ring-sky-500" />
             <button id="search-button" type="submit" class="rounded-r-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white px-4 transition-colors active:scale-95 focus:outline-none focus:ring-2 focus:ring-sky-500">Search</button>
         </form>
     </div>
@@ -38,7 +39,7 @@
         <h3 class="mb-2">No files have been uploaded yet.</h3>
         <p>Start by <a href="/file/upload" class="text-sky-600 dark:text-sky-400 hover:underline">uploading a file</a>.</p>
     </div>
-    <div class="grid grid-cols-12 gap-4">
+    <div class="grid grid-cols-12 gap-6">
         <div th:each="file : ${files}" class="col-span-12 sm:col-span-6 md:col-span-4 lg:col-span-3">
             <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-lg flex flex-col h-full p-6 md:p-8">
                 <div class="flex-grow">

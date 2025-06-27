@@ -23,13 +23,15 @@
     </div>
 </nav>
 <main class="max-w-7xl mx-auto px-4 py-6 md:py-8">
-    <h1 class="text-2xl font-semibold tracking-tight text-center mb-6">Upload a File</h1>
-    <p class="text-center text-gray-600 dark:text-gray-300 mb-2">
-        Accepted file types: any • Max size <span class="maxFileSize" th:text="${maxFileSize}">1GB</span>
-    </p>
-    <p class="text-center text-gray-600 dark:text-gray-300 mb-6">
-        Files are deleted after <span class="maxFileLifeTime" th:text="${maxFileLifeTime}">30</span> days unless “Keep indefinitely” is selected.
-    </p>
+    <header class="text-center mb-8 space-y-1">
+        <h1 class="text-3xl md:text-4xl font-semibold tracking-tight">Upload a File</h1>
+        <p class="text-gray-600 dark:text-gray-300">
+            Accepted file types: any • Max size <span class="maxFileSize" th:text="${maxFileSize}">1GB</span>
+        </p>
+        <p class="text-gray-600 dark:text-gray-300">
+            Files are deleted after <span class="maxFileLifeTime" th:text="${maxFileLifeTime}">30</span> days unless “Keep indefinitely” is selected.
+        </p>
+    </header>
     <div class="grid grid-cols-12 gap-4">
         <div class="col-span-12 md:col-span-8 md:col-start-3 lg:col-span-6 lg:col-start-4">
             <form id="uploadForm" class="bg-white dark:bg-slate-800 p-6 md:p-8 rounded-2xl shadow-lg flex flex-col gap-6" method="post" enctype="multipart/form-data" th:action="@{/file/upload}">

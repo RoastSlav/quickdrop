@@ -42,6 +42,25 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function handleFiles(files, items) {
         if (!fileNameEl || !dropZoneText) return;
+
+        let isFolder = false;
+        const firstFile = files && files[0];
+        if (items && items.length > 0 && items[0].webkitGetAsEntry) {
+            const entry = items[0].webkitGetAsEntry();
+            if (entry && entry.isDirectory) isFolder = true;
+        } else if (firstFile && firstFile.webkitRelativePath && firstFile.webkitRelativePath !== "") {
+            isFolder = true;
+        }
+
+        if (isFolder) {
+            dropZoneText.textContent = "Folders cannot be uploaded.";
+            dropZoneText.classList.remove("hidden");
+            fileNameEl.textContent = "";
+            fileNameEl.classList.add("hidden");
+            if (fileInput) fileInput.value = "";
+            return;
+        }
+
         if (!files || files.length === 0) {
             fileNameEl.textContent = "";
             fileNameEl.classList.add("hidden");
@@ -50,25 +69,11 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
-        const file = files[0];
-        let isFolder = false;
-        if (items && items.length > 0 && items[0].webkitGetAsEntry) {
-            const entry = items[0].webkitGetAsEntry();
-            if (entry && entry.isDirectory) isFolder = true;
-        } else if (file.webkitRelativePath && file.webkitRelativePath !== "") {
-            isFolder = true;
-        }
+        const file = firstFile;
 
         const maxSizeSpan = document.querySelector('.maxFileSize');
         const maxSize = maxSizeSpan ? parseSize(maxSizeSpan.innerText) : Infinity;
 
-        if (isFolder) {
-            dropZoneText.textContent = "Folders cannot be uploaded.";
-            fileNameEl.textContent = "";
-            fileNameEl.classList.add("hidden");
-            fileInput.value = "";
-            return;
-        }
 
         if (file.size > maxSize) {
             dropZoneText.textContent = `File exceeds the ${maxSizeSpan.innerText} limit.`;

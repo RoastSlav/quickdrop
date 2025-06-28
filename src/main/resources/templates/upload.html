@@ -18,7 +18,7 @@
         <div class="flex items-center space-x-4">
             <a th:if="${isFileListPageEnabled}" href="/file/list" class="hover:text-white">View Files</a>
             <a th:if="${isAdminDashboardButtonEnabled}" href="/admin/dashboard" class="hover:text-white">Admin Dashboard</a>
-            <button id="themeToggle" type="button" class="rounded-lg p-2 transition-colors hover:bg-sky-600 dark:hover:bg-sky-500 active:scale-95 focus:outline-none focus:ring-2 focus:ring-sky-500">🌙</button>
+            <button id="themeToggle" type="button" aria-label="Toggle theme" class="rounded-lg p-2 transition-colors hover:bg-sky-600 dark:hover:bg-sky-500 active:scale-95 focus:outline-none focus:ring-2 focus:ring-sky-500">🌙</button>
         </div>
     </div>
 </nav>
@@ -45,19 +45,19 @@
                 </label>
                 <label class="block">
                     <span class="sr-only">Description</span>
-                    <input id="description" name="description" type="text" placeholder="Description" class="mt-1 w-full rounded-lg border border-gray-500 dark:border-gray-600 bg-gray-50 dark:bg-slate-700 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500"/>
+                    <input id="description" name="description" type="text" placeholder="Description" class="mt-1 w-full rounded-lg border border-gray-500 dark:border-gray-600 bg-white dark:bg-slate-700 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500"/>
                 </label>
                 <div class="flex flex-wrap gap-6">
                     <div>
                         <label class="inline-flex items-start gap-2">
-                            <input id="keepIndefinitely" name="keepIndefinitely" type="checkbox" class="h-4 w-4 rounded border-gray-400 dark:border-gray-600 accent-sky-500 dark:accent-sky-400 focus:ring-sky-500">
+                            <input id="keepIndefinitely" name="keepIndefinitely" type="checkbox" class="h-4 w-4 rounded border-gray-400 dark:border-gray-600 accent-sky-500 dark:accent-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-500">
                             <span class="text-sm">Keep indefinitely</span>
                         </label>
                         <small class="block ml-6 text-sm text-gray-600 dark:text-gray-300 mb-2">If checked, this file will not be auto-deleted after <span class="maxFileLifeTime" th:text="${maxFileLifeTime}">30</span> days.</small>
                     </div>
                     <div th:if="${isFileListPageEnabled}">
                         <label class="inline-flex items-start gap-2">
-                            <input id="hidden" name="hidden" type="checkbox" class="h-4 w-4 rounded border-gray-400 dark:border-gray-600 accent-sky-500 dark:accent-sky-400 focus:ring-sky-500">
+                            <input id="hidden" name="hidden" type="checkbox" class="h-4 w-4 rounded border-gray-400 dark:border-gray-600 accent-sky-500 dark:accent-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-500">
                             <span class="text-sm">Hide from file list</span>
                         </label>
                         <small class="block ml-6 text-sm text-gray-600 dark:text-gray-300 mb-2">If checked, this file won’t appear on the “View Files” page.</small>
@@ -65,7 +65,7 @@
                 </div>
                 <label class="block">
                     <span class="sr-only">Password (Optional)</span>
-                    <input id="password" name="password" type="password" placeholder="Password (Optional)" class="mt-1 w-full rounded-lg border border-gray-500 dark:border-gray-600 bg-gray-50 dark:bg-slate-700 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500"/>
+                    <input id="password" name="password" type="password" placeholder="Password (Optional)" class="mt-1 w-full rounded-lg border border-gray-500 dark:border-gray-600 bg-white dark:bg-slate-700 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500"/>
                 </label>
                 <button type="submit" class="rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium py-2 transition-colors active:scale-95 focus:outline-none focus:ring-2 focus:ring-sky-500">Upload</button>
             </form>

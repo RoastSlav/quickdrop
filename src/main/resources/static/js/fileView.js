@@ -17,8 +17,7 @@ function initializeModal() {
     const downloadLink = document.getElementById("downloadLink").innerText;
     updateShareLink(downloadLink);
     document.getElementById('unrestrictedLink').checked = false;
-    document.getElementById('daysValidContainer').classList.add('hidden');
-    document.getElementById('allowedNumberOfDownloads').classList.add('hidden');
+    document.getElementById('linkOptions').classList.add('hidden');
     document.getElementById('generateLinkButton').disabled = true;
 }
 
@@ -145,17 +144,14 @@ function updateShareLink(link) {
 
 function toggleLinkType() {
     const unrestrictedLinkCheckbox = document.getElementById('unrestrictedLink');
-    const daysValidContainer = document.getElementById('daysValidContainer');
+    const linkOptions = document.getElementById('linkOptions');
     const generateLinkButton = document.getElementById('generateLinkButton');
-    const allowedNumberOfDownloads = document.getElementById('allowedNumberOfDownloads');
 
     if (unrestrictedLinkCheckbox.checked) {
-        daysValidContainer.classList.remove('hidden');
-        allowedNumberOfDownloads.classList.remove('hidden');
+        linkOptions.classList.remove('hidden');
         generateLinkButton.disabled = false;
     } else {
-        daysValidContainer.classList.add('hidden');
-        allowedNumberOfDownloads.classList.add('hidden');
+        linkOptions.classList.add('hidden');
         generateLinkButton.disabled = true;
         initializeModal();
     }

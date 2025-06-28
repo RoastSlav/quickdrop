@@ -52,57 +52,58 @@
     <div class="bg-white dark:bg-slate-800 p-6 md:p-8 rounded-2xl shadow-lg">
         <h2 class="text-xl font-semibold tracking-tight mb-4">Files</h2>
         <div class="overflow-x-auto">
-            <table class="min-w-full border border-slate-300 dark:border-slate-700 divide-y divide-slate-300 dark:divide-slate-700">
+            <table class="min-w-full border border-slate-400 dark:border-slate-700">
                 <thead class="bg-gray-100 dark:bg-gray-800 divide-x divide-slate-200 dark:divide-slate-600">
                 <tr>
                     <th class="px-4 py-3 text-left text-sm font-semibold">Name</th>
                     <th class="px-4 py-3 text-left text-sm font-semibold">Upload Date/Last Renewed</th>
                     <th class="px-4 py-3 text-left text-sm font-semibold">Size</th>
                     <th class="px-4 py-3 text-left text-sm font-semibold">Downloads</th>
-                    <th class="px-4 py-3 text-center text-sm font-semibold">Keep Indefinitely</th>
-                    <th class="px-4 py-3 text-center text-sm font-semibold">Hidden</th>
-                    <th class="px-4 py-3 text-right text-sm font-semibold">Actions</th>
                 </tr>
                 </thead>
-                <tbody class="divide-y divide-slate-300 dark:divide-slate-700">
-                <tr th:each="file : ${files}" class="bg-white whitespace-nowrap even:bg-gray-50 dark:bg-slate-900 dark:even:bg-slate-800/50 divide-x divide-slate-200 dark:divide-slate-600">
-                    <td class="px-4 py-3" th:text="${file.name}">File Name</td>
-                    <td class="px-4 py-3" th:text="${#temporals.format(file.uploadDate, 'dd.MM.yyyy')}">Date</td>
-                    <td class="px-4 py-3" th:text="${file.size}">--</td>
-                    <td class="px-4 py-3" th:text="${file.totalDownloads}">--</td>
-                    <td class="px-4 py-3 text-center">
-                        <form class="inline" method="post" th:action="@{/admin/keep-indefinitely/{uuid}(uuid=${file.uuid})}">
-                            <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden"/>
-                            <input name="keepIndefinitely" type="hidden" value="false"/>
-                            <input type="checkbox" name="keepIndefinitely" value="true" th:checked="${file.keepIndefinitely}"
-                                   onchange="updateCheckboxState(event, this)"
-                                   class="h-4 w-4 rounded border-gray-400 dark:border-gray-600 accent-sky-500 dark:accent-sky-400 focus:ring-sky-500"/>
-                        </form>
-                    </td>
-                    <td class="px-4 py-3 text-center">
-                        <form class="inline" method="post" th:action="@{/admin/toggle-hidden/{uuid}(uuid=${file.uuid})}">
-                            <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden"/>
-                            <input name="hidden" type="hidden" value="false"/>
-                            <input type="checkbox" name="hidden" value="true" th:checked="${file.hidden}"
-                                   onchange="updateHiddenState(event, this)"
-                                   class="h-4 w-4 rounded border-gray-400 dark:border-gray-600 accent-sky-500 dark:accent-sky-400 focus:ring-sky-500"/>
-                        </form>
-                    </td>
-                    <td class="px-4 py-3 text-right">
-                        <div class="flex flex-wrap gap-3 justify-end">
-                            <a th:href="@{/file/{uuid}(uuid=${file.uuid})}"
-                               class="inline-block rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium px-4 py-2 text-sm transition-colors active:scale-95 focus:outline-none focus:ring-2 focus:ring-sky-500">View</a>
-                            <a th:href="@{/file/history/{uuid}(uuid=${file.uuid})}"
-                               class="inline-block rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium px-4 py-2 text-sm transition-colors active:scale-95 focus:outline-none focus:ring-2 focus:ring-sky-500">History</a>
-                            <a th:href="@{/file/download/{uuid}(uuid=${file.uuid})}"
-                               class="inline-block rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium px-4 py-2 text-sm transition-colors active:scale-95 focus:outline-none focus:ring-2 focus:ring-sky-500">Download</a>
-                            <form class="inline" method="post" onsubmit="return confirmDelete();" th:action="@{/admin/delete/{uuid}(uuid=${file.uuid})}">
+                <tbody>
+                <th:block th:each="file : ${files}">
+                    <tr class="bg-white dark:bg-slate-900 divide-x divide-slate-200 dark:divide-slate-600">
+                        <td class="px-4 py-3" th:text="${file.name}">File Name</td>
+                        <td class="px-4 py-3" th:text="${#temporals.format(file.uploadDate, 'dd.MM.yyyy')}">Date</td>
+                        <td class="px-4 py-3" th:text="${file.size}">--</td>
+                        <td class="px-4 py-3" th:text="${file.totalDownloads}">--</td>
+                    </tr>
+                    <tr class="bg-gray-50 dark:bg-slate-800 divide-x divide-slate-200 dark:divide-slate-600 border-b-2 border-slate-300 dark:border-slate-700">
+                        <td class="px-4 py-3" colspan="2">
+                            <div class="flex flex-wrap gap-3">
+                                <a th:href="@{/file/{uuid}(uuid=${file.uuid})}"
+                                   class="inline-block rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium px-4 py-2 text-sm transition-colors active:scale-95 focus:outline-none focus:ring-2 focus:ring-sky-500">View</a>
+                                <a th:href="@{/file/history/{uuid}(uuid=${file.uuid})}"
+                                   class="inline-block rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium px-4 py-2 text-sm transition-colors active:scale-95 focus:outline-none focus:ring-2 focus:ring-sky-500">History</a>
+                                <a th:href="@{/file/download/{uuid}(uuid=${file.uuid})}"
+                                   class="inline-block rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium px-4 py-2 text-sm transition-colors active:scale-95 focus:outline-none focus:ring-2 focus:ring-sky-500">Download</a>
+                                <form class="inline" method="post" onsubmit="return confirmDelete();" th:action="@{/admin/delete/{uuid}(uuid=${file.uuid})}">
+                                    <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden"/>
+                                    <button type="submit" class="rounded-lg bg-red-600 hover:bg-red-700 text-white font-medium px-4 py-2 text-sm transition-colors active:scale-95 focus:outline-none focus:ring-2 focus:ring-red-500">Delete</button>
+                                </form>
+                            </div>
+                        </td>
+                        <td class="px-4 py-3 text-center">
+                            <form class="inline" method="post" th:action="@{/admin/keep-indefinitely/{uuid}(uuid=${file.uuid})}">
                                 <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden"/>
-                                <button type="submit" class="rounded-lg bg-red-600 hover:bg-red-700 text-white font-medium px-4 py-2 text-sm transition-colors active:scale-95 focus:outline-none focus:ring-2 focus:ring-red-500">Delete</button>
+                                <input name="keepIndefinitely" type="hidden" value="false"/>
+                                <input type="checkbox" name="keepIndefinitely" value="true" th:checked="${file.keepIndefinitely}"
+                                       onchange="updateCheckboxState(event, this)"
+                                       class="h-4 w-4 rounded border-gray-400 dark:border-gray-600 accent-sky-500 dark:accent-sky-400 focus:ring-sky-500"/>
                             </form>
-                        </div>
-                    </td>
-                </tr>
+                        </td>
+                        <td class="px-4 py-3 text-center">
+                            <form class="inline" method="post" th:action="@{/admin/toggle-hidden/{uuid}(uuid=${file.uuid})}">
+                                <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden"/>
+                                <input name="hidden" type="hidden" value="false"/>
+                                <input type="checkbox" name="hidden" value="true" th:checked="${file.hidden}"
+                                       onchange="updateHiddenState(event, this)"
+                                       class="h-4 w-4 rounded border-gray-400 dark:border-gray-600 accent-sky-500 dark:accent-sky-400 focus:ring-sky-500"/>
+                            </form>
+                        </td>
+                    </tr>
+                </th:block>
                 </tbody>
             </table>
         </div>

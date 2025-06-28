@@ -17,11 +17,13 @@ function initializeModal() {
     const downloadLink = document.getElementById("downloadLink").innerText;
     updateShareLink(downloadLink);
     document.getElementById('unrestrictedLink').checked = false;
-    document.getElementById('daysValidContainer').style.display = 'none';
+    document.getElementById('daysValidContainer').classList.add('hidden');
+    document.getElementById('allowedNumberOfDownloads').classList.add('hidden');
     document.getElementById('generateLinkButton').disabled = true;
 }
 
 function openShareModal() {
+    initializeModal();
     const downloadLink = document.getElementById("downloadLink").innerText;
 
     const shareLinkInput = document.getElementById("shareLink");
@@ -37,8 +39,12 @@ function openShareModal() {
         }
     });
 
-    const shareModal = new bootstrap.Modal(document.getElementById('shareModal'));
-    shareModal.show();
+    document.getElementById('shareModal').classList.remove('hidden');
+}
+
+function closeShareModal() {
+    document.getElementById('shareModal').classList.add('hidden');
+    initializeModal();
 }
 
 function generateShareLink(fileUuid, daysValid, allowedNumberOfDownloads) {
@@ -126,12 +132,12 @@ function toggleLinkType() {
     const allowedNumberOfDownloads = document.getElementById('allowedNumberOfDownloads');
 
     if (unrestrictedLinkCheckbox.checked) {
-        daysValidContainer.style.display = 'block';
-        allowedNumberOfDownloads.style.display = 'block';
+        daysValidContainer.classList.remove('hidden');
+        allowedNumberOfDownloads.classList.remove('hidden');
         generateLinkButton.disabled = false;
     } else {
-        daysValidContainer.style.display = 'none';
-        allowedNumberOfDownloads.style.display = 'none';
+        daysValidContainer.classList.add('hidden');
+        allowedNumberOfDownloads.classList.add('hidden');
         generateLinkButton.disabled = true;
         initializeModal();
     }

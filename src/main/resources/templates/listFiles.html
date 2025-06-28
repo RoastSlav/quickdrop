@@ -28,7 +28,7 @@
     <header class="text-center mb-8 space-y-1">
         <h1 class="text-3xl md:text-4xl font-semibold tracking-tight">All files</h1>
     </header>
-    <div class="mx-auto w-full max-w-lg mb-8">
+    <div class="mx-auto w-full max-w-xl mb-8">
         <form action="/file/search" method="GET" class="w-full">
             <label for="searchInput" class="sr-only">Search files</label>
             <div class="h-14 flex items-center space-x-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-gray-800 rounded-full px-4 shadow-sm focus-within:border-sky-500 focus-within:ring-2 focus-within:ring-sky-500">
@@ -44,18 +44,18 @@
     </div>
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
         <div th:each="file : ${files}" class="h-full">
-            <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-lg flex flex-col h-full min-h-64 p-6 md:p-8 space-y-4">
-                <div class="flex-grow space-y-2 overflow-hidden">
-                    <h2 class="text-lg font-semibold tracking-tight whitespace-nowrap overflow-hidden [mask-image:linear-gradient(to_right,black_85%,transparent)]" th:text="${file.name}">File Name</h2>
+            <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-lg flex flex-col h-full p-6 md:p-8">
+                <div class="flex-grow space-y-3 overflow-hidden">
+                    <h2 class="text-xl font-semibold tracking-tight truncate" th:text="${file.name}">File Name</h2>
                     <hr class="border-t border-slate-200 dark:border-slate-700">
-                    <p th:if="${!#strings.isEmpty(file.description)}" class="text-sm overflow-hidden line-clamp-2 [mask-image:linear-gradient(to_right,black_85%,transparent)]" th:text="${file.description}"></p>
+                    <p th:if="${!#strings.isEmpty(file.description)}" class="text-sm text-gray-700 dark:text-gray-300 line-clamp-2 overflow-hidden" th:text="${file.description}"></p>
                     <div class="flex justify-between text-sm text-gray-600 dark:text-gray-400">
                         <span th:text="'Keep indefinitely: ' + (${file.keepIndefinitely} ? 'Yes' : 'No')"></span>
                         <span th:text="'Password protected: ' + (${file.passwordHash != null} ? 'Yes' : 'No')"></span>
                     </div>
                     <p class="text-sm text-gray-600 dark:text-gray-400" th:text="${file.keepIndefinitely} ? 'Uploaded: ' + ${#temporals.format(file.uploadDate, 'dd.MM.yyyy')} : 'Uploaded/Renewed: ' + ${#temporals.format(file.uploadDate, 'dd.MM.yyyy')}"></p>
                 </div>
-                <div class="text-center mt-auto pt-1">
+                <div class="mt-4 text-center">
                     <a th:href="@{/file/{UUID}(UUID=${file.uuid})}" class="inline-block rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium px-4 py-2 transition-colors active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500">Go to file page</a>
                 </div>
             </div>

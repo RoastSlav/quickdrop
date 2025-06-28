@@ -30,23 +30,26 @@
         <h1 class="text-3xl md:text-4xl font-semibold tracking-tight">Admin Dashboard</h1>
     </header>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-        <div class="bg-white dark:bg-slate-800 p-6 md:p-8 rounded-2xl shadow-lg">
-            <h2 class="text-xl font-semibold tracking-tight mb-1">Total Downloads</h2>
-            <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">Excluding deleted files</p>
-            <p class="text-2xl font-semibold" th:text="${analytics.totalDownloads}">0</p>
-        </div>
-        <div class="bg-white dark:bg-slate-800 p-6 md:p-8 rounded-2xl shadow-lg">
-            <h2 class="text-xl font-semibold tracking-tight mb-1">Total Space Used</h2>
-            <p class="text-2xl font-semibold" th:text="${analytics.totalSpaceUsed}">0 MB</p>
+    <div class="bg-white dark:bg-slate-800 p-6 md:p-8 rounded-2xl shadow-lg mb-8">
+        <h2 class="text-xl font-semibold tracking-tight mb-4">Analytics</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <div>
+                <h3 class="text-lg font-semibold tracking-tight">Total Downloads</h3>
+                <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">Excluding deleted files</p>
+                <p class="text-2xl font-semibold" th:text="${analytics.totalDownloads}">0</p>
+            </div>
+            <div>
+                <h3 class="text-lg font-semibold tracking-tight">Total Space Used</h3>
+                <p class="text-2xl font-semibold" th:text="${analytics.totalSpaceUsed}">0 MB</p>
+            </div>
         </div>
     </div>
 
     <div class="bg-white dark:bg-slate-800 p-6 md:p-8 rounded-2xl shadow-lg">
         <h2 class="text-xl font-semibold tracking-tight mb-4">Files</h2>
         <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
-                <thead class="bg-gray-100 dark:bg-gray-800">
+            <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700 border border-slate-200 dark:border-slate-700">
+                <thead class="bg-gray-100 dark:bg-gray-800 divide-x divide-slate-200 dark:divide-slate-700">
                 <tr>
                     <th class="px-4 py-3 text-left text-sm font-semibold">Name</th>
                     <th class="px-4 py-3 text-left text-sm font-semibold">Upload Date/Last Renewed</th>
@@ -58,7 +61,7 @@
                 </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
-                <tr th:each="file : ${files}" class="whitespace-nowrap">
+                <tr th:each="file : ${files}" class="bg-white whitespace-nowrap even:bg-gray-50 dark:bg-slate-900 dark:even:bg-slate-800/50 divide-x divide-slate-200 dark:divide-slate-700">
                     <td class="px-4 py-3" th:text="${file.name}">File Name</td>
                     <td class="px-4 py-3" th:text="${#temporals.format(file.uploadDate, 'dd.MM.yyyy')}">Date</td>
                     <td class="px-4 py-3" th:text="${file.size}">--</td>
@@ -82,16 +85,16 @@
                         </form>
                     </td>
                     <td class="px-4 py-3 text-right">
-                        <div class="flex flex-wrap gap-2 justify-end">
+                        <div class="flex flex-wrap gap-3 justify-end">
                             <a th:href="@{/file/{uuid}(uuid=${file.uuid})}"
-                               class="inline-block rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium px-3 py-1 transition-colors active:scale-95 focus:outline-none focus:ring-2 focus:ring-sky-500">View</a>
+                               class="inline-block rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium px-4 py-2 text-sm transition-colors active:scale-95 focus:outline-none focus:ring-2 focus:ring-sky-500">View</a>
                             <a th:href="@{/file/history/{uuid}(uuid=${file.uuid})}"
-                               class="inline-block rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium px-3 py-1 transition-colors active:scale-95 focus:outline-none focus:ring-2 focus:ring-sky-500">History</a>
+                               class="inline-block rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium px-4 py-2 text-sm transition-colors active:scale-95 focus:outline-none focus:ring-2 focus:ring-sky-500">History</a>
                             <a th:href="@{/file/download/{uuid}(uuid=${file.uuid})}"
-                               class="inline-block rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium px-3 py-1 transition-colors active:scale-95 focus:outline-none focus:ring-2 focus:ring-sky-500">Download</a>
+                               class="inline-block rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium px-4 py-2 text-sm transition-colors active:scale-95 focus:outline-none focus:ring-2 focus:ring-sky-500">Download</a>
                             <form class="inline" method="post" onsubmit="return confirmDelete();" th:action="@{/admin/delete/{uuid}(uuid=${file.uuid})}">
                                 <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden"/>
-                                <button type="submit" class="rounded-lg bg-red-600 hover:bg-red-700 text-white font-medium px-3 py-1 transition-colors active:scale-95 focus:outline-none focus:ring-2 focus:ring-red-500">Delete</button>
+                                <button type="submit" class="rounded-lg bg-red-600 hover:bg-red-700 text-white font-medium px-4 py-2 text-sm transition-colors active:scale-95 focus:outline-none focus:ring-2 focus:ring-red-500">Delete</button>
                             </form>
                         </div>
                     </td>

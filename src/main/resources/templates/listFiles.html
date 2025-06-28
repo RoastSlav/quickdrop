@@ -1,122 +1,66 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <script src="/js/darkMode.js"></script>
     <meta charset="UTF-8">
-    <title>
-        All
-        Files</title>
-    <meta content="width=device-width, initial-scale=1"
-          name="viewport">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
-          rel="stylesheet">
-    <link href="/images/favicon.png"
-          rel="icon"
-          type="image/png">
+    <title>All files</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="/css/tailwind.css">
+    <link rel="icon" type="image/png" href="/images/favicon.png">
+    <script src="/js/tailwindTheme.js"></script>
 </head>
-<body>
-<!-- Navbar -->
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
-    <div class="container">
-        <a class="navbar-brand d-flex align-items-center" href="/">
-            <img alt="Website Logo" class="me-2" height="40" src="/images/favicon.png">
-            QuickDrop
+<body class="bg-gray-50 text-gray-800 dark:bg-slate-900 dark:text-gray-100">
+<nav class="bg-gray-800 dark:bg-gray-900 text-gray-100">
+    <div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+        <a href="/" class="flex items-center space-x-2">
+            <img src="/images/favicon.png" alt="Website Logo" class="h-10">
+            <span class="font-semibold tracking-tight">QuickDrop</span>
         </a>
-        <button
-                class="navbar-toggler"
-                type="button"
-                aria-controls="navbarNav"
-                aria-expanded="false"
-                aria-label="Toggle navigation"
-                data-bs-target="#navbarNav"
-                data-bs-toggle="collapse">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav ms-auto">
-                <li class="nav-item">
-                    <a class="nav-link" href="/file/upload">Upload File</a>
-                </li>
-                <li class="nav-item">
-                    <!-- Admin Dashboard Button -->
-                    <a class="nav-link" href="/admin/dashboard" onclick="requestAdminPassword()"
-                       th:if="${isAdminDashboardButtonEnabled}">
-                        Admin Dashboard
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <button id="themeToggle" type="button" class="btn btn-sm ms-2">🌙</button>
-                </li>
-            </ul>
+        <div class="flex items-center space-x-4">
+            <a href="/file/upload" class="hover:text-white">Upload File</a>
+            <a th:if="${isAdminDashboardButtonEnabled}" href="/admin/dashboard" onclick="requestAdminPassword()" class="hover:text-white">Admin Dashboard</a>
+            <button id="themeToggle" type="button" class="rounded-lg p-2 transition-colors hover:bg-sky-600 dark:hover:bg-sky-500 active:scale-95 focus:outline-none focus:ring-2 focus:ring-sky-500">🌙</button>
         </div>
     </div>
 </nav>
 
 
-<!-- Main Content -->
-<div class="container mt-5">
-    <h1 class="text-center mb-4">
-        All
-        Files</h1>
-    <!-- Search Bar Section -->
-    <div class="row mb-4">
-        <div class="col-12 col-md-8 offset-md-2">
-            <form action="/file/search"
-                  method="GET">
-                <div class="input-group">
-                    <input aria-describedby="search-button"
-                           aria-label="Search for files"
-                           class="form-control"
-                           name="query"
-                           placeholder="Search for files..."
-                           type="text">
-                    <button class="btn btn-primary"
-                            id="search-button"
-                            type="submit">
-                        Search
-                    </button>
-                </div>
-            </form>
-        </div>
+<main class="max-w-7xl mx-auto px-4 py-6 md:py-8">
+    <header class="text-center mb-8 space-y-1">
+        <h1 class="text-3xl md:text-4xl font-semibold tracking-tight">All files</h1>
+    </header>
+    <div class="mx-auto w-full max-w-xl mb-8">
+        <form action="/file/search" method="GET" class="w-full">
+            <label for="searchInput" class="sr-only">Search files</label>
+            <div class="h-14 flex items-center space-x-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-gray-800 rounded-full px-4 shadow-sm focus-within:border-sky-500 focus-within:ring-2 focus-within:ring-sky-500">
+                <svg class="w-5 h-5 text-gray-500 dark:text-gray-400" aria-hidden="true" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M12.9 14.32a8 8 0 111.414-1.414l4.387 4.387a1 1 0 01-1.414 1.414l-4.387-4.387zM14 8a6 6 0 11-12 0 6 6 0 0112 0z" clip-rule="evenodd"/></svg>
+                <input id="searchInput" name="query" type="text" placeholder="Search files by name or date…" class="flex-grow bg-transparent py-2 focus:outline-none focus-visible:ring-0" />
+                <button id="search-button" type="submit" class="rounded-full bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium px-4 py-2 h-10 transition-colors active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500">Search</button>
+            </div>
+        </form>
     </div>
-    <div class="row" th:if="${#lists.isEmpty(files)}">
-        <div class="col-12 text-center my-5">
-            <h3 class="text-muted">No files have been uploaded yet.</h3>
-            <p>Start by <a href="/file/upload">uploading a file</a>.</p>
-        </div>
+    <div th:if="${#lists.isEmpty(files)}" class="text-center text-gray-600 dark:text-gray-300 my-5">
+        <h3 class="mb-2">No files have been uploaded yet.</h3>
+        <p>Start by <a href="/file/upload" class="text-sky-600 dark:text-sky-400 hover:underline">uploading a file</a>.</p>
     </div>
-
-    <div class="row">
-        <div class="col-12 col-sm-6 col-md-4 col-lg-3 mb-4"
-             th:each="file : ${files}">
-            <div class="card h-100 shadow">
-                <div class="card-body">
-                    <h5 class="card-title"
-                        th:text="${file.name}">
-                        File
-                        Name</h5>
-                    <p class="card-text"
-                       th:if="${!#strings.isEmpty(file.description)}"
-                       th:text="${file.description}"></p>
-                    <p class="card-text border-top pt-3"
-                       th:text="'Keep Indefinitely: ' + (${file.keepIndefinitely} ? 'Yes' : 'No')">
-                        Keep
-                        Indefinitely</p>
-                    <p class="card-text"
-                       th:text="'Password Protected: ' + (${file.passwordHash != null} ? 'Yes' : 'No')">
-                        Password
-                        Protected</p>
-                    <p class="card-text border-top pt-3"
-                       th:text="${file.keepIndefinitely} ? 'Uploaded: ' + ${#temporals.format(file.uploadDate, 'dd.MM.yyyy')} : 'Uploaded/Renewed: ' + ${#temporals.format(file.uploadDate, 'dd.MM.yyyy')}"></p>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
+        <div th:each="file : ${files}" class="h-full">
+            <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-lg flex flex-col h-full p-6 md:p-8">
+                <div class="flex-grow space-y-3 overflow-hidden">
+                    <h2 class="text-xl font-semibold tracking-tight truncate" th:text="${file.name}">File Name</h2>
+                    <hr class="border-t border-slate-200 dark:border-slate-700">
+                    <p th:if="${!#strings.isEmpty(file.description)}" class="text-sm text-gray-700 dark:text-gray-300 line-clamp-2 overflow-hidden" th:text="${file.description}"></p>
+                    <div class="flex justify-between text-sm text-gray-600 dark:text-gray-400">
+                        <span th:text="'Keep indefinitely: ' + (${file.keepIndefinitely} ? 'Yes' : 'No')"></span>
+                        <span th:text="'Password protected: ' + (${file.passwordHash != null} ? 'Yes' : 'No')"></span>
+                    </div>
+                    <p class="text-sm text-gray-600 dark:text-gray-400" th:text="${file.keepIndefinitely} ? 'Uploaded: ' + ${#temporals.format(file.uploadDate, 'dd.MM.yyyy')} : 'Uploaded/Renewed: ' + ${#temporals.format(file.uploadDate, 'dd.MM.yyyy')}"></p>
                 </div>
-                <div class="card-footer">
-                    <a class="btn btn-primary w-100"
-                       th:href="@{/file/{UUID}(UUID=${file.uuid})}">Go to File Page</a>
+                <div class="mt-4 text-center">
+                    <a th:href="@{/file/{UUID}(UUID=${file.uuid})}" class="inline-block rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium px-4 py-2 transition-colors active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500">Go to file page</a>
                 </div>
             </div>
         </div>
     </div>
-</div>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</main>
 </body>
 </html>

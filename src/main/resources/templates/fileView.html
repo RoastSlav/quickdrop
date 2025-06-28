@@ -34,7 +34,7 @@
     <span id="downloadLink" th:text="${downloadLink}" hidden></span>
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div class="md:col-span-1">
-            <div id="fileInfoCard" class="bg-white dark:bg-slate-800 p-6 md:p-8 rounded-2xl shadow-lg flex flex-col gap-4 md:max-w-xs">
+            <div id="fileInfoCard" class="bg-white dark:bg-slate-800 p-6 md:p-8 rounded-2xl shadow-lg flex flex-col gap-4 w-full max-w-xs">
                 <h2 class="text-center text-xl font-semibold tracking-tight" th:text="${file.name}">File Name</h2>
                 <p th:if="${!#strings.isEmpty(file.description)}" th:text="${file.description}" class="text-center text-gray-700 dark:text-gray-300"></p>
                 <div class="flex justify-between border-t pt-4">
@@ -117,7 +117,7 @@
         </div>
         <div th:if="${file.passwordHash != null || isAppPasswordSet == true}" class="flex justify-end items-center gap-2">
             <div id="spinner" class="hidden animate-spin rounded-full h-5 w-5 border-2 border-sky-500 border-t-transparent"></div>
-            <button id="generateLinkButton" onclick="createShareLink()" type="button" class="rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium px-4 py-2" disabled>Generate</button>
+            <button id="generateLinkButton" onclick="createShareLink()" type="button" class="hidden rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium px-4 py-2" disabled>Generate</button>
         </div>
     </div>
 </div>

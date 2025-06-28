@@ -18,7 +18,9 @@ function initializeModal() {
     updateShareLink(downloadLink);
     document.getElementById('unrestrictedLink').checked = false;
     document.getElementById('linkOptions').classList.add('hidden');
-    document.getElementById('generateLinkButton').disabled = true;
+    const generateButton = document.getElementById('generateLinkButton');
+    generateButton.disabled = true;
+    generateButton.classList.add('hidden');
 }
 
 function generateShareLink(fileUuid, daysValid, allowedNumberOfDownloads) {
@@ -106,9 +108,11 @@ function toggleLinkType() {
 
     if (unrestrictedLinkCheckbox.checked) {
         linkOptions.classList.remove('hidden');
+        generateLinkButton.classList.remove('hidden');
         generateLinkButton.disabled = false;
     } else {
         linkOptions.classList.add('hidden');
+        generateLinkButton.classList.add('hidden');
         generateLinkButton.disabled = true;
         initializeModal();
     }

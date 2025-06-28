@@ -32,17 +32,17 @@
 
     <div class="bg-white dark:bg-slate-800 p-6 md:p-8 rounded-2xl shadow-lg mb-8">
         <h2 class="text-xl font-semibold tracking-tight mb-4">Analytics</h2>
-        <div class="grid grid-cols-3 gap-6">
-            <div>
+        <div class="flex flex-wrap justify-between gap-6 text-center">
+            <div class="flex-1 min-w-[8rem] space-y-1">
                 <h3 class="text-lg font-semibold tracking-tight">Total Downloads</h3>
-                <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">Excluding deleted files</p>
+                <p class="text-sm text-gray-600 dark:text-gray-400">Excluding deleted files</p>
                 <p class="text-2xl font-semibold" th:text="${analytics.totalDownloads}">0</p>
             </div>
-            <div>
+            <div class="flex-1 min-w-[8rem] space-y-1">
                 <h3 class="text-lg font-semibold tracking-tight">Total Space Used</h3>
                 <p class="text-2xl font-semibold" th:text="${analytics.totalSpaceUsed}">0 MB</p>
             </div>
-            <div>
+            <div class="flex-1 min-w-[8rem] space-y-1">
                 <h3 class="text-lg font-semibold tracking-tight">Average File Size</h3>
                 <p class="text-2xl font-semibold" th:text="${analytics.averageFileSize}">0 MB</p>
             </div>

@@ -69,18 +69,18 @@
                         <td class="px-6 py-4" th:text="${file.size}">--</td>
                         <td class="px-6 py-4" th:text="${file.totalDownloads}">--</td>
                     </tr>
-                    <tr class="bg-white dark:bg-slate-900 divide-x divide-slate-200 dark:divide-slate-600 border-b-2 border-slate-300 dark:border-slate-700">
+                    <tr class="bg-white dark:bg-slate-900 divide-x divide-slate-200 dark:divide-slate-600 border-b border-gray-400 dark:border-gray-600">
                         <td class="px-6 pt-4 pb-6" colspan="2">
                             <div class="flex flex-wrap gap-4 pb-2">
                                 <a th:href="@{/file/{uuid}(uuid=${file.uuid})}"
-                                   class="inline-block rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium px-4 py-2 text-sm transition-colors active:scale-95 focus:outline-none focus:ring-2 focus:ring-sky-500">View</a>
+                                   class="inline-block rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium pl-5 pr-4 py-2 text-sm transition-colors active:scale-95 focus:outline-none focus:ring-2 focus:ring-sky-500">View</a>
                                 <a th:href="@{/file/history/{uuid}(uuid=${file.uuid})}"
                                    class="inline-block rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium px-4 py-2 text-sm transition-colors active:scale-95 focus:outline-none focus:ring-2 focus:ring-sky-500">History</a>
                                 <a th:href="@{/file/download/{uuid}(uuid=${file.uuid})}"
                                    class="inline-block rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium px-4 py-2 text-sm transition-colors active:scale-95 focus:outline-none focus:ring-2 focus:ring-sky-500">Download</a>
                                 <form class="inline" method="post" onsubmit="return confirmDelete();" th:action="@{/admin/delete/{uuid}(uuid=${file.uuid})}">
                                     <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden"/>
-                                    <button type="submit" class="rounded-lg bg-red-600 hover:bg-red-700 text-white font-medium px-4 py-2 text-sm transition-colors active:scale-95 focus:outline-none focus:ring-2 focus:ring-red-500">Delete</button>
+                                    <button type="submit" class="rounded-lg bg-gray-700 hover:bg-gray-800 dark:bg-gray-600 dark:hover:bg-gray-500 text-white font-medium px-4 py-2 text-sm transition-colors active:scale-95 focus:outline-none focus:ring-2 focus:ring-gray-500">Delete</button>
                                 </form>
                             </div>
                         </td>

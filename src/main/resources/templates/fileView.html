@@ -94,7 +94,7 @@
         </div>
         <div class="flex gap-2">
             <input id="shareLink" type="text" placeholder="Generated link will appear here" readonly value="" class="flex-grow rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2">
-            <button type="button" onclick="copyShareLink()" class="rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium px-6 py-2">Copy Link</button>
+            <button type="button" onclick="copyShareLink()" class="rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium px-8 py-2">Copy Link</button>
         </div>
         <div class="text-center">
             <canvas id="shareQRCode" class="mx-auto" style="width:150px;height:150px;"></canvas>
@@ -105,11 +105,11 @@
                 <label for="unrestrictedLink" class="text-sm">Generate an unrestricted link</label>
             </div>
             <div id="linkOptions" class="grid grid-cols-2 gap-4 hidden">
-                <div>
+                <div class="col-span-1">
                     <label for="daysValid" class="block text-sm">Days the link will be valid:</label>
                     <input id="daysValid" type="number" min="1" value="30" class="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2">
                 </div>
-                <div>
+                <div class="col-span-1">
                     <label for="allowedNumberOfDownloadsCount" class="block text-sm">Number of allowed downloads:</label>
                     <input id="allowedNumberOfDownloadsCount" type="number" min="1" value="1" class="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2">
                 </div>

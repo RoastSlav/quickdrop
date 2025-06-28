@@ -32,7 +32,7 @@
 
     <div class="bg-white dark:bg-slate-800 p-6 md:p-8 rounded-2xl shadow-lg mb-8">
         <h2 class="text-xl font-semibold tracking-tight mb-4">Analytics</h2>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
             <div>
                 <h3 class="text-lg font-semibold tracking-tight">Total Downloads</h3>
                 <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">Excluding deleted files</p>
@@ -41,6 +41,10 @@
             <div>
                 <h3 class="text-lg font-semibold tracking-tight">Total Space Used</h3>
                 <p class="text-2xl font-semibold" th:text="${analytics.totalSpaceUsed}">0 MB</p>
+            </div>
+            <div>
+                <h3 class="text-lg font-semibold tracking-tight">Average File Size</h3>
+                <p class="text-2xl font-semibold" th:text="${analytics.averageFileSize}">0 MB</p>
             </div>
         </div>
     </div>

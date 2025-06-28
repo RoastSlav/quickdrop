@@ -21,49 +21,6 @@ function initializeModal() {
     document.getElementById('generateLinkButton').disabled = true;
 }
 
-function openShareModal() {
-    initializeModal();
-    const downloadLink = document.getElementById("downloadLink").innerText;
-
-    const shareLinkInput = document.getElementById("shareLink");
-    shareLinkInput.value = downloadLink;
-
-    const shareQRCode = document.getElementById("shareQRCode");
-    QRCode.toCanvas(shareQRCode, encodeURI(downloadLink), {
-        width: 150,
-        margin: 2
-    }, function (error) {
-        if (error) {
-            console.error("QR Code generation failed:", error);
-        }
-    });
-
-    const overlay = document.getElementById('shareModal');
-    const modal = document.getElementById('shareModalContent');
-    overlay.classList.remove('hidden');
-
-    // Position modal to the left of the info card
-    const card = document.getElementById('fileInfoCard');
-    const cardRect = card.getBoundingClientRect();
-    const modalRect = modal.getBoundingClientRect();
-    const space = 16; // px
-    let left = cardRect.left - modalRect.width - space;
-    if (left < space) left = space;
-    let top = cardRect.top + cardRect.height / 2 - modalRect.height / 2;
-    if (top < space) top = space;
-    modal.style.left = left + 'px';
-    modal.style.top = top + 'px';
-}
-
-function closeShareModal() {
-    const overlay = document.getElementById('shareModal');
-    const modal = document.getElementById('shareModalContent');
-    overlay.classList.add('hidden');
-    modal.style.left = '';
-    modal.style.top = '';
-    initializeModal();
-}
-
 function generateShareLink(fileUuid, daysValid, allowedNumberOfDownloads) {
     const csrfToken = document.querySelector('meta[name="_csrf"]').content;
     const expirationDate = new Date();
@@ -156,3 +113,5 @@ function toggleLinkType() {
         initializeModal();
     }
 }
+
+document.addEventListener('DOMContentLoaded', initializeModal);

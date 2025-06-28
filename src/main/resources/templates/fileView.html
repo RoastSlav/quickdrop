@@ -32,8 +32,8 @@
     </header>
     <span id="fileUuid" th:text="${file.uuid}" hidden></span>
     <span id="downloadLink" th:text="${downloadLink}" hidden></span>
-    <div class="grid grid-cols-12 gap-4">
-        <div class="col-span-12 md:col-span-8 md:col-start-3 lg:col-span-6 lg:col-start-4">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="md:col-span-1">
             <div id="fileInfoCard" class="bg-white dark:bg-slate-800 p-6 md:p-8 rounded-2xl shadow-lg flex flex-col gap-4">
                 <h2 class="text-center text-xl font-semibold tracking-tight" th:text="${file.name}">File Name</h2>
                 <p th:if="${!#strings.isEmpty(file.description)}" th:text="${file.description}" class="text-center text-gray-700 dark:text-gray-300"></p>
@@ -77,18 +77,12 @@
                         <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden">
                         <button type="submit" class="rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium px-4 py-2 transition-colors active:scale-95">Renew File Lifetime</button>
                     </form>
-                    <button type="button" onclick="openShareModal()" class="rounded-lg bg-gray-500 hover:bg-gray-600 dark:bg-gray-700 dark:hover:bg-gray-600 text-white font-medium px-4 py-2 transition-colors active:scale-95">Share</button>
                 </div>
             </div>
         </div>
-    </div>
-</main>
-<div id="shareModal" class="fixed inset-0 bg-black/50 p-4 hidden z-50">
-    <div id="shareModalContent" class="absolute bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-6 w-full max-w-md space-y-4">
-        <div class="flex justify-between items-center">
-            <h2 class="text-xl font-semibold tracking-tight" id="shareModalLabel">Share File</h2>
-            <button type="button" onclick="closeShareModal()" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">✕</button>
-        </div>
+        <div class="md:col-span-1">
+            <div id="shareModalContent" class="bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-6 w-full space-y-4">
+                <h2 class="text-xl font-semibold tracking-tight" id="shareModalLabel">Share File</h2>
         <div th:if="${file.passwordHash != null || isAppPasswordSet}" class="text-sm text-gray-600 dark:text-gray-400">
             <p>By default, this link requires a password to access the file if the file is password-protected or if the app password is enabled.<br>You can generate an unrestricted link valid for a specific number of days and downloads.</p>
         </div>
@@ -104,7 +98,7 @@
                 <input id="unrestrictedLink" type="checkbox" onchange="toggleLinkType()" class="h-4 w-4 rounded border-gray-400 dark:border-gray-600 accent-sky-500 dark:accent-sky-400 focus:ring-sky-500">
                 <label for="unrestrictedLink" class="text-sm">Generate an unrestricted link</label>
             </div>
-            <div id="linkOptions" class="grid grid-cols-2 gap-4 hidden">
+            <div id="linkOptions" class="grid grid-cols-1 sm:grid-cols-2 gap-4 hidden">
                 <div>
                     <label for="daysValid" class="block text-sm">Days the link will be valid:</label>
                     <input id="daysValid" type="number" min="1" value="30" class="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2">
@@ -119,8 +113,10 @@
             <div id="spinner" class="hidden animate-spin rounded-full h-5 w-5 border-2 border-sky-500 border-t-transparent"></div>
             <button id="generateLinkButton" onclick="createShareLink()" type="button" class="rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium px-4 py-2" disabled>Generate</button>
         </div>
+            </div>
+        </div>
     </div>
-</div>
+</main>
 <script src="/js/fileView.js"></script>
 </body>
 </html>

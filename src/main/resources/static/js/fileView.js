@@ -114,4 +114,15 @@ function toggleLinkType() {
     }
 }
 
-document.addEventListener('DOMContentLoaded', initializeModal);
+function openShareModal() {
+    document.getElementById('shareModal').classList.remove('hidden');
+}
+
+function closeShareModal() {
+    document.getElementById('shareModal').classList.add('hidden');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    initializeModal();
+    openShareModal();
+});

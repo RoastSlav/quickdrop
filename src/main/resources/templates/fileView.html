@@ -80,9 +80,16 @@
                 </div>
             </div>
         </div>
-        <div class="md:col-span-1">
-            <div id="shareModalContent" class="bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-6 w-full space-y-4">
-                <h2 class="text-xl font-semibold tracking-tight" id="shareModalLabel">Share File</h2>
+    </div>
+</main>
+
+<!-- Share Modal -->
+<div id="shareModal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+    <div id="shareModalContent" class="relative bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-6 w-full max-w-md space-y-4">
+        <div class="flex justify-between items-start">
+            <h2 class="text-xl font-semibold tracking-tight" id="shareModalLabel">Share File</h2>
+            <button type="button" onclick="closeShareModal()" aria-label="Close" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">&#x2715;</button>
+        </div>
         <div th:if="${file.passwordHash != null || isAppPasswordSet}" class="text-sm text-gray-600 dark:text-gray-400">
             <p>By default, this link requires a password to access the file if the file is password-protected or if the app password is enabled.<br>You can generate an unrestricted link valid for a specific number of days and downloads.</p>
         </div>
@@ -113,10 +120,9 @@
             <div id="spinner" class="hidden animate-spin rounded-full h-5 w-5 border-2 border-sky-500 border-t-transparent"></div>
             <button id="generateLinkButton" onclick="createShareLink()" type="button" class="rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium px-4 py-2" disabled>Generate</button>
         </div>
-            </div>
-        </div>
     </div>
-</main>
+</div>
+
 <script src="/js/fileView.js"></script>
 </body>
 </html>

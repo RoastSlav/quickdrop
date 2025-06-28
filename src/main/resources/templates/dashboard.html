@@ -61,15 +61,15 @@
                     <th class="px-6 py-4 text-left text-sm font-semibold">Downloads</th>
                 </tr>
                 </thead>
-                <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
+                <tbody>
                 <th:block th:each="file : ${files}">
-                    <tr class="bg-white dark:bg-slate-900 divide-x divide-slate-200 dark:divide-slate-600">
+                    <tr class="bg-gray-50 dark:bg-slate-800 divide-x divide-slate-200 dark:divide-slate-600">
                         <td class="px-6 py-4" th:text="${file.name}">File Name</td>
                         <td class="px-6 py-4" th:text="${#temporals.format(file.uploadDate, 'dd.MM.yyyy')}">Date</td>
                         <td class="px-6 py-4" th:text="${file.size}">--</td>
                         <td class="px-6 py-4" th:text="${file.totalDownloads}">--</td>
                     </tr>
-                    <tr class="bg-gray-50 dark:bg-slate-800 divide-x divide-slate-200 dark:divide-slate-600 border-b-2 border-slate-300 dark:border-slate-700">
+                    <tr class="bg-white dark:bg-slate-900 divide-x divide-slate-200 dark:divide-slate-600 border-b-2 border-slate-300 dark:border-slate-700">
                         <td class="px-6 pt-4 pb-6" colspan="2">
                             <div class="flex flex-wrap gap-4 pb-2">
                                 <a th:href="@{/file/{uuid}(uuid=${file.uuid})}"

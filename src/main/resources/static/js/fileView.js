@@ -115,14 +115,37 @@ function toggleLinkType() {
 }
 
 function openShareModal() {
-    document.getElementById('shareModal').classList.remove('hidden');
+    const modal = document.getElementById('shareModal');
+    modal.classList.remove('hidden');
+    positionShareModal();
 }
 
 function closeShareModal() {
     document.getElementById('shareModal').classList.add('hidden');
 }
 
+function positionShareModal() {
+    const card = document.getElementById('fileInfoCard');
+    const modal = document.getElementById('shareModalContent');
+    if (!card || !modal) return;
+
+    const margin = 16; // space between modal, card and screen edge
+    const cardRect = card.getBoundingClientRect();
+    const modalRect = modal.getBoundingClientRect();
+
+    let left = cardRect.left - modalRect.width - margin;
+    if (left < margin) {
+        left = margin;
+    }
+
+    const top = cardRect.top + cardRect.height / 2 - modalRect.height / 2;
+
+    modal.style.left = `${left}px`;
+    modal.style.top = `${Math.max(top, margin)}px`;
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     initializeModal();
     openShareModal();
+    window.addEventListener('resize', positionShareModal);
 });

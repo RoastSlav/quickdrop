@@ -23,7 +23,7 @@
         </div>
     </div>
 </nav>
-<main class="max-w-7xl mx-auto px-4 py-6 md:py-8">
+<main class="max-w-7xl mx-auto px-4 p-6 md:p-8">
     <header class="text-center mb-8 space-y-1">
         <h1 class="text-3xl md:text-4xl font-semibold tracking-tight">Upload a File</h1>
         <p class="text-gray-600 dark:text-gray-300">
@@ -33,20 +33,20 @@
             Files are deleted after <span class="maxFileLifeTime" th:text="${maxFileLifeTime}">30</span> days unless “Keep indefinitely” is selected.
         </p>
     </header>
-    <div class="grid grid-cols-12 gap-4">
+    <div class="grid grid-cols-12 gap-6">
         <div class="col-span-12 md:col-span-8 md:col-start-3 lg:col-span-6 lg:col-start-4">
-            <form id="uploadForm" class="bg-white dark:bg-slate-800 p-6 md:p-8 rounded-2xl shadow-lg flex flex-col gap-6" method="post" enctype="multipart/form-data" th:action="@{/file/upload}">
+            <form id="uploadForm" class="bg-white dark:bg-gray-800 p-6 md:p-8 rounded-2xl shadow-lg flex flex-col gap-6" method="post" enctype="multipart/form-data" th:action="@{/file/upload}">
                 <div id="messageContainer"></div>
                 <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden"/>
                 <input name="uuid" th:value="${uuid}" type="hidden"/>
-                <label id="dropZone" for="file" class="relative border-2 border-dashed border-gray-500 dark:border-gray-600 rounded-lg p-6 text-center cursor-pointer focus:outline-none focus:ring-2 focus:ring-sky-500">
+                <label id="dropZone" for="file" class="relative border-2 border-dashed border-gray-400 dark:border-gray-600 rounded-lg p-6 text-center cursor-pointer focus:outline-none focus:ring-2 focus:ring-sky-500">
                     <span id="dropZoneInstructions" data-default-text="Drop file here or click to browse" class="block text-gray-600 dark:text-gray-300">Drop file here or click to browse</span>
                     <input id="file" name="file" type="file" class="absolute inset-0 opacity-0 cursor-pointer" required/>
                     <p id="selectedFile" class="hidden mt-2 text-sm text-gray-700 dark:text-gray-300"></p>
                 </label>
                 <label class="block">
                     <span class="sr-only">Description</span>
-                    <input id="description" name="description" type="text" placeholder="Description" class="mt-1 w-full rounded-lg border border-gray-500 dark:border-gray-600 bg-white dark:bg-slate-700 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500"/>
+                    <input id="description" name="description" type="text" placeholder="Description" class="mt-1 w-full rounded-lg border border-gray-400 dark:border-gray-600 bg-white dark:bg-slate-700 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500"/>
                 </label>
                 <div class="flex flex-wrap gap-6">
                     <div>
@@ -54,19 +54,19 @@
                             <input id="keepIndefinitely" name="keepIndefinitely" type="checkbox" class="h-4 w-4 rounded border-gray-400 dark:border-gray-600 accent-sky-500 dark:accent-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-500">
                             <span class="text-sm">Keep indefinitely</span>
                         </label>
-                        <small class="block ml-6 text-sm text-gray-600 dark:text-gray-300 mb-2">If checked, this file will not be auto-deleted after <span class="maxFileLifeTime" th:text="${maxFileLifeTime}">30</span> days.</small>
+                        <small class="block ml-6 mt-1 text-sm text-gray-600 dark:text-gray-300">If checked, this file will not be auto-deleted after <span class="maxFileLifeTime" th:text="${maxFileLifeTime}">30</span> days.</small>
                     </div>
                     <div th:if="${isFileListPageEnabled}">
                         <label class="inline-flex items-start gap-2">
                             <input id="hidden" name="hidden" type="checkbox" class="h-4 w-4 rounded border-gray-400 dark:border-gray-600 accent-sky-500 dark:accent-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-500">
                             <span class="text-sm">Hide from file list</span>
                         </label>
-                        <small class="block ml-6 text-sm text-gray-600 dark:text-gray-300 mb-2">If checked, this file won’t appear on the “View Files” page.</small>
+                        <small class="block ml-6 mt-1 text-sm text-gray-600 dark:text-gray-300">If checked, this file won’t appear on the “View Files” page.</small>
                     </div>
                 </div>
                 <label class="block">
                     <span class="sr-only">Password (Optional)</span>
-                    <input id="password" name="password" type="password" placeholder="Password (Optional)" class="mt-1 w-full rounded-lg border border-gray-500 dark:border-gray-600 bg-white dark:bg-slate-700 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500"/>
+                    <input id="password" name="password" type="password" placeholder="Password (Optional)" class="mt-1 w-full rounded-lg border border-gray-400 dark:border-gray-600 bg-white dark:bg-slate-700 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500"/>
                 </label>
                 <button type="submit" class="rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium py-2 transition-colors active:scale-95 focus:outline-none focus:ring-2 focus:ring-sky-500">Upload</button>
             </form>

@@ -34,7 +34,7 @@
     <span id="downloadLink" th:text="${downloadLink}" hidden></span>
     <div class="grid grid-cols-12 gap-4">
         <div class="col-span-12 md:col-span-8 md:col-start-3 lg:col-span-6 lg:col-start-4">
-            <div class="bg-white dark:bg-slate-800 p-6 md:p-8 rounded-2xl shadow-lg flex flex-col gap-4">
+            <div id="fileInfoCard" class="bg-white dark:bg-slate-800 p-6 md:p-8 rounded-2xl shadow-lg flex flex-col gap-4">
                 <h2 class="text-center text-xl font-semibold tracking-tight" th:text="${file.name}">File Name</h2>
                 <p th:if="${!#strings.isEmpty(file.description)}" th:text="${file.description}" class="text-center text-gray-700 dark:text-gray-300"></p>
                 <div class="flex justify-between border-t pt-4">
@@ -83,8 +83,8 @@
         </div>
     </div>
 </main>
-<div id="shareModal" class="fixed inset-0 flex items-start justify-center p-4 bg-black/50 hidden z-50">
-    <div class="mt-20 bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-6 w-full max-w-md mx-auto space-y-4">
+<div id="shareModal" class="fixed inset-0 bg-black/50 p-4 hidden z-50">
+    <div id="shareModalContent" class="absolute bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-6 w-full max-w-md space-y-4">
         <div class="flex justify-between items-center">
             <h2 class="text-xl font-semibold tracking-tight" id="shareModalLabel">Share File</h2>
             <button type="button" onclick="closeShareModal()" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">✕</button>

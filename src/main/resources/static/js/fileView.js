@@ -39,11 +39,29 @@ function openShareModal() {
         }
     });
 
-    document.getElementById('shareModal').classList.remove('hidden');
+    const overlay = document.getElementById('shareModal');
+    const modal = document.getElementById('shareModalContent');
+    overlay.classList.remove('hidden');
+
+    // Position modal to the left of the info card
+    const card = document.getElementById('fileInfoCard');
+    const cardRect = card.getBoundingClientRect();
+    const modalRect = modal.getBoundingClientRect();
+    const space = 16; // px
+    let left = cardRect.left - modalRect.width - space;
+    if (left < space) left = space;
+    let top = cardRect.top + cardRect.height / 2 - modalRect.height / 2;
+    if (top < space) top = space;
+    modal.style.left = left + 'px';
+    modal.style.top = top + 'px';
 }
 
 function closeShareModal() {
-    document.getElementById('shareModal').classList.add('hidden');
+    const overlay = document.getElementById('shareModal');
+    const modal = document.getElementById('shareModalContent');
+    overlay.classList.add('hidden');
+    modal.style.left = '';
+    modal.style.top = '';
     initializeModal();
 }
 

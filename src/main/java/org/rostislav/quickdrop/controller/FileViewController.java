@@ -99,6 +99,10 @@ public class FileViewController {
             return "redirect:/file/" + uuid;
         } else {
             model.addAttribute("uuid", uuid);
+            FileEntity fileEntity = fileService.getFile(uuid);
+            if (fileEntity != null) {
+                model.addAttribute("fileName", fileEntity.name);
+            }
             return "file-password";
         }
     }
@@ -106,6 +110,10 @@ public class FileViewController {
     @GetMapping("/password/{uuid}")
     public String passwordPage(@PathVariable String uuid, Model model) {
         model.addAttribute("uuid", uuid);
+        FileEntity fileEntity = fileService.getFile(uuid);
+        if (fileEntity != null) {
+            model.addAttribute("fileName", fileEntity.name);
+        }
         return "file-password";
     }
 

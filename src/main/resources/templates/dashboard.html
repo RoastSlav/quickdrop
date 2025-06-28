@@ -52,8 +52,8 @@
     <div class="bg-white dark:bg-slate-800 p-6 md:p-8 rounded-2xl shadow-lg">
         <h2 class="text-xl font-semibold tracking-tight mb-4">Files</h2>
         <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700 border border-slate-200 dark:border-slate-700">
-                <thead class="bg-gray-100 dark:bg-gray-800 divide-x divide-slate-200 dark:divide-slate-700">
+            <table class="min-w-full border border-slate-300 dark:border-slate-700 divide-y divide-slate-300 dark:divide-slate-700">
+                <thead class="bg-gray-100 dark:bg-gray-800 divide-x divide-slate-200 dark:divide-slate-600">
                 <tr>
                     <th class="px-4 py-3 text-left text-sm font-semibold">Name</th>
                     <th class="px-4 py-3 text-left text-sm font-semibold">Upload Date/Last Renewed</th>
@@ -64,8 +64,8 @@
                     <th class="px-4 py-3 text-right text-sm font-semibold">Actions</th>
                 </tr>
                 </thead>
-                <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
-                <tr th:each="file : ${files}" class="bg-white whitespace-nowrap even:bg-gray-50 dark:bg-slate-900 dark:even:bg-slate-800/50 divide-x divide-slate-200 dark:divide-slate-700">
+                <tbody class="divide-y divide-slate-300 dark:divide-slate-700">
+                <tr th:each="file : ${files}" class="bg-white whitespace-nowrap even:bg-gray-50 dark:bg-slate-900 dark:even:bg-slate-800/50 divide-x divide-slate-200 dark:divide-slate-600">
                     <td class="px-4 py-3" th:text="${file.name}">File Name</td>
                     <td class="px-4 py-3" th:text="${#temporals.format(file.uploadDate, 'dd.MM.yyyy')}">Date</td>
                     <td class="px-4 py-3" th:text="${file.size}">--</td>

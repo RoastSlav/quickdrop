@@ -51,8 +51,8 @@
 
     <div class="bg-white dark:bg-slate-800 p-6 md:p-8 rounded-2xl shadow-lg">
         <h2 class="text-xl font-semibold tracking-tight mb-4">Files</h2>
-        <div class="overflow-x-auto">
-            <table class="min-w-full border border-slate-400 dark:border-slate-700 divide-y divide-slate-200 dark:divide-slate-700">
+        <div class="overflow-x-auto w-full">
+            <table class="min-w-full w-full border border-slate-400 dark:border-slate-700 divide-y divide-slate-200 dark:divide-slate-700">
                 <thead class="bg-gray-100 dark:bg-gray-800 divide-x divide-slate-200 dark:divide-slate-600">
                 <tr>
                     <th class="px-4 py-3 text-left text-sm font-semibold">Name</th>
@@ -71,7 +71,7 @@
                     </tr>
                     <tr class="bg-gray-50 dark:bg-slate-800 divide-x divide-slate-200 dark:divide-slate-600 border-b-2 border-slate-300 dark:border-slate-700">
                         <td class="px-4 py-3" colspan="2">
-                            <div class="flex flex-wrap gap-3">
+                            <div class="flex flex-wrap gap-4">
                                 <a th:href="@{/file/{uuid}(uuid=${file.uuid})}"
                                    class="inline-block rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium px-4 py-2 text-sm transition-colors active:scale-95 focus:outline-none focus:ring-2 focus:ring-sky-500">View</a>
                                 <a th:href="@{/file/history/{uuid}(uuid=${file.uuid})}"

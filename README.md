@@ -81,7 +81,7 @@ docker run -d -p 8080:8080 \
   -v /path/to/db:/app/db \
   -v /path/to/log:/app/log \
   -v /path/to/files:/app/files \
-  quickdrop
+  roastslav/quickdrop
 ```
 
 **Installation without Docker**

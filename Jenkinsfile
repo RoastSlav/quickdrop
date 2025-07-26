@@ -1,16 +1,13 @@
 pipeline {
       agent any
-
       tools {
         jdk   'Java 21'
         maven 'Maven'
       }
-
       environment {
         DOCKER_IMAGE = 'roastslav/quickdrop:latest'
         DOCKER_CREDENTIALS_ID = 'dockerhub-credentials'
       }
-
       stages {
         stage('Checkout') {
           steps { checkout scm }
@@ -20,6 +17,8 @@ pipeline {
           steps {
             sh '''
               echo "JAVA_HOME=$JAVA_HOME"
+              ls -l $JAVA_HOME/bin/java || true
+              which java
               java -version
               mvn -v
               mvn clean package

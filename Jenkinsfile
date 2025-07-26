@@ -1,28 +1,30 @@
 pipeline {
-    agent any
+      agent any
 
-    tools {
+      tools {
         jdk   'Java 21'
         maven 'Maven'
       }
 
-    environment {
-        MAVEN_HOME = tool name: 'Maven', type: 'hudson.tasks.Maven$MavenInstallation'
-        DOCKER_IMAGE = "roastslav/quickdrop:latest"
+      environment {
+        DOCKER_IMAGE = 'roastslav/quickdrop:latest'
         DOCKER_CREDENTIALS_ID = 'dockerhub-credentials'
-    }
+      }
 
-    stages {
+      stages {
         stage('Checkout') {
-            steps {
-                checkout scm
-            }
+          steps { checkout scm }
         }
 
         stage('Build and Test') {
-            steps {
-                sh "${MAVEN_HOME}/bin/mvn clean package"
-            }
+          steps {
+            sh '''
+              echo "JAVA_HOME=$JAVA_HOME"
+              java -version
+              mvn -v
+              mvn clean package
+            '''
+          }
         }
 
         stage('Docker Build and Push Multi-Arch') {

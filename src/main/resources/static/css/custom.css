@@ -1,0 +1,9 @@
+.bg-red-600{background-color:#dc2626;}
+.hover\:bg-red-700:hover{background-color:#b91c1c;}
+.dark .bg-red-500{background-color:#ef4444;}
+.dark .hover\:bg-red-600:hover{background-color:#dc2626;}
+.bg-gray-500{background-color:#6b7280;}
+.hover\:bg-gray-600:hover{background-color:#4b5563;}
+.dark .bg-gray-700{background-color:#374151;}
+.dark .hover\:bg-gray-600:hover{background-color:#4b5563;}
+.focus\:ring-red-500:focus{--tw-ring-color:#ef4444;}

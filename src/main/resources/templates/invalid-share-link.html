@@ -2,49 +2,38 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <title>Share Link Invalid</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="/images/favicon.png" rel="icon" type="image/png">
-    <style>
-        body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            background-color: #f8f9fa;
-        }
-
-        .card {
-            max-width: 500px;
-            width: 100%;
-            border: none;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-
-        .card-body {
-            text-align: center;
-        }
-
-        .btn-home {
-            margin-top: 20px;
-        }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="/css/tailwind.css">
+    <link rel="stylesheet" href="/css/custom.css">
+    <link rel="icon" type="image/png" href="/images/favicon.png">
+    <script src="/js/tailwindTheme.js"></script>
 </head>
-<body>
-<div class="container d-flex justify-content-center align-items-center">
-    <div class="card">
-        <div class="card-body">
-            <h1 class="card-title">Link Expired</h1>
-            <p class="card-text text-muted">
-                This share link is no longer valid. The file you are trying to access has expired or the link has been
-                used.
-            </p>
-            <a class="btn btn-primary btn-home" href="/">Return to Homepage</a>
+<body class="bg-gray-50 text-gray-800 dark:bg-slate-900 dark:text-gray-100">
+<nav class="bg-gray-800 dark:bg-gray-900 text-gray-100">
+    <div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+        <a href="/" class="flex items-center space-x-2">
+            <img src="/images/favicon.png" alt="Website Logo" class="h-10">
+            <span class="font-semibold tracking-tight">QuickDrop</span>
+        </a>
+        <div class="flex items-center space-x-4">
+            <a th:if="${isFileListPageEnabled}" href="/file/list" class="hover:text-white">View Files</a>
+            <a href="/file/upload" class="hover:text-white">Upload File</a>
+            <a th:if="${isAdminDashboardButtonEnabled}" href="/admin/dashboard" onclick="requestAdminPassword()" class="hover:text-white">Admin Dashboard</a>
+            <button id="themeToggle" type="button" class="rounded-lg p-2 transition-colors hover:bg-sky-600 dark:hover:bg-sky-500 active:scale-95 focus:outline-none focus:ring-2 focus:ring-sky-500">🌙</button>
         </div>
     </div>
-</div>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</nav>
+<main class="max-w-7xl mx-auto px-4 py-6 md:py-8">
+    <div class="grid grid-cols-12 gap-4">
+        <div class="col-span-12 md:col-span-8 md:col-start-3 lg:col-span-6 lg:col-start-4">
+            <div class="bg-white dark:bg-slate-800 p-6 md:p-8 rounded-2xl shadow-lg text-center space-y-4">
+                <h1 class="text-3xl font-semibold tracking-tight">Link Expired</h1>
+                <p class="text-gray-700 dark:text-gray-300">This share link is no longer valid. The file you are trying to access has expired or the link has been used.</p>
+                <a href="/" class="inline-block rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium px-4 py-2 transition-colors active:scale-95 focus:outline-none focus:ring-2 focus:ring-sky-500">Return to Homepage</a>
+            </div>
+        </div>
+    </div>
+</main>
 </body>
 </html>

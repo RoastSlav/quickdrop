@@ -6,17 +6,106 @@ let indefiniteNoPwWarningShown = false;
 document.addEventListener("DOMContentLoaded", () => {
     const uploadForm = document.getElementById("uploadForm");
     uploadForm.addEventListener("submit", onUploadFormSubmit);
+
+    const dropZone = document.getElementById("dropZone");
+    const fileInput = document.getElementById("file");
+    const fileNameEl = document.getElementById("selectedFile");
+    const dropZoneText = document.getElementById("dropZoneInstructions");
+    const defaultText = dropZoneText ? dropZoneText.dataset.defaultText || dropZoneText.textContent : "";
+    if (dropZone) {
+        dropZone.addEventListener("click", () => fileInput.click());
+        ["dragenter", "dragover"].forEach((eventName) => {
+            dropZone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                dropZone.classList.add("ring-2", "ring-sky-500");
+            });
+        });
+        ["dragleave", "drop"].forEach((eventName) => {
+            dropZone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                dropZone.classList.remove("ring-2", "ring-sky-500");
+            });
+        });
+        dropZone.addEventListener("drop", (e) => {
+            const items = e.dataTransfer.items;
+            const files = e.dataTransfer.files;
+            if (fileInput) {
+                const dt = new DataTransfer();
+                for (const f of files) dt.items.add(f);
+                fileInput.files = dt.files;
+            }
+            handleFiles(fileInput.files, items);
+        });
+    }
+
+    if (fileInput) {
+        fileInput.addEventListener("change", () => {
+            handleFiles(fileInput.files);
+        });
+        handleFiles(fileInput.files);
+    }
+
+    function handleFiles(files, items) {
+        if (!fileNameEl || !dropZoneText) return;
+
+        let isFolder = false;
+        const firstFile = files && files[0];
+        if (items && items.length > 0 && items[0].webkitGetAsEntry) {
+            const entry = items[0].webkitGetAsEntry();
+            if (entry && entry.isDirectory) isFolder = true;
+        } else if (firstFile && firstFile.webkitRelativePath && firstFile.webkitRelativePath !== "") {
+            isFolder = true;
+        }
+
+        if (isFolder) {
+            dropZoneText.textContent = "Folders cannot be uploaded.";
+            dropZoneText.classList.remove("hidden");
+            fileNameEl.textContent = "";
+            fileNameEl.classList.add("hidden");
+            if (fileInput) fileInput.value = "";
+            return;
+        }
+
+        if (!files || files.length === 0) {
+            fileNameEl.textContent = "";
+            fileNameEl.classList.add("hidden");
+            dropZoneText.textContent = defaultText;
+            dropZoneText.classList.remove("hidden");
+            return;
+        }
+
+        const file = firstFile;
+
+        const maxSizeSpan = document.querySelector('.maxFileSize');
+        const maxSize = maxSizeSpan ? parseSize(maxSizeSpan.innerText) : Infinity;
+
+
+        if (file.size > maxSize) {
+            dropZoneText.textContent = `File exceeds the ${maxSizeSpan.innerText} limit.`;
+            dropZoneText.classList.remove("hidden");
+            fileNameEl.textContent = "";
+            fileNameEl.classList.add("hidden");
+            if (fileInput) fileInput.value = "";
+            return;
+        }
+        const size = (file.size / (1024 * 1024)).toFixed(2) + ' MB';
+        fileNameEl.textContent = `${file.name} (${size})`;
+        fileNameEl.classList.remove("hidden");
+        dropZoneText.textContent = defaultText;
+        dropZoneText.classList.add("hidden");
+    }
 });
 
 // Unified way to show an inline message in our #messageContainer
 function showMessage(type, text) {
-    // type: "success", "info", "danger", "warning"
+    const styles = {
+        success: "bg-sky-100 text-sky-700 dark:bg-sky-900 dark:text-sky-100",
+        info: "bg-sky-100 text-sky-700 dark:bg-sky-900 dark:text-sky-100",
+        danger: "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-100",
+        warning: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-100"
+    };
     const container = document.getElementById("messageContainer");
-    container.innerHTML = `
-    <div class="alert alert-${type} alert-dismissible fade show" role="alert">
-      ${text}
-      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>`;
+    container.innerHTML = `<div class="rounded-lg p-4 mb-4 ${styles[type] || styles.info}">${text}</div>`;
 }
 
 // Called when user hits "Upload"
@@ -60,7 +149,7 @@ function startChunkUpload() {
     }
 
     // Initialize progress bar
-    document.getElementById("uploadIndicator").style.display = "block";
+    document.getElementById("uploadIndicator").classList.remove("hidden");
     const progressBar = document.getElementById("uploadProgress");
     progressBar.style.width = "0%";
     progressBar.setAttribute("aria-valuenow", 0);
@@ -171,25 +260,10 @@ function buildChunkFormData(chunk, chunkNumber, fileName, totalChunks, fileSize)
 
 // Reset UI if something fails
 function resetUploadUI() {
-    document.getElementById("uploadIndicator").style.display = "none";
+    document.getElementById("uploadIndicator").classList.add("hidden");
     isUploading = false;
 }
 
-function validateFileSize() {
-    const fileSizeSpan = document.querySelector('.maxFileSize');
-    const file = document.getElementById('file').files[0];
-    if (!file || !fileSizeSpan) return;
-
-    const maxSize = parseSize(fileSizeSpan.innerText);
-    const fileSizeAlert = document.getElementById('fileSizeAlert');
-
-    if (file.size > maxSize) {
-        fileSizeAlert.style.display = 'block';
-        document.getElementById('file').value = '';
-    } else {
-        fileSizeAlert.style.display = 'none';
-    }
-}
 
 function parseSize(size) {
     // Example: "1GB" -> parse

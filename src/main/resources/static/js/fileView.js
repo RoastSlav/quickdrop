@@ -17,28 +17,10 @@ function initializeModal() {
     const downloadLink = document.getElementById("downloadLink").innerText;
     updateShareLink(downloadLink);
     document.getElementById('unrestrictedLink').checked = false;
-    document.getElementById('daysValidContainer').style.display = 'none';
-    document.getElementById('generateLinkButton').disabled = true;
-}
-
-function openShareModal() {
-    const downloadLink = document.getElementById("downloadLink").innerText;
-
-    const shareLinkInput = document.getElementById("shareLink");
-    shareLinkInput.value = downloadLink;
-
-    const shareQRCode = document.getElementById("shareQRCode");
-    QRCode.toCanvas(shareQRCode, encodeURI(downloadLink), {
-        width: 150,
-        margin: 2
-    }, function (error) {
-        if (error) {
-            console.error("QR Code generation failed:", error);
-        }
-    });
-
-    const shareModal = new bootstrap.Modal(document.getElementById('shareModal'));
-    shareModal.show();
+    document.getElementById('linkOptions').classList.add('hidden');
+    const generateButton = document.getElementById('generateLinkButton');
+    generateButton.disabled = true;
+    generateButton.classList.add('hidden');
 }
 
 function generateShareLink(fileUuid, daysValid, allowedNumberOfDownloads) {
@@ -121,18 +103,53 @@ function updateShareLink(link) {
 
 function toggleLinkType() {
     const unrestrictedLinkCheckbox = document.getElementById('unrestrictedLink');
-    const daysValidContainer = document.getElementById('daysValidContainer');
+    const linkOptions = document.getElementById('linkOptions');
     const generateLinkButton = document.getElementById('generateLinkButton');
-    const allowedNumberOfDownloads = document.getElementById('allowedNumberOfDownloads');
 
     if (unrestrictedLinkCheckbox.checked) {
-        daysValidContainer.style.display = 'block';
-        allowedNumberOfDownloads.style.display = 'block';
+        linkOptions.classList.remove('hidden');
+        generateLinkButton.classList.remove('hidden');
         generateLinkButton.disabled = false;
     } else {
-        daysValidContainer.style.display = 'none';
-        allowedNumberOfDownloads.style.display = 'none';
+        linkOptions.classList.add('hidden');
+        generateLinkButton.classList.add('hidden');
         generateLinkButton.disabled = true;
         initializeModal();
     }
 }
+
+function openShareModal() {
+    const modal = document.getElementById('shareModal');
+    modal.classList.remove('hidden');
+    positionShareModal();
+}
+
+function closeShareModal() {
+    document.getElementById('shareModal').classList.add('hidden');
+}
+
+function positionShareModal() {
+    const card = document.getElementById('fileInfoCard');
+    const modal = document.getElementById('shareModalContent');
+    if (!card || !modal) return;
+
+    const margin = 16; // space between modal, card and screen edge
+    const cardRect = card.getBoundingClientRect();
+    const modalRect = modal.getBoundingClientRect();
+
+    let left = cardRect.left - modalRect.width - margin;
+    if (left < margin) {
+        left = margin;
+    }
+
+    const top = cardRect.top + cardRect.height / 2 - modalRect.height / 2;
+
+    modal.style.left = `${left}px`;
+    modal.style.top = `${Math.max(top, margin)}px`;
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    initializeModal();
+    openShareModal();
+    window.addEventListener('resize', positionShareModal);
+});

@@ -27,10 +27,17 @@ public class AnalyticsService {
     public AnalyticsDataView getAnalytics() {
         long totalDownloads = downloadLogRepository.countAllDownloads();
         long totalSpaceUsed = fileService.calculateTotalSpaceUsed();
+        long fileCount = fileService.getFileCount();
+
+        String averageFileSize = "0 B";
+        if (fileCount > 0) {
+            averageFileSize = formatFileSize(totalSpaceUsed / fileCount);
+        }
 
         AnalyticsDataView analytics = new AnalyticsDataView();
         analytics.setTotalDownloads(totalDownloads);
         analytics.setTotalSpaceUsed(formatFileSize(totalSpaceUsed));
+        analytics.setAverageFileSize(averageFileSize);
         return analytics;
     }
 

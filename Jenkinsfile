@@ -1,6 +1,11 @@
 pipeline {
     agent any
 
+    tools {
+        jdk   'jdk-21'
+        maven 'Maven'
+      }
+
     environment {
         MAVEN_HOME = tool name: 'Maven', type: 'hudson.tasks.Maven$MavenInstallation'
         DOCKER_IMAGE = "roastslav/quickdrop:latest"

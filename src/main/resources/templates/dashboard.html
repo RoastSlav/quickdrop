@@ -1,255 +1,121 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <script src="/js/darkMode.js"></script>
     <meta charset="UTF-8">
     <title>QuickDrop Admin</title>
-    <meta content="width=device-width, initial-scale=1.0" name="viewport">
-
-    <!-- Bootstrap CSS -->
-    <link
-            href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
-            rel="stylesheet"
-    >
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="/css/tailwind.css">
+    <link rel="stylesheet" href="/css/custom.css">
+    <link rel="icon" type="image/png" href="/images/favicon.png">
+    <script src="/js/tailwindTheme.js"></script>
 </head>
-<body>
-<!-- Navbar -->
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-    <div class="container">
-        <a class="navbar-brand" href="/">
-            <img alt="QuickDrop Logo" class="me-2" height="40" src="/images/favicon.png">
-            QuickDrop Admin
+<body class="bg-gray-50 text-gray-800 dark:bg-slate-900 dark:text-gray-100">
+<nav class="bg-gray-800 dark:bg-gray-900 text-gray-100">
+    <div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+        <a href="/" class="flex items-center space-x-2">
+            <img src="/images/favicon.png" alt="Website Logo" class="h-10">
+            <span class="font-semibold tracking-tight">QuickDrop Admin</span>
         </a>
-        <button
-                aria-controls="navbarNav"
-                aria-expanded="false"
-                aria-label="Toggle navigation"
-                class="navbar-toggler"
-                data-bs-target="#navbarNav"
-                data-bs-toggle="collapse"
-                type="button"
-        >
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav ms-auto">
-                <li class="nav-item">
-                    <a class="nav-link" href="/admin/settings">Settings</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/">Home</a>
-                </li>
-                <li class="nav-item">
-                    <button id="themeToggle" type="button" class="btn btn-sm ms-2">🌙</button>
-                </li>
-            </ul>
+        <div class="flex items-center space-x-4">
+            <a href="/file/upload" class="hover:text-white">Upload File</a>
+            <a href="/file/list" class="hover:text-white">View Files</a>
+            <a href="/admin/settings" class="hover:text-white">Settings</a>
+            <button id="themeToggle" type="button"
+                    class="rounded-lg p-2 transition-colors hover:bg-sky-600 dark:hover:bg-sky-500 active:scale-95 focus:outline-none focus:ring-2 focus:ring-sky-500">🌙</button>
         </div>
     </div>
 </nav>
 
-<!-- Main Content -->
-<div class="container my-5">
-    <h1 class="text-center mb-4">Admin Dashboard</h1>
+<main class="max-w-7xl mx-auto px-4 py-6 md:py-8">
+    <header class="text-center mb-8 space-y-1">
+        <h1 class="text-3xl md:text-4xl font-semibold tracking-tight">Admin Dashboard</h1>
+    </header>
 
-    <!-- Analytics Section -->
-    <div class="card mb-4">
-        <div class="card-header bg-secondary text-white">
-            <h2 class="mb-0 h4">Analytics</h2>
-        </div>
-        <div class="card-body">
-            <div class="row mb-3">
-                <div class="col-md-6 mb-3 mb-md-0">
-                    <h5 class="mb-0">Total Downloads</h5>
-                    <small class="text-muted">Excluding deleted files</small>
-                    <p class="text-muted fs-5" th:text="${analytics.totalDownloads}">0</p>
-                </div>
-                <div class="col-md-6">
-                    <h5>Total Space Used</h5>
-                    <p class="text-muted fs-5" th:text="${analytics.totalSpaceUsed}">0 MB</p>
-                </div>
+    <div class="bg-white dark:bg-slate-800 p-6 md:p-8 rounded-2xl shadow-lg mb-8">
+        <h2 class="text-xl font-semibold tracking-tight mb-4">Analytics</h2>
+        <div class="flex flex-wrap justify-between gap-6 text-center">
+            <div class="flex-1 min-w-[8rem] space-y-1">
+                <h3 class="text-lg font-semibold tracking-tight">Total Downloads</h3>
+                <p class="text-sm text-gray-600 dark:text-gray-400">Excluding deleted files</p>
+                <p class="text-2xl font-semibold" th:text="${analytics.totalDownloads}">0</p>
+            </div>
+            <div class="flex-1 min-w-[8rem] space-y-1">
+                <h3 class="text-lg font-semibold tracking-tight">Total Space Used</h3>
+                <p class="text-2xl font-semibold" th:text="${analytics.totalSpaceUsed}">0 MB</p>
+            </div>
+            <div class="flex-1 min-w-[8rem] space-y-1">
+                <h3 class="text-lg font-semibold tracking-tight">Average File Size</h3>
+                <p class="text-2xl font-semibold" th:text="${analytics.averageFileSize}">0 MB</p>
             </div>
         </div>
     </div>
 
-    <!-- Files Section -->
-    <div class="card mb-4">
-        <div class="card-header bg-primary text-white">
-            <h2 class="mb-0 h4">Files</h2>
-        </div>
-        <div class="card-body p-0">
-
-            <!-- DESKTOP/TABLE LAYOUT (hidden on small screens) -->
-            <div class="table-responsive d-none d-md-block">
-                <table class="table table-striped align-middle mb-0">
-                    <thead class="table-dark">
-                    <tr>
-                        <th>Name</th>
-                        <th>Upload Date/Last Renewed</th>
-                        <th>Size</th>
-                        <th>Downloads</th>
-                        <th class="text-center">Keep Indefinitely</th>
-                        <th class="text-center">Hidden</th>
-                        <th class="text-end">Actions</th>
+    <div class="bg-white dark:bg-slate-800 p-6 md:p-8 rounded-2xl shadow-lg">
+        <h2 class="text-xl font-semibold tracking-tight mb-4">Files</h2>
+        <div class="overflow-x-auto w-full">
+            <table class="min-w-full w-full divide-y divide-slate-200 dark:divide-slate-700">
+                <thead class="bg-gray-100 dark:bg-gray-800 divide-x divide-slate-200 dark:divide-slate-600">
+                <tr>
+                    <th class="px-6 py-4 text-left text-sm font-semibold">Name</th>
+                    <th class="px-6 py-4 text-left text-sm font-semibold">Upload Date/Last Renewed</th>
+                    <th class="px-6 py-4 text-left text-sm font-semibold">Size</th>
+                    <th class="px-6 py-4 text-left text-sm font-semibold">Downloads</th>
+                </tr>
+                </thead>
+                <tbody>
+                <th:block th:each="file : ${files}">
+                    <tr class="bg-gray-50 dark:bg-slate-800 divide-x divide-slate-200 dark:divide-slate-600">
+                        <td class="px-6 py-4" th:text="${file.name}">File Name</td>
+                        <td class="px-6 py-4" th:text="${#temporals.format(file.uploadDate, 'dd.MM.yyyy')}">Date</td>
+                        <td class="px-6 py-4" th:text="${file.size}">--</td>
+                        <td class="px-6 py-4" th:text="${file.totalDownloads}">--</td>
                     </tr>
-                    </thead>
-                    <tbody>
-                    <tr th:each="file : ${files}">
-                        <td th:text="${file.name}"></td>
-                        <td th:text="${#temporals.format(file.uploadDate, 'dd.MM.yyyy')}"></td>
-                        <td th:text="${file.size}">--</td>
-                        <td th:text="${file.totalDownloads}">--</td>
-
-                        <!-- Keep Indefinitely Checkbox -->
-                        <td class="text-center">
-                            <form class="d-inline" method="post"
-                                  th:action="@{/admin/keep-indefinitely/{uuid}(uuid=${file.uuid})}">
-                                <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden">
-                                <input name="keepIndefinitely" type="hidden" value="false">
-                                <div class="form-check form-switch d-inline-block">
-                                    <input
-                                            class="form-check-input"
-                                            name="keepIndefinitely"
-                                            onchange="updateCheckboxState(event, this)"
-                                            th:checked="${file.keepIndefinitely}"
-                                            type="checkbox"
-                                            value="true"
-                                    >
-                                </div>
-                            </form>
-                        </td>
-
-                        <!-- Hidden Checkbox -->
-                        <td class="text-center">
-                            <form class="d-inline" method="post"
-                                  th:action="@{/admin/toggle-hidden/{uuid}(uuid=${file.uuid})}">
-                                <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden">
-                                <input name="hidden" type="hidden" value="false">
-                                <div class="form-check form-switch d-inline-block">
-                                    <input
-                                            class="form-check-input"
-                                            name="hidden"
-                                            onchange="updateHiddenState(event, this)"
-                                            th:checked="${file.hidden}"
-                                            type="checkbox"
-                                            value="true"
-                                    >
-                                </div>
-                            </form>
-                        </td>
-
-                        <!-- Actions -->
-                        <td class="text-end">
-                            <!-- Buttons in a flex container so they wrap if needed -->
-                            <div class="d-flex flex-wrap gap-2 justify-content-end">
-                                <a class="btn btn-sm btn-info"
-                                   th:href="@{/file/{uuid}(uuid=${file.uuid})}">
-                                    View
-                                </a>
-                                <a class="btn btn-sm btn-warning"
-                                   th:href="@{/file/history/{uuid}(uuid=${file.uuid})}">
-                                    History
-                                </a>
-                                <a class="btn btn-sm btn-success"
-                                   th:href="@{/file/download/{uuid}(uuid=${file.uuid})}">
-                                    Download
-                                </a>
-                                <form class="d-inline"
-                                      method="post"
-                                      onsubmit="return confirmDelete();"
-                                      th:action="@{/admin/delete/{uuid}(uuid=${file.uuid})}">
-                                    <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden">
-                                    <button class="btn btn-sm btn-danger">Delete</button>
+                    <tr class="bg-white dark:bg-slate-900 divide-x divide-slate-200 dark:divide-slate-600 border-b border-gray-400 dark:border-gray-600">
+                        <td class="px-6 pt-4 pb-6" colspan="2">
+                            <div class="flex flex-wrap gap-4 pb-2">
+                                <a th:href="@{/file/{uuid}(uuid=${file.uuid})}"
+                                   class="inline-block rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium px-4 py-2 text-sm transition-colors active:scale-95 focus:outline-none focus:ring-2 focus:ring-sky-500">View</a>
+                                <a th:href="@{/file/history/{uuid}(uuid=${file.uuid})}"
+                                   class="inline-block rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium px-4 py-2 text-sm transition-colors active:scale-95 focus:outline-none focus:ring-2 focus:ring-sky-500">History</a>
+                                <a th:href="@{/file/download/{uuid}(uuid=${file.uuid})}"
+                                   class="inline-block rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium px-4 py-2 text-sm transition-colors active:scale-95 focus:outline-none focus:ring-2 focus:ring-sky-500">Download</a>
+                                <form class="inline" method="post" onsubmit="return confirmDelete();" th:action="@{/admin/delete/{uuid}(uuid=${file.uuid})}">
+                                    <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden"/>
+                                    <button type="submit" class="rounded-lg bg-red-600 hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600 text-white font-medium px-4 py-2 text-sm transition-colors active:scale-95 focus:outline-none focus:ring-2 focus:ring-red-500">Delete</button>
                                 </form>
                             </div>
                         </td>
+                        <td class="px-6 py-4 text-center">
+                            <form class="inline" method="post" th:action="@{/admin/keep-indefinitely/{uuid}(uuid=${file.uuid})}">
+                                <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden"/>
+                                <input name="keepIndefinitely" type="hidden" value="false"/>
+                                <label class="inline-flex items-center gap-2">
+                                    <input type="checkbox" name="keepIndefinitely" value="true" th:checked="${file.keepIndefinitely}"
+                                           onchange="updateCheckboxState(event, this)"
+                                           class="h-4 w-4 rounded border-gray-400 dark:border-gray-600 accent-sky-500 dark:accent-sky-400 focus:ring-sky-500"/>
+                                    <span class="text-sm">Keep indefinitely</span>
+                                </label>
+                            </form>
+                        </td>
+                        <td class="px-6 py-4 text-center">
+                            <form class="inline" method="post" th:action="@{/admin/toggle-hidden/{uuid}(uuid=${file.uuid})}">
+                                <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden"/>
+                                <input name="hidden" type="hidden" value="false"/>
+                                <label class="inline-flex items-center gap-2">
+                                    <input type="checkbox" name="hidden" value="true" th:checked="${file.hidden}"
+                                           onchange="updateHiddenState(event, this)"
+                                           class="h-4 w-4 rounded border-gray-400 dark:border-gray-600 accent-sky-500 dark:accent-sky-400 focus:ring-sky-500"/>
+                                    <span class="text-sm">Hidden</span>
+                                </label>
+                            </form>
+                        </td>
                     </tr>
-                    </tbody>
-                </table>
-            </div><!-- /.table-responsive -->
-
-            <!-- MOBILE/CARD LAYOUT (hidden on md+ screens) -->
-            <div class="d-block d-md-none p-3">
-                <div class="card mb-3 shadow-sm" th:each="file : ${files}">
-                    <div class="card-body">
-                        <!-- File Info -->
-                        <h5 class="card-title" th:text="${file.name}">File Name</h5>
-                        <p class="mb-1">
-                            <strong>Uploaded/Renewed:</strong>
-                            <span th:text="${#temporals.format(file.uploadDate, 'dd.MM.yyyy')}"></span>
-                        </p>
-                        <p class="mb-1">
-                            <strong>Size:</strong> <span th:text="${file.size}">--</span>
-                        </p>
-                        <p class="mb-1">
-                            <strong>Downloads:</strong> <span th:text="${file.totalDownloads}">--</span>
-                        </p>
-
-                        <!-- Keep Indefinitely / Hidden -->
-                        <div class="my-2">
-                            <form class="d-inline me-3" method="post"
-                                  th:action="@{/admin/keep-indefinitely/{uuid}(uuid=${file.uuid})}">
-                                <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden">
-                                <input name="keepIndefinitely" type="hidden" value="false">
-                                <div class="form-check form-switch">
-                                    <label class="form-check-label me-2">Keep Indefinitely</label>
-                                    <input
-                                            class="form-check-input"
-                                            name="keepIndefinitely"
-                                            onchange="updateCheckboxState(event, this)"
-                                            th:checked="${file.keepIndefinitely}"
-                                            type="checkbox"
-                                            value="true"
-                                    >
-                                </div>
-                            </form>
-
-                            <form class="d-inline" method="post"
-                                  th:action="@{/admin/toggle-hidden/{uuid}(uuid=${file.uuid})}">
-                                <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden">
-                                <input name="hidden" type="hidden" value="false">
-                                <div class="form-check form-switch">
-                                    <label class="form-check-label me-2">Hidden</label>
-                                    <input
-                                            class="form-check-input"
-                                            name="hidden"
-                                            onchange="updateHiddenState(event, this)"
-                                            th:checked="${file.hidden}"
-                                            type="checkbox"
-                                            value="true"
-                                    >
-                                </div>
-                            </form>
-                        </div>
-
-                        <!-- ACTION BUTTONS under the data -->
-                        <div class="d-flex flex-wrap gap-2 justify-content-end mt-3">
-                            <a class="btn btn-sm btn-info"
-                               th:href="@{/file/{uuid}(uuid=${file.uuid})}">
-                                View
-                            </a>
-                            <a class="btn btn-sm btn-warning"
-                               th:href="@{/file/history/{uuid}(uuid=${file.uuid})}">
-                                History
-                            </a>
-                            <a class="btn btn-sm btn-success"
-                               th:href="@{/file/download/{uuid}(uuid=${file.uuid})}">
-                                Download
-                            </a>
-                            <form class="d-inline"
-                                  method="post"
-                                  onsubmit="return confirmDelete();"
-                                  th:action="@{/admin/delete/{uuid}(uuid=${file.uuid})}">
-                                <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden">
-                                <button class="btn btn-sm btn-danger">Delete</button>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-            </div><!-- /.mobile/card layout -->
-
-        </div><!-- /.card-body -->
-    </div><!-- /.card -->
-</div><!-- /.container -->
+                </th:block>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</main>
 
 <script>
     function updateHiddenState(event, checkbox) {
@@ -274,8 +140,5 @@
         checkbox.form.submit();
     }
 </script>
-
-<!-- Bootstrap Bundle (includes Popper) -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

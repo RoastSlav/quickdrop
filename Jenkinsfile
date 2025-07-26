@@ -14,15 +14,14 @@ pipeline {
         }
 
         stage('Build and Test') {
+          agent {
+            docker {
+              image 'maven:3.9.9-eclipse-temurin-21'
+              args '-v $HOME/.m2:/root/.m2'
+            }
+          }
           steps {
-            sh '''
-              echo "JAVA_HOME=$JAVA_HOME"
-              ls -l $JAVA_HOME/bin/java || true
-              which java
-              java -version
-              mvn -v
-              mvn clean package
-            '''
+            sh 'java -version && mvn -v && mvn clean package'
           }
         }
 

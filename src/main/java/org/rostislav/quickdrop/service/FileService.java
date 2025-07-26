@@ -220,6 +220,10 @@ public class FileService {
         return nullToZero(fileRepository.totalFileSizeForAllFiles());
     }
 
+    public long getFileCount() {
+        return fileRepository.count();
+    }
+
     public void extendFile(String uuid, HttpServletRequest request) {
         Optional<FileEntity> referenceById = fileRepository.findByUUID(uuid);
         if (referenceById.isEmpty()) {

@@ -49,7 +49,7 @@ pipeline {
 
     stage('Docker Build and Push Multi-Arch') {
       when {
-        expression { env.VERSION_CHANGED == 'true' }   // run only if version changed
+        expression { env.VERSION_CHANGED == 'true' }
       }
       steps {
         script {
@@ -84,11 +84,11 @@ pipeline {
 
     stage('Skip Docker (version unchanged)') {
       when {
-        expression { env.VERSION_CHANGED != 'true' }   // only when unchanged
+        expression { env.VERSION_CHANGED != 'true' }
       }
       steps {
         echo "Version unchanged (${APP_VERSION}). Skipping Docker build & push."
-        script { currentBuild.result = 'SUCCESS' }     // explicit, though default is success
+        script { currentBuild.result = 'SUCCESS' }
       }
     }
 

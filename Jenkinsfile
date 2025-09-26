@@ -15,9 +15,10 @@ pipeline {
         }
 
         stage('Build and Test') {
-            steps {
-                sh "${MAVEN_HOME}/bin/mvn clean package"
-            }
+            agent { docker { image 'maven:3.9.9-eclipse-temurin-25' } }
+              steps {
+                sh 'mvn -B -DskipTests clean package'
+              }
         }
 
         stage('Docker Build and Push Multi-Arch') {

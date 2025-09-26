@@ -12,7 +12,7 @@
     </parent>
     <groupId>org.rostislav</groupId>
     <artifactId>quickdrop</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>1.4.6</version>
     <name>quickdrop</name>
     <description>quickdrop</description>
     <url/>
@@ -109,6 +109,7 @@
     </dependencies>
 
     <build>
+        <finalName>quickdrop</finalName>
         <plugins>
             <plugin>
                 <groupId>org.springframework.boot</groupId>

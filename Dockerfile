@@ -28,7 +28,7 @@ ENV PATH="${JAVA_HOME}/bin:${PATH}"
 COPY --from=corretto-jdk /slim_jre $JAVA_HOME
 
 # Copy the compiled app into Alpine image
-COPY --from=builder build/target/quickdrop-0.0.1-SNAPSHOT.jar app/quickdrop.jar
+COPY --from=builder /build/target/quickdrop.jar /app/quickdrop.jar
 
 WORKDIR /app
 

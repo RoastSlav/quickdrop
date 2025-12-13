@@ -15,6 +15,33 @@ function toggleEmailFields() {
     document.getElementById('emailConfig')?.classList.toggle('hidden', !enabled);
 }
 
+function getCsrfToken() {
+    const csrfInput = document.querySelector('input[name="_csrf"]');
+    return csrfInput ? csrfInput.value : null;
+}
+
+function buildCsrfHeaders(csrf) {
+    const headers = {'X-Requested-With': 'XMLHttpRequest'};
+    if (csrf) {
+        headers['X-XSRF-TOKEN'] = csrf;
+        headers['X-CSRF-TOKEN'] = csrf;
+    }
+    return headers;
+}
+
+async function saveSettings(csrf) {
+    const form = document.querySelector('form[method="post"][action="/admin/save"]');
+    if (!form) return;
+
+    const formData = new FormData(form);
+    await fetch('/admin/save', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: buildCsrfHeaders(csrf),
+        body: formData
+    });
+}
+
 async function sendNotificationTest(target, buttonId, statusId) {
     const button = document.getElementById(buttonId);
     const status = document.getElementById(statusId);
@@ -24,13 +51,15 @@ async function sendNotificationTest(target, buttonId, statusId) {
     button.disabled = true;
 
     try {
-        const csrfInput = document.querySelector('input[name="_csrf"]');
-        const csrf = csrfInput ? csrfInput.value : null;
+        const csrf = getCsrfToken();
+
+        // Always save settings before running a test so the latest values are used
+        await saveSettings(csrf);
 
         const response = await fetch(`/admin/notification-test?target=${target}`, {
             method: 'POST',
             credentials: 'same-origin',
-            headers: csrf ? {'X-XSRF-TOKEN': csrf, 'X-CSRF-TOKEN': csrf} : {}
+            headers: buildCsrfHeaders(csrf)
         });
         const text = await response.text();
         status.textContent = text;

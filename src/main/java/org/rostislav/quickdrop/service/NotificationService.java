@@ -83,18 +83,18 @@ public class NotificationService {
         }
     }
 
-    public boolean sendTestDiscord() {
+    public NotificationTestResult sendTestDiscord() {
         String url = safeString(applicationSettingsService.getDiscordWebhookUrl());
         if (url.isBlank()) {
-            return false;
+            return NotificationTestResult.failure("Discord webhook URL is not configured.");
         }
 
         try {
             restTemplate.postForEntity(url, Map.of("content", "QuickDrop notification test (Discord)"), Void.class);
-            return true;
+            return NotificationTestResult.success("Discord test notification sent.");
         } catch (Exception e) {
             logger.warn("Discord test notification failed: {}", e.getMessage());
-            return false;
+            return NotificationTestResult.failure("Discord test failed: " + e.getMessage());
         }
     }
 
@@ -120,13 +120,13 @@ public class NotificationService {
         }
     }
 
-    public boolean sendTestEmail() {
+    public NotificationTestResult sendTestEmail() {
         try {
             JavaMailSenderImpl mailSender = resolveMailSender();
             String from = safeString(applicationSettingsService.getEmailFrom());
             String[] recipients = parseRecipients();
             if (mailSender == null || from.isBlank() || recipients.length == 0) {
-                return false;
+                return NotificationTestResult.failure("Email settings incomplete (host/from/recipients).");
             }
 
             MimeMessage message = mailSender.createMimeMessage();
@@ -137,10 +137,20 @@ public class NotificationService {
             helper.setText("This is a QuickDrop notification test email. If you see this, SMTP settings are working.");
 
             mailSender.send(message);
-            return true;
+            return NotificationTestResult.success("Email test notification sent.");
         } catch (Exception e) {
             logger.warn("Email test notification failed: {}", e.getMessage());
-            return false;
+            return NotificationTestResult.failure("Email test failed: " + e.getMessage());
+        }
+    }
+
+    public record NotificationTestResult(boolean success, String message) {
+        public static NotificationTestResult success(String message) {
+            return new NotificationTestResult(true, message);
+        }
+
+        public static NotificationTestResult failure(String message) {
+            return new NotificationTestResult(false, message);
         }
     }
 

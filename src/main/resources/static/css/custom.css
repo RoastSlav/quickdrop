@@ -7,3 +7,46 @@
 .dark .bg-gray-700{background-color:#374151;}
 .dark .hover\:bg-gray-600:hover{background-color:#4b5563;}
 .focus\:ring-red-500:focus{--tw-ring-color:#ef4444;}
+
+/* Light-mode overrides to ensure readability when the OS prefers dark. */
+:root{color-scheme:light;}
+html.dark{color-scheme:dark;}
+html:not(.dark) nav{background-color:#ffffff!important;color:#0f172a!important;}
+html:not(.dark) nav a,html:not(.dark) nav button{color:#0f172a!important;}
+
+/* Reset dark backgrounds to light in light theme (cards, inputs, sections). */
+html:not(.dark) .dark\:bg-slate-900,
+html:not(.dark) .dark\:bg-slate-900\/50,
+html:not(.dark) .dark\:bg-slate-800,
+html:not(.dark) .dark\:bg-slate-700,
+html:not(.dark) .dark\:bg-gray-900,
+html:not(.dark) .dark\:bg-gray-800,
+html:not(.dark) .dark\:bg-gray-700,
+html:not(.dark) .dark\:bg-sky-900{
+	background-color:#ffffff!important;
+	color:#0f172a!important;
+}
+
+/* Reset dark text utilities to normal dark text for light theme. */
+html:not(.dark) .dark\:text-gray-100,
+html:not(.dark) .dark\:text-gray-300,
+html:not(.dark) .dark\:text-gray-400,
+html:not(.dark) .dark\:text-sky-100,
+html:not(.dark) .dark\:text-sky-300,
+html:not(.dark) .dark\:text-slate-300,
+html:not(.dark) .dark\:text-slate-400{
+	color:#0f172a!important;
+}
+
+/* Reset borders/placeholders that are dark-only. */
+html:not(.dark) .dark\:border-gray-600,
+html:not(.dark) .dark\:border-slate-600,
+html:not(.dark) .dark\:border-slate-700{
+	border-color:#e5e7eb!important;
+}
+html:not(.dark) .dark\:placeholder-gray-400::placeholder{color:#6b7280!important;}
+
+/* Zebra striping helpers for light mode tables. */
+html:not(.dark) .light-table-zebra thead{background-color:#e5e7eb!important;}
+html:not(.dark) .light-table-zebra tbody tr:nth-child(odd){background-color:#f9fafb!important;}
+html:not(.dark) .light-table-zebra tbody tr:nth-child(even){background-color:#ffffff!important;}

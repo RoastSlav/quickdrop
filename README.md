@@ -53,7 +53,6 @@ This project is made with the self-hosting community in mind as a self-hosted fi
 - **Spring Web**
 - **Spring Boot**
 - **Thymeleaf**
-- **Bootstrap**
 - **Maven**
 
 ## Getting Started

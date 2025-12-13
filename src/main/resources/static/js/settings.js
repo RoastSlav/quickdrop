@@ -24,7 +24,13 @@ async function sendNotificationTest(target, buttonId, statusId) {
     button.disabled = true;
 
     try {
-        const response = await fetch(`/admin/notification-test?target=${target}`, {method: 'POST'});
+        const csrfMatch = document.cookie.match(/XSRF-TOKEN=([^;]+)/);
+        const csrf = csrfMatch ? decodeURIComponent(csrfMatch[1]) : null;
+
+        const response = await fetch(`/admin/notification-test?target=${target}`, {
+            method: 'POST',
+            headers: csrf ? {'X-XSRF-TOKEN': csrf} : {}
+        });
         const text = await response.text();
         status.textContent = text;
         status.className = response.ok ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400';

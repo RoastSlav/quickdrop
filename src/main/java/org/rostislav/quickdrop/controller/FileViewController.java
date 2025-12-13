@@ -12,6 +12,8 @@ import org.rostislav.quickdrop.service.AnalyticsService;
 import org.rostislav.quickdrop.service.ApplicationSettingsService;
 import org.rostislav.quickdrop.service.FileService;
 import org.rostislav.quickdrop.service.SessionService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -32,6 +34,7 @@ public class FileViewController {
     private final ApplicationSettingsService applicationSettingsService;
     private final AnalyticsService analyticsService;
     private final SessionService sessionService;
+    private static final Logger logger = LoggerFactory.getLogger(FileViewController.class);
 
     public FileViewController(FileService fileService, ApplicationSettingsService applicationSettingsService, AnalyticsService analyticsService, SessionService sessionService) {
         this.fileService = fileService;
@@ -96,8 +99,10 @@ public class FileViewController {
             String fileSessionToken = sessionService.addFileSessionToken(UUID.randomUUID().toString(), password, uuid);
             HttpSession session = request.getSession();
             session.setAttribute("file-session-token", fileSessionToken);
+            logger.info("Token has been added to the session for file UUID: {}", uuid);
             return "redirect:/file/" + uuid;
         } else {
+            logger.info("Incorrect password attempt for file UUID: {}", uuid);
             model.addAttribute("uuid", uuid);
             FileEntity fileEntity = fileService.getFile(uuid);
             if (fileEntity != null) {
@@ -152,6 +157,7 @@ public class FileViewController {
     public String updateKeepIndefinitely(@PathVariable String uuid, @RequestParam(required = false, defaultValue = "false") boolean keepIndefinitely, HttpServletRequest request) {
         FileEntity fileEntity = fileService.updateKeepIndefinitely(uuid, keepIndefinitely, request);
         if (fileEntity != null) {
+            logger.info("Updated keep indefinitely for file UUID: {} to {}", uuid, keepIndefinitely);
             return "redirect:/file/" + fileEntity.uuid;
         }
         return "redirect:/file/list";
@@ -162,6 +168,7 @@ public class FileViewController {
     public String toggleHidden(@PathVariable String uuid) {
         FileEntity fileEntity = fileService.toggleHidden(uuid);
         if (fileEntity != null) {
+            logger.info("Updated hidden for file UUID: {} to {}", uuid, fileEntity.hidden);
             return "redirect:/file/" + fileEntity.uuid;
         }
         return "redirect:/file/list";
@@ -183,6 +190,7 @@ public class FileViewController {
         model.addAttribute("file", new FileEntityView(file, analyticsService.getTotalDownloadsByFile(file.uuid)));
         model.addAttribute("downloadLink", "/api/file/download/" + file.uuid + "/" + token);
 
+        logger.info("Accessed shared file view for file UUID: {}", file.uuid);
         return "file-share-view";
     }
 }

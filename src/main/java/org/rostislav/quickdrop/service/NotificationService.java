@@ -47,10 +47,15 @@ public class NotificationService {
         };
 
         String summary = "File '" + fileEntity.name + "' (" + fileEntity.uuid + ") was " + event + ".";
-        String details = "Size: " + fileEntity.size + " bytes\nIP: " + safeValue(ipAddress) + "\nUser-Agent: " + safeValue(userAgent);
+        StringBuilder detailsBuilder = new StringBuilder();
+        if (type == FileHistoryType.UPLOAD) {
+            detailsBuilder.append("Size: ").append(fileEntity.size).append(" bytes");
+        }
+        String details = detailsBuilder.toString();
+        String formattedMessage = details.isBlank() ? summary : summary + "\n---\n" + details;
 
         if (shouldSendDiscord) {
-            sendDiscord(summary + "\n" + details);
+            sendDiscord(formattedMessage);
         }
 
         if (shouldSendEmail) {
@@ -107,7 +112,7 @@ public class NotificationService {
             helper.setFrom(from);
             helper.setTo(recipients);
             helper.setSubject("QuickDrop file " + event);
-            helper.setText(summary + "\n\n" + details);
+            helper.setText(details.isBlank() ? summary : summary + "\n\n" + details);
 
             mailSender.send(message);
         } catch (Exception e) {

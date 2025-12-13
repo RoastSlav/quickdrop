@@ -1,120 +1,98 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <script src="/js/darkMode.js"></script>
     <meta charset="UTF-8">
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <title>Download History</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        .file-info {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1rem;
-        }
-
-        .file-info-item {
-            background-color: #f8f9fa;
-            padding: 1rem;
-            border: 1px solid #ddd;
-            border-radius: 0.5rem;
-            text-align: center;
-        }
-
-        .file-name {
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: #007bff;
-            margin-bottom: 0.5rem;
-        }
-
-        .file-description {
-            font-size: 1.1rem;
-            color: #6c757d;
-            margin-bottom: 1rem;
-        }
-    </style>
+    <link href="/css/tailwind.css" rel="stylesheet">
+    <link href="/css/custom.css" rel="stylesheet">
+    <link href="/images/favicon.png" rel="icon" type="image/png">
+    <script src="/js/tailwindTheme.js"></script>
 </head>
-<body>
+<body class="bg-gray-50 text-gray-800 dark:bg-slate-900 dark:text-gray-100">
+
 <!-- Navbar -->
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-    <div class="container">
-        <a class="navbar-brand" href="/">
-            <img alt="QuickDrop Logo" class="me-2" height="40" src="/images/favicon.png">
-            QuickDrop Admin
+<nav class="bg-gray-800 dark:bg-gray-900 text-gray-100">
+    <div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+        <a class="flex items-center space-x-2" href="/">
+            <img alt="QuickDrop Logo" class="h-10" src="/images/favicon.png">
+            <span class="font-semibold tracking-tight">QuickDrop Admin</span>
         </a>
-        <button aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation" class="navbar-toggler"
-                data-bs-target="#navbarNav" data-bs-toggle="collapse" type="button">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav ms-auto">
-                <li class="nav-item">
-                    <a class="nav-link" href="/admin/dashboard">Dashboard</a>
-                </li>
-                <li class="nav-item">
-                    <button id="themeToggle" type="button" class="btn btn-sm ms-2">🌙</button>
-                </li>
-            </ul>
+        <div class="flex items-center space-x-4">
+            <a class="hover:text-white" href="/admin/dashboard">Dashboard</a>
+            <button aria-label="Toggle theme" class="rounded-lg p-2 transition-colors hover:bg-sky-600 dark:hover:bg-sky-500 active:scale-95 focus:outline-none focus:ring-2 focus:ring-sky-500" id="themeToggle" type="button">🌙</button>
         </div>
     </div>
 </nav>
 
 <!-- Main Content -->
-<div class="container mt-5">
-    <h1 class="text-center mb-4">History</h1>
+<div class="container mx-auto mt-5 px-4">
+    <h1 class="text-center text-3xl font-semibold mb-4">History</h1>
 
     <!-- File Name and Description -->
-    <div class="text-center">
-        <p class="file-name" th:text="${file.name}">File Name</p>
-        <p class="file-description" th:text="${file.description ?: 'No description provided'}">File Description</p>
+    <div class="text-center mb-8">
+        <p class="text-xl font-semibold text-blue-600" th:text="${file.name}">File Name</p>
+        <p class="text-lg text-gray-600 dark:text-gray-300" th:text="${file.description ?: 'No description provided'}">
+            File Description</p>
     </div>
 
     <!-- File Details Grid -->
-    <div class="card mb-4">
-        <div class="card-header bg-info text-white text-center">
-            File Details
-        </div>
-        <div class="card-body">
-            <div class="file-info">
-                <div class="file-info-item">
-                    <strong th:text="${file.size}"></strong>
-                    <span>Size</span>
-                </div>
-                <div class="file-info-item">
-                    <strong th:text="${#temporals.format(file.uploadDate, 'dd.MM.yyyy')}"></strong>
-                    <span>Upload Date</span>
-                </div>
-                <div class="file-info-item">
-                    <strong th:text="${file.totalDownloads}"></strong>
-                    <span>Total Downloads</span>
-                </div>
+    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-lg mb-8 p-6">
+        <div class="text-center text-xl font-semibold mb-4">File Details</div>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+            <div class="bg-sky-500 text-white p-4 rounded-lg">
+                <p class="text-2xl font-semibold" th:text="${file.size}">--</p>
+                <p class="text-sm">Size</p>
+            </div>
+            <div class="bg-sky-500 text-white p-4 rounded-lg">
+                <p class="text-2xl font-semibold" th:text="${#temporals.format(file.uploadDate, 'dd.MM.yyyy')}">--</p>
+                <p class="text-sm">Upload Date</p>
+            </div>
+            <div class="bg-sky-500 text-white p-4 rounded-lg">
+                <p class="text-2xl font-semibold" th:text="${file.totalDownloads}">--</p>
+                <p class="text-sm">Total Downloads</p>
             </div>
         </div>
     </div>
 
     <!-- History Table -->
-    <table class="table table-striped text-center">
-        <thead>
-        <tr>
-            <th>Date</th>
-            <th>Action</th>
-            <th>IP Address</th>
-            <th>User Agent</th>
-        </tr>
-        </thead>
-        <tbody>
-        <tr th:each="log : ${actionLogs}">
-            <td th:text="${#temporals.format(log.actionDate, 'dd.MM.yyyy HH:mm:ss')}">01.12.2024 20:12:22</td>
-            <td th:text="${log.actionType}">Action</td>
-            <td th:text="${log.ipAddress}">127.0.0.1</td>
-            <td th:text="${log.userAgent}">Mozilla/5.0 (Windows NT 10.0; Win64; x64)</td>
-        </tr>
-        </tbody>
-    </table>
+    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-6">
+        <h2 class="text-xl font-semibold tracking-tight mb-4">Download History</h2>
+
+        <!-- scroll container -->
+        <div class="-mx-6 overflow-x-auto">
+            <div class="inline-block min-w-full align-middle px-6">
+                <table class="min-w-max w-full divide-y divide-slate-200 dark:divide-slate-700 light-table-zebra">
+                    <thead class="bg-gray-100 dark:bg-gray-800">
+                    <tr>
+                        <th class="px-6 py-4 text-left text-sm font-semibold whitespace-nowrap">Date</th>
+                        <th class="px-6 py-4 text-left text-sm font-semibold whitespace-nowrap">Action</th>
+                        <th class="px-6 py-4 text-left text-sm font-semibold whitespace-nowrap">IP Address</th>
+                        <th class="px-6 py-4 text-left text-sm font-semibold whitespace-nowrap">User Agent</th>
+                    </tr>
+                    </thead>
+
+                    <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
+                    <tr class="dark:bg-slate-800" th:each="log,iter : ${actionLogs}" th:classappend="${iter.index % 2 == 0} ? ' bg-gray-50' : ' bg-white'">
+                        <td class="px-6 py-4 whitespace-nowrap"
+                            th:text="${#temporals.format(log.actionDate, 'dd.MM.yyyy HH:mm:ss')}">01.12.2024 20:12:22
+                        </td>
+
+                        <td class="px-6 py-4 whitespace-nowrap" th:text="${log.actionType}">Download</td>
+
+                        <td class="px-6 py-4 whitespace-nowrap" th:text="${log.ipAddress}">127.0.0.1</td>
+
+                        <!-- key: allow breaking long UA strings -->
+                        <td class="px-6 py-4 max-w-[28rem] break-words"
+                            th:text="${log.userAgent}">Mozilla/5.0 ...
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 </div>
 
-<!-- Bootstrap Bundle -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

@@ -3,23 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <title>All files</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" href="/css/tailwind.css">
-    <link rel="stylesheet" href="/css/custom.css">
-    <link rel="icon" type="image/png" href="/images/favicon.png">
+    <meta content="width=device-width, initial-scale=1" name="viewport">
+    <link href="/css/tailwind.css" rel="stylesheet">
+    <link href="/css/custom.css" rel="stylesheet">
+    <link href="/images/favicon.png" rel="icon" type="image/png">
     <script src="/js/tailwindTheme.js"></script>
 </head>
 <body class="bg-gray-50 text-gray-800 dark:bg-slate-900 dark:text-gray-100">
 <nav class="bg-gray-800 dark:bg-gray-900 text-gray-100">
     <div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-        <a href="/" class="flex items-center space-x-2">
-            <img src="/images/favicon.png" alt="Website Logo" class="h-10">
+        <a class="flex items-center space-x-2" href="/">
+            <img alt="Website Logo" class="h-10" src="/images/favicon.png">
             <span class="font-semibold tracking-tight">QuickDrop</span>
         </a>
         <div class="flex items-center space-x-4">
-            <a href="/file/upload" class="hover:text-white">Upload File</a>
-            <a th:if="${isAdminDashboardButtonEnabled}" href="/admin/dashboard" onclick="requestAdminPassword()" class="hover:text-white">Admin Dashboard</a>
-            <button id="themeToggle" type="button" class="rounded-lg p-2 transition-colors hover:bg-sky-600 dark:hover:bg-sky-500 active:scale-95 focus:outline-none focus:ring-2 focus:ring-sky-500">🌙</button>
+            <a class="hover:text-white" href="/file/upload">Upload File</a>
+            <a class="hover:text-white" href="/admin/dashboard" onclick="requestAdminPassword()"
+               th:if="${isAdminDashboardButtonEnabled}">Admin Dashboard</a>
+            <button class="rounded-lg p-2 transition-colors hover:bg-sky-600 dark:hover:bg-sky-500 active:scale-95 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                    id="themeToggle"
+                    type="button">
+                🌙
+            </button>
         </div>
     </div>
 </nav>
@@ -30,34 +35,51 @@
         <h1 class="text-3xl md:text-4xl font-semibold tracking-tight">All files</h1>
     </header>
     <div class="mx-auto w-full max-w-xl mb-8">
-        <form action="/file/search" method="GET" class="w-full">
-            <label for="searchInput" class="sr-only">Search files</label>
+        <form action="/file/search" class="w-full" method="GET">
+            <label class="sr-only" for="searchInput">Search files</label>
             <div class="h-14 flex items-center space-x-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-gray-800 rounded-full px-4 shadow-sm focus-within:border-sky-500 focus-within:ring-2 focus-within:ring-sky-500">
-                <svg class="w-5 h-5 text-gray-500 dark:text-gray-400" aria-hidden="true" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M12.9 14.32a8 8 0 111.414-1.414l4.387 4.387a1 1 0 01-1.414 1.414l-4.387-4.387zM14 8a6 6 0 11-12 0 6 6 0 0112 0z" clip-rule="evenodd"/></svg>
-                <input id="searchInput" name="query" type="text" placeholder="Search files by name or date…" class="flex-grow bg-transparent py-2 focus:outline-none focus-visible:ring-0" />
-                <button id="search-button" type="submit" class="rounded-full bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium px-4 py-2 h-10 transition-colors active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500">Search</button>
+                <svg aria-hidden="true" class="w-5 h-5 text-gray-500 dark:text-gray-400" fill="currentColor"
+                     viewBox="0 0 20 20">
+                    <path clip-rule="evenodd"
+                          d="M12.9 14.32a8 8 0 111.414-1.414l4.387 4.387a1 1 0 01-1.414 1.414l-4.387-4.387zM14 8a6 6 0 11-12 0 6 6 0 0112 0z"
+                          fill-rule="evenodd"/>
+                </svg>
+                <input class="flex-grow bg-transparent py-2 focus:outline-none focus-visible:ring-0" id="searchInput"
+                       name="query" placeholder="Search files by name or date…"
+                       type="text"/>
+                <button class="rounded-full bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium px-4 py-2 h-10 transition-colors active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500"
+                        id="search-button"
+                        type="submit">
+                    Search
+                </button>
             </div>
         </form>
     </div>
-    <div th:if="${#lists.isEmpty(files)}" class="text-center text-gray-600 dark:text-gray-300 my-5">
+    <div class="text-center text-gray-600 dark:text-gray-300 my-5" th:if="${#lists.isEmpty(files)}">
         <h3 class="mb-2">No files have been uploaded yet.</h3>
-        <p>Start by <a href="/file/upload" class="text-sky-600 dark:text-sky-400 hover:underline">uploading a file</a>.</p>
+        <p>Start by <a class="text-sky-600 dark:text-sky-400 hover:underline" href="/file/upload">uploading a file</a>.
+        </p>
     </div>
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
-        <div th:each="file : ${files}" class="h-full">
+        <div class="h-full" th:each="file : ${files}">
             <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-lg flex flex-col h-full p-6 md:p-8">
                 <div class="flex-grow space-y-3 overflow-hidden">
                     <h2 class="text-xl font-semibold tracking-tight truncate" th:text="${file.name}">File Name</h2>
                     <hr class="border-t border-slate-200 dark:border-slate-700">
-                    <p th:if="${!#strings.isEmpty(file.description)}" class="text-sm text-gray-700 dark:text-gray-300 line-clamp-2 overflow-hidden" th:text="${file.description}"></p>
+                    <p class="text-sm text-gray-700 dark:text-gray-300 line-clamp-2 overflow-hidden"
+                       th:if="${!#strings.isEmpty(file.description)}"
+                       th:text="${file.description}"></p>
                     <div class="flex justify-between text-sm text-gray-600 dark:text-gray-400">
                         <span th:text="'Keep indefinitely: ' + (${file.keepIndefinitely} ? 'Yes' : 'No')"></span>
                         <span th:text="'Password protected: ' + (${file.passwordHash != null} ? 'Yes' : 'No')"></span>
                     </div>
-                    <p class="text-sm text-gray-600 dark:text-gray-400" th:text="${file.keepIndefinitely} ? 'Uploaded: ' + ${#temporals.format(file.uploadDate, 'dd.MM.yyyy')} : 'Uploaded/Renewed: ' + ${#temporals.format(file.uploadDate, 'dd.MM.yyyy')}"></p>
+                    <p class="text-sm text-gray-600 dark:text-gray-400"
+                       th:text="${file.keepIndefinitely} ? 'Uploaded: ' + ${#temporals.format(file.uploadDate, 'dd.MM.yyyy')} : 'Uploaded/Renewed: ' + ${#temporals.format(file.uploadDate, 'dd.MM.yyyy')}"></p>
                 </div>
                 <div class="mt-4 text-center">
-                    <a th:href="@{/file/{UUID}(UUID=${file.uuid})}" class="inline-block rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium px-4 py-2 transition-colors active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500">Go to file page</a>
+                    <a class="inline-block rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium px-4 py-2 transition-colors active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500"
+                       th:href="@{/file/{UUID}(UUID=${file.uuid})}">Go
+                        to file page</a>
                 </div>
             </div>
         </div>

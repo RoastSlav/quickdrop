@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 
 @Controller
 @RequestMapping("/password")
-public class PasswordController {
+public class PasswordViewController {
     @GetMapping("/login")
     public String passwordPage() {
         return "app-password";

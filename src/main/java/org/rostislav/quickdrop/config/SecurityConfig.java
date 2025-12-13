@@ -42,7 +42,18 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         if (applicationSettingsService.isAppPasswordEnabled()) {
             http.authorizeHttpRequests(authz -> authz
-                    .requestMatchers("/password/login", "/favicon.ico", "/error", "/file/share/**", "/api/file/download/**").permitAll()
+                .requestMatchers(
+                    "/password/login",
+                    "/favicon.ico",
+                    "/error",
+                    "/share/**",
+                    "/file/share/**",
+                    "/api/file/download/**",
+                    "/css/**",
+                    "/js/**",
+                    "/images/**",
+                    "/webjars/**"
+                ).permitAll()
                     .anyRequest().authenticated()
             ).formLogin(form -> form
                     .loginPage("/password/login")

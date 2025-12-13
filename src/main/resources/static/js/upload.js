@@ -59,7 +59,17 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     if (folderButton && folderInput) {
-        folderButton.addEventListener("click", () => folderInput.click());
+        folderButton.addEventListener("click", async () => {
+            if (window.showDirectoryPicker) {
+                try {
+                    await handleDirectoryPickerSelection();
+                    return;
+                } catch (e) {
+                    console.warn("Directory picker failed, falling back to input", e);
+                }
+            }
+            folderInput.click();
+        });
         folderInput.addEventListener("change", () => handleFolderSelection(folderInput.files));
     }
 
@@ -122,13 +132,21 @@ document.addEventListener("DOMContentLoaded", () => {
         const maxSize = maxSizeSpan ? parseSize(maxSizeSpan.innerText) : Infinity;
 
         const firstPath = fileList[0].webkitRelativePath || fileList[0].name;
-        const rootFolder = firstPath.split("/")[0];
-        const manifest = [];
+        const rootFolder = firstPath.split(/[/\\]/)[0];
+        const manifest = new Set();
         let totalOriginalSize = 0;
 
         for (const file of fileList) {
             totalOriginalSize += file.size;
-            manifest.push({path: file.webkitRelativePath || file.name, size: file.size});
+            const rel = file.webkitRelativePath || file.name;
+            manifest.add(JSON.stringify({path: rel, size: file.size, type: 'file'}));
+            // add all ancestor directories
+            const parts = rel.split(/[/\\]/);
+            let prefix = '';
+            for (let i = 0; i < parts.length - 1; i++) {
+                prefix = prefix ? `${prefix}/${parts[i]}` : parts[i];
+                manifest.add(JSON.stringify({path: prefix, type: 'dir'}));
+            }
         }
 
         if (totalOriginalSize > maxSize) {
@@ -142,6 +160,12 @@ document.addEventListener("DOMContentLoaded", () => {
         fileNameEl.classList.add("hidden");
 
         const zip = new JSZip();
+        const manifestArray = Array.from(manifest).map((s) => JSON.parse(s));
+        manifestArray.forEach((entry) => {
+            if (entry.type === 'dir') {
+                zip.folder(entry.path);
+            }
+        });
         for (const file of fileList) {
             const path = file.webkitRelativePath || file.name;
             zip.file(path, file);
@@ -162,10 +186,42 @@ document.addEventListener("DOMContentLoaded", () => {
             size: zipBlob.size,
             folderUpload: true,
             folderName: rootFolder,
-            folderManifest: JSON.stringify(manifest)
+            folderManifest: JSON.stringify(manifestArray)
         };
 
         if (fileInput) fileInput.value = ""; // clear single-file selection
+    }
+
+    async function handleDirectoryPickerSelection() {
+        const dirHandle = await window.showDirectoryPicker();
+        const files = [];
+        async function walkDirectory(handle, pathParts) {
+            for await (const [name, entry] of handle.entries()) {
+                const newPath = [...pathParts, name];
+                if (entry.kind === 'file') {
+                    const file = await entry.getFile();
+                    file.relativePath = newPath.join('/');
+                    files.push(file);
+                } else if (entry.kind === 'directory') {
+                    // ensure empty dirs are captured via manifest later
+                    files.push({relativePath: newPath.join('/'), isDirMarker: true});
+                    await walkDirectory(entry, newPath);
+                }
+            }
+        }
+
+        await walkDirectory(dirHandle, [dirHandle.name]);
+
+        const fileListLike = [];
+        files.forEach((item) => {
+            if (item.isDirMarker) return;
+            const f = item;
+            // fabricate webkitRelativePath for consistency
+            f.webkitRelativePath = item.relativePath;
+            fileListLike.push(f);
+        });
+
+        await handleFolderSelection(fileListLike);
     }
 });
 

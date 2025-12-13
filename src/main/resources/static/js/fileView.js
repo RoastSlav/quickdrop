@@ -196,7 +196,7 @@ function createTreeRoot(name) {
 }
 
 function addPathToTree(root, path, folderName) {
-    const parts = path.split('/').filter(Boolean);
+    const parts = path.split(/[\\/]/).filter(Boolean);
     let idx = 0;
     if (parts[0] === folderName) {
         idx = 1; // skip duplicated root segment
@@ -206,7 +206,12 @@ function addPathToTree(root, path, folderName) {
     for (; idx < parts.length; idx++) {
         const part = parts[idx];
         const isFile = idx === parts.length - 1;
-        if (isFile) {
+        if (isFile && path && path.endsWith('/')) {
+            // directory marker encoded with trailing slash
+            const dirNode = createTreeRoot(part);
+            node.children.push(dirNode);
+            node = dirNode;
+        } else if (isFile && part.includes('.')) {
             node.files.push(part);
         } else {
             let child = node.children.find((c) => c.name === part);

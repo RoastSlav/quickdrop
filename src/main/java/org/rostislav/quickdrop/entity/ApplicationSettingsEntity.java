@@ -24,6 +24,7 @@ public class ApplicationSettingsEntity {
     private boolean isAdminDashboardButtonEnabled;
     private boolean disableEncryption;
     private String defaultHomePage;
+    private boolean keepIndefinitelyAdminOnly;
 
     public ApplicationSettingsEntity() {
     }
@@ -40,6 +41,7 @@ public class ApplicationSettingsEntity {
         this.isAdminDashboardButtonEnabled = settings.isAdminDashboardButtonEnabled();
         this.disableEncryption = settings.isEncryptionDisabled();
         this.defaultHomePage = settings.getDefaultHomePage();
+        this.keepIndefinitelyAdminOnly = settings.isKeepIndefinitelyAdminOnly();
     }
 
     public long getMaxFileSize() {
@@ -152,5 +154,13 @@ public class ApplicationSettingsEntity {
 
     public void setDefaultHomePage(String defaultHomePage) {
         this.defaultHomePage = defaultHomePage;
+    }
+
+    public boolean isKeepIndefinitelyAdminOnly() {
+        return keepIndefinitelyAdminOnly;
+    }
+
+    public void setKeepIndefinitelyAdminOnly(boolean keepIndefinitelyAdminOnly) {
+        this.keepIndefinitelyAdminOnly = keepIndefinitelyAdminOnly;
     }
 }

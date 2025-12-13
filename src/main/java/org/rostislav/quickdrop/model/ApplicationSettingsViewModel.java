@@ -17,6 +17,7 @@ public class ApplicationSettingsViewModel {
     private boolean isAdminDashboardButtonEnabled;
     private boolean encryptionDisabled;
     private String defaultHomePage;
+    private boolean keepIndefinitelyAdminOnly;
 
     public ApplicationSettingsViewModel() {
     }
@@ -34,6 +35,7 @@ public class ApplicationSettingsViewModel {
         this.isAdminDashboardButtonEnabled = settings.isAdminDashboardButtonEnabled();
         this.encryptionDisabled = settings.isDisableEncryption();
         this.defaultHomePage = settings.getDefaultHomePage();
+        this.keepIndefinitelyAdminOnly = settings.isKeepIndefinitelyAdminOnly();
     }
 
     public Long getId() {
@@ -138,5 +140,13 @@ public class ApplicationSettingsViewModel {
 
     public void setDefaultHomePage(String defaultHomePage) {
         this.defaultHomePage = defaultHomePage;
+    }
+
+    public boolean isKeepIndefinitelyAdminOnly() {
+        return keepIndefinitelyAdminOnly;
+    }
+
+    public void setKeepIndefinitelyAdminOnly(boolean keepIndefinitelyAdminOnly) {
+        this.keepIndefinitelyAdminOnly = keepIndefinitelyAdminOnly;
     }
 }

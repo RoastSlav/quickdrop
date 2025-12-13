@@ -87,7 +87,13 @@ public class ApplicationSettingsService {
         }
         applicationSettingsEntity.setSmtpUseTls(settings.isSmtpUseTls());
         applicationSettingsEntity.setNotificationBatchEnabled(settings.isNotificationBatchEnabled());
-        applicationSettingsEntity.setNotificationBatchMinutes(settings.getNotificationBatchMinutes());
+        Integer existingBatchMinutes = applicationSettingsEntity.getNotificationBatchMinutes();
+        Integer requestedBatchMinutes = settings.getNotificationBatchMinutes();
+        if (requestedBatchMinutes != null) {
+            applicationSettingsEntity.setNotificationBatchMinutes(requestedBatchMinutes);
+        } else if (existingBatchMinutes != null) {
+            applicationSettingsEntity.setNotificationBatchMinutes(existingBatchMinutes);
+        }
 
         if (appPassword != null && !appPassword.isEmpty()) {
             applicationSettingsEntity.setAppPasswordEnabled(settings.isAppPasswordEnabled());

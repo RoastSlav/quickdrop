@@ -1,7 +1,6 @@
 package org.rostislav.quickdrop.model;
 
 import org.rostislav.quickdrop.entity.FileHistoryLog;
-import org.rostislav.quickdrop.model.FileHistoryType;
 
 import java.time.LocalDateTime;
 
@@ -30,6 +29,7 @@ public class FileActionLogDTO {
             case DOWNLOAD -> "Download";
             case RENEWAL -> "Lifetime Renewed";
             case UPLOAD -> "Uploaded";
+            case DELETION -> "Deletion";
         };
     }
 

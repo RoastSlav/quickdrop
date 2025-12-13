@@ -11,20 +11,32 @@ import org.springframework.web.client.RestTemplate;
 
 import jakarta.mail.internet.MimeMessage;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 @Service
 public class NotificationService {
     private static final Logger logger = LoggerFactory.getLogger(NotificationService.class);
+    private static final long DEFAULT_FLUSH_POLL_SECONDS = 60;
     private final ApplicationSettingsService applicationSettingsService;
     private final RestTemplate restTemplate = new RestTemplate();
     private volatile JavaMailSenderImpl cachedMailSender;
     private volatile String mailSenderKey;
+    private final Queue<String> pendingMessages = new ConcurrentLinkedQueue<>();
+    private volatile long lastFlushEpochMillis = System.currentTimeMillis();
+    private final Object schedulerLock = new Object();
+    private ScheduledExecutorService scheduler;
 
     public NotificationService(ApplicationSettingsService applicationSettingsService) {
         this.applicationSettingsService = applicationSettingsService;
+        startSchedulerIfNeeded();
     }
 
     public void notifyFileAction(FileEntity fileEntity, FileHistoryType type, String ipAddress, String userAgent) {
@@ -32,9 +44,8 @@ public class NotificationService {
             return;
         }
 
-        String discordUrl = safeString(applicationSettingsService.getDiscordWebhookUrl());
-        boolean shouldSendDiscord = applicationSettingsService.isDiscordWebhookEnabled() && !discordUrl.isBlank();
-        boolean shouldSendEmail = applicationSettingsService.isEmailNotificationsEnabled() && hasEmailRecipients();
+        boolean shouldSendDiscord = shouldSendDiscord();
+        boolean shouldSendEmail = shouldSendEmail();
 
         if (!shouldSendDiscord && !shouldSendEmail) {
             return;
@@ -54,6 +65,12 @@ public class NotificationService {
         }
         String details = detailsBuilder.toString();
         String formattedMessage = details.isBlank() ? summary : summary + "\n---\n" + details;
+
+        if (shouldUseBatching(shouldSendDiscord, shouldSendEmail)) {
+            pendingMessages.add(formattedMessage);
+            startSchedulerIfNeeded();
+            return;
+        }
 
         if (shouldSendDiscord) {
             sendDiscord(formattedMessage);
@@ -145,6 +162,56 @@ public class NotificationService {
         }
     }
 
+    private void flushBatchIfDue() {
+        try {
+            boolean sendDiscord = shouldSendDiscord();
+            boolean sendEmail = shouldSendEmail();
+
+            if (!shouldUseBatching(sendDiscord, sendEmail)) {
+                stopSchedulerIfIdle();
+                flushPending(sendDiscord, sendEmail);
+                return;
+            }
+
+            Integer intervalMinutes = applicationSettingsService.getNotificationBatchMinutes();
+            if (intervalMinutes == null || intervalMinutes < 1) {
+                flushPending(sendDiscord, sendEmail);
+                return;
+            }
+
+            long now = System.currentTimeMillis();
+            if (now - lastFlushEpochMillis >= TimeUnit.MINUTES.toMillis(intervalMinutes)) {
+                flushPending(sendDiscord, sendEmail);
+            }
+        } catch (Exception e) {
+            logger.warn("Batch flush failed: {}", e.getMessage());
+        }
+    }
+
+    private void flushPending(boolean sendDiscord, boolean sendEmail) {
+        List<String> drained = pendingMessages.stream().toList();
+        lastFlushEpochMillis = System.currentTimeMillis();
+        pendingMessages.clear();
+
+        if (drained.isEmpty()) {
+            return;
+        }
+
+        String intervalLabel = Optional.ofNullable(applicationSettingsService.getNotificationBatchMinutes())
+                .map(Object::toString)
+                .orElse("?");
+        String header = "Batched notifications (last " + intervalLabel + " minutes):";
+        String content = header + "\n\n" + String.join("\n\n", drained);
+
+        if (sendDiscord) {
+            sendDiscord(content);
+        }
+
+        if (sendEmail) {
+            sendEmail("batch", content, "");
+        }
+    }
+
     public record NotificationTestResult(boolean success, String message) {
         public static NotificationTestResult success(String message) {
             return new NotificationTestResult(true, message);
@@ -209,5 +276,49 @@ public class NotificationService {
 
     private String safeString(String value) {
         return value == null ? "" : value;
+    }
+
+    private boolean shouldSendDiscord() {
+        String discordUrl = safeString(applicationSettingsService.getDiscordWebhookUrl());
+        return applicationSettingsService.isDiscordWebhookEnabled() && !discordUrl.isBlank();
+    }
+
+    private boolean shouldSendEmail() {
+        return applicationSettingsService.isEmailNotificationsEnabled() && hasEmailRecipients();
+    }
+
+    private boolean shouldUseBatching(boolean sendDiscord, boolean sendEmail) {
+        return applicationSettingsService.isNotificationBatchEnabled() && (sendDiscord || sendEmail);
+    }
+
+    private void startSchedulerIfNeeded() {
+        if (!applicationSettingsService.isNotificationBatchEnabled()) {
+            return;
+        }
+
+        synchronized (schedulerLock) {
+            if (scheduler != null && !scheduler.isShutdown()) {
+                return;
+            }
+
+            scheduler = Executors.newSingleThreadScheduledExecutor(r -> {
+                Thread t = new Thread(r);
+                t.setDaemon(true);
+                t.setName("notification-batch-flush");
+                return t;
+            });
+            scheduler.scheduleAtFixedRate(this::flushBatchIfDue, DEFAULT_FLUSH_POLL_SECONDS, DEFAULT_FLUSH_POLL_SECONDS, TimeUnit.SECONDS);
+        }
+    }
+
+    private void stopSchedulerIfIdle() {
+        synchronized (schedulerLock) {
+            if (scheduler == null) {
+                return;
+            }
+
+            scheduler.shutdownNow();
+            scheduler = null;
+        }
     }
 }

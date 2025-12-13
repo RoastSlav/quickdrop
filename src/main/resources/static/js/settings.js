@@ -15,6 +15,11 @@ function toggleEmailFields() {
     document.getElementById('emailConfig')?.classList.toggle('hidden', !enabled);
 }
 
+function toggleBatchFields() {
+    const enabled = document.getElementById('notificationBatchEnabled')?.checked;
+    document.getElementById('notificationBatchConfig')?.classList.toggle('hidden', !enabled);
+}
+
 function getCsrfToken() {
     const csrfInput = document.querySelector('input[name="_csrf"]');
     return csrfInput ? csrfInput.value : null;
@@ -77,9 +82,11 @@ document.addEventListener('DOMContentLoaded', function () {
     togglePasswordField();
     toggleDiscordField();
     toggleEmailFields();
+    toggleBatchFields();
 
     document.getElementById('discordWebhookEnabled')?.addEventListener('change', toggleDiscordField);
     document.getElementById('emailNotificationsEnabled')?.addEventListener('change', toggleEmailFields);
+    document.getElementById('notificationBatchEnabled')?.addEventListener('change', toggleBatchFields);
 
     document.getElementById('testDiscord')?.addEventListener('click', () => sendNotificationTest('discord', 'testDiscord', 'discordTestStatus'));
     document.getElementById('testEmail')?.addEventListener('click', () => sendNotificationTest('email', 'testEmail', 'emailTestStatus'));

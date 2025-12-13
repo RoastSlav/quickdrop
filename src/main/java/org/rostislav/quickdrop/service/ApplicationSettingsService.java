@@ -49,6 +49,8 @@ public class ApplicationSettingsService {
             settings.setSmtpUsername("");
             settings.setSmtpPassword("");
             settings.setSmtpUseTls(true);
+            settings.setNotificationBatchEnabled(false);
+            settings.setNotificationBatchMinutes(5);
             settings = applicationSettingsRepository.save(settings);
             scheduleService.updateSchedule(settings.getFileDeletionCron(), settings.getMaxFileLifeTime());
             return settings;
@@ -84,6 +86,8 @@ public class ApplicationSettingsService {
             applicationSettingsEntity.setSmtpPassword(settings.getSmtpPassword());
         }
         applicationSettingsEntity.setSmtpUseTls(settings.isSmtpUseTls());
+        applicationSettingsEntity.setNotificationBatchEnabled(settings.isNotificationBatchEnabled());
+        applicationSettingsEntity.setNotificationBatchMinutes(settings.getNotificationBatchMinutes());
 
         if (appPassword != null && !appPassword.isEmpty()) {
             applicationSettingsEntity.setAppPasswordEnabled(settings.isAppPasswordEnabled());
@@ -214,5 +218,13 @@ public class ApplicationSettingsService {
 
     public boolean isSmtpUseTls() {
         return applicationSettings.isSmtpUseTls();
+    }
+
+    public boolean isNotificationBatchEnabled() {
+        return applicationSettings.isNotificationBatchEnabled();
+    }
+
+    public Integer getNotificationBatchMinutes() {
+        return applicationSettings.getNotificationBatchMinutes();
     }
 }

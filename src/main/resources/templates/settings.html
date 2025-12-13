@@ -138,6 +138,88 @@
             </div>
         </section>
 
+        <!-- Notification Settings -->
+        <section class="bg-white dark:bg-slate-800 p-6 md:p-8 rounded-2xl shadow-lg">
+            <h2 class="text-xl font-semibold tracking-tight mb-4">Notification Settings</h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="rounded-xl border border-slate-200 dark:border-slate-700 p-4 space-y-4">
+                    <div class="flex items-start gap-3">
+                        <input class="mt-1 h-4 w-4 rounded border-gray-400 dark:border-gray-600 accent-sky-500 dark:accent-sky-400 focus:ring-sky-500"
+                               id="discordWebhookEnabled" th:field="*{discordWebhookEnabled}" type="checkbox">
+                        <div>
+                            <div class="text-sm font-medium">Discord Webhook</div>
+                            <p class="text-xs text-gray-600 dark:text-gray-400">Post file activity to a Discord channel.</p>
+                        </div>
+                    </div>
+
+                    <div id="discordWebhookUrlGroup">
+                        <label class="block text-sm font-medium mb-1" for="discordWebhookUrl">Webhook URL</label>
+                        <input class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                               id="discordWebhookUrl" placeholder="https://discord.com/api/webhooks/..." th:field="*{discordWebhookUrl}" type="url">
+                    </div>
+                </div>
+
+                <div class="rounded-xl border border-slate-200 dark:border-slate-700 p-4 space-y-4">
+                    <div class="flex items-start gap-3">
+                        <input class="mt-1 h-4 w-4 rounded border-gray-400 dark:border-gray-600 accent-sky-500 dark:accent-sky-400 focus:ring-sky-500"
+                               id="emailNotificationsEnabled" th:field="*{emailNotificationsEnabled}" type="checkbox">
+                        <div>
+                            <div class="text-sm font-medium">Email Notifications</div>
+                            <p class="text-xs text-gray-600 dark:text-gray-400">Send emails on upload, download, and renewal events.</p>
+                        </div>
+                    </div>
+
+                    <div class="space-y-4" id="emailConfig">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium mb-1" for="emailFrom">From Address</label>
+                                <input class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500" id="emailFrom"
+                                       placeholder="noreply@example.com" th:field="*{emailFrom}" type="email">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-1" for="emailTo">Recipients (comma separated)</label>
+                                <input class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500" id="emailTo"
+                                       placeholder="admin@example.com, alerts@example.com" th:field="*{emailTo}" type="text">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium mb-1" for="smtpHost">SMTP Host</label>
+                                <input class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500" id="smtpHost"
+                                       placeholder="smtp.example.com" th:field="*{smtpHost}" type="text">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-1" for="smtpPort">SMTP Port</label>
+                                <input class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500" id="smtpPort"
+                                       min="1" th:field="*{smtpPort}" type="number">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium mb-1" for="smtpUsername">SMTP Username</label>
+                                <input class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500" id="smtpUsername"
+                                       autocomplete="off" th:field="*{smtpUsername}" type="text">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-1" for="smtpPassword">SMTP Password</label>
+                                <input class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500" id="smtpPassword"
+                                       autocomplete="off" th:field="*{smtpPassword}" type="password">
+                            </div>
+                        </div>
+
+                        <label class="flex items-center gap-3">
+                            <input class="h-4 w-4 rounded border-gray-400 dark:border-gray-600 accent-sky-500 dark:accent-sky-400 focus:ring-sky-500" id="smtpUseTls"
+                                   th:field="*{smtpUseTls}" type="checkbox">
+                            <span class="text-sm">Use STARTTLS</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <!-- Security Settings -->
         <section class="bg-white dark:bg-slate-800 p-6 md:p-8 rounded-2xl shadow-lg">
             <h2 class="text-xl font-semibold tracking-tight mb-4">Security Settings</h2>
@@ -227,9 +309,24 @@
         group.classList.toggle('hidden', !enabled);
     }
 
+    function toggleDiscordField() {
+        const enabled = document.getElementById('discordWebhookEnabled')?.checked;
+        document.getElementById('discordWebhookUrlGroup')?.classList.toggle('hidden', !enabled);
+    }
+
+    function toggleEmailFields() {
+        const enabled = document.getElementById('emailNotificationsEnabled')?.checked;
+        document.getElementById('emailConfig')?.classList.toggle('hidden', !enabled);
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
         // Ensure correct initial state on page load
         togglePasswordField();
+        toggleDiscordField();
+        toggleEmailFields();
+
+        document.getElementById('discordWebhookEnabled')?.addEventListener('change', toggleDiscordField);
+        document.getElementById('emailNotificationsEnabled')?.addEventListener('change', toggleEmailFields);
     });
 </script>
 </body>

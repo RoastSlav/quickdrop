@@ -47,9 +47,10 @@ public class FileService {
     private final SessionService sessionService;
     private final FileEncryptionService fileEncryptionService;
     private final ShareTokenRepository shareTokenRepository;
+    private final NotificationService notificationService;
 
     @Lazy
-    public FileService(FileRepository fileRepository, PasswordEncoder passwordEncoder, ApplicationSettingsService applicationSettingsService, FileHistoryLogRepository fileHistoryLogRepository, SessionService sessionService, FileEncryptionService fileEncryptionService, ShareTokenRepository shareTokenRepository) {
+    public FileService(FileRepository fileRepository, PasswordEncoder passwordEncoder, ApplicationSettingsService applicationSettingsService, FileHistoryLogRepository fileHistoryLogRepository, SessionService sessionService, FileEncryptionService fileEncryptionService, ShareTokenRepository shareTokenRepository, NotificationService notificationService) {
         this.fileRepository = fileRepository;
         this.passwordEncoder = passwordEncoder;
         this.applicationSettingsService = applicationSettingsService;
@@ -57,6 +58,7 @@ public class FileService {
         this.sessionService = sessionService;
         this.fileEncryptionService = fileEncryptionService;
         this.shareTokenRepository = shareTokenRepository;
+        this.notificationService = notificationService;
     }
 
     private static StreamingResponseBody getStreamingResponseBody(InputStream inputStream) {
@@ -102,6 +104,7 @@ public class FileService {
 
         // Log initial upload event using client-provided context
         fileHistoryLogRepository.save(new FileHistoryLog(saved, FileHistoryType.UPLOAD, fileUploadRequest.uploaderIp, fileUploadRequest.uploaderUserAgent));
+        notificationService.notifyFileAction(saved, FileHistoryType.UPLOAD, fileUploadRequest.uploaderIp, fileUploadRequest.uploaderUserAgent);
 
         return saved;
     }
@@ -365,6 +368,7 @@ public class FileService {
     private void logHistory(FileEntity fileEntity, HttpServletRequest request, FileHistoryType eventType) {
         RequesterInfo info = getRequesterInfo(request);
         fileHistoryLogRepository.save(new FileHistoryLog(fileEntity, eventType, info.ipAddress(), info.userAgent()));
+        notificationService.notifyFileAction(fileEntity, eventType, info.ipAddress(), info.userAgent());
     }
 
     private String generateUniqueShareToken(FileEntity fileEntity) {

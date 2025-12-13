@@ -65,9 +65,9 @@
                            type="text"/>
                 </label>
                 <div class="flex flex-wrap gap-6">
-                    <div>
+                    <div th:if="${canUseKeepIndefinitely}">
                         <label class="inline-flex items-start gap-2">
-                            <input class="h-4 w-4 rounded border-gray-400 dark:border-gray-600 accent-sky-500 dark:accent-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                                <input class="h-4 w-4 rounded border-gray-400 dark:border-gray-600 accent-sky-500 dark:accent-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-500"
                                    id="keepIndefinitely" name="keepIndefinitely"
                                    type="checkbox">
                             <span class="text-sm">Keep indefinitely</span>

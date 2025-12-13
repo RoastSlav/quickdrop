@@ -338,6 +338,11 @@ public class FileService {
             return null;
         }
 
+        if (applicationSettingsService.isKeepIndefinitelyAdminOnly() && !sessionService.hasValidAdminSession(request)) {
+            logger.info("Keep indefinitely change blocked (admin only) for file UUID: {}", uuid);
+            return referenceById.get();
+        }
+
         if (!keepIndefinitely) {
             extendFile(uuid, request);
         }

@@ -38,6 +38,7 @@ public class ApplicationSettingsService {
             settings.setAdminDashboardButtonEnabled(true);
             settings.setDisableEncryption(false);
             settings.setDefaultHomePage("upload");
+            settings.setKeepIndefinitelyAdminOnly(false);
             settings = applicationSettingsRepository.save(settings);
             scheduleService.updateSchedule(settings.getFileDeletionCron(), settings.getMaxFileLifeTime());
             return settings;
@@ -60,6 +61,7 @@ public class ApplicationSettingsService {
         applicationSettingsEntity.setAdminDashboardButtonEnabled(settings.isAdminDashboardButtonEnabled());
         applicationSettingsEntity.setDisableEncryption(settings.isEncryptionDisabled());
         applicationSettingsEntity.setDefaultHomePage(settings.getDefaultHomePage());
+        applicationSettingsEntity.setKeepIndefinitelyAdminOnly(settings.isKeepIndefinitelyAdminOnly());
 
         if (appPassword != null && !appPassword.isEmpty()) {
             applicationSettingsEntity.setAppPasswordEnabled(settings.isAppPasswordEnabled());
@@ -146,5 +148,9 @@ public class ApplicationSettingsService {
 
     public String getDefaultHomePage() {
         return applicationSettings.getDefaultHomePage();
+    }
+
+    public boolean isKeepIndefinitelyAdminOnly() {
+        return applicationSettings.isKeepIndefinitelyAdminOnly();
     }
 }

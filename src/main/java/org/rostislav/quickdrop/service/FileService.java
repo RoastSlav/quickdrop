@@ -126,6 +126,9 @@ public class FileService {
         fileEntity.keepIndefinitely = request.keepIndefinitely;
         fileEntity.hidden = request.hidden;
         fileEntity.encrypted = shouldEncrypt(request);
+        fileEntity.folderUpload = request.folderUpload;
+        fileEntity.folderName = request.folderName;
+        fileEntity.folderManifest = request.folderManifest;
 
         if (request.password != null && !request.password.isBlank()) {
             fileEntity.passwordHash = passwordEncoder.encode(request.password);

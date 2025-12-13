@@ -153,4 +153,82 @@ function positionShareModal() {
 
 document.addEventListener('DOMContentLoaded', () => {
     initializeModal();
+    renderFolderTree();
 });
+
+function renderFolderTree() {
+    const treeEl = document.getElementById('folderTree');
+    if (!treeEl) return;
+
+    const manifestRaw = treeEl.dataset.manifest;
+    const folderName = treeEl.dataset.folderName || 'folder';
+    if (!manifestRaw) {
+        treeEl.textContent = 'No manifest available.';
+        return;
+    }
+
+    let entries;
+    try {
+        entries = JSON.parse(manifestRaw);
+    } catch (e) {
+        treeEl.textContent = 'Unable to render folder contents.';
+        return;
+    }
+
+    const root = createTreeRoot(folderName);
+    entries.forEach((entry) => {
+        if (!entry || !entry.path) return;
+        addPathToTree(root, entry.path, folderName);
+    });
+
+    const lines = [];
+    printTree(root, '', true, lines);
+    treeEl.textContent = lines.join('\n');
+}
+
+function createTreeRoot(name) {
+    return {name, children: [], files: []};
+}
+
+function addPathToTree(root, path, folderName) {
+    const parts = path.split('/').filter(Boolean);
+    let idx = 0;
+    if (parts[0] === folderName) {
+        idx = 1; // skip duplicated root segment
+    }
+
+    let node = root;
+    for (; idx < parts.length; idx++) {
+        const part = parts[idx];
+        const isFile = idx === parts.length - 1;
+        if (isFile) {
+            node.files.push(part);
+        } else {
+            let child = node.children.find((c) => c.name === part);
+            if (!child) {
+                child = createTreeRoot(part);
+                node.children.push(child);
+            }
+            node = child;
+        }
+    }
+}
+
+function printTree(node, prefix, isLast, lines) {
+    const connector = prefix === '' ? '' : (isLast ? '└─ ' : '├─ ');
+    const line = `${prefix}${connector}${node.name}`;
+    lines.push(line);
+
+    const nextPrefix = prefix === '' ? '' : (isLast ? `${prefix}   ` : `${prefix}│  `);
+    const children = [...node.children.sort((a, b) => a.name.localeCompare(b.name)), ...node.files.sort()];
+
+    children.forEach((child, index) => {
+        const lastChild = index === children.length - 1;
+        if (typeof child === 'string') {
+            const fileLine = `${nextPrefix}${lastChild ? '└─ ' : '├─ '}${child}`;
+            lines.push(fileLine);
+        } else {
+            printTree(child, nextPrefix, lastChild, lines);
+        }
+    });
+}

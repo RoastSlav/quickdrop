@@ -2,6 +2,7 @@
 
 let isUploading = false;
 let indefiniteNoPwWarningShown = false;
+let selectedUpload = null; // { file: Blob|File, name, size, folderUpload, folderName, folderManifest }
 
 document.addEventListener("DOMContentLoaded", () => {
     const uploadForm = document.getElementById("uploadForm");
@@ -12,6 +13,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const fileNameEl = document.getElementById("selectedFile");
     const dropZoneText = document.getElementById("dropZoneInstructions");
     const defaultText = dropZoneText ? dropZoneText.dataset.defaultText || dropZoneText.textContent : "";
+    const folderInput = document.getElementById("folderInput");
+    const folderButton = document.getElementById("folderSelectButton");
     if (dropZone) {
         dropZone.addEventListener("click", () => fileInput.click());
         ["dragenter", "dragover"].forEach((eventName) => {
@@ -29,56 +32,57 @@ document.addEventListener("DOMContentLoaded", () => {
         dropZone.addEventListener("drop", (e) => {
             const items = e.dataTransfer.items;
             const files = e.dataTransfer.files;
+            // We intentionally do not support folder drops; instruct the user to use the folder button
+            if (items && items.length > 0) {
+                const firstItem = items[0];
+                if (firstItem.webkitGetAsEntry && firstItem.webkitGetAsEntry().isDirectory) {
+                    showMessage("info", "Use the ‘Select a Folder’ button to upload a folder.");
+                    resetFileSelection(fileInput, fileNameEl, dropZoneText, defaultText);
+                    return;
+                }
+            }
+
             if (fileInput) {
                 const dt = new DataTransfer();
                 for (const f of files) dt.items.add(f);
                 fileInput.files = dt.files;
             }
-            handleFiles(fileInput.files, items);
+            handleSingleFile(fileInput.files);
         });
     }
 
     if (fileInput) {
         fileInput.addEventListener("change", () => {
-            handleFiles(fileInput.files);
+            handleSingleFile(fileInput.files);
         });
-        handleFiles(fileInput.files);
+        handleSingleFile(fileInput.files);
     }
 
-    function handleFiles(files, items) {
+    if (folderButton && folderInput) {
+        folderButton.addEventListener("click", () => folderInput.click());
+        folderInput.addEventListener("change", () => handleFolderSelection(folderInput.files));
+    }
+
+    function resetFileSelection(input, fileNameEl, dropZoneText, defaultText) {
+        if (input) input.value = "";
+        selectedUpload = null;
+        fileNameEl.textContent = "";
+        fileNameEl.classList.add("hidden");
+        dropZoneText.textContent = defaultText;
+        dropZoneText.classList.remove("hidden");
+    }
+
+    function handleSingleFile(files) {
         if (!fileNameEl || !dropZoneText) return;
 
-        let isFolder = false;
-        const firstFile = files && files[0];
-        if (items && items.length > 0 && items[0].webkitGetAsEntry) {
-            const entry = items[0].webkitGetAsEntry();
-            if (entry && entry.isDirectory) isFolder = true;
-        } else if (firstFile && firstFile.webkitRelativePath && firstFile.webkitRelativePath !== "") {
-            isFolder = true;
-        }
-
-        if (isFolder) {
-            dropZoneText.textContent = "Folders cannot be uploaded.";
-            dropZoneText.classList.remove("hidden");
-            fileNameEl.textContent = "";
-            fileNameEl.classList.add("hidden");
-            if (fileInput) fileInput.value = "";
-            return;
-        }
-
         if (!files || files.length === 0) {
-            fileNameEl.textContent = "";
-            fileNameEl.classList.add("hidden");
-            dropZoneText.textContent = defaultText;
-            dropZoneText.classList.remove("hidden");
+            resetFileSelection(fileInput, fileNameEl, dropZoneText, defaultText);
             return;
         }
 
-        const file = firstFile;
-
+        const file = files[0];
         const maxSizeSpan = document.querySelector('.maxFileSize');
         const maxSize = maxSizeSpan ? parseSize(maxSizeSpan.innerText) : Infinity;
-
 
         if (file.size > maxSize) {
             dropZoneText.textContent = `File exceeds the ${maxSizeSpan.innerText} limit.`;
@@ -86,13 +90,82 @@ document.addEventListener("DOMContentLoaded", () => {
             fileNameEl.textContent = "";
             fileNameEl.classList.add("hidden");
             if (fileInput) fileInput.value = "";
+            selectedUpload = null;
             return;
         }
+
         const size = (file.size / (1024 * 1024)).toFixed(2) + ' MB';
         fileNameEl.textContent = `${file.name} (${size})`;
         fileNameEl.classList.remove("hidden");
         dropZoneText.textContent = defaultText;
         dropZoneText.classList.add("hidden");
+        selectedUpload = {
+            file,
+            name: file.name,
+            size: file.size,
+            folderUpload: false,
+            folderName: null,
+            folderManifest: null
+        };
+        if (folderInput) {
+            folderInput.value = ""; // clear folder selection when switching back
+        }
+    }
+
+    async function handleFolderSelection(fileList) {
+        if (!fileList || fileList.length === 0) {
+            resetFileSelection(fileInput, fileNameEl, dropZoneText, defaultText);
+            return;
+        }
+
+        const maxSizeSpan = document.querySelector('.maxFileSize');
+        const maxSize = maxSizeSpan ? parseSize(maxSizeSpan.innerText) : Infinity;
+
+        const firstPath = fileList[0].webkitRelativePath || fileList[0].name;
+        const rootFolder = firstPath.split("/")[0];
+        const manifest = [];
+        let totalOriginalSize = 0;
+
+        for (const file of fileList) {
+            totalOriginalSize += file.size;
+            manifest.push({path: file.webkitRelativePath || file.name, size: file.size});
+        }
+
+        if (totalOriginalSize > maxSize) {
+            showMessage("danger", `Folder exceeds the ${maxSizeSpan.innerText} limit.`);
+            resetFileSelection(fileInput, fileNameEl, dropZoneText, defaultText);
+            return;
+        }
+
+        dropZoneText.textContent = "Building zip from folder...";
+        dropZoneText.classList.remove("hidden");
+        fileNameEl.classList.add("hidden");
+
+        const zip = new JSZip();
+        for (const file of fileList) {
+            const path = file.webkitRelativePath || file.name;
+            zip.file(path, file);
+        }
+
+        const zipBlob = await zip.generateAsync({type: "blob"});
+        const zipName = `${rootFolder}.zip`;
+
+        const size = (zipBlob.size / (1024 * 1024)).toFixed(2) + ' MB';
+        fileNameEl.textContent = `${zipName} (${size})`;
+        fileNameEl.classList.remove("hidden");
+        dropZoneText.textContent = `Prepared from folder “${rootFolder}” (${fileList.length} files)`;
+        dropZoneText.classList.remove("hidden");
+
+        selectedUpload = {
+            file: zipBlob,
+            name: zipName,
+            size: zipBlob.size,
+            folderUpload: true,
+            folderName: rootFolder,
+            folderManifest: JSON.stringify(manifest)
+        };
+
+        if (fileInput) fileInput.value = ""; // clear single-file selection
     }
 });
 
@@ -142,12 +215,13 @@ function onUploadFormSubmit(event) {
 
 
 function startChunkUpload() {
-    const file = document.getElementById("file").files[0];
-    if (!file) {
-        showMessage("danger", "No file selected.");
+    if (!selectedUpload || !selectedUpload.file) {
+        showMessage("danger", "No file or folder selected.");
         isUploading = false;
         return;
     }
+
+    const file = selectedUpload.file;
 
     // Initialize progress bar
     document.getElementById("uploadIndicator").classList.remove("hidden");
@@ -166,7 +240,7 @@ function startChunkUpload() {
         const end = Math.min(start + chunkSize, file.size);
         const chunk = file.slice(start, end);
 
-        const formData = buildChunkFormData(chunk, currentChunk, file.name, totalChunks, file.size);
+        const formData = buildChunkFormData(chunk, currentChunk, selectedUpload.name, totalChunks, selectedUpload.size, selectedUpload);
 
         const xhr = new XMLHttpRequest();
         xhr.open("POST", "/api/file/upload-chunk", true);
@@ -230,7 +304,7 @@ function startChunkUpload() {
     uploadNextChunk();
 }
 
-function buildChunkFormData(chunk, chunkNumber, fileName, totalChunks, fileSize) {
+function buildChunkFormData(chunk, chunkNumber, fileName, totalChunks, fileSize, uploadMeta) {
     const uploadForm = document.getElementById("uploadForm");
     const formData = new FormData();
 
@@ -240,6 +314,14 @@ function buildChunkFormData(chunk, chunkNumber, fileName, totalChunks, fileSize)
     formData.append("chunkNumber", chunkNumber);
     formData.append("totalChunks", totalChunks);
     formData.append("fileSize", fileSize);
+
+    if (uploadMeta) {
+        formData.append("folderUpload", uploadMeta.folderUpload ? "true" : "false");
+        if (uploadMeta.folderUpload) {
+            formData.append("folderName", uploadMeta.folderName || "");
+            formData.append("folderManifest", uploadMeta.folderManifest || "[]");
+        }
+    }
 
     // Keep Indefinitely + hidden
     const keepIndefinitelyCheckbox = document.getElementById("keepIndefinitely");

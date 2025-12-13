@@ -50,6 +50,9 @@ public class FileRestController {
             @RequestParam(value = "keepIndefinitely", defaultValue = "false") Boolean keepIndefinitely,
             @RequestParam(value = "password", required = false) String password,
             @RequestParam(value = "hidden", defaultValue = "false") Boolean hidden,
+            @RequestParam(value = "folderUpload", defaultValue = "false") Boolean folderUpload,
+            @RequestParam(value = "folderName", required = false) String folderName,
+            @RequestParam(value = "folderManifest", required = false) String folderManifest,
             HttpServletRequest request) {
 
         if (chunkNumber == 0) {
@@ -67,7 +70,7 @@ public class FileRestController {
             String uploaderIp = forwardedFor != null && !forwardedFor.isBlank() ? forwardedFor.split(",")[0].trim() : request.getRemoteAddr();
             String uploaderUserAgent = request.getHeader("User-Agent");
 
-            FileUploadRequest fileUploadRequest = new FileUploadRequest(description, keepIndefinitelyValue, password, hidden, fileName, totalChunks, fileSize, uploaderIp, uploaderUserAgent);
+            FileUploadRequest fileUploadRequest = new FileUploadRequest(description, keepIndefinitelyValue, password, hidden, fileName, totalChunks, fileSize, uploaderIp, uploaderUserAgent, Boolean.TRUE.equals(folderUpload), folderName, folderManifest);
             FileEntity fileEntity = asyncFileMergeService.submitChunk(fileUploadRequest, file, chunkNumber);
             return ResponseEntity.ok(fileEntity);
         } catch (IOException e) {

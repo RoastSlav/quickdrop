@@ -39,6 +39,16 @@ public class ApplicationSettingsService {
             settings.setDisableEncryption(false);
             settings.setDefaultHomePage("upload");
             settings.setKeepIndefinitelyAdminOnly(false);
+            settings.setDiscordWebhookEnabled(false);
+            settings.setDiscordWebhookUrl("");
+            settings.setEmailNotificationsEnabled(false);
+            settings.setEmailFrom("");
+            settings.setEmailTo("");
+            settings.setSmtpHost("");
+            settings.setSmtpPort(587);
+            settings.setSmtpUsername("");
+            settings.setSmtpPassword("");
+            settings.setSmtpUseTls(true);
             settings = applicationSettingsRepository.save(settings);
             scheduleService.updateSchedule(settings.getFileDeletionCron(), settings.getMaxFileLifeTime());
             return settings;
@@ -62,6 +72,16 @@ public class ApplicationSettingsService {
         applicationSettingsEntity.setDisableEncryption(settings.isEncryptionDisabled());
         applicationSettingsEntity.setDefaultHomePage(settings.getDefaultHomePage());
         applicationSettingsEntity.setKeepIndefinitelyAdminOnly(settings.isKeepIndefinitelyAdminOnly());
+        applicationSettingsEntity.setDiscordWebhookEnabled(settings.isDiscordWebhookEnabled());
+        applicationSettingsEntity.setDiscordWebhookUrl(settings.getDiscordWebhookUrl());
+        applicationSettingsEntity.setEmailNotificationsEnabled(settings.isEmailNotificationsEnabled());
+        applicationSettingsEntity.setEmailFrom(settings.getEmailFrom());
+        applicationSettingsEntity.setEmailTo(settings.getEmailTo());
+        applicationSettingsEntity.setSmtpHost(settings.getSmtpHost());
+        applicationSettingsEntity.setSmtpPort(settings.getSmtpPort());
+        applicationSettingsEntity.setSmtpUsername(settings.getSmtpUsername());
+        applicationSettingsEntity.setSmtpPassword(settings.getSmtpPassword());
+        applicationSettingsEntity.setSmtpUseTls(settings.isSmtpUseTls());
 
         if (appPassword != null && !appPassword.isEmpty()) {
             applicationSettingsEntity.setAppPasswordEnabled(settings.isAppPasswordEnabled());
@@ -152,5 +172,45 @@ public class ApplicationSettingsService {
 
     public boolean isKeepIndefinitelyAdminOnly() {
         return applicationSettings.isKeepIndefinitelyAdminOnly();
+    }
+
+    public boolean isDiscordWebhookEnabled() {
+        return applicationSettings.isDiscordWebhookEnabled();
+    }
+
+    public String getDiscordWebhookUrl() {
+        return applicationSettings.getDiscordWebhookUrl();
+    }
+
+    public boolean isEmailNotificationsEnabled() {
+        return applicationSettings.isEmailNotificationsEnabled();
+    }
+
+    public String getEmailFrom() {
+        return applicationSettings.getEmailFrom();
+    }
+
+    public String getEmailTo() {
+        return applicationSettings.getEmailTo();
+    }
+
+    public String getSmtpHost() {
+        return applicationSettings.getSmtpHost();
+    }
+
+    public Integer getSmtpPort() {
+        return applicationSettings.getSmtpPort();
+    }
+
+    public String getSmtpUsername() {
+        return applicationSettings.getSmtpUsername();
+    }
+
+    public String getSmtpPassword() {
+        return applicationSettings.getSmtpPassword();
+    }
+
+    public boolean isSmtpUseTls() {
+        return applicationSettings.isSmtpUseTls();
     }
 }

@@ -35,7 +35,7 @@ public class FileUtils {
         if (scheme == null) {
             scheme = request.getScheme();
         }
-        return scheme + "://" + request.getServerName() + "/file/share/" + token;
+        return scheme + "://" + request.getServerName() + "/share/" + token;
     }
 
     public static long bytesToMegabytes(long bytes) {

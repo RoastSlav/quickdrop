@@ -166,24 +166,4 @@ public class FileViewController {
         }
         return "redirect:/file/list";
     }
-
-    @GetMapping("/share/{token}")
-    public String viewSharedFile(@PathVariable String token, Model model) {
-        Optional<ShareTokenEntity> tokenEntity = fileService.getShareTokenEntityByToken(token);
-
-        if (tokenEntity.isEmpty() || !fileService.validateShareToken(tokenEntity.get())) {
-            return "invalid-share-link";
-        }
-
-        FileEntity file = tokenEntity.get().file;
-        if (file == null) {
-            return "redirect:/file/list";
-        }
-
-        model.addAttribute("file", new FileEntityView(file, analyticsService.getTotalDownloadsByFile(file.uuid)));
-        model.addAttribute("downloadLink", "/api/file/download/" + token);
-
-        logger.info("Accessed shared file view for file UUID: {}", file.uuid);
-        return "file-share-view";
-    }
 }

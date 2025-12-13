@@ -14,13 +14,25 @@ function updateCheckboxState(event, checkbox) {
 }
 
 function initializeModal() {
-    const downloadLink = document.getElementById("downloadLink").innerText;
-    updateShareLink(downloadLink);
-    document.getElementById('unrestrictedLink').checked = false;
-    document.getElementById('linkOptions').classList.add('hidden');
+    const downloadLinkEl = document.getElementById("downloadLink");
+    const unrestricted = document.getElementById('unrestrictedLink');
+    const linkOptions = document.getElementById('linkOptions');
     const generateButton = document.getElementById('generateLinkButton');
-    generateButton.disabled = true;
-    generateButton.classList.add('hidden');
+
+    if (downloadLinkEl) {
+        updateShareLink(downloadLinkEl.innerText);
+    }
+
+    if (unrestricted) {
+        unrestricted.checked = false;
+    }
+    if (linkOptions) {
+        linkOptions.classList.add('hidden');
+    }
+    if (generateButton) {
+        generateButton.disabled = true;
+        generateButton.classList.add('hidden');
+    }
 }
 
 function generateShareLink(fileUuid, daysValid, allowedNumberOfDownloads) {
@@ -109,11 +121,11 @@ function toggleLinkType() {
     const linkOptions = document.getElementById('linkOptions');
     const generateLinkButton = document.getElementById('generateLinkButton');
 
-    if (unrestrictedLinkCheckbox.checked) {
+    if (unrestrictedLinkCheckbox && unrestrictedLinkCheckbox.checked) {
         linkOptions.classList.remove('hidden');
         generateLinkButton.classList.remove('hidden');
         generateLinkButton.disabled = false;
-    } else {
+    } else if (unrestrictedLinkCheckbox) {
         linkOptions.classList.add('hidden');
         generateLinkButton.classList.add('hidden');
         generateLinkButton.disabled = true;
@@ -160,22 +172,18 @@ function renderFolderTree() {
     const treeEl = document.getElementById('folderTree');
     if (!treeEl) return;
 
-    let manifestRaw = treeEl.dataset.manifest;
     const manifestScript = document.getElementById('folderManifestData');
-    if (!manifestRaw && manifestScript) {
-        manifestRaw = manifestScript.textContent;
-    }
-
     const folderName = treeEl.dataset.folderName || 'folder';
-    if (!manifestRaw) {
+    if (!manifestScript || !manifestScript.textContent) {
         treeEl.textContent = 'No manifest available.';
         return;
     }
 
     let entries;
     try {
-        entries = JSON.parse(manifestRaw);
+        entries = JSON.parse(manifestScript.textContent);
     } catch (e) {
+        console.warn('Folder manifest parse failed', e);
         treeEl.textContent = 'Unable to render folder contents.';
         return;
     }

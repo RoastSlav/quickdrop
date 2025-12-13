@@ -4,6 +4,15 @@ let isUploading = false;
 let indefiniteNoPwWarningShown = false;
 let selectedUpload = null; // { file: Blob|File, name, size, folderUpload, folderName, folderManifest }
 
+function cleanupSelectedUpload() {
+    if (selectedUpload?.zipObjectUrl) {
+        URL.revokeObjectURL(selectedUpload.zipObjectUrl);
+    }
+    selectedUpload = null;
+}
+
+window.addEventListener('beforeunload', cleanupSelectedUpload);
+
 document.addEventListener("DOMContentLoaded", () => {
     const uploadForm = document.getElementById("uploadForm");
     uploadForm.addEventListener("submit", onUploadFormSubmit);
@@ -334,6 +343,7 @@ function startChunkUpload() {
                     // Final chunk response handling.
                     document.getElementById("uploadStatus").innerText = "Upload complete.";
                     if (response && response.uuid) {
+                        cleanupSelectedUpload();
                         window.location.href = "/file/" + response.uuid;
                     } else {
                         // No file entity returned; warn the user.
@@ -401,6 +411,7 @@ function buildChunkFormData(chunk, chunkNumber, fileName, totalChunks, fileSize,
 function resetUploadUI() {
     document.getElementById("uploadIndicator").classList.add("hidden");
     isUploading = false;
+    cleanupSelectedUpload();
 }
 
 

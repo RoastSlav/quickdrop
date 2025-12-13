@@ -62,7 +62,11 @@ public class FileRestController {
             boolean allowKeepIndefinitely = !applicationSettingsService.isKeepIndefinitelyAdminOnly() || adminSession;
             boolean keepIndefinitelyValue = allowKeepIndefinitely && Boolean.TRUE.equals(keepIndefinitely);
 
-            FileUploadRequest fileUploadRequest = new FileUploadRequest(description, keepIndefinitelyValue, password, hidden, fileName, totalChunks, fileSize);
+            String forwardedFor = request.getHeader("X-Forwarded-For");
+            String uploaderIp = forwardedFor != null && !forwardedFor.isBlank() ? forwardedFor.split(",")[0].trim() : request.getRemoteAddr();
+            String uploaderUserAgent = request.getHeader("User-Agent");
+
+            FileUploadRequest fileUploadRequest = new FileUploadRequest(description, keepIndefinitelyValue, password, hidden, fileName, totalChunks, fileSize, uploaderIp, uploaderUserAgent);
             FileEntity fileEntity = asyncFileMergeService.submitChunk(fileUploadRequest, file, chunkNumber);
             return ResponseEntity.ok(fileEntity);
         } catch (IOException e) {

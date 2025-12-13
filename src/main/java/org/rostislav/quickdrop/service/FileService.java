@@ -158,6 +158,7 @@ public class FileService {
         }
 
         FileEntity fileEntity = referenceById.get();
+        notificationService.notifyFileAction(fileEntity, FileHistoryType.DELETION, null, null);
         fileRepository.delete(fileEntity);
         fileHistoryLogRepository.deleteByFileId(fileEntity.id);
         return deleteFileFromFileSystem(fileEntity.uuid);
@@ -171,6 +172,7 @@ public class FileService {
         }
 
         FileEntity fileEntity = referenceById.get();
+        notificationService.notifyFileAction(fileEntity, FileHistoryType.DELETION, null, null);
         fileRepository.delete(fileEntity);
         fileHistoryLogRepository.deleteByFileId(fileEntity.id);
         return true;

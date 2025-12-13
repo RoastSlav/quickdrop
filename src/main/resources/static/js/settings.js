@@ -47,7 +47,8 @@ async function sendNotificationTest(target, buttonId, statusId) {
     const status = document.getElementById(statusId);
     if (!button || !status) return;
 
-    status.textContent = '';
+    status.textContent = 'Testing…';
+    status.className = 'text-slate-600 dark:text-slate-300';
     button.disabled = true;
 
     try {

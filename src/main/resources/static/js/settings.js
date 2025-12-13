@@ -8,16 +8,49 @@ function togglePasswordField() {
 function toggleDiscordField() {
     const enabled = document.getElementById('discordWebhookEnabled')?.checked;
     document.getElementById('discordWebhookUrlGroup')?.classList.toggle('hidden', !enabled);
+    updateBatchAvailability();
 }
 
 function toggleEmailFields() {
     const enabled = document.getElementById('emailNotificationsEnabled')?.checked;
     document.getElementById('emailConfig')?.classList.toggle('hidden', !enabled);
+    updateBatchAvailability();
 }
 
 function toggleBatchFields() {
-    const enabled = document.getElementById('notificationBatchEnabled')?.checked;
-    document.getElementById('notificationBatchConfig')?.classList.toggle('hidden', !enabled);
+    const batchEnabled = document.getElementById('notificationBatchEnabled')?.checked;
+    const batchConfig = document.getElementById('notificationBatchConfig');
+    if (batchConfig) {
+        batchConfig.classList.toggle('hidden', !batchEnabled);
+    }
+}
+
+function updateBatchAvailability() {
+    const discordOn = document.getElementById('discordWebhookEnabled')?.checked;
+    const emailOn = document.getElementById('emailNotificationsEnabled')?.checked;
+    const anyChannel = Boolean(discordOn) || Boolean(emailOn);
+
+    const batchToggle = document.getElementById('notificationBatchEnabled');
+    const batchMinutes = document.getElementById('notificationBatchMinutes');
+    const row = document.getElementById('notificationBatchRow');
+
+    if (batchToggle) {
+        batchToggle.disabled = !anyChannel;
+        if (!anyChannel) {
+            batchToggle.checked = false;
+        }
+    }
+
+    if (batchMinutes) {
+        batchMinutes.disabled = !anyChannel;
+    }
+
+    if (row) {
+        row.classList.toggle('opacity-50', !anyChannel);
+        row.classList.toggle('cursor-not-allowed', !anyChannel);
+    }
+
+    toggleBatchFields();
 }
 
 function getCsrfToken() {
@@ -82,7 +115,7 @@ document.addEventListener('DOMContentLoaded', function () {
     togglePasswordField();
     toggleDiscordField();
     toggleEmailFields();
-    toggleBatchFields();
+    updateBatchAvailability();
 
     document.getElementById('discordWebhookEnabled')?.addEventListener('change', toggleDiscordField);
     document.getElementById('emailNotificationsEnabled')?.addEventListener('change', toggleEmailFields);

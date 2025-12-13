@@ -36,7 +36,7 @@ public class NotificationService {
 
     public NotificationService(ApplicationSettingsService applicationSettingsService) {
         this.applicationSettingsService = applicationSettingsService;
-        startSchedulerIfNeeded();
+        startSchedulerIfNeeded(shouldSendDiscord(), shouldSendEmail());
     }
 
     public void notifyFileAction(FileEntity fileEntity, FileHistoryType type, String ipAddress, String userAgent) {
@@ -68,7 +68,7 @@ public class NotificationService {
 
         if (shouldUseBatching(shouldSendDiscord, shouldSendEmail)) {
             pendingMessages.add(formattedMessage);
-            startSchedulerIfNeeded();
+            startSchedulerIfNeeded(shouldSendDiscord, shouldSendEmail);
             return;
         }
 
@@ -291,8 +291,9 @@ public class NotificationService {
         return applicationSettingsService.isNotificationBatchEnabled() && (sendDiscord || sendEmail);
     }
 
-    private void startSchedulerIfNeeded() {
-        if (!applicationSettingsService.isNotificationBatchEnabled()) {
+    private void startSchedulerIfNeeded(boolean sendDiscord, boolean sendEmail) {
+        if (!shouldUseBatching(sendDiscord, sendEmail)) {
+            stopSchedulerIfIdle();
             return;
         }
 

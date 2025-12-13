@@ -4,12 +4,12 @@ function confirmDelete() {
 
 function updateCheckboxState(event, checkbox) {
     event.preventDefault();
-    const hiddenField = checkbox.form.querySelector('input[name="keepIndefinitely"][type="hidden"]');
+
+    const hiddenField = checkbox.form.querySelector(`input[name="${checkbox.name}"][type="hidden"]`);
     if (hiddenField) {
         hiddenField.value = checkbox.checked;
     }
 
-    console.log('Submitting form...');
     checkbox.form.submit();
 }
 
@@ -93,11 +93,14 @@ function createShareLink() {
 
 function updateShareLink(link) {
     const shareLinkInput = document.getElementById('shareLink');
-    const qrCodeContainer = document.getElementById('shareQRCode');
+    const canvas = document.getElementById('shareQRCode');
 
     shareLinkInput.value = link;
-    qrCodeContainer.innerHTML = '';
-    QRCode.toCanvas(qrCodeContainer, link, {width: 150, height: 150});
+
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    QRCode.toCanvas(canvas, link, {width: 150, height: 150});
 }
 
 
@@ -150,6 +153,4 @@ function positionShareModal() {
 
 document.addEventListener('DOMContentLoaded', () => {
     initializeModal();
-    openShareModal();
-    window.addEventListener('resize', positionShareModal);
 });

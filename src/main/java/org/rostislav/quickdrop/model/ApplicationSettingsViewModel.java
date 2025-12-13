@@ -18,6 +18,16 @@ public class ApplicationSettingsViewModel {
     private boolean encryptionDisabled;
     private String defaultHomePage;
     private boolean keepIndefinitelyAdminOnly;
+    private boolean discordWebhookEnabled;
+    private String discordWebhookUrl;
+    private boolean emailNotificationsEnabled;
+    private String emailFrom;
+    private String emailTo;
+    private String smtpHost;
+    private Integer smtpPort;
+    private String smtpUsername;
+    private String smtpPassword;
+    private boolean smtpUseTls;
 
     public ApplicationSettingsViewModel() {
     }
@@ -36,6 +46,16 @@ public class ApplicationSettingsViewModel {
         this.encryptionDisabled = settings.isDisableEncryption();
         this.defaultHomePage = settings.getDefaultHomePage();
         this.keepIndefinitelyAdminOnly = settings.isKeepIndefinitelyAdminOnly();
+        this.discordWebhookEnabled = settings.isDiscordWebhookEnabled();
+        this.discordWebhookUrl = settings.getDiscordWebhookUrl();
+        this.emailNotificationsEnabled = settings.isEmailNotificationsEnabled();
+        this.emailFrom = settings.getEmailFrom();
+        this.emailTo = settings.getEmailTo();
+        this.smtpHost = settings.getSmtpHost();
+        this.smtpPort = settings.getSmtpPort();
+        this.smtpUsername = settings.getSmtpUsername();
+        this.smtpPassword = settings.getSmtpPassword();
+        this.smtpUseTls = settings.isSmtpUseTls();
     }
 
     public Long getId() {
@@ -148,5 +168,85 @@ public class ApplicationSettingsViewModel {
 
     public void setKeepIndefinitelyAdminOnly(boolean keepIndefinitelyAdminOnly) {
         this.keepIndefinitelyAdminOnly = keepIndefinitelyAdminOnly;
+    }
+
+    public boolean isDiscordWebhookEnabled() {
+        return discordWebhookEnabled;
+    }
+
+    public void setDiscordWebhookEnabled(boolean discordWebhookEnabled) {
+        this.discordWebhookEnabled = discordWebhookEnabled;
+    }
+
+    public String getDiscordWebhookUrl() {
+        return discordWebhookUrl;
+    }
+
+    public void setDiscordWebhookUrl(String discordWebhookUrl) {
+        this.discordWebhookUrl = discordWebhookUrl;
+    }
+
+    public boolean isEmailNotificationsEnabled() {
+        return emailNotificationsEnabled;
+    }
+
+    public void setEmailNotificationsEnabled(boolean emailNotificationsEnabled) {
+        this.emailNotificationsEnabled = emailNotificationsEnabled;
+    }
+
+    public String getEmailFrom() {
+        return emailFrom;
+    }
+
+    public void setEmailFrom(String emailFrom) {
+        this.emailFrom = emailFrom;
+    }
+
+    public String getEmailTo() {
+        return emailTo;
+    }
+
+    public void setEmailTo(String emailTo) {
+        this.emailTo = emailTo;
+    }
+
+    public String getSmtpHost() {
+        return smtpHost;
+    }
+
+    public void setSmtpHost(String smtpHost) {
+        this.smtpHost = smtpHost;
+    }
+
+    public Integer getSmtpPort() {
+        return smtpPort;
+    }
+
+    public void setSmtpPort(Integer smtpPort) {
+        this.smtpPort = smtpPort;
+    }
+
+    public String getSmtpUsername() {
+        return smtpUsername;
+    }
+
+    public void setSmtpUsername(String smtpUsername) {
+        this.smtpUsername = smtpUsername;
+    }
+
+    public String getSmtpPassword() {
+        return smtpPassword;
+    }
+
+    public void setSmtpPassword(String smtpPassword) {
+        this.smtpPassword = smtpPassword;
+    }
+
+    public boolean isSmtpUseTls() {
+        return smtpUseTls;
+    }
+
+    public void setSmtpUseTls(boolean smtpUseTls) {
+        this.smtpUseTls = smtpUseTls;
     }
 }

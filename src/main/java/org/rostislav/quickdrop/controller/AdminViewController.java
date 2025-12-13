@@ -76,11 +76,14 @@ public class AdminViewController {
     }
 
     @PostMapping("/save")
-    public String saveSettings(ApplicationSettingsViewModel settings) {
+    public Object saveSettings(ApplicationSettingsViewModel settings, HttpServletRequest request) {
         settings.setMaxFileSize(megabytesToBytes(settings.getMaxFileSize()));
 
         applicationSettingsService.updateApplicationSettings(settings, settings.getAppPassword());
-        return "redirect:dashboard";
+        if ("XMLHttpRequest".equalsIgnoreCase(request.getHeader("X-Requested-With"))) {
+            return ResponseEntity.ok("Settings saved");
+        }
+        return "redirect:settings";
     }
 
     @PostMapping("/password")
@@ -126,12 +129,14 @@ public class AdminViewController {
     @ResponseBody
     public ResponseEntity<String> sendNotificationTest(@RequestParam String target) {
         return switch (target.toLowerCase()) {
-            case "discord" -> notificationService.sendTestDiscord()
-                    ? ResponseEntity.ok("Discord test notification sent.")
-                    : ResponseEntity.badRequest().body("Discord test failed. Check the webhook URL and network access.");
-            case "email" -> notificationService.sendTestEmail()
-                    ? ResponseEntity.ok("Email test notification sent.")
-                    : ResponseEntity.badRequest().body("Email test failed. Check SMTP host, credentials, sender, and recipients.");
+            case "discord" -> {
+                var result = notificationService.sendTestDiscord();
+                yield result.success() ? ResponseEntity.ok(result.message()) : ResponseEntity.badRequest().body(result.message());
+            }
+            case "email" -> {
+                var result = notificationService.sendTestEmail();
+                yield result.success() ? ResponseEntity.ok(result.message()) : ResponseEntity.badRequest().body(result.message());
+            }
             default -> ResponseEntity.badRequest().body("Unknown notification target.");
         };
     }

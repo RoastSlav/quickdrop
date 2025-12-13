@@ -4,6 +4,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.rostislav.quickdrop.entity.FileEntity;
 import org.rostislav.quickdrop.entity.ShareTokenEntity;
 import org.rostislav.quickdrop.model.FileUploadRequest;
+import org.rostislav.quickdrop.service.ApplicationSettingsService;
 import org.rostislav.quickdrop.service.AsyncFileMergeService;
 import org.rostislav.quickdrop.service.FileService;
 import org.rostislav.quickdrop.service.SessionService;
@@ -28,11 +29,13 @@ public class FileRestController {
     private final FileService fileService;
     private final SessionService sessionService;
     private final AsyncFileMergeService asyncFileMergeService;
+    private final ApplicationSettingsService applicationSettingsService;
 
-    public FileRestController(FileService fileService, SessionService sessionService, AsyncFileMergeService asyncFileMergeService) {
+    public FileRestController(FileService fileService, SessionService sessionService, AsyncFileMergeService asyncFileMergeService, ApplicationSettingsService applicationSettingsService) {
         this.fileService = fileService;
         this.sessionService = sessionService;
         this.asyncFileMergeService = asyncFileMergeService;
+        this.applicationSettingsService = applicationSettingsService;
     }
 
     @PostMapping("/upload-chunk")
@@ -45,7 +48,8 @@ public class FileRestController {
             @RequestParam(value = "description", required = false) String description,
             @RequestParam(value = "keepIndefinitely", defaultValue = "false") Boolean keepIndefinitely,
             @RequestParam(value = "password", required = false) String password,
-            @RequestParam(value = "hidden", defaultValue = "false") Boolean hidden) {
+            @RequestParam(value = "hidden", defaultValue = "false") Boolean hidden,
+            HttpServletRequest request) {
 
         if (chunkNumber == 0) {
             logger.info("Upload started for file: {}", fileName);
@@ -54,7 +58,11 @@ public class FileRestController {
         try {
             logger.info("Submitting chunk {} of {} for file: {}", chunkNumber, totalChunks, fileName);
 
-            FileUploadRequest fileUploadRequest = new FileUploadRequest(description, keepIndefinitely, password, hidden, fileName, totalChunks, fileSize);
+            boolean adminSession = sessionService.hasValidAdminSession(request);
+            boolean allowKeepIndefinitely = !applicationSettingsService.isKeepIndefinitelyAdminOnly() || adminSession;
+            boolean keepIndefinitelyValue = allowKeepIndefinitely && Boolean.TRUE.equals(keepIndefinitely);
+
+            FileUploadRequest fileUploadRequest = new FileUploadRequest(description, keepIndefinitelyValue, password, hidden, fileName, totalChunks, fileSize);
             FileEntity fileEntity = asyncFileMergeService.submitChunk(fileUploadRequest, file, chunkNumber);
             return ResponseEntity.ok(fileEntity);
         } catch (IOException e) {

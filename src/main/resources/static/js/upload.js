@@ -116,7 +116,8 @@ function onUploadFormSubmit(event) {
     isUploading = true;
 
     // 1) Check "Keep Indefinitely" + no password
-    const keepIndefinitely = document.getElementById("keepIndefinitely").checked;
+    const keepIndefinitelyCheckbox = document.getElementById("keepIndefinitely");
+    const keepIndefinitely = keepIndefinitelyCheckbox ? keepIndefinitelyCheckbox.checked : false;
     const password = document.getElementById("password").value.trim();
 
     if (keepIndefinitely && !password) {
@@ -242,7 +243,7 @@ function buildChunkFormData(chunk, chunkNumber, fileName, totalChunks, fileSize)
 
     // Keep Indefinitely + hidden
     const keepIndefinitelyCheckbox = document.getElementById("keepIndefinitely");
-    formData.append("keepIndefinitely", keepIndefinitelyCheckbox.checked ? "true" : "false");
+    formData.append("keepIndefinitely", keepIndefinitelyCheckbox && keepIndefinitelyCheckbox.checked ? "true" : "false");
     const hiddenCheckbox = document.getElementById("hidden");
     if (hiddenCheckbox) {
         formData.append("hidden", hiddenCheckbox.checked ? "true" : "false");

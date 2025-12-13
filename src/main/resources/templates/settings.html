@@ -61,6 +61,18 @@
                     <input class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500" required th:field="*{fileStoragePath}"
                            type="text">
                 </div>
+
+                <div class="md:col-span-2 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
+                    <div class="text-sm font-medium mb-2">Keep Indefinitely</div>
+                    <label class="flex items-start gap-3 pl-2">
+                        <input class="mt-1 h-4 w-4 rounded border-gray-400 dark:border-gray-600 accent-sky-500 dark:accent-sky-400 focus:ring-sky-500"
+                               id="keepIndefinitelyAdminOnly" th:field="*{keepIndefinitelyAdminOnly}" type="checkbox">
+                        <span>
+                            <span class="text-sm">Require admin session for “Keep indefinitely”</span><br>
+                            <span class="text-xs text-gray-600 dark:text-gray-400">When enabled, only admins with an active session can mark uploads to keep indefinitely.</span>
+                        </span>
+                    </label>
+                </div>
             </div>
         </section>
 

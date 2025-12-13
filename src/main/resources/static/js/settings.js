@@ -26,9 +26,13 @@ async function sendNotificationTest(target, buttonId, statusId) {
     try {
         const csrfMatch = document.cookie.match(/XSRF-TOKEN=([^;]+)/);
         const csrf = csrfMatch ? decodeURIComponent(csrfMatch[1]) : null;
+        const url = csrf
+            ? `/admin/notification-test?target=${target}&_csrf=${encodeURIComponent(csrf)}`
+            : `/admin/notification-test?target=${target}`;
 
-        const response = await fetch(`/admin/notification-test?target=${target}`, {
+        const response = await fetch(url, {
             method: 'POST',
+            credentials: 'same-origin',
             headers: csrf ? {'X-XSRF-TOKEN': csrf} : {}
         });
         const text = await response.text();

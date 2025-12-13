@@ -3,23 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <title>Upload File</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" href="/css/tailwind.css">
-    <link rel="stylesheet" href="/css/custom.css">
-    <link rel="icon" type="image/png" href="/images/favicon.png">
+    <meta content="width=device-width, initial-scale=1" name="viewport">
+    <link href="/css/tailwind.css" rel="stylesheet">
+    <link href="/css/custom.css" rel="stylesheet">
+    <link href="/images/favicon.png" rel="icon" type="image/png">
     <script src="/js/tailwindTheme.js"></script>
 </head>
 <body class="bg-gray-50 text-gray-800 dark:bg-slate-900 dark:text-gray-100">
 <nav class="bg-gray-800 dark:bg-gray-900 text-gray-100">
     <div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-        <a href="/" class="flex items-center space-x-2">
-            <img src="/images/favicon.png" alt="Website Logo" class="h-10">
+        <a class="flex items-center space-x-2" href="/">
+            <img alt="Website Logo" class="h-10" src="/images/favicon.png">
             <span class="font-semibold tracking-tight">QuickDrop</span>
         </a>
         <div class="flex items-center space-x-4">
-            <a th:if="${isFileListPageEnabled}" href="/file/list" class="hover:text-white">View Files</a>
-            <a th:if="${isAdminDashboardButtonEnabled}" href="/admin/dashboard" class="hover:text-white">Admin Dashboard</a>
-            <button id="themeToggle" type="button" aria-label="Toggle theme" class="rounded-lg p-2 transition-colors hover:bg-sky-600 dark:hover:bg-sky-500 active:scale-95 focus:outline-none focus:ring-2 focus:ring-sky-500">🌙</button>
+            <a class="hover:text-white" href="/file/list" th:if="${isFileListPageEnabled}">View Files</a>
+            <a class="hover:text-white" href="/admin/dashboard" th:if="${isAdminDashboardButtonEnabled}">Admin
+                Dashboard</a>
+            <button aria-label="Toggle theme"
+                    class="rounded-lg p-2 transition-colors hover:bg-sky-600 dark:hover:bg-sky-500 active:scale-95 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                    id="themeToggle"
+                    type="button">
+                🌙
+            </button>
         </div>
     </div>
 </nav>
@@ -30,52 +36,76 @@
             Accepted file types: any • Max size <span class="maxFileSize" th:text="${maxFileSize}">1GB</span>
         </p>
         <p class="text-gray-600 dark:text-gray-300">
-            Files are deleted after <span class="maxFileLifeTime" th:text="${maxFileLifeTime}">30</span> days unless “Keep indefinitely” is selected.
+            Files are deleted after <span class="maxFileLifeTime" th:text="${maxFileLifeTime}">30</span> days unless
+            “Keep indefinitely” is selected.
         </p>
     </header>
     <div class="grid grid-cols-12 gap-6">
         <div class="col-span-12 md:col-span-8 md:col-start-3 lg:col-span-6 lg:col-start-4">
-            <form id="uploadForm" class="bg-white dark:bg-gray-800 p-6 md:p-8 rounded-2xl shadow-lg flex flex-col gap-6" method="post" enctype="multipart/form-data" th:action="@{/file/upload}">
+            <form class="bg-white dark:bg-gray-800 p-6 md:p-8 rounded-2xl shadow-lg flex flex-col gap-6"
+                  enctype="multipart/form-data"
+                  id="uploadForm" method="post" th:action="@{/file/upload}">
                 <div id="messageContainer"></div>
                 <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden"/>
                 <input name="uuid" th:value="${uuid}" type="hidden"/>
-                <label id="dropZone" for="file" class="relative border-2 border-dashed border-gray-400 dark:border-gray-600 rounded-lg p-6 text-center cursor-pointer focus:outline-none focus:ring-2 focus:ring-sky-500">
-                    <span id="dropZoneInstructions" data-default-text="Drop file here or click to browse" class="block text-gray-600 dark:text-gray-300">Drop file here or click to browse</span>
-                    <input id="file" name="file" type="file" class="absolute inset-0 opacity-0 cursor-pointer" required/>
-                    <p id="selectedFile" class="hidden mt-2 text-sm text-gray-700 dark:text-gray-300"></p>
+                <label class="relative border-2 border-dashed border-gray-400 dark:border-gray-600 rounded-lg p-6 text-center cursor-pointer focus:outline-none focus:ring-2 focus:ring-sky-500"
+                       for="file"
+                       id="dropZone">
+                    <span class="block text-gray-600 dark:text-gray-300"
+                          data-default-text="Drop file here or click to browse"
+                          id="dropZoneInstructions">Drop file here or click to browse</span>
+                    <input class="absolute inset-0 opacity-0 cursor-pointer" id="file" name="file" required
+                           type="file"/>
+                    <p class="hidden mt-2 text-sm text-gray-700 dark:text-gray-300" id="selectedFile"></p>
                 </label>
                 <label class="block">
                     <span class="sr-only">Description</span>
-                    <input id="description" name="description" type="text" placeholder="Description" class="mt-1 w-full rounded-lg border border-gray-400 dark:border-gray-600 bg-white dark:bg-slate-700 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500"/>
+                    <input class="mt-1 w-full rounded-lg border border-gray-400 dark:border-gray-600 bg-white dark:bg-slate-700 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                           id="description" name="description" placeholder="Description"
+                           type="text"/>
                 </label>
                 <div class="flex flex-wrap gap-6">
                     <div>
                         <label class="inline-flex items-start gap-2">
-                            <input id="keepIndefinitely" name="keepIndefinitely" type="checkbox" class="h-4 w-4 rounded border-gray-400 dark:border-gray-600 accent-sky-500 dark:accent-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-500">
+                            <input class="h-4 w-4 rounded border-gray-400 dark:border-gray-600 accent-sky-500 dark:accent-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                                   id="keepIndefinitely" name="keepIndefinitely"
+                                   type="checkbox">
                             <span class="text-sm">Keep indefinitely</span>
                         </label>
-                        <small class="block ml-6 mt-1 text-sm text-gray-600 dark:text-gray-300">If checked, this file will not be auto-deleted after <span class="maxFileLifeTime" th:text="${maxFileLifeTime}">30</span> days.</small>
+                        <small class="block ml-6 mt-1 text-sm text-gray-600 dark:text-gray-300">If checked, this file
+                            will not be auto-deleted after <span class="maxFileLifeTime"
+                                                                 th:text="${maxFileLifeTime}">30</span> days.</small>
                     </div>
                     <div th:if="${isFileListPageEnabled}">
                         <label class="inline-flex items-start gap-2">
-                            <input id="hidden" name="hidden" type="checkbox" class="h-4 w-4 rounded border-gray-400 dark:border-gray-600 accent-sky-500 dark:accent-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-500">
+                            <input class="h-4 w-4 rounded border-gray-400 dark:border-gray-600 accent-sky-500 dark:accent-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                                   id="hidden" name="hidden"
+                                   type="checkbox">
                             <span class="text-sm">Hide from file list</span>
                         </label>
-                        <small class="block ml-6 mt-1 text-sm text-gray-600 dark:text-gray-300">If checked, this file won’t appear on the “View Files” page.</small>
+                        <small class="block ml-6 mt-1 text-sm text-gray-600 dark:text-gray-300">If checked, this file
+                            won’t appear on the “View Files” page.</small>
                     </div>
                 </div>
                 <label class="block">
                     <span class="sr-only">Password (Optional)</span>
-                    <input id="password" name="password" type="password" placeholder="Password (Optional)" class="mt-1 w-full rounded-lg border border-gray-400 dark:border-gray-600 bg-white dark:bg-slate-700 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500"/>
+                    <input class="mt-1 w-full rounded-lg border border-gray-400 dark:border-gray-600 bg-white dark:bg-slate-700 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                           id="password" name="password" placeholder="Password (Optional)"
+                           type="password"/>
                 </label>
-                <button type="submit" class="rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium py-2 transition-colors active:scale-95 focus:outline-none focus:ring-2 focus:ring-sky-500">Upload</button>
+                <button class="rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium py-2 transition-colors active:scale-95 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                        type="submit">
+                    Upload
+                </button>
             </form>
         </div>
     </div>
-    <div id="uploadIndicator" class="mt-6 text-center hidden">
-        <p id="uploadStatus" class="text-gray-600 dark:text-gray-300 mb-2" aria-live="polite">Upload started...</p>
+    <div class="mt-6 text-center hidden" id="uploadIndicator">
+        <p aria-live="polite" class="text-gray-600 dark:text-gray-300 mb-2" id="uploadStatus">Upload started...</p>
         <div class="w-full max-w-md mx-auto bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
-            <div id="uploadProgress" class="h-2 bg-sky-500 dark:bg-sky-400 transition-[width] duration-300" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width:0%"></div>
+            <div aria-valuemax="100" aria-valuemin="0"
+                 aria-valuenow="0" class="h-2 bg-sky-500 dark:bg-sky-400 transition-[width] duration-300"
+                 id="uploadProgress" role="progressbar" style="width:0%"></div>
         </div>
     </div>
     <div class="mt-4 text-center text-gray-600 dark:text-gray-300" th:if="${isEncryptionEnabled}">

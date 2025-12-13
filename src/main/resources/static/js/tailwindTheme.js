@@ -1,26 +1,35 @@
 // tailwindTheme.js
-// Minimal theme toggler for Tailwind
+// Unified theme toggler for Tailwind
 (function () {
     const html = document.documentElement;
 
-    function applyTheme(theme) {
+    const applyTheme = (theme) => {
         html.classList.toggle('dark', theme === 'dark');
-    }
+        localStorage.setItem('theme', theme);
+    };
+
+    const updateToggleButtons = (theme) => {
+        document.querySelectorAll('#themeToggle').forEach((btn) => {
+            btn.textContent = theme === 'dark' ? '☀️' : '🌙';
+            btn.setAttribute('aria-label', theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme');
+        });
+    };
 
     const stored = localStorage.getItem('theme');
-    const initial = stored || 'light';
+    const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const initial = stored || (prefersDark ? 'dark' : 'light');
 
     applyTheme(initial);
 
     document.addEventListener('DOMContentLoaded', () => {
-        const btn = document.getElementById('themeToggle');
-        if (!btn) return;
-        btn.textContent = html.classList.contains('dark') ? '☀️' : '🌙';
-        btn.addEventListener('click', () => {
-            const newTheme = html.classList.contains('dark') ? 'light' : 'dark';
-            applyTheme(newTheme);
-            localStorage.setItem('theme', newTheme);
-            btn.textContent = newTheme === 'dark' ? '☀️' : '🌙';
+        updateToggleButtons(initial);
+
+        document.querySelectorAll('#themeToggle').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const nextTheme = html.classList.contains('dark') ? 'light' : 'dark';
+                applyTheme(nextTheme);
+                updateToggleButtons(nextTheme);
+            });
         });
     });
 })();

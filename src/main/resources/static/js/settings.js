@@ -8,6 +8,11 @@ function togglePasswordField() {
 function toggleDiscordField() {
     const enabled = document.getElementById('discordWebhookEnabled')?.checked;
     document.getElementById('discordWebhookUrlGroup')?.classList.toggle('hidden', !enabled);
+    document.getElementById('discordTestGroup')?.classList.toggle('hidden', !enabled);
+    const testBtn = document.getElementById('testDiscord');
+    if (testBtn) {
+        testBtn.disabled = !enabled;
+    }
     updateBatchAvailability();
 }
 

@@ -7,6 +7,7 @@ import org.rostislav.quickdrop.model.AnalyticsDataView;
 import org.rostislav.quickdrop.model.ApplicationSettingsViewModel;
 import org.rostislav.quickdrop.model.FileEntityView;
 import org.rostislav.quickdrop.service.*;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCrypt;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -26,13 +27,15 @@ public class AdminViewController {
     private final FileService fileService;
     private final SessionService sessionService;
     private final SystemInfoService systemInfoService;
+    private final NotificationService notificationService;
 
-    public AdminViewController(ApplicationSettingsService applicationSettingsService, AnalyticsService analyticsService, FileService fileService, SessionService sessionService, SystemInfoService systemInfoService) {
+    public AdminViewController(ApplicationSettingsService applicationSettingsService, AnalyticsService analyticsService, FileService fileService, SessionService sessionService, SystemInfoService systemInfoService, NotificationService notificationService) {
         this.applicationSettingsService = applicationSettingsService;
         this.analyticsService = analyticsService;
         this.fileService = fileService;
         this.sessionService = sessionService;
         this.systemInfoService = systemInfoService;
+        this.notificationService = notificationService;
     }
 
     @GetMapping("/dashboard")
@@ -117,5 +120,19 @@ public class AdminViewController {
         fileService.deleteFileFromDatabaseAndFileSystem(uuid);
 
         return "redirect:/admin/dashboard";
+    }
+
+    @PostMapping("/notification-test")
+    @ResponseBody
+    public ResponseEntity<String> sendNotificationTest(@RequestParam String target) {
+        return switch (target.toLowerCase()) {
+            case "discord" -> notificationService.sendTestDiscord()
+                    ? ResponseEntity.ok("Discord test notification sent.")
+                    : ResponseEntity.badRequest().body("Discord test failed. Check the webhook URL and network access.");
+            case "email" -> notificationService.sendTestEmail()
+                    ? ResponseEntity.ok("Email test notification sent.")
+                    : ResponseEntity.badRequest().body("Email test failed. Check SMTP host, credentials, sender, and recipients.");
+            default -> ResponseEntity.badRequest().body("Unknown notification target.");
+        };
     }
 }

@@ -78,6 +78,21 @@ public class NotificationService {
         }
     }
 
+    public boolean sendTestDiscord() {
+        String url = safeString(applicationSettingsService.getDiscordWebhookUrl());
+        if (url.isBlank()) {
+            return false;
+        }
+
+        try {
+            restTemplate.postForEntity(url, Map.of("content", "QuickDrop notification test (Discord)"), Void.class);
+            return true;
+        } catch (Exception e) {
+            logger.warn("Discord test notification failed: {}", e.getMessage());
+            return false;
+        }
+    }
+
     private void sendEmail(String event, String summary, String details) {
         try {
             JavaMailSenderImpl mailSender = resolveMailSender();
@@ -97,6 +112,30 @@ public class NotificationService {
             mailSender.send(message);
         } catch (Exception e) {
             logger.warn("Email notification failed: {}", e.getMessage());
+        }
+    }
+
+    public boolean sendTestEmail() {
+        try {
+            JavaMailSenderImpl mailSender = resolveMailSender();
+            String from = safeString(applicationSettingsService.getEmailFrom());
+            String[] recipients = parseRecipients();
+            if (mailSender == null || from.isBlank() || recipients.length == 0) {
+                return false;
+            }
+
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, false);
+            helper.setFrom(from);
+            helper.setTo(recipients);
+            helper.setSubject("QuickDrop test email");
+            helper.setText("This is a QuickDrop notification test email. If you see this, SMTP settings are working.");
+
+            mailSender.send(message);
+            return true;
+        } catch (Exception e) {
+            logger.warn("Email test notification failed: {}", e.getMessage());
+            return false;
         }
     }
 

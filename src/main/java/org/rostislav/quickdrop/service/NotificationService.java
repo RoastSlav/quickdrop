@@ -44,6 +44,7 @@ public class NotificationService {
             case UPLOAD -> "uploaded";
             case DOWNLOAD -> "downloaded";
             case RENEWAL -> "renewed";
+            case DELETION -> "deleted";
         };
 
         String summary = "File '" + fileEntity.name + "' (" + fileEntity.uuid + ") was " + event + ".";

@@ -80,7 +80,9 @@ public class ApplicationSettingsService {
         applicationSettingsEntity.setSmtpHost(settings.getSmtpHost());
         applicationSettingsEntity.setSmtpPort(settings.getSmtpPort());
         applicationSettingsEntity.setSmtpUsername(settings.getSmtpUsername());
-        applicationSettingsEntity.setSmtpPassword(settings.getSmtpPassword());
+        if (settings.getSmtpPassword() != null && !settings.getSmtpPassword().isBlank()) {
+            applicationSettingsEntity.setSmtpPassword(settings.getSmtpPassword());
+        }
         applicationSettingsEntity.setSmtpUseTls(settings.isSmtpUseTls());
 
         if (appPassword != null && !appPassword.isEmpty()) {

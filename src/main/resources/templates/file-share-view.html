@@ -1,44 +1,52 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <script src="/js/darkMode.js"></script>
     <meta charset="UTF-8">
     <title>Shared File View</title>
     <meta content="width=device-width, initial-scale=1" name="viewport">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/tailwind.css" rel="stylesheet">
+    <link href="/css/custom.css" rel="stylesheet">
+    <link href="/images/favicon.png" rel="icon" type="image/png">
+    <script src="/js/tailwindTheme.js"></script>
 </head>
-<body>
-<div class="container mt-5">
-    <h1 class="text-center mb-4">Shared File</h1>
-    <div class="row justify-content-center">
-        <div class="col-12 col-md-8 col-lg-6">
-            <div class="card shadow">
-                <div class="card-body">
-                    <h5 class="card-title text-center" th:text="${file.name}">File Name</h5>
-
-                    <p class="card-text text-center" th:text="${file.description}">Description</p>
-
-                    <div class="d-flex justify-content-between align-items-center border-top pt-3">
-                        <h5 class="card-title mb-0">Uploaded At:</h5>
-                        <p class="card-text mb-0" th:text="${#temporals.format(file.uploadDate, 'dd.MM.yyyy')}"></p>
-                    </div>
-
-                    <div class="d-flex justify-content-between align-items-center pt-3">
-                        <h5 class="card-title">File Size:</h5>
-                        <p class="card-text" th:text="${file.size}"></p>
-                    </div>
-
-                    <h5 class="card-title border-top pt-3"></h5>
-                    <a
-                            class="btn btn-success w-100"
-                            id="downloadButton"
-                            th:href="${downloadLink}">
-                        Download
-                    </a>
-                </div>
-            </div>
+<body class="bg-gray-50 text-gray-800 dark:bg-slate-900 dark:text-gray-100">
+<nav class="bg-gray-800 dark:bg-gray-900 text-gray-100">
+    <div class="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
+        <a class="flex items-center space-x-2" href="/">
+            <img alt="QuickDrop Logo" class="h-10" src="/images/favicon.png">
+            <span class="font-semibold tracking-tight">QuickDrop</span>
+        </a>
+        <div class="flex items-center space-x-4">
+            <button aria-label="Toggle theme" class="rounded-lg p-2 transition-colors hover:bg-sky-600 dark:hover:bg-sky-500 active:scale-95 focus:outline-none focus:ring-2 focus:ring-sky-500" id="themeToggle" type="button">🌙</button>
         </div>
     </div>
-</div>
+</nav>
+
+<main class="max-w-5xl mx-auto px-4 py-10">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-6 md:p-8 space-y-6">
+        <header class="text-center space-y-2">
+            <p class="text-sm uppercase tracking-wide text-slate-500 dark:text-slate-400">Shared File</p>
+            <h1 class="text-3xl font-semibold tracking-tight" th:text="${file.name}">File Name</h1>
+            <p class="text-gray-700 dark:text-gray-300" th:if="${file.description}" th:text="${file.description}">Description</p>
+        </header>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="flex items-center justify-between rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 px-4 py-3">
+                <span class="text-sm font-semibold text-slate-600 dark:text-slate-300">Uploaded</span>
+                <span class="text-base font-medium" th:text="${#temporals.format(file.uploadDate, 'dd.MM.yyyy')}"></span>
+            </div>
+            <div class="flex items-center justify-between rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 px-4 py-3">
+                <span class="text-sm font-semibold text-slate-600 dark:text-slate-300">File Size</span>
+                <span class="text-base font-medium" th:text="${file.size}"></span>
+            </div>
+        </div>
+
+        <div class="pt-2">
+            <a class="inline-flex w-full justify-center items-center rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-semibold px-4 py-3 transition-colors active:scale-95" id="downloadButton" th:href="${downloadLink}">
+                Download
+            </a>
+        </div>
+    </div>
+</main>
 </body>
 </html>

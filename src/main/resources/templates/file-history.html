@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <script src="/js/darkMode.js"></script>
     <meta charset="UTF-8">
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <title>Download History</title>
@@ -21,7 +20,7 @@
         </a>
         <div class="flex items-center space-x-4">
             <a class="hover:text-white" href="/admin/dashboard">Dashboard</a>
-            <button class="btn btn-sm ms-2" id="themeToggle" type="button">🌙</button>
+            <button aria-label="Toggle theme" class="rounded-lg p-2 transition-colors hover:bg-sky-600 dark:hover:bg-sky-500 active:scale-95 focus:outline-none focus:ring-2 focus:ring-sky-500" id="themeToggle" type="button">🌙</button>
         </div>
     </div>
 </nav>
@@ -63,7 +62,7 @@
         <!-- scroll container -->
         <div class="-mx-6 overflow-x-auto">
             <div class="inline-block min-w-full align-middle px-6">
-                <table class="min-w-max w-full divide-y divide-slate-200 dark:divide-slate-700">
+                <table class="min-w-max w-full divide-y divide-slate-200 dark:divide-slate-700 light-table-zebra">
                     <thead class="bg-gray-100 dark:bg-gray-800">
                     <tr>
                         <th class="px-6 py-4 text-left text-sm font-semibold whitespace-nowrap">Date</th>
@@ -74,7 +73,7 @@
                     </thead>
 
                     <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
-                    <tr class="bg-gray-50 dark:bg-slate-800" th:each="log : ${actionLogs}">
+                    <tr class="dark:bg-slate-800" th:each="log,iter : ${actionLogs}" th:classappend="${iter.index % 2 == 0} ? ' bg-gray-50' : ' bg-white'">
                         <td class="px-6 py-4 whitespace-nowrap"
                             th:text="${#temporals.format(log.actionDate, 'dd.MM.yyyy HH:mm:ss')}">01.12.2024 20:12:22
                         </td>

@@ -4,26 +4,27 @@
     <meta charset="UTF-8">
     <meta name="_csrf" th:content="${_csrf.token}"/>
     <title>File View</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" href="/css/tailwind.css">
-    <link rel="stylesheet" href="/css/custom.css">
-    <link rel="icon" type="image/png" href="/images/favicon.png">
+    <meta content="width=device-width, initial-scale=1" name="viewport">
+    <link href="/css/tailwind.css" rel="stylesheet">
+    <link href="/css/custom.css" rel="stylesheet">
+    <link href="/images/favicon.png" rel="icon" type="image/png">
     <script src="/js/tailwindTheme.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/qrcode@1.4.4/build/qrcode.min.js"></script>
 </head>
 <body class="bg-gray-50 text-gray-800 dark:bg-slate-900 dark:text-gray-100">
 <nav class="bg-gray-800 dark:bg-gray-900 text-gray-100">
     <div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-        <a href="/" class="flex items-center space-x-2">
-            <img src="/images/favicon.png" alt="Website Logo" class="h-10">
+        <a class="flex items-center space-x-2" href="/">
+            <img alt="Website Logo" class="h-10" src="/images/favicon.png">
             <span class="font-semibold tracking-tight">QuickDrop</span>
         </a>
         <div class="flex items-center space-x-4">
-            <a th:if="${isFileListPageEnabled}" href="/file/list" class="hover:text-white">View Files</a>
-            <a href="/file/upload" class="hover:text-white">Upload File</a>
+            <a class="hover:text-white" href="/file/list" th:if="${isFileListPageEnabled}">View Files</a>
+            <a class="hover:text-white" href="/file/upload">Upload File</a>
             <a class="hover:text-white" href="/admin/dashboard" onclick="requestAdminPassword()"
                th:if="${isAdminDashboardButtonEnabled}">Admin Dashboard</a>
-            <button class="rounded-lg p-2 transition-colors hover:bg-sky-600 dark:hover:bg-sky-500 active:scale-95 focus:outline-none focus:ring-2 focus:ring-sky-500" id="themeToggle"
+            <button class="rounded-lg p-2 transition-colors hover:bg-sky-600 dark:hover:bg-sky-500 active:scale-95 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                    id="themeToggle"
                     type="button">
                 🌙
             </button>
@@ -34,8 +35,8 @@
     <header class="text-center mb-8 space-y-1">
         <h1 class="text-3xl md:text-4xl font-semibold tracking-tight">File View</h1>
     </header>
-    <span id="fileUuid" th:text="${file.uuid}" hidden></span>
-    <span id="downloadLink" th:text="${downloadLink}" hidden></span>
+    <span hidden id="fileUuid" th:text="${file.uuid}"></span>
+    <span hidden id="downloadLink" th:text="${downloadLink}"></span>
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 items-start">
         <section class="sm:col-span-2">
             <div class="bg-white dark:bg-slate-800 p-6 md:p-8 rounded-2xl shadow-lg flex flex-col gap-4 w-full"
@@ -56,7 +57,8 @@
                         <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden">
                         <input name="keepIndefinitely" type="hidden" value="false">
                         <label class="inline-flex items-center gap-2">
-                            <input class="h-4 w-4 rounded border-gray-400 dark:border-gray-600 accent-sky-500 dark:accent-sky-400 focus:ring-sky-500" id="keepIndefinitely" name="keepIndefinitely"
+                            <input class="h-4 w-4 rounded border-gray-400 dark:border-gray-600 accent-sky-500 dark:accent-sky-400 focus:ring-sky-500"
+                                   id="keepIndefinitely" name="keepIndefinitely"
                                    onchange="updateCheckboxState(event,this)" th:checked="${file.keepIndefinitely}"
                                    th:disabled="${file.passwordHash == null}" type="checkbox"
                                    value="true">
@@ -69,7 +71,9 @@
                         <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden">
                         <input name="hidden" type="hidden" value="false">
                         <label class="inline-flex items-center gap-2">
-                            <input class="h-4 w-4 rounded border-gray-400 dark:border-gray-600 accent-sky-500 dark:accent-sky-400 focus:ring-sky-500" id="hidden" name="hidden" onchange="updateCheckboxState(event,this)" th:checked="${file.hidden}"
+                            <input class="h-4 w-4 rounded border-gray-400 dark:border-gray-600 accent-sky-500 dark:accent-sky-400 focus:ring-sky-500"
+                                   id="hidden" name="hidden" onchange="updateCheckboxState(event,this)"
+                                   th:checked="${file.hidden}"
                                    type="checkbox"
                                    value="true">
                         </label>
@@ -84,7 +88,8 @@
                     being prepared for download. Please wait...
                 </div>
                 <div class="mt-4 flex flex-wrap justify-center gap-4">
-                    <a class="rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium px-4 py-2 transition-colors active:scale-95" id="downloadButton"
+                    <a class="rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium px-4 py-2 transition-colors active:scale-95"
+                       id="downloadButton"
                        th:href="@{/file/download/{uuid}(uuid=${file.uuid})}"
                        th:onclick="${file.passwordHash != null} ? 'showPreparingMessage()' : ''">Download</a>
                     <form method="post" onsubmit="return confirmDelete();"
@@ -121,9 +126,11 @@
                 </div>
 
                 <div class="flex flex-col sm:flex-row gap-2">
-                    <input class="w-full min-w-0 flex-1 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2" id="shareLink" readonly
+                    <input class="w-full min-w-0 flex-1 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2"
+                           id="shareLink" readonly
                            type="text">
-                    <button class="w-full sm:w-auto shrink-0 rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium px-4 py-2" onclick="copyShareLink()"
+                    <button class="w-full sm:w-auto shrink-0 rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium px-4 py-2"
+                            onclick="copyShareLink()"
                             type="button">
                         Copy
                     </button>
@@ -136,7 +143,8 @@
                 <div class="space-y-4">
                     <div class="flex items-center gap-2"
                          th:if="${file.passwordHash != null || isAppPasswordSet == true}">
-                        <input class="h-4 w-4 rounded border-gray-400 dark:border-gray-600 accent-sky-500 dark:accent-sky-400 focus:ring-sky-500" id="unrestrictedLink" onchange="toggleLinkType()"
+                        <input class="h-4 w-4 rounded border-gray-400 dark:border-gray-600 accent-sky-500 dark:accent-sky-400 focus:ring-sky-500"
+                               id="unrestrictedLink" onchange="toggleLinkType()"
                                type="checkbox">
                         <label class="text-sm" for="unrestrictedLink">Generate an unrestricted link</label>
                     </div>
@@ -144,12 +152,14 @@
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 hidden" id="linkOptions">
                         <div>
                             <label class="block text-sm" for="daysValid">Days valid:</label>
-                            <input class="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2" id="daysValid" min="1" type="number"
+                            <input class="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2"
+                                   id="daysValid" min="1" type="number"
                                    value="30">
                         </div>
                         <div>
                             <label class="block text-sm" for="allowedNumberOfDownloadsCount">Allowed downloads:</label>
-                            <input class="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2" id="allowedNumberOfDownloadsCount" min="1" type="number"
+                            <input class="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2"
+                                   id="allowedNumberOfDownloadsCount" min="1" type="number"
                                    value="1">
                         </div>
                     </div>
@@ -158,7 +168,8 @@
                          th:if="${file.passwordHash != null || isAppPasswordSet == true}">
                         <div class="hidden animate-spin rounded-full h-5 w-5 border-2 border-sky-500 border-t-transparent"
                              id="spinner"></div>
-                        <button class="hidden rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium px-4 py-2" disabled id="generateLinkButton"
+                        <button class="hidden rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium px-4 py-2"
+                                disabled id="generateLinkButton"
                                 onclick="createShareLink()"
                                 type="button">
                             Generate

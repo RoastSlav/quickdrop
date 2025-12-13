@@ -195,8 +195,34 @@ function renderFolderTree() {
     });
 
     const lines = [];
-    printTree(root, '', true, lines);
-    treeEl.textContent = lines.join('\n');
+    printTree(root, '', true, lines, true);
+
+    treeEl.innerHTML = '';
+    const frag = document.createDocumentFragment();
+
+    lines.forEach((segments) => {
+        const lineEl = document.createElement('div');
+        lineEl.style.whiteSpace = 'pre';
+
+        segments.forEach((segment) => {
+            const span = document.createElement('span');
+            if (segment.type === 'root') {
+                span.className = 'folder-tree-root';
+            } else if (segment.type === 'folder') {
+                span.className = 'folder-tree-folder';
+            } else if (segment.type === 'file') {
+                span.className = 'folder-tree-file';
+            } else if (segment.type === 'connector') {
+                span.className = 'folder-tree-connector';
+            }
+            span.textContent = segment.text;
+            lineEl.appendChild(span);
+        });
+
+        frag.appendChild(lineEl);
+    });
+
+    treeEl.appendChild(frag);
 }
 
 function createTreeRoot(name) {
@@ -232,21 +258,27 @@ function addPathToTree(root, path, folderName) {
     }
 }
 
-function printTree(node, prefix, isLast, lines) {
+function printTree(node, prefix, isLast, lines, isRoot = false) {
     const connector = prefix === '' ? '' : (isLast ? '└─ ' : '├─ ');
-    const line = `${prefix}${connector}${node.name}`;
-    lines.push(line);
+    const lineSegments = [
+        {text: `${prefix}${connector}`, type: 'connector'},
+        {text: node.name, type: isRoot ? 'root' : 'folder'},
+    ];
+    lines.push(lineSegments);
 
-    const nextPrefix = prefix === '' ? '' : (isLast ? `${prefix}   ` : `${prefix}│  `);
+    const nextPrefix = prefix === '' ? '   ' : (isLast ? `${prefix}   ` : `${prefix}│  `);
     const children = [...node.children.sort((a, b) => a.name.localeCompare(b.name)), ...node.files.sort()];
 
     children.forEach((child, index) => {
         const lastChild = index === children.length - 1;
         if (typeof child === 'string') {
-            const fileLine = `${nextPrefix}${lastChild ? '└─ ' : '├─ '}${child}`;
+            const fileLine = [
+                {text: `${nextPrefix}${lastChild ? '└─ ' : '├─ '}`, type: 'connector'},
+                {text: child, type: 'file'},
+            ];
             lines.push(fileLine);
         } else {
-            printTree(child, nextPrefix, lastChild, lines);
+            printTree(child, nextPrefix, lastChild, lines, false);
         }
     });
 }

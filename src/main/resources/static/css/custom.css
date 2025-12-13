@@ -38,6 +38,18 @@ html:not(.dark) .dark\:text-slate-400{
 	color:#0f172a!important;
 }
 
+/* Folder tree palette */
+.folder-tree-box{background-color:#e2e8f0!important;border:1px solid #cbd5e1!important;color:#0f172a!important;}
+.dark .folder-tree-box{background-color:#0f172a!important;border-color:#1e293b!important;color:#e2e8f0!important;}
+.folder-tree-root{color:#0369a1;font-weight:600;}
+.dark .folder-tree-root{color:#38bdf8;}
+.folder-tree-folder{color:#92400e;}
+.dark .folder-tree-folder{color:#fbbf24;}
+.folder-tree-file{color:#065f46;}
+.dark .folder-tree-file{color:#4ade80;}
+.folder-tree-connector{color:#475569;}
+.dark .folder-tree-connector{color:#cbd5e1;}
+
 /* Reset borders/placeholders that are dark-only. */
 html:not(.dark) .dark\:border-gray-600,
 html:not(.dark) .dark\:border-slate-600,

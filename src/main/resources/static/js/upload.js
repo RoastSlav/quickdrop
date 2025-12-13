@@ -24,8 +24,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const defaultText = dropZoneText ? dropZoneText.dataset.defaultText || dropZoneText.textContent : "";
     const folderInput = document.getElementById("folderInput");
     const folderButton = document.getElementById("folderSelectButton");
+    const fileButton = document.getElementById("fileSelectButton");
     if (dropZone) {
-        dropZone.addEventListener("click", () => fileInput.click());
         ["dragenter", "dragover"].forEach((eventName) => {
             dropZone.addEventListener(eventName, (e) => {
                 e.preventDefault();
@@ -38,25 +38,34 @@ document.addEventListener("DOMContentLoaded", () => {
                 dropZone.classList.remove("ring-2", "ring-sky-500");
             });
         });
-        dropZone.addEventListener("drop", (e) => {
+        dropZone.addEventListener("drop", async (e) => {
             const items = e.dataTransfer.items;
             const files = e.dataTransfer.files;
-            // We intentionally do not support folder drops; instruct the user to use the folder button
+
             if (items && items.length > 0) {
-                const firstItem = items[0];
-                if (firstItem.webkitGetAsEntry && firstItem.webkitGetAsEntry().isDirectory) {
-                    showMessage("info", "Use the ‘Select a Folder’ button to upload a folder.");
+                const collected = await getFilesFromItems(items);
+                if (!collected || collected.length === 0) {
                     resetFileSelection(fileInput, fileNameEl, dropZoneText, defaultText);
                     return;
                 }
+                const hasRelative = collected.some((f) => f.webkitRelativePath && f.webkitRelativePath.includes("/"));
+                if (hasRelative || collected.length > 1) {
+                    await handleFolderSelection(collected);
+                } else {
+                    const dt = new DataTransfer();
+                    dt.items.add(collected[0]);
+                    fileInput.files = dt.files;
+                    handleSingleFile(fileInput.files);
+                }
+                return;
             }
 
-            if (fileInput) {
+            if (files && files.length > 0) {
                 const dt = new DataTransfer();
                 for (const f of files) dt.items.add(f);
                 fileInput.files = dt.files;
+                handleSingleFile(fileInput.files);
             }
-            handleSingleFile(fileInput.files);
         });
     }
 
@@ -65,6 +74,10 @@ document.addEventListener("DOMContentLoaded", () => {
             handleSingleFile(fileInput.files);
         });
         handleSingleFile(fileInput.files);
+    }
+
+    if (fileButton && fileInput) {
+        fileButton.addEventListener("click", () => fileInput.click());
     }
 
     if (folderButton && folderInput) {
@@ -231,6 +244,61 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
         await handleFolderSelection(fileListLike);
+    }
+
+    async function getFilesFromItems(items) {
+        const entries = [];
+        for (const item of items) {
+            if (item.kind === "file" && item.webkitGetAsEntry) {
+                const entry = item.webkitGetAsEntry();
+                if (entry) entries.push(entry);
+            } else if (item.kind === "file") {
+                const file = item.getAsFile();
+                if (file) entries.push(file);
+            }
+        }
+
+        const files = [];
+
+        async function walkEntry(entry, pathPrefix = "") {
+            if (entry.isFile) {
+                return new Promise((resolve, reject) => {
+                    entry.file((file) => {
+                        const rel = pathPrefix ? `${pathPrefix}/${file.name}` : file.name;
+                        file.webkitRelativePath = rel;
+                        resolve([file]);
+                    }, reject);
+                });
+            }
+            if (entry.isDirectory) {
+                const reader = entry.createReader();
+                const allEntries = [];
+                async function readAll() {
+                    return new Promise((resolve) => reader.readEntries(resolve));
+                }
+                let batch = await readAll();
+                while (batch.length) {
+                    for (const child of batch) {
+                        const childFiles = await walkEntry(child, pathPrefix ? `${pathPrefix}/${entry.name}` : entry.name);
+                        allEntries.push(...childFiles);
+                    }
+                    batch = await readAll();
+                }
+                return allEntries;
+            }
+            return [];
+        }
+
+        for (const entry of entries) {
+            if (entry.isFile || entry.isDirectory) {
+                const walked = await walkEntry(entry);
+                files.push(...walked);
+            } else if (entry instanceof File) {
+                files.push(entry);
+            }
+        }
+
+        return files;
     }
 });
 

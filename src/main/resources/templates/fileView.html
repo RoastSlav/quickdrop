@@ -86,9 +86,8 @@
                 <div class="border-t pt-4" th:if="${file.folderUpload}">
                     <div class="flex items-center justify-between mb-2">
                         <div class="text-sm font-semibold">Folder contents</div>
-                        <span class="text-xs px-2 py-1 rounded bg-slate-100 dark:bg-slate-700 text-gray-700 dark:text-gray-200" th:text="${file.folderName}"></span>
                     </div>
-                    <div id="folderTree" class="text-sm font-mono whitespace-pre-wrap bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 rounded-lg p-3 max-h-64 overflow-auto"
+                    <div id="folderTree" class="text-sm font-mono whitespace-pre-wrap bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-100 rounded-lg p-3 max-h-64 overflow-auto folder-tree-box"
                          th:attr="data-manifest=${file.folderManifest},data-folder-name=${file.folderName}"></div>
                     <script id="folderManifestData" type="application/json" th:utext="${file.folderManifest}"></script>
                 </div>

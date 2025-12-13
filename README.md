@@ -108,7 +108,7 @@ mvn clean package
 3. Run the application:
 
 ```
-java -jar target/quickdrop-0.0.1-SNAPSHOT.jar
+java -jar target/quickdrop.jar
 ```
 
 ## Updates

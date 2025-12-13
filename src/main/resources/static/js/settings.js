@@ -24,16 +24,13 @@ async function sendNotificationTest(target, buttonId, statusId) {
     button.disabled = true;
 
     try {
-        const csrfMatch = document.cookie.match(/XSRF-TOKEN=([^;]+)/);
-        const csrf = csrfMatch ? decodeURIComponent(csrfMatch[1]) : null;
-        const url = csrf
-            ? `/admin/notification-test?target=${target}&_csrf=${encodeURIComponent(csrf)}`
-            : `/admin/notification-test?target=${target}`;
+        const csrfInput = document.querySelector('input[name="_csrf"]');
+        const csrf = csrfInput ? csrfInput.value : null;
 
-        const response = await fetch(url, {
+        const response = await fetch(`/admin/notification-test?target=${target}`, {
             method: 'POST',
             credentials: 'same-origin',
-            headers: csrf ? {'X-XSRF-TOKEN': csrf} : {}
+            headers: csrf ? {'X-XSRF-TOKEN': csrf, 'X-CSRF-TOKEN': csrf} : {}
         });
         const text = await response.text();
         status.textContent = text;

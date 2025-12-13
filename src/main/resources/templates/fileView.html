@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="_csrf" th:content="${_csrf.token}" />
+    <meta name="_csrf" th:content="${_csrf.token}"/>
     <title>File View</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="/css/tailwind.css">
@@ -21,8 +21,12 @@
         <div class="flex items-center space-x-4">
             <a th:if="${isFileListPageEnabled}" href="/file/list" class="hover:text-white">View Files</a>
             <a href="/file/upload" class="hover:text-white">Upload File</a>
-            <a th:if="${isAdminDashboardButtonEnabled}" href="/admin/dashboard" onclick="requestAdminPassword()" class="hover:text-white">Admin Dashboard</a>
-            <button id="themeToggle" type="button" class="rounded-lg p-2 transition-colors hover:bg-sky-600 dark:hover:bg-sky-500 active:scale-95 focus:outline-none focus:ring-2 focus:ring-sky-500">🌙</button>
+            <a class="hover:text-white" href="/admin/dashboard" onclick="requestAdminPassword()"
+               th:if="${isAdminDashboardButtonEnabled}">Admin Dashboard</a>
+            <button class="rounded-lg p-2 transition-colors hover:bg-sky-600 dark:hover:bg-sky-500 active:scale-95 focus:outline-none focus:ring-2 focus:ring-sky-500" id="themeToggle"
+                    type="button">
+                🌙
+            </button>
         </div>
     </div>
 </nav>
@@ -32,23 +36,30 @@
     </header>
     <span id="fileUuid" th:text="${file.uuid}" hidden></span>
     <span id="downloadLink" th:text="${downloadLink}" hidden></span>
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div class="md:col-span-1">
-            <div id="fileInfoCard" class="bg-white dark:bg-slate-800 p-6 md:p-8 rounded-2xl shadow-lg flex flex-col gap-4 w-full max-w-xs">
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 items-start">
+        <section class="sm:col-span-2">
+            <div class="bg-white dark:bg-slate-800 p-6 md:p-8 rounded-2xl shadow-lg flex flex-col gap-4 w-full"
+                 id="fileInfoCard">
                 <h2 class="text-center text-xl font-semibold tracking-tight" th:text="${file.name}">File Name</h2>
-                <p th:if="${!#strings.isEmpty(file.description)}" th:text="${file.description}" class="text-center text-gray-700 dark:text-gray-300"></p>
+                <p class="text-center text-gray-700 dark:text-gray-300" th:if="${!#strings.isEmpty(file.description)}"
+                   th:text="${file.description}"></p>
                 <div class="flex justify-between border-t pt-4">
-                    <span class="font-semibold" th:text="${file.keepIndefinitely} ? 'Uploaded at:' : 'Uploaded/Renewed at:'"></span>
+                <span class="font-semibold"
+                      th:text="${file.keepIndefinitely} ? 'Uploaded at:' : 'Uploaded/Renewed at:'"></span>
                     <span th:text="${#temporals.format(file.uploadDate, 'dd.MM.yyyy')}"></span>
                 </div>
-                <small th:if="${file.keepIndefinitely == false}" class="text-gray-600 dark:text-gray-400">Files are kept only for <span th:text="${maxFileLifeTime}">30</span> days after this date.</small>
+                <small class="text-gray-600 dark:text-gray-400" th:if="${file.keepIndefinitely == false}">Files are kept
+                    only for <span th:text="${maxFileLifeTime}">30</span> days after this date.</small>
                 <div class="flex justify-between items-center pt-4">
                     <span class="font-semibold">Keep indefinitely:</span>
                     <form method="post" th:action="@{/file/keep-indefinitely/{uuid}(uuid=${file.uuid})}">
                         <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden">
                         <input name="keepIndefinitely" type="hidden" value="false">
                         <label class="inline-flex items-center gap-2">
-                            <input id="keepIndefinitely" name="keepIndefinitely" type="checkbox" th:checked="${file.keepIndefinitely}" th:disabled="${file.passwordHash == null}" value="true" onchange="updateCheckboxState(event,this)" class="h-4 w-4 rounded border-gray-400 dark:border-gray-600 accent-sky-500 dark:accent-sky-400 focus:ring-sky-500">
+                            <input class="h-4 w-4 rounded border-gray-400 dark:border-gray-600 accent-sky-500 dark:accent-sky-400 focus:ring-sky-500" id="keepIndefinitely" name="keepIndefinitely"
+                                   onchange="updateCheckboxState(event,this)" th:checked="${file.keepIndefinitely}"
+                                   th:disabled="${file.passwordHash == null}" type="checkbox"
+                                   value="true">
                         </label>
                     </form>
                 </div>
@@ -58,7 +69,9 @@
                         <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden">
                         <input name="hidden" type="hidden" value="false">
                         <label class="inline-flex items-center gap-2">
-                            <input id="hidden" name="hidden" type="checkbox" th:checked="${file.hidden}" value="true" onchange="updateCheckboxState(event,this)" class="h-4 w-4 rounded border-gray-400 dark:border-gray-600 accent-sky-500 dark:accent-sky-400 focus:ring-sky-500">
+                            <input class="h-4 w-4 rounded border-gray-400 dark:border-gray-600 accent-sky-500 dark:accent-sky-400 focus:ring-sky-500" id="hidden" name="hidden" onchange="updateCheckboxState(event,this)" th:checked="${file.hidden}"
+                                   type="checkbox"
+                                   value="true">
                         </label>
                     </form>
                 </div>
@@ -66,61 +79,96 @@
                     <span class="font-semibold">File Size:</span>
                     <span th:text="${fileSize}"></span>
                 </div>
-                <div id="preparingMessage" class="hidden bg-sky-50 dark:bg-sky-900 text-sky-800 dark:text-sky-300 rounded-lg p-2">Your file is being prepared for download. Please wait...</div>
+                <div class="hidden bg-sky-50 dark:bg-sky-900 text-sky-800 dark:text-sky-300 rounded-lg p-2"
+                     id="preparingMessage">Your file is
+                    being prepared for download. Please wait...
+                </div>
                 <div class="mt-4 flex flex-wrap justify-center gap-4">
-                    <a id="downloadButton" th:href="@{/file/download/{uuid}(uuid=${file.uuid})}" th:onclick="${file.passwordHash != null} ? 'showPreparingMessage()' : ''" class="rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium px-4 py-2 transition-colors active:scale-95">Download</a>
-                    <form method="post" th:action="@{/file/delete/{uuid}(uuid=${file.uuid})}" onsubmit="return confirmDelete();" th:if="${file.passwordHash != null}">
+                    <a class="rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium px-4 py-2 transition-colors active:scale-95" id="downloadButton"
+                       th:href="@{/file/download/{uuid}(uuid=${file.uuid})}"
+                       th:onclick="${file.passwordHash != null} ? 'showPreparingMessage()' : ''">Download</a>
+                    <form method="post" onsubmit="return confirmDelete();"
+                          th:action="@{/file/delete/{uuid}(uuid=${file.uuid})}" th:if="${file.passwordHash != null}">
                         <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden">
-                        <button type="submit" class="rounded-lg bg-red-600 hover:bg-red-700 text-white font-medium px-4 py-2 transition-colors active:scale-95">Delete File</button>
+                        <button class="rounded-lg bg-red-600 hover:bg-red-700 text-white font-medium px-4 py-2 transition-colors active:scale-95"
+                                type="submit">
+                            Delete File
+                        </button>
                     </form>
-                    <form method="post" th:action="@{/file/extend/{uuid}(uuid=${file.uuid})}" th:if="${file.keepIndefinitely == false}">
+                    <form method="post" th:action="@{/file/extend/{uuid}(uuid=${file.uuid})}"
+                          th:if="${file.keepIndefinitely == false}">
                         <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden">
-                        <button type="submit" class="rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium px-4 py-2 transition-colors active:scale-95">Renew File Lifetime</button>
+                        <button class="rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium px-4 py-2 transition-colors active:scale-95"
+                                type="submit">
+                            Renew File Lifetime
+                        </button>
                     </form>
                 </div>
             </div>
-        </div>
+        </section>
+        <aside class="sm:col-span-1">
+            <div class="bg-white dark:bg-slate-800 p-6 md:p-8 rounded-2xl shadow-lg space-y-4 w-full"
+                 id="sharePanel">
+                <h2 class="text-xl font-semibold tracking-tight">Share</h2>
+
+                <div class="text-sm text-gray-600 dark:text-gray-400"
+                     th:if="${file.passwordHash != null || isAppPasswordSet}">
+                    <p>
+                        By default, this link requires a password to access the file if the file is password-protected
+                        or if the app password is enabled.
+                        <br>You can generate an unrestricted link valid for a specific number of days and downloads.
+                    </p>
+                </div>
+
+                <div class="flex flex-col sm:flex-row gap-2">
+                    <input class="w-full min-w-0 flex-1 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2" id="shareLink" readonly
+                           type="text">
+                    <button class="w-full sm:w-auto shrink-0 rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium px-4 py-2" onclick="copyShareLink()"
+                            type="button">
+                        Copy
+                    </button>
+                </div>
+
+                <div class="text-center">
+                    <canvas class="mx-auto" height="150" id="shareQRCode" width="150"></canvas>
+                </div>
+
+                <div class="space-y-4">
+                    <div class="flex items-center gap-2"
+                         th:if="${file.passwordHash != null || isAppPasswordSet == true}">
+                        <input class="h-4 w-4 rounded border-gray-400 dark:border-gray-600 accent-sky-500 dark:accent-sky-400 focus:ring-sky-500" id="unrestrictedLink" onchange="toggleLinkType()"
+                               type="checkbox">
+                        <label class="text-sm" for="unrestrictedLink">Generate an unrestricted link</label>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 hidden" id="linkOptions">
+                        <div>
+                            <label class="block text-sm" for="daysValid">Days valid:</label>
+                            <input class="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2" id="daysValid" min="1" type="number"
+                                   value="30">
+                        </div>
+                        <div>
+                            <label class="block text-sm" for="allowedNumberOfDownloadsCount">Allowed downloads:</label>
+                            <input class="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2" id="allowedNumberOfDownloadsCount" min="1" type="number"
+                                   value="1">
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end items-center gap-2"
+                         th:if="${file.passwordHash != null || isAppPasswordSet == true}">
+                        <div class="hidden animate-spin rounded-full h-5 w-5 border-2 border-sky-500 border-t-transparent"
+                             id="spinner"></div>
+                        <button class="hidden rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium px-4 py-2" disabled id="generateLinkButton"
+                                onclick="createShareLink()"
+                                type="button">
+                            Generate
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </aside>
     </div>
 </main>
-
-<!-- Share Modal -->
-<div id="shareModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden">
-    <div id="shareModalContent" class="absolute bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-6 w-full max-w-md space-y-4">
-        <div class="flex justify-between items-start">
-            <h2 class="text-xl font-semibold tracking-tight" id="shareModalLabel">Share File</h2>
-        </div>
-        <div th:if="${file.passwordHash != null || isAppPasswordSet}" class="text-sm text-gray-600 dark:text-gray-400">
-            <p>By default, this link requires a password to access the file if the file is password-protected or if the app password is enabled.<br>You can generate an unrestricted link valid for a specific number of days and downloads.</p>
-        </div>
-        <div class="flex gap-2">
-            <input id="shareLink" type="text" placeholder="Generated link will appear here" readonly value="" class="flex-grow rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2">
-            <button type="button" onclick="copyShareLink()" class="rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium whitespace-nowrap px-10 py-2">Copy Link</button>
-        </div>
-        <div class="text-center">
-            <canvas id="shareQRCode" class="mx-auto" style="width:150px;height:150px;"></canvas>
-        </div>
-        <div class="space-y-4">
-            <div th:if="${file.passwordHash != null || isAppPasswordSet == true}" class="flex items-center gap-2">
-                <input id="unrestrictedLink" type="checkbox" onchange="toggleLinkType()" class="h-4 w-4 rounded border-gray-400 dark:border-gray-600 accent-sky-500 dark:accent-sky-400 focus:ring-sky-500">
-                <label for="unrestrictedLink" class="text-sm">Generate an unrestricted link</label>
-            </div>
-            <div id="linkOptions" class="grid grid-cols-2 gap-4 hidden">
-                <div class="col-span-1">
-                    <label for="daysValid" class="block text-sm">Days the link will be valid:</label>
-                    <input id="daysValid" type="number" min="1" value="30" class="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2">
-                </div>
-                <div class="col-span-1">
-                    <label for="allowedNumberOfDownloadsCount" class="block text-sm">Number of allowed downloads:</label>
-                    <input id="allowedNumberOfDownloadsCount" type="number" min="1" value="1" class="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2">
-                </div>
-            </div>
-        </div>
-        <div th:if="${file.passwordHash != null || isAppPasswordSet == true}" class="flex justify-end items-center gap-2">
-            <div id="spinner" class="hidden animate-spin rounded-full h-5 w-5 border-2 border-sky-500 border-t-transparent"></div>
-            <button id="generateLinkButton" onclick="createShareLink()" type="button" class="hidden rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium px-4 py-2" disabled>Generate</button>
-        </div>
-    </div>
-</div>
 
 <script src="/js/fileView.js"></script>
 </body>

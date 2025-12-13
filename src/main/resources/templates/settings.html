@@ -147,6 +147,21 @@
                     <div class="flex items-start gap-3">
                         <input class="mt-1 h-4 w-4 rounded border-gray-400 dark:border-gray-600 accent-sky-500 dark:accent-sky-400 focus:ring-sky-500"
                                id="discordWebhookEnabled" th:field="*{discordWebhookEnabled}" type="checkbox">
+                        <div class="flex items-center gap-3">
+                            <input class="h-4 w-4 rounded border-gray-400 dark:border-gray-600 accent-sky-500 dark:accent-sky-400 focus:ring-sky-500" id="notificationBatchEnabled"
+                                   th:field="*{notificationBatchEnabled}" type="checkbox">
+                            <div>
+                                <div class="text-sm font-medium">Batch notifications</div>
+                                <p class="text-xs text-gray-600 dark:text-gray-400">Pool events and send every N minutes.</p>
+                            </div>
+                        </div>
+                        <div id="notificationBatchConfig" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-sm font-medium mb-1" for="notificationBatchMinutes">Batch interval (minutes)</label>
+                                <input class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                                       id="notificationBatchMinutes" min="1" th:field="*{notificationBatchMinutes}" type="number">
+                            </div>
+                        </div>
                         <div>
                             <div class="text-sm font-medium">Discord Webhook</div>
                             <p class="text-xs text-gray-600 dark:text-gray-400">Post file activity to a Discord channel.</p>

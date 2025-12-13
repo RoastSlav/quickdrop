@@ -28,6 +28,8 @@ public class ApplicationSettingsViewModel {
     private String smtpUsername;
     private String smtpPassword;
     private boolean smtpUseTls;
+    private boolean notificationBatchEnabled;
+    private Integer notificationBatchMinutes;
 
     public ApplicationSettingsViewModel() {
     }
@@ -56,6 +58,8 @@ public class ApplicationSettingsViewModel {
         this.smtpUsername = settings.getSmtpUsername();
         this.smtpPassword = settings.getSmtpPassword();
         this.smtpUseTls = settings.isSmtpUseTls();
+        this.notificationBatchEnabled = settings.isNotificationBatchEnabled();
+        this.notificationBatchMinutes = settings.getNotificationBatchMinutes();
     }
 
     public Long getId() {
@@ -248,5 +252,21 @@ public class ApplicationSettingsViewModel {
 
     public void setSmtpUseTls(boolean smtpUseTls) {
         this.smtpUseTls = smtpUseTls;
+    }
+
+    public boolean isNotificationBatchEnabled() {
+        return notificationBatchEnabled;
+    }
+
+    public void setNotificationBatchEnabled(boolean notificationBatchEnabled) {
+        this.notificationBatchEnabled = notificationBatchEnabled;
+    }
+
+    public Integer getNotificationBatchMinutes() {
+        return notificationBatchMinutes;
+    }
+
+    public void setNotificationBatchMinutes(Integer notificationBatchMinutes) {
+        this.notificationBatchMinutes = notificationBatchMinutes;
     }
 }

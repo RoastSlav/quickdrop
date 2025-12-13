@@ -35,6 +35,8 @@ public class ApplicationSettingsEntity {
     private String smtpUsername;
     private String smtpPassword;
     private boolean smtpUseTls;
+    private boolean notificationBatchEnabled;
+    private Integer notificationBatchMinutes;
 
     public ApplicationSettingsEntity() {
     }
@@ -62,6 +64,8 @@ public class ApplicationSettingsEntity {
         this.smtpUsername = settings.getSmtpUsername();
         this.smtpPassword = settings.getSmtpPassword();
         this.smtpUseTls = settings.isSmtpUseTls();
+        this.notificationBatchEnabled = settings.isNotificationBatchEnabled();
+        this.notificationBatchMinutes = settings.getNotificationBatchMinutes();
     }
 
     public long getMaxFileSize() {
@@ -262,5 +266,21 @@ public class ApplicationSettingsEntity {
 
     public void setSmtpUseTls(boolean smtpUseTls) {
         this.smtpUseTls = smtpUseTls;
+    }
+
+    public boolean isNotificationBatchEnabled() {
+        return notificationBatchEnabled;
+    }
+
+    public void setNotificationBatchEnabled(boolean notificationBatchEnabled) {
+        this.notificationBatchEnabled = notificationBatchEnabled;
+    }
+
+    public Integer getNotificationBatchMinutes() {
+        return notificationBatchMinutes;
+    }
+
+    public void setNotificationBatchMinutes(Integer notificationBatchMinutes) {
+        this.notificationBatchMinutes = notificationBatchMinutes;
     }
 }

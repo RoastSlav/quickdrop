@@ -158,6 +158,14 @@
                         <input class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500"
                                id="discordWebhookUrl" placeholder="https://discord.com/api/webhooks/..." th:field="*{discordWebhookUrl}" type="url">
                     </div>
+
+                    <div class="flex items-center gap-3">
+                        <button class="rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white text-sm font-medium px-4 py-2 transition-colors active:scale-95 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                                id="testDiscord" type="button">
+                            Send Test to Discord
+                        </button>
+                        <span class="text-xs" id="discordTestStatus"></span>
+                    </div>
                 </div>
 
                 <div class="rounded-xl border border-slate-200 dark:border-slate-700 p-4 space-y-4">
@@ -215,6 +223,14 @@
                                    th:field="*{smtpUseTls}" type="checkbox">
                             <span class="text-sm">Use STARTTLS</span>
                         </label>
+
+                        <div class="flex items-center gap-3">
+                            <button class="rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white text-sm font-medium px-4 py-2 transition-colors active:scale-95 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                                    id="testEmail" type="button">
+                                Send Test Email
+                            </button>
+                            <span class="text-xs" id="emailTestStatus"></span>
+                        </div>
                     </div>
                 </div>
             </div>

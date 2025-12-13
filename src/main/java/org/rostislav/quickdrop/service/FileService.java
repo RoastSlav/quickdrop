@@ -2,15 +2,14 @@ package org.rostislav.quickdrop.service;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
-import org.rostislav.quickdrop.entity.DownloadLog;
 import org.rostislav.quickdrop.entity.FileEntity;
-import org.rostislav.quickdrop.entity.FileRenewalLog;
+import org.rostislav.quickdrop.entity.FileHistoryLog;
 import org.rostislav.quickdrop.entity.ShareTokenEntity;
 import org.rostislav.quickdrop.model.FileEntityView;
+import org.rostislav.quickdrop.model.FileHistoryType;
 import org.rostislav.quickdrop.model.FileUploadRequest;
-import org.rostislav.quickdrop.repository.DownloadLogRepository;
 import org.rostislav.quickdrop.repository.FileRepository;
-import org.rostislav.quickdrop.repository.RenewalLogRepository;
+import org.rostislav.quickdrop.repository.FileHistoryLogRepository;
 import org.rostislav.quickdrop.repository.ShareTokenRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,20 +40,18 @@ public class FileService {
     private final FileRepository fileRepository;
     private final PasswordEncoder passwordEncoder;
     private final ApplicationSettingsService applicationSettingsService;
-    private final DownloadLogRepository downloadLogRepository;
+    private final FileHistoryLogRepository fileHistoryLogRepository;
     private final SessionService sessionService;
-    private final RenewalLogRepository renewalLogRepository;
     private final FileEncryptionService fileEncryptionService;
     private final ShareTokenRepository shareTokenRepository;
 
     @Lazy
-    public FileService(FileRepository fileRepository, PasswordEncoder passwordEncoder, ApplicationSettingsService applicationSettingsService, DownloadLogRepository downloadLogRepository, SessionService sessionService, RenewalLogRepository renewalLogRepository, FileEncryptionService fileEncryptionService, ShareTokenRepository shareTokenRepository) {
+    public FileService(FileRepository fileRepository, PasswordEncoder passwordEncoder, ApplicationSettingsService applicationSettingsService, FileHistoryLogRepository fileHistoryLogRepository, SessionService sessionService, FileEncryptionService fileEncryptionService, ShareTokenRepository shareTokenRepository) {
         this.fileRepository = fileRepository;
         this.passwordEncoder = passwordEncoder;
         this.applicationSettingsService = applicationSettingsService;
-        this.downloadLogRepository = downloadLogRepository;
+        this.fileHistoryLogRepository = fileHistoryLogRepository;
         this.sessionService = sessionService;
-        this.renewalLogRepository = renewalLogRepository;
         this.fileEncryptionService = fileEncryptionService;
         this.shareTokenRepository = shareTokenRepository;
     }
@@ -98,7 +95,12 @@ public class FileService {
         FileEntity fileEntity = populateFileEntity(fileUploadRequest, uuid);
 
         logger.info("FileEntity inserted into database: {}", fileEntity);
-        return fileRepository.save(fileEntity);
+        FileEntity saved = fileRepository.save(fileEntity);
+
+        // Log initial upload event using client-provided context
+        fileHistoryLogRepository.save(new FileHistoryLog(saved, FileHistoryType.UPLOAD, request.uploaderIp, request.uploaderUserAgent));
+
+        return saved;
     }
 
     public List<FileEntity> getFiles() {
@@ -151,7 +153,7 @@ public class FileService {
 
         FileEntity fileEntity = referenceById.get();
         fileRepository.delete(fileEntity);
-        downloadLogRepository.deleteByFileId(fileEntity.id);
+        fileHistoryLogRepository.deleteByFileId(fileEntity.id);
         return deleteFileFromFileSystem(fileEntity.uuid);
     }
 
@@ -164,7 +166,7 @@ public class FileService {
 
         FileEntity fileEntity = referenceById.get();
         fileRepository.delete(fileEntity);
-        downloadLogRepository.deleteByFileId(fileEntity.id);
+        fileHistoryLogRepository.deleteByFileId(fileEntity.id);
         return true;
     }
 
@@ -234,7 +236,7 @@ public class FileService {
         fileEntity.uploadDate = LocalDate.now();
         logger.info("File extended: {}", fileEntity);
         fileRepository.save(fileEntity);
-        logFileRenewal(fileEntity, request);
+        logHistory(fileEntity, request, FileHistoryType.RENEWAL);
     }
 
     public FileEntity toggleHidden(String uuid) {
@@ -286,7 +288,7 @@ public class FileService {
         Path decryptedFilePath = Path.of(applicationSettingsService.getFileStoragePath(), fileEntity.uuid + "-decrypted");
         Path filePathToStream = Files.exists(decryptedFilePath) ? decryptedFilePath : Path.of(applicationSettingsService.getFileStoragePath(), fileEntity.uuid);
 
-        logDownload(fileEntity, request);
+        logHistory(fileEntity, request, FileHistoryType.DOWNLOAD);
 
         return outputStream -> {
             try {
@@ -354,16 +356,9 @@ public class FileService {
         return fileEntity;
     }
 
-    private void logDownload(FileEntity fileEntity, HttpServletRequest request) {
+    private void logHistory(FileEntity fileEntity, HttpServletRequest request, FileHistoryType eventType) {
         RequesterInfo info = getRequesterInfo(request);
-        DownloadLog downloadLog = new DownloadLog(fileEntity, info.ipAddress(), info.userAgent());
-        downloadLogRepository.save(downloadLog);
-    }
-
-    private void logFileRenewal(FileEntity fileEntity, HttpServletRequest request) {
-        RequesterInfo info = getRequesterInfo(request);
-        FileRenewalLog fileRenewalLog = new FileRenewalLog(fileEntity, info.ipAddress(), info.userAgent());
-        renewalLogRepository.save(fileRenewalLog);
+        fileHistoryLogRepository.save(new FileHistoryLog(fileEntity, eventType, info.ipAddress(), info.userAgent()));
     }
 
     public ShareTokenEntity generateShareToken(String uuid, LocalDate tokenExpirationDate, int numberOfDownloads) {
@@ -417,7 +412,7 @@ public class FileService {
     private ResponseEntity<StreamingResponseBody> createFileDownloadResponse(InputStream inputStream, FileEntity fileEntity, HttpServletRequest request) throws IOException {
         StreamingResponseBody responseBody = getStreamingResponseBody(inputStream);
         logger.info("Sending file: {}", fileEntity);
-        logDownload(fileEntity, request);
+        logHistory(fileEntity, request, FileHistoryType.DOWNLOAD);
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + URLEncoder.encode(fileEntity.name, StandardCharsets.UTF_8) + "\"")

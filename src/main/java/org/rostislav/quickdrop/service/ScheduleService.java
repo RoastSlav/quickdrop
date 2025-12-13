@@ -2,7 +2,7 @@ package org.rostislav.quickdrop.service;
 
 import jakarta.transaction.Transactional;
 import org.rostislav.quickdrop.entity.FileEntity;
-import org.rostislav.quickdrop.repository.DownloadLogRepository;
+import org.rostislav.quickdrop.repository.FileHistoryLogRepository;
 import org.rostislav.quickdrop.repository.FileRepository;
 import org.rostislav.quickdrop.repository.ShareTokenRepository;
 import org.slf4j.Logger;
@@ -22,16 +22,16 @@ public class ScheduleService {
     private final FileRepository fileRepository;
     private final FileService fileService;
     private final ThreadPoolTaskScheduler taskScheduler = new ThreadPoolTaskScheduler();
-    private final DownloadLogRepository downloadLogRepository;
+    private final FileHistoryLogRepository fileHistoryLogRepository;
     private final ShareTokenRepository shareTokenRepository;
     private ScheduledFuture<?> scheduledTask;
 
-    public ScheduleService(FileRepository fileRepository, FileService fileService, DownloadLogRepository downloadLogRepository, ShareTokenRepository shareTokenRepository) {
+    public ScheduleService(FileRepository fileRepository, FileService fileService, FileHistoryLogRepository fileHistoryLogRepository, ShareTokenRepository shareTokenRepository) {
         this.fileRepository = fileRepository;
         this.fileService = fileService;
         taskScheduler.setPoolSize(1);
         taskScheduler.initialize();
-        this.downloadLogRepository = downloadLogRepository;
+        this.fileHistoryLogRepository = fileHistoryLogRepository;
         this.shareTokenRepository = shareTokenRepository;
     }
 
@@ -56,7 +56,7 @@ public class ScheduleService {
             logger.info("Deleting file: {}", file);
             boolean deleted = fileService.deleteFileFromFileSystem(file.uuid);
             if (deleted) {
-                downloadLogRepository.deleteByFileId(file.id);
+                fileHistoryLogRepository.deleteByFileId(file.id);
                 fileRepository.delete(file);
             } else {
                 logger.error("Failed to delete file: {}", file);

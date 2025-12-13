@@ -2,9 +2,7 @@ package org.rostislav.quickdrop.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
-import org.rostislav.quickdrop.entity.DownloadLog;
 import org.rostislav.quickdrop.entity.FileEntity;
-import org.rostislav.quickdrop.entity.FileRenewalLog;
 import org.rostislav.quickdrop.entity.ShareTokenEntity;
 import org.rostislav.quickdrop.model.FileActionLogDTO;
 import org.rostislav.quickdrop.model.FileEntityView;
@@ -20,8 +18,6 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
-import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 
@@ -77,14 +73,10 @@ public class FileViewController {
         long totalDownloads = analyticsService.getTotalDownloadsByFile(uuid);
         FileEntityView fileEntityView = new FileEntityView(fileEntity, totalDownloads);
 
-        List<FileActionLogDTO> actionLogs = new ArrayList<>();
-
-        List<DownloadLog> downloadLogs = analyticsService.getDownloadsByFile(uuid);
-        List<FileRenewalLog> renewalLogs = analyticsService.getRenewalLogsByFile(uuid);
-        downloadLogs.forEach(log -> actionLogs.add(new FileActionLogDTO(log)));
-        renewalLogs.forEach(log -> actionLogs.add(new FileActionLogDTO(log)));
-
-        actionLogs.sort(Comparator.comparing(FileActionLogDTO::getActionDate).reversed());
+        List<FileActionLogDTO> actionLogs = analyticsService.getHistoryByFile(uuid)
+            .stream()
+            .map(FileActionLogDTO::new)
+            .toList();
 
         model.addAttribute("file", fileEntityView);
         model.addAttribute("actionLogs", actionLogs);

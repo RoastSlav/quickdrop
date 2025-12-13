@@ -31,7 +31,11 @@ public class FileUtils {
     }
 
     public static String getShareLink(HttpServletRequest request, String token) {
-        return request.getScheme() + "://" + request.getServerName() + "/file/share/" + token;
+        String scheme = request.getHeader("X-Forwarded-Proto");
+        if (scheme == null) {
+            scheme = request.getScheme();
+        }
+        return scheme + "://" + request.getServerName() + "/file/share/" + token;
     }
 
     public static long bytesToMegabytes(long bytes) {

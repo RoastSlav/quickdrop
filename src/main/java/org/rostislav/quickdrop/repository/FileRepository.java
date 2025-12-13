@@ -35,7 +35,7 @@ public interface FileRepository extends JpaRepository<FileEntity, Long> {
                     CAST(SUM(CASE WHEN dl.id IS NOT NULL THEN 1 ELSE 0 END) AS long)
                 )
                 FROM FileEntity f
-                LEFT JOIN DownloadLog dl ON dl.file.id = f.id
+                LEFT JOIN FileHistoryLog dl ON dl.file.id = f.id AND dl.eventType = 'DOWNLOAD'
                 GROUP BY f
             """)
     List<FileEntityView> findAllFilesWithDownloadCounts();

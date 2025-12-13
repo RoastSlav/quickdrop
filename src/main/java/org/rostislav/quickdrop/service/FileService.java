@@ -8,8 +8,8 @@ import org.rostislav.quickdrop.entity.ShareTokenEntity;
 import org.rostislav.quickdrop.model.FileEntityView;
 import org.rostislav.quickdrop.model.FileHistoryType;
 import org.rostislav.quickdrop.model.FileUploadRequest;
-import org.rostislav.quickdrop.repository.FileRepository;
 import org.rostislav.quickdrop.repository.FileHistoryLogRepository;
+import org.rostislav.quickdrop.repository.FileRepository;
 import org.rostislav.quickdrop.repository.ShareTokenRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -98,7 +98,7 @@ public class FileService {
         FileEntity saved = fileRepository.save(fileEntity);
 
         // Log initial upload event using client-provided context
-        fileHistoryLogRepository.save(new FileHistoryLog(saved, FileHistoryType.UPLOAD, request.uploaderIp, request.uploaderUserAgent));
+        fileHistoryLogRepository.save(new FileHistoryLog(saved, FileHistoryType.UPLOAD, fileUploadRequest.uploaderIp, fileUploadRequest.uploaderUserAgent));
 
         return saved;
     }

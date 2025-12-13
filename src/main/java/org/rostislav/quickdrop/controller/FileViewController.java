@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.rostislav.quickdrop.util.FileUtils.populateModelAttributes;
@@ -168,19 +169,19 @@ public class FileViewController {
 
     @GetMapping("/share/{token}")
     public String viewSharedFile(@PathVariable String token, Model model) {
-        ShareTokenEntity tokenEntity = fileService.getShareTokenEntityByToken(token);
+        Optional<ShareTokenEntity> tokenEntity = fileService.getShareTokenEntityByToken(token);
 
-        if (!fileService.validateShareToken(tokenEntity)) {
+        if (tokenEntity.isEmpty() || !fileService.validateShareToken(tokenEntity.get())) {
             return "invalid-share-link";
         }
 
-        FileEntity file = fileService.getFile(tokenEntity.file.uuid);
+        FileEntity file = tokenEntity.get().file;
         if (file == null) {
             return "redirect:/file/list";
         }
 
         model.addAttribute("file", new FileEntityView(file, analyticsService.getTotalDownloadsByFile(file.uuid)));
-        model.addAttribute("downloadLink", "/api/file/download/" + file.uuid + "/" + token);
+        model.addAttribute("downloadLink", "/api/file/download/" + token);
 
         logger.info("Accessed shared file view for file UUID: {}", file.uuid);
         return "file-share-view";

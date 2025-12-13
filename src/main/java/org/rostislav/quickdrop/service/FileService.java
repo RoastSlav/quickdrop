@@ -22,14 +22,17 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 import java.io.*;
+import java.math.BigInteger;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 
 import static org.rostislav.quickdrop.util.DataValidator.nullToZero;
 import static org.rostislav.quickdrop.util.DataValidator.validateObjects;
@@ -263,7 +266,13 @@ public class FileService {
 
 
     public boolean validateShareToken(ShareTokenEntity token) {
-        return (token.tokenExpirationDate == null || !LocalDate.now().isAfter(token.tokenExpirationDate)) && token.numberOfAllowedDownloads > 0;
+        if (token == null) {
+            return false;
+        }
+
+        boolean notExpired = token.tokenExpirationDate == null || !LocalDate.now().isAfter(token.tokenExpirationDate);
+        boolean hasDownloads = token.numberOfAllowedDownloads != null && token.numberOfAllowedDownloads > 0;
+        return notExpired && hasDownloads;
     }
 
     public boolean checkFilePassword(String uuid, String password) {
@@ -276,15 +285,12 @@ public class FileService {
         return passwordEncoder.matches(password, fileEntity.passwordHash);
     }
 
-    public StreamingResponseBody streamFileAndUpdateToken(String uuid, String token, HttpServletRequest request) {
-        Optional<FileEntity> optionalFile = fileRepository.findByUUID(uuid);
-        ShareTokenEntity shareTokenEntity = shareTokenRepository.getShareTokenEntityByToken(token);
-
-        if (optionalFile.isEmpty() || !validateShareToken(shareTokenEntity)) {
+    public StreamingResponseBody streamFileByShareToken(ShareTokenEntity shareTokenEntity, HttpServletRequest request) {
+        if (!validateShareToken(shareTokenEntity)) {
             return null;
         }
 
-        FileEntity fileEntity = optionalFile.get();
+        FileEntity fileEntity = shareTokenEntity.file;
         Path decryptedFilePath = Path.of(applicationSettingsService.getFileStoragePath(), fileEntity.uuid + "-decrypted");
         Path filePathToStream = Files.exists(decryptedFilePath) ? decryptedFilePath : Path.of(applicationSettingsService.getFileStoragePath(), fileEntity.uuid);
 
@@ -292,7 +298,7 @@ public class FileService {
 
         return outputStream -> {
             try {
-                streamFile(filePathToStream, decryptedFilePath, uuid, outputStream);
+                streamFile(filePathToStream, decryptedFilePath, fileEntity.uuid, outputStream);
             } finally {
                 updateShareTokenAfterDownload(shareTokenEntity, fileEntity);
             }
@@ -361,6 +367,51 @@ public class FileService {
         fileHistoryLogRepository.save(new FileHistoryLog(fileEntity, eventType, info.ipAddress(), info.userAgent()));
     }
 
+    private String generateUniqueShareToken(FileEntity fileEntity) {
+        String token;
+        do {
+            token = generateHashedToken(fileEntity);
+        } while (shareTokenRepository.existsByShareToken(token));
+        return token;
+    }
+
+    private String generateHashedToken(FileEntity fileEntity) {
+        String seed = String.join(":",
+                fileEntity.uuid,
+                String.valueOf(fileEntity.size),
+                String.valueOf(fileEntity.uploadDate),
+                String.valueOf(System.nanoTime()),
+                String.valueOf(ThreadLocalRandom.current().nextLong())
+        );
+
+        try {
+            byte[] digest = MessageDigest.getInstance("SHA-256").digest(seed.getBytes(StandardCharsets.UTF_8));
+            String base62 = toBase62(digest);
+            return base62.length() >= 5 ? base62.substring(0, 5) : String.format("%1$-5s", base62).replace(' ', '0');
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 not available", e);
+        }
+    }
+
+    private String toBase62(byte[] bytes) {
+        final String alphabet = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+        BigInteger value = new BigInteger(1, bytes);
+        if (value.equals(BigInteger.ZERO)) {
+            return alphabet.substring(0, 1);
+        }
+
+        StringBuilder builder = new StringBuilder();
+        BigInteger base = BigInteger.valueOf(alphabet.length());
+
+        while (value.compareTo(BigInteger.ZERO) > 0) {
+            BigInteger[] divRem = value.divideAndRemainder(base);
+            builder.append(alphabet.charAt(divRem[1].intValue()));
+            value = divRem[0];
+        }
+
+        return builder.reverse().toString();
+    }
+
     public ShareTokenEntity generateShareToken(String uuid, LocalDate tokenExpirationDate, int numberOfDownloads) {
         Optional<FileEntity> optionalFile = fileRepository.findByUUID(uuid);
         if (optionalFile.isEmpty()) {
@@ -368,7 +419,7 @@ public class FileService {
         }
         FileEntity file = optionalFile.get();
 
-        String token = UUID.randomUUID().toString();
+        String token = generateUniqueShareToken(file);
         ShareTokenEntity shareToken = new ShareTokenEntity(token, file, tokenExpirationDate, numberOfDownloads);
         shareTokenRepository.save(shareToken);
 
@@ -385,7 +436,6 @@ public class FileService {
         Path encryptedFilePath = Path.of(applicationSettingsService.getFileStoragePath(), file.uuid);
         Path decryptedFilePath = encryptedFilePath.resolveSibling(file.uuid + "-decrypted");
 
-        // Decrypt the file if necessary
         if (file.encrypted && !Files.exists(decryptedFilePath)) {
             try {
                 String password = sessionService.getPasswordForFileSessionToken(sessionToken).getPassword();
@@ -397,16 +447,13 @@ public class FileService {
             }
         }
 
-        // Generate the share token
         ShareTokenEntity shareToken = generateShareToken(uuid, tokenExpirationDate, numberOfDownloads);
-        shareTokenRepository.save(shareToken);
-
         logger.info("Share token generated for file: {}", file.name);
         return shareToken;
     }
 
-    public ShareTokenEntity getShareTokenEntityByToken(String token) {
-        return shareTokenRepository.getShareTokenEntityByToken(token);
+    public Optional<ShareTokenEntity> getShareTokenEntityByToken(String token) {
+        return shareTokenRepository.findByShareToken(token);
     }
 
     private ResponseEntity<StreamingResponseBody> createFileDownloadResponse(InputStream inputStream, FileEntity fileEntity, HttpServletRequest request) throws IOException {

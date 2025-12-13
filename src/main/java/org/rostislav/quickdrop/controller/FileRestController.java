@@ -19,6 +19,7 @@ import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBo
 
 import java.io.IOException;
 import java.time.LocalDate;
+import java.util.Optional;
 
 import static org.springframework.http.ResponseEntity.ok;
 
@@ -97,15 +98,21 @@ public class FileRestController {
         return ok(shareLink);
     }
 
-    @GetMapping("/download/{uuid}/{token}")
-    public ResponseEntity<StreamingResponseBody> downloadFile(@PathVariable String uuid, @PathVariable String token, HttpServletRequest request) {
+    @GetMapping("/download/{token}")
+    public ResponseEntity<StreamingResponseBody> downloadFile(@PathVariable String token, HttpServletRequest request) {
         try {
-            StreamingResponseBody responseBody = fileService.streamFileAndUpdateToken(uuid, token, request);
-            if (responseBody == null) {
+            Optional<ShareTokenEntity> shareTokenEntity = fileService.getShareTokenEntityByToken(token);
+            if (shareTokenEntity.isEmpty() || !fileService.validateShareToken(shareTokenEntity.get())) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
             }
 
-            FileEntity fileEntity = fileService.getFile(uuid);
+            ShareTokenEntity tokenEntity = shareTokenEntity.get();
+            FileEntity fileEntity = tokenEntity.file;
+            StreamingResponseBody responseBody = fileService.streamFileByShareToken(tokenEntity, request);
+
+            if (responseBody == null) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            }
 
             return ok()
                     .header("Content-Disposition", "attachment; filename=\"" + fileEntity.name + "\"")

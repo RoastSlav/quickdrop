@@ -9,8 +9,14 @@ public class ShareTokenEntity {
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "file_id", nullable = false)
     public FileEntity file;
+
+    @Column(name = "share_token", nullable = false, unique = true, length = 10)
     public String shareToken;
+
+    @Column(name = "token_expiration_date")
     public LocalDate tokenExpirationDate;
+
+    @Column(name = "number_of_allowed_downloads")
     public Integer numberOfAllowedDownloads;
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

@@ -160,7 +160,12 @@ function renderFolderTree() {
     const treeEl = document.getElementById('folderTree');
     if (!treeEl) return;
 
-    const manifestRaw = treeEl.dataset.manifest;
+    let manifestRaw = treeEl.dataset.manifest;
+    const manifestScript = document.getElementById('folderManifestData');
+    if (!manifestRaw && manifestScript) {
+        manifestRaw = manifestScript.textContent;
+    }
+
     const folderName = treeEl.dataset.folderName || 'folder';
     if (!manifestRaw) {
         treeEl.textContent = 'No manifest available.';

@@ -3,7 +3,6 @@ package org.rostislav.quickdrop.controller;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import org.rostislav.quickdrop.entity.FileEntity;
-import org.rostislav.quickdrop.entity.ShareTokenEntity;
 import org.rostislav.quickdrop.model.FileActionLogDTO;
 import org.rostislav.quickdrop.model.FileEntityView;
 import org.rostislav.quickdrop.service.AnalyticsService;
@@ -21,6 +20,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 import org.springframework.web.util.UriUtils;
 
+import java.util.List;
 import java.util.UUID;
 
 import static org.rostislav.quickdrop.util.FileUtils.populateModelAttributes;

@@ -12,21 +12,28 @@
 </head>
 <body class="bg-gray-50 text-gray-800 dark:bg-slate-900 dark:text-gray-100">
 <nav class="bg-gray-800 dark:bg-gray-900 text-gray-100">
-    <div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-        <a class="flex items-center space-x-2" href="/">
-            <img alt="Website Logo" class="h-10" src="/images/favicon.png">
-            <span class="font-semibold tracking-tight">QuickDrop</span>
-        </a>
-        <div class="flex items-center space-x-4">
-            <a class="hover:text-white" href="/file/list" th:if="${isFileListPageEnabled}">View Files</a>
-            <a class="hover:text-white" href="/admin/dashboard" th:if="${isAdminDashboardButtonEnabled}">Admin
-                Dashboard</a>
-            <button aria-label="Toggle theme"
-                    class="rounded-lg p-2 transition-colors hover:bg-sky-600 dark:hover:bg-sky-500 active:scale-95 focus:outline-none focus:ring-2 focus:ring-sky-500"
-                    id="themeToggle"
-                    type="button">
-                🌙
+    <div class="max-w-7xl mx-auto px-4 py-4">
+        <div class="flex items-center justify-between">
+            <a class="flex items-center space-x-2" href="/">
+                <img alt="Website Logo" class="h-10" src="/images/favicon.png">
+                <span class="font-semibold tracking-tight">QuickDrop</span>
+            </a>
+            <button aria-controls="navMenu" aria-expanded="false" aria-label="Toggle navigation"
+                    class="md:hidden rounded-lg p-2 hover:bg-sky-600 dark:hover:bg-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                    id="navToggle" type="button">
+                <svg aria-hidden="true" class="h-6 w-6" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M4 6h16M4 12h16M4 18h16"></path>
+                </svg>
             </button>
+            <div class="hidden md:flex flex-col md:flex-row md:items-center md:space-x-4 mt-3 md:mt-0 space-y-2 md:space-y-0" id="navMenu">
+                <a class="hover:text-white" href="/file/list" th:if="${isFileListPageEnabled}">View Files</a>
+                <a class="hover:text-white" href="/admin/dashboard" th:if="${isAdminDashboardButtonEnabled}">Admin Dashboard</a>
+                <button aria-label="Toggle theme"
+                        class="theme-toggle rounded-lg p-2 transition-colors hover:bg-sky-600 dark:hover:bg-sky-500 active:scale-95 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                        type="button">
+                    🌙
+                </button>
+            </div>
         </div>
     </div>
 </nav>
@@ -117,6 +124,19 @@
         All password-protected files are also encrypted for additional security.
     </div>
 </main>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const navToggle = document.getElementById('navToggle');
+        const navMenu = document.getElementById('navMenu');
+        if (navToggle && navMenu) {
+            navToggle.addEventListener('click', () => {
+                const isHidden = navMenu.classList.contains('hidden');
+                navMenu.classList.toggle('hidden');
+                navToggle.setAttribute('aria-expanded', isHidden ? 'true' : 'false');
+            });
+        }
+    });
+</script>
 <script src="/js/upload.js"></script>
 </body>
 </html>

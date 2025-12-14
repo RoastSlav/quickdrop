@@ -9,7 +9,7 @@
     };
 
     const updateToggleButtons = (theme) => {
-        document.querySelectorAll('#themeToggle').forEach((btn) => {
+        document.querySelectorAll('.theme-toggle, #themeToggle').forEach((btn) => {
             btn.textContent = theme === 'dark' ? '☀️' : '🌙';
             btn.setAttribute('aria-label', theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme');
         });
@@ -24,7 +24,7 @@
     document.addEventListener('DOMContentLoaded', () => {
         updateToggleButtons(initial);
 
-        document.querySelectorAll('#themeToggle').forEach((btn) => {
+        document.querySelectorAll('.theme-toggle, #themeToggle').forEach((btn) => {
             btn.addEventListener('click', () => {
                 const nextTheme = html.classList.contains('dark') ? 'light' : 'dark';
                 applyTheme(nextTheme);

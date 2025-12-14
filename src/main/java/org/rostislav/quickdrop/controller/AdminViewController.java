@@ -42,13 +42,15 @@ public class AdminViewController {
     @GetMapping("/dashboard")
     public String getDashboardPage(@RequestParam(name = "page", defaultValue = "0") int page,
                                    @RequestParam(name = "size", defaultValue = "20") int size,
+                                   @RequestParam(name = "query", required = false) String query,
                                    Model model) {
         int pageNumber = Math.max(page, 0);
         int pageSize = Math.min(Math.max(size, 1), 100);
 
-        Page<FileEntityView> filesPage = fileService.getFilesWithDownloadCounts(PageRequest.of(pageNumber, pageSize));
+        Page<FileEntityView> filesPage = fileService.getFilesWithDownloadCounts(PageRequest.of(pageNumber, pageSize), query);
         model.addAttribute("filesPage", filesPage);
         model.addAttribute("pageSize", pageSize);
+        model.addAttribute("query", query == null ? "" : query);
 
         AnalyticsDataView analytics = analyticsService.getAnalytics();
         model.addAttribute("analytics", analytics);

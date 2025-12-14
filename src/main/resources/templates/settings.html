@@ -123,14 +123,11 @@
         <section class="bg-white dark:bg-slate-800 p-6 md:p-8 rounded-2xl shadow-lg">
             <h2 class="text-xl font-semibold tracking-tight mb-4">System Settings</h2>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div th:if="${param.error != null && param.error.contains('invalidCron')}" class="mb-4 rounded-lg border border-red-200 bg-red-50 text-red-700 dark:border-red-800 dark:bg-red-950 dark:text-red-200 px-4 py-3 text-sm">
+                Invalid cron expression. Please enter a valid cron pattern (e.g., <span class="font-mono">0 0 2 * * *</span> for 2:00 AM daily).
+            </div>
 
-                <!-- TOP: Cron (full width) -->
-                <div class="md:col-span-2">
-                    <label class="block text-sm font-medium mb-1">File Deletion Cron Expression</label>
-                    <input class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500" required th:field="*{fileDeletionCron}"
-                           type="text">
-                </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
                 <!-- MIDDLE: Lifetime (left) -->
                 <div>
@@ -150,6 +147,17 @@
                         <option value="upload">Upload Page</option>
                         <option value="list">File List Page</option>
                     </select>
+                </div>
+
+                <!-- Cron + Next Run (new middle row) -->
+                <div>
+                    <label class="block text-sm font-medium mb-1" for="fileDeletionCron">File Deletion Cron Expression</label>
+                    <input class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500" id="fileDeletionCron" required th:field="*{fileDeletionCron}"
+                           type="text">
+                </div>
+                <div class="rounded-xl border border-slate-200 dark:border-slate-700 p-4 h-full flex flex-col justify-center bg-slate-50 dark:bg-slate-900">
+                    <div class="text-sm font-medium mb-1">Next run</div>
+                    <div class="text-sm text-gray-700 dark:text-gray-300" th:text="${cronNextRunText != null ? cronNextRunText : 'Unable to parse cron'}"></div>
                 </div>
 
                 <!-- BOTTOM: File List Enabled (left) -->

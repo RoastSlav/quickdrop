@@ -76,7 +76,9 @@ html:not(.dark) .dark\:text-slate-400{
 .dark .nav-menu-item:hover{background-color:rgba(255,255,255,0.08);}
 @media (min-width:768px){
 	.nav-menu-panel{border:none;background-color:transparent;box-shadow:none;align-items:center;}
-	.nav-menu-item{border:none;background-color:transparent;padding:0;margin-top:0;width:auto;border-radius:0;line-height:1.1;}
+	.nav-menu-panel .md\:space-x-4>:not([hidden])~:not([hidden]){margin-left:0.6rem!important;}
+	.nav-menu-item{border:none;background-color:transparent;padding:0 0.35rem;margin-top:0;width:auto;border-radius:0;line-height:1.05;}
+	.nav-menu-item.theme-toggle{padding:0.15rem 0.4rem;}
 	.nav-menu-item + .nav-menu-item{margin-top:0;}
 	.nav-menu-item:hover{background-color:transparent;}
 }

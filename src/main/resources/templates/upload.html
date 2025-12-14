@@ -49,19 +49,17 @@
                 <div id="messageContainer"></div>
                 <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden"/>
                 <input name="uuid" th:value="${uuid}" type="hidden"/>
-                <div class="relative border-2 border-dashed border-gray-400 dark:border-gray-600 rounded-lg p-6 text-center cursor-default focus:outline-none"
-                     id="dropZone" tabindex="0">
-                    <span class="block text-gray-600 dark:text-gray-300"
-                          data-default-text="Drop files or folders here"
-                          id="dropZoneInstructions">Drop files or folders here</span>
-                    <p class="hidden mt-2 text-sm text-gray-700 dark:text-gray-300" id="selectedFile"></p>
-                </div>
-                <div class="flex flex-wrap items-center gap-3">
-                    <button class="rounded-lg bg-slate-100 dark:bg-slate-700 px-4 py-2 text-sm font-medium text-gray-800 dark:text-gray-100 border border-slate-300 dark:border-slate-600 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors active:scale-95"
-                            type="button" id="fileSelectButton">Select a File</button>
-                    <button class="rounded-lg bg-slate-100 dark:bg-slate-700 px-4 py-2 text-sm font-medium text-gray-800 dark:text-gray-100 border border-slate-300 dark:border-slate-600 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors active:scale-95"
-                            type="button" id="folderSelectButton">Select a Folder</button>
-                    <span class="text-xs text-gray-600 dark:text-gray-400">Drop is supported for both; folders are zipped with structure preserved.</span>
+                <div class="upload-shell cursor-default" id="dropZone">
+                    <div class="upload-shell-body">
+                        <span class="block text-gray-700 dark:text-gray-100 text-xl font-semibold"
+                              data-default-text="Drop file or folder"
+                              id="dropZoneInstructions">Drop file or folder</span>
+                        <p class="hidden mt-2 text-sm text-gray-700 dark:text-gray-300" id="selectedFile"></p>
+                    </div>
+                    <div class="upload-shell-buttons">
+                        <button class="upload-shell-button" type="button" id="fileSelectButton">Select file</button>
+                        <button class="upload-shell-button" type="button" id="folderSelectButton">Select folder</button>
+                    </div>
                 </div>
                 <input class="hidden" id="file" name="file" type="file" />
                 <input class="hidden" id="folderInput" name="folderInput" type="file" webkitdirectory multiple />

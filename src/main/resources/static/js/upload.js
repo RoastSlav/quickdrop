@@ -81,17 +81,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     if (folderButton && folderInput) {
-        folderButton.addEventListener("click", async () => {
-            if (window.showDirectoryPicker) {
-                try {
-                    await handleDirectoryPickerSelection();
-                    return;
-                } catch (e) {
-                    console.warn("Directory picker failed, falling back to input", e);
-                }
-            }
-            folderInput.click();
-        });
+        folderButton.addEventListener("click", () => folderInput.click());
         folderInput.addEventListener("change", () => handleFolderSelection(folderInput.files));
     }
 
@@ -177,7 +167,7 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
-        dropZoneText.textContent = "Building zip from folder...";
+        dropZoneText.textContent = "Zipping folder...";
         dropZoneText.classList.remove("hidden");
         fileNameEl.classList.add("hidden");
 
@@ -199,7 +189,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const size = (zipBlob.size / (1024 * 1024)).toFixed(2) + ' MB';
         fileNameEl.textContent = `${zipName} (${size})`;
         fileNameEl.classList.remove("hidden");
-        dropZoneText.textContent = `Prepared from folder “${rootFolder}” (${fileList.length} files)`;
+        dropZoneText.textContent = `Folder selected: ${rootFolder} (${fileList.length} items)`;
         dropZoneText.classList.remove("hidden");
 
         selectedUpload = {
@@ -212,38 +202,6 @@ document.addEventListener("DOMContentLoaded", () => {
         };
 
         if (fileInput) fileInput.value = ""; // clear single-file selection
-    }
-
-    async function handleDirectoryPickerSelection() {
-        const dirHandle = await window.showDirectoryPicker();
-        const files = [];
-        async function walkDirectory(handle, pathParts) {
-            for await (const [name, entry] of handle.entries()) {
-                const newPath = [...pathParts, name];
-                if (entry.kind === 'file') {
-                    const file = await entry.getFile();
-                    file.relativePath = newPath.join('/');
-                    files.push(file);
-                } else if (entry.kind === 'directory') {
-                    // ensure empty dirs are captured via manifest later
-                    files.push({relativePath: newPath.join('/'), isDirMarker: true});
-                    await walkDirectory(entry, newPath);
-                }
-            }
-        }
-
-        await walkDirectory(dirHandle, [dirHandle.name]);
-
-        const fileListLike = [];
-        files.forEach((item) => {
-            if (item.isDirMarker) return;
-            const f = item;
-            // fabricate webkitRelativePath for consistency
-            f.webkitRelativePath = item.relativePath;
-            fileListLike.push(f);
-        });
-
-        await handleFolderSelection(fileListLike);
     }
 
     async function getFilesFromItems(items) {

@@ -50,6 +50,23 @@ html:not(.dark) .dark\:text-slate-400{
 .folder-tree-connector{color:#475569;}
 .dark .folder-tree-connector{color:#cbd5e1;}
 
+/* Upload drop zone (rounded rectangle with embedded buttons) */
+.upload-shell{border:2px dashed #cbd5e1;border-radius:20px;overflow:hidden;background-color:#ffffff;transition:box-shadow .2s ease,transform .2s ease;user-select:none;}
+.upload-shell *{user-select:none;}
+.dark .upload-shell{border-color:#475569;background-color:#0f172a;}
+.upload-shell-body{padding:28px 24px;min-height:140px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center;}
+.upload-shell-buttons{display:flex;border-top:1px solid #cbd5e1;background-color:#ffffff;}
+.dark .upload-shell-buttons{border-top-color:#1e293b;background-color:#0f172a;}
+.upload-shell-button{flex:1;padding:14px 12px;font-weight:600;font-size:16px;text-transform:none;border:0;background:transparent;color:#0f172a;transition:background-color .2s ease,color .2s ease;}
+.upload-shell-button:first-child{border-right:1px solid #cbd5e1;}
+.dark .upload-shell-button{color:#e2e8f0;}
+.dark .upload-shell-button:first-child{border-right-color:#1e293b;}
+.upload-shell-button:hover{background-color:#e2e8f0;}
+.dark .upload-shell-button:hover{background-color:#1f2937;}
+.upload-shell-button:focus{outline:none;background-color:transparent;}
+.dark .upload-shell-button:focus{background-color:transparent;}
+
+
 /* Reset borders/placeholders that are dark-only. */
 html:not(.dark) .dark\:border-gray-600,
 html:not(.dark) .dark\:border-slate-600,

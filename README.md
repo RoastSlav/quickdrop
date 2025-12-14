@@ -9,6 +9,8 @@ QuickDrop is a self-hosted file sharing app for fast, anonymous uploads with chu
 per-file passwords, share tokens with expiry/download limits, and an admin console to govern storage limits,
 lifetime policies, cleanup schedules, notifications, and privacy settings.
 
+<img width="1296" height="998" alt="image" src="https://github.com/user-attachments/assets/724267eb-7f43-4351-9167-6703ce6b5c1c" />
+
 # Features
 
 ## Uploads & storage
@@ -61,6 +63,11 @@ lifetime policies, cleanup schedules, notifications, and privacy settings.
 - Scheduled cleanup for expired files, missing-file DB rows, expired share tokens, and other maintenance tasks.
 
 ---
+
+<img width="1315" height="1211" alt="image" src="https://github.com/user-attachments/assets/980df6f1-b63d-49f6-8b67-43c240886fcd" />
+<img width="1270" height="1211" alt="image" src="https://github.com/user-attachments/assets/9e6a95d4-48e2-4fad-8d56-edfea63df119" />
+
+
 
 ## Technologies Used
 

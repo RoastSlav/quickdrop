@@ -1,7 +1,6 @@
 package org.rostislav.quickdrop.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpSession;
 import org.rostislav.quickdrop.entity.FileEntity;
 import org.rostislav.quickdrop.model.FileActionLogDTO;
 import org.rostislav.quickdrop.model.FileEntityView;
@@ -70,6 +69,11 @@ public class FileViewController {
     @GetMapping("/{uuid}")
     public String filePage(@PathVariable String uuid, Model model, HttpServletRequest request) {
         FileEntity fileEntity = fileService.getFile(uuid);
+        if (fileEntity == null) {
+            logger.info("File not found for UUID: {}", uuid);
+            return "redirect:/file/list";
+        }
+
         model.addAttribute("maxFileLifeTime", applicationSettingsService.getMaxFileLifeTime());
 
         populateModelAttributes(fileEntity, model, request);
@@ -80,9 +84,11 @@ public class FileViewController {
         boolean isPdf = previewsEnabled && isPreviewablePdf(fileEntity);
         boolean isJson = previewsEnabled && isPreviewableJson(fileEntity);
         boolean isCsv = previewsEnabled && isPreviewableCsvOrTsv(fileEntity);
-        String previewType = isImage ? "image" : isPdf ? "pdf" : isJson ? "json" : isCsv ? "csv" : isText ? "text" : "";
+
+        String previewType = determinePreviewType(isImage, isPdf, isJson, isCsv, isText);
         long previewLimit = applicationSettingsService.getMaxPreviewSizeBytes();
-        boolean requireManualPreview = fileEntity != null && fileEntity.size > previewLimit;
+        boolean requireManualPreview = fileEntity.size > previewLimit;
+
         model.addAttribute("isPreviewEnabled", previewsEnabled);
         model.addAttribute("isPreviewableImage", isImage);
         model.addAttribute("isPreviewableText", isText);
@@ -90,7 +96,7 @@ public class FileViewController {
         model.addAttribute("isPreviewableJson", isJson);
         model.addAttribute("isPreviewableCsv", isCsv);
         model.addAttribute("previewType", previewType);
-        model.addAttribute("previewUrl", "/file/preview/" + uuid);
+        model.addAttribute("previewUrl", String.format("/file/preview/%s", uuid));
         model.addAttribute("requireManualPreview", requireManualPreview);
         model.addAttribute("maxPreviewSizeMB", previewLimit / 1024 / 1024);
 
@@ -131,21 +137,19 @@ public class FileViewController {
 
 
     @PostMapping("/password")
-    public String checkPassword(String uuid, String password, HttpServletRequest request, Model model) {
+    public String checkPassword(@RequestParam("uuid") String uuid,
+                                @RequestParam("password") String password,
+                                HttpServletRequest request,
+                                org.springframework.web.servlet.mvc.support.RedirectAttributes redirectAttributes) {
         if (fileService.checkFilePassword(uuid, password)) {
             String fileSessionToken = sessionService.addFileSessionToken(UUID.randomUUID().toString(), password, uuid);
-            HttpSession session = request.getSession();
-            session.setAttribute("file-session-token", fileSessionToken);
+            request.getSession().setAttribute("file-session-token", fileSessionToken);
             logger.info("Token has been added to the session for file UUID: {}", uuid);
             return "redirect:/file/" + uuid;
         } else {
             logger.info("Incorrect password attempt for file UUID: {}", uuid);
-            model.addAttribute("uuid", uuid);
-            FileEntity fileEntity = fileService.getFile(uuid);
-            if (fileEntity != null) {
-                model.addAttribute("fileName", fileEntity.name);
-            }
-            return "file-password";
+            redirectAttributes.addFlashAttribute("passwordError", true);
+            return "redirect:/file/password/" + uuid;
         }
     }
 
@@ -165,13 +169,9 @@ public class FileViewController {
     }
 
     @PostMapping("/extend/{uuid}")
-    public String extendFile(@PathVariable String uuid, Model model, HttpServletRequest request) {
+    public String extendFile(@PathVariable String uuid, HttpServletRequest request) {
         fileService.extendFile(uuid, request);
-
-        FileEntity fileEntity = fileService.getFile(uuid);
-        populateModelAttributes(fileEntity, model, request);
-        model.addAttribute("maxFileLifeTime", applicationSettingsService.getMaxFileLifeTime());
-        return "fileView";
+        return "redirect:/file/" + uuid;
     }
 
     @PostMapping("/delete/{uuid}")
@@ -186,13 +186,18 @@ public class FileViewController {
     @GetMapping("/search")
     public String searchFiles(@RequestParam String query,
                               @RequestParam(name = "size", defaultValue = "20") int size) {
+        if (query == null || query.isBlank()) {
+            return "redirect:/file/list";
+        }
         int pageSize = Math.min(Math.max(size, 1), 100);
         String encodedQuery = UriUtils.encodeQueryParam(query, java.nio.charset.StandardCharsets.UTF_8);
         return "redirect:/file/list?query=" + encodedQuery + "&page=0&size=" + pageSize;
     }
 
     @PostMapping("/keep-indefinitely/{uuid}")
-    public String updateKeepIndefinitely(@PathVariable String uuid, @RequestParam(required = false, defaultValue = "false") boolean keepIndefinitely, HttpServletRequest request) {
+    public String updateKeepIndefinitely(@PathVariable String uuid,
+                                         @RequestParam(required = false, defaultValue = "false") boolean keepIndefinitely,
+                                         HttpServletRequest request) {
         FileEntity fileEntity = fileService.updateKeepIndefinitely(uuid, keepIndefinitely, request);
         if (fileEntity != null) {
             logger.info("Updated keep indefinitely for file UUID: {} to {}", uuid, keepIndefinitely);

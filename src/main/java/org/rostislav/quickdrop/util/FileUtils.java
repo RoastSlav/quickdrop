@@ -122,6 +122,15 @@ public class FileUtils {
         return fileEntity == null || fileEntity.name == null ? "" : fileEntity.name.toLowerCase(Locale.ROOT);
     }
 
+    public static String determinePreviewType(boolean isImage, boolean isPdf, boolean isJson, boolean isCsv, boolean isText) {
+        if (isImage) return "image";
+        if (isPdf) return "pdf";
+        if (isJson) return "json";
+        if (isCsv) return "csv";
+        if (isText) return "text";
+        return "";
+    }
+
     public static boolean isPreviewableText(FileEntity fileEntity) {
         String lower = lowerName(fileEntity);
         return TEXT_EXTENSIONS.stream().anyMatch(lower::endsWith);

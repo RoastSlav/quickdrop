@@ -52,20 +52,6 @@
         <section class="sm:col-span-2">
             <div class="bg-white dark:bg-slate-800 p-6 md:p-8 rounded-2xl shadow-lg flex flex-col gap-4 w-full"
                  id="fileInfoCard">
-                <div class="rounded-xl border border-slate-200 dark:border-slate-700 p-3 bg-slate-50 dark:bg-slate-900" id="previewContainer"
-                     th:if="${isPreviewEnabled and (isPreviewableImage or isPreviewableText)}"
-                     th:attr="data-preview-url=${previewUrl},data-preview-image=${isPreviewableImage},data-preview-text=${isPreviewableText},data-file-name=${file.name},data-require-manual=${requireManualPreview},data-max-preview-mb=${maxPreviewSizeMB}">
-                    <div class="flex items-center justify-between mb-2 text-sm text-gray-600 dark:text-gray-400">
-                        <span>Preview</span>
-                        <button class="text-xs px-2 py-1 rounded bg-sky-500 text-white hover:bg-sky-600 disabled:opacity-50" type="button"
-                                id="loadPreviewBtn" th:if="${requireManualPreview}">
-                            Load preview (<span th:text="${maxPreviewSizeMB}">5</span> MB limit)
-                        </button>
-                    </div>
-                    <div id="previewContent" class="flex justify-center">
-                        <div class="text-sm text-gray-500" id="previewStatus" th:text="${requireManualPreview} ? 'Click Load preview to fetch.' : 'Loading preview…'"></div>
-                    </div>
-                </div>
                 <h2 class="text-center text-xl font-semibold tracking-tight" th:text="${file.name}">File Name</h2>
                 <p class="text-center text-gray-700 dark:text-gray-300" th:if="${!#strings.isEmpty(file.description)}"
                    th:text="${file.description}"></p>
@@ -141,6 +127,21 @@
                             Renew File Lifetime
                         </button>
                     </form>
+                </div>
+
+                <div class="rounded-xl border border-slate-200 dark:border-slate-700 p-3 bg-slate-50 dark:bg-slate-900" id="previewContainer"
+                     th:if="${isPreviewEnabled and (isPreviewableImage or isPreviewableText)}"
+                     th:attr="data-preview-url=${previewUrl},data-preview-image=${isPreviewableImage},data-preview-text=${isPreviewableText},data-file-name=${file.name},data-require-manual=${requireManualPreview},data-max-preview-mb=${maxPreviewSizeMB}">
+                    <div class="flex items-center justify-between mb-2 text-sm text-gray-600 dark:text-gray-400">
+                        <span>Preview</span>
+                        <button class="text-xs px-2 py-1 rounded bg-sky-500 text-white hover:bg-sky-600 disabled:opacity-50" type="button"
+                                id="loadPreviewBtn" th:if="${requireManualPreview}">
+                            Load preview (<span th:text="${maxPreviewSizeMB}">5</span> MB limit)
+                        </button>
+                    </div>
+                    <div id="previewContent" class="flex justify-center">
+                        <div class="text-sm text-gray-500" id="previewStatus" th:text="${requireManualPreview} ? 'Click Load preview to fetch.' : 'Loading preview…'"></div>
+                    </div>
                 </div>
             </div>
         </section>

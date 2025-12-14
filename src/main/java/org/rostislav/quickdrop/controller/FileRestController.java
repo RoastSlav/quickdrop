@@ -62,6 +62,11 @@ public class FileRestController {
         try {
             logger.info("Submitting chunk {} of {} for file: {}", chunkNumber, totalChunks, fileName);
 
+            boolean uploadPasswordEnabled = applicationSettingsService.isUploadPasswordEnabled();
+            if (!uploadPasswordEnabled && password != null && !password.isBlank()) {
+                return ResponseEntity.badRequest().body("{\"error\": \"Upload passwords are disabled\"}");
+            }
+
             boolean adminSession = sessionService.hasValidAdminSession(request);
             boolean allowKeepIndefinitely = !applicationSettingsService.isKeepIndefinitelyAdminOnly() || adminSession;
             boolean keepIndefinitelyValue = allowKeepIndefinitely && Boolean.TRUE.equals(keepIndefinitely);
@@ -70,7 +75,9 @@ public class FileRestController {
             String uploaderIp = forwardedFor != null && !forwardedFor.isBlank() ? forwardedFor.split(",")[0].trim() : request.getRemoteAddr();
             String uploaderUserAgent = request.getHeader("User-Agent");
 
-            FileUploadRequest fileUploadRequest = new FileUploadRequest(description, keepIndefinitelyValue, password, hidden, fileName, totalChunks, fileSize, uploaderIp, uploaderUserAgent, Boolean.TRUE.equals(folderUpload), folderName, folderManifest);
+            String effectivePassword = uploadPasswordEnabled ? password : null;
+
+            FileUploadRequest fileUploadRequest = new FileUploadRequest(description, keepIndefinitelyValue, effectivePassword, hidden, fileName, totalChunks, fileSize, uploaderIp, uploaderUserAgent, Boolean.TRUE.equals(folderUpload), folderName, folderManifest);
             FileEntity fileEntity = asyncFileMergeService.submitChunk(fileUploadRequest, file, chunkNumber);
             return ResponseEntity.ok(fileEntity);
         } catch (IOException e) {

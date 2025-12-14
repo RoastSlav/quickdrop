@@ -3,6 +3,7 @@
 let isUploading = false;
 let indefiniteNoPwWarningShown = false;
 let selectedUpload = null; // { file: Blob|File, name, size, folderUpload, folderName, folderManifest }
+const uploadPasswordEnabled = typeof window !== "undefined" && window.uploadPasswordEnabled === false ? false : true;
 
 function cleanupSelectedUpload() {
     if (selectedUpload?.zipObjectUrl) {
@@ -282,9 +283,10 @@ function onUploadFormSubmit(event) {
     // 1) Check "Keep Indefinitely" + no password
     const keepIndefinitelyCheckbox = document.getElementById("keepIndefinitely");
     const keepIndefinitely = keepIndefinitelyCheckbox ? keepIndefinitelyCheckbox.checked : false;
-    const password = document.getElementById("password").value.trim();
+    const passwordInput = document.getElementById("password");
+    const password = passwordInput ? passwordInput.value.trim() : "";
 
-    if (keepIndefinitely && !password) {
+    if (uploadPasswordEnabled && keepIndefinitely && !password) {
         // If we haven’t shown the warning yet, show it now and bail
         if (!indefiniteNoPwWarningShown) {
             indefiniteNoPwWarningShown = true;
@@ -361,7 +363,8 @@ function startChunkUpload() {
 
                 if (currentChunk < totalChunks) {
                     // Continue uploading remaining chunks.
-                    if (currentChunk === totalChunks - 1 && document.getElementById("password").value.trim()) {
+                    const passwordValue = document.getElementById("password")?.value.trim();
+                    if (uploadPasswordEnabled && currentChunk === totalChunks - 1 && passwordValue) {
                         document.getElementById("uploadStatus").innerText = "Upload complete. Encrypting...";
                     }
                     uploadNextChunk();
@@ -425,6 +428,9 @@ function buildChunkFormData(chunk, chunkNumber, fileName, totalChunks, fileSize,
 
     // Gather other fields (excluding file inputs/checkboxes)
     Array.from(uploadForm.elements).forEach((el) => {
+        if (!uploadPasswordEnabled && el.name === "password") {
+            return;
+        }
         if (el.name && el.type !== "file" && el.type !== "checkbox") {
             formData.append(el.name, el.value.trim());
         }

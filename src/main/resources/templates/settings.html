@@ -301,6 +301,19 @@
                         </span>
                     </label>
                 </div>
+
+                <div class="rounded-xl border border-slate-200 dark:border-slate-700 p-4">
+                    <label class="flex items-start gap-3">
+                        <input class="mt-1 h-4 w-4 rounded border-gray-400 dark:border-gray-600 accent-sky-500 dark:accent-sky-400 focus:ring-sky-500" id="disableUploadPassword" th:field="*{disableUploadPassword}"
+                               type="checkbox">
+                        <span>
+                            <span class="text-sm font-medium">Disable upload passwords</span><br>
+                            <span class="text-xs text-gray-600 dark:text-gray-400">
+                                Prevents users from setting passwords on uploads (and disables per-file encryption).
+                            </span>
+                        </span>
+                    </label>
+                </div>
             </div>
         </section>
 

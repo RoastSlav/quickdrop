@@ -30,6 +30,22 @@ function toggleBatchFields() {
     }
 }
 
+function syncUploadPasswordSetting() {
+    const disableUploadPw = document.getElementById('disableUploadPassword');
+    const encryptionDisabled = document.getElementById('encryptionDisabled');
+    if (!disableUploadPw || !encryptionDisabled) return;
+
+    const forced = disableUploadPw.checked;
+    if (forced) {
+        encryptionDisabled.checked = true;
+        encryptionDisabled.disabled = true;
+        encryptionDisabled.classList.add('cursor-not-allowed', 'opacity-60');
+    } else {
+        encryptionDisabled.disabled = false;
+        encryptionDisabled.classList.remove('cursor-not-allowed', 'opacity-60');
+    }
+}
+
 function updateBatchAvailability() {
     const discordOn = document.getElementById('discordWebhookEnabled')?.checked;
     const emailOn = document.getElementById('emailNotificationsEnabled')?.checked;
@@ -121,10 +137,12 @@ document.addEventListener('DOMContentLoaded', function () {
     toggleDiscordField();
     toggleEmailFields();
     updateBatchAvailability();
+    syncUploadPasswordSetting();
 
     document.getElementById('discordWebhookEnabled')?.addEventListener('change', toggleDiscordField);
     document.getElementById('emailNotificationsEnabled')?.addEventListener('change', toggleEmailFields);
     document.getElementById('notificationBatchEnabled')?.addEventListener('change', toggleBatchFields);
+    document.getElementById('disableUploadPassword')?.addEventListener('change', syncUploadPasswordSetting);
 
     document.getElementById('testDiscord')?.addEventListener('click', () => sendNotificationTest('discord', 'testDiscord', 'discordTestStatus'));
     document.getElementById('testEmail')?.addEventListener('click', () => sendNotificationTest('email', 'testEmail', 'emailTestStatus'));

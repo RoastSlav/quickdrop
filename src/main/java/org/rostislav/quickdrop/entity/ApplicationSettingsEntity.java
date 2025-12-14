@@ -23,6 +23,7 @@ public class ApplicationSettingsEntity {
     private boolean isFileListPageEnabled;
     private boolean isAdminDashboardButtonEnabled;
     private boolean disableEncryption;
+    private boolean disableUploadPassword;
     private String defaultHomePage;
     private boolean keepIndefinitelyAdminOnly;
     private boolean discordWebhookEnabled;
@@ -52,6 +53,7 @@ public class ApplicationSettingsEntity {
         this.isFileListPageEnabled = settings.isFileListPageEnabled();
         this.isAdminDashboardButtonEnabled = settings.isAdminDashboardButtonEnabled();
         this.disableEncryption = settings.isEncryptionDisabled();
+        this.disableUploadPassword = settings.isDisableUploadPassword();
         this.defaultHomePage = settings.getDefaultHomePage();
         this.keepIndefinitelyAdminOnly = settings.isKeepIndefinitelyAdminOnly();
         this.discordWebhookEnabled = settings.isDiscordWebhookEnabled();
@@ -170,6 +172,14 @@ public class ApplicationSettingsEntity {
 
     public void setDisableEncryption(boolean disableEncryption) {
         this.disableEncryption = disableEncryption;
+    }
+
+    public boolean isDisableUploadPassword() {
+        return disableUploadPassword;
+    }
+
+    public void setDisableUploadPassword(boolean disableUploadPassword) {
+        this.disableUploadPassword = disableUploadPassword;
     }
 
     public String getDefaultHomePage() {

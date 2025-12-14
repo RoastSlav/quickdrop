@@ -14,13 +14,25 @@ function updateCheckboxState(event, checkbox) {
 }
 
 function initializeModal() {
-    const downloadLink = document.getElementById("downloadLink").innerText;
-    updateShareLink(downloadLink);
-    document.getElementById('unrestrictedLink').checked = false;
-    document.getElementById('linkOptions').classList.add('hidden');
+    const downloadLinkEl = document.getElementById("downloadLink");
+    const unrestricted = document.getElementById('unrestrictedLink');
+    const linkOptions = document.getElementById('linkOptions');
     const generateButton = document.getElementById('generateLinkButton');
-    generateButton.disabled = true;
-    generateButton.classList.add('hidden');
+
+    if (downloadLinkEl) {
+        updateShareLink(downloadLinkEl.innerText);
+    }
+
+    if (unrestricted) {
+        unrestricted.checked = false;
+    }
+    if (linkOptions) {
+        linkOptions.classList.add('hidden');
+    }
+    if (generateButton) {
+        generateButton.disabled = true;
+        generateButton.classList.add('hidden');
+    }
 }
 
 function generateShareLink(fileUuid, daysValid, allowedNumberOfDownloads) {
@@ -109,11 +121,11 @@ function toggleLinkType() {
     const linkOptions = document.getElementById('linkOptions');
     const generateLinkButton = document.getElementById('generateLinkButton');
 
-    if (unrestrictedLinkCheckbox.checked) {
+    if (unrestrictedLinkCheckbox && unrestrictedLinkCheckbox.checked) {
         linkOptions.classList.remove('hidden');
         generateLinkButton.classList.remove('hidden');
         generateLinkButton.disabled = false;
-    } else {
+    } else if (unrestrictedLinkCheckbox) {
         linkOptions.classList.add('hidden');
         generateLinkButton.classList.add('hidden');
         generateLinkButton.disabled = true;
@@ -153,4 +165,120 @@ function positionShareModal() {
 
 document.addEventListener('DOMContentLoaded', () => {
     initializeModal();
+    renderFolderTree();
 });
+
+function renderFolderTree() {
+    const treeEl = document.getElementById('folderTree');
+    if (!treeEl) return;
+
+    const manifestScript = document.getElementById('folderManifestData');
+    const folderName = treeEl.dataset.folderName || 'folder';
+    if (!manifestScript || !manifestScript.textContent) {
+        treeEl.textContent = 'No manifest available.';
+        return;
+    }
+
+    let entries;
+    try {
+        entries = JSON.parse(manifestScript.textContent);
+    } catch (e) {
+        console.warn('Folder manifest parse failed', e);
+        treeEl.textContent = 'Unable to render folder contents.';
+        return;
+    }
+
+    const root = createTreeRoot(folderName);
+    entries.forEach((entry) => {
+        if (!entry || !entry.path) return;
+        addPathToTree(root, entry.path, folderName);
+    });
+
+    const lines = [];
+    printTree(root, '', true, lines, true);
+
+    treeEl.innerHTML = '';
+    const frag = document.createDocumentFragment();
+
+    lines.forEach((segments) => {
+        const lineEl = document.createElement('div');
+        lineEl.style.whiteSpace = 'pre';
+
+        segments.forEach((segment) => {
+            const span = document.createElement('span');
+            if (segment.type === 'root') {
+                span.className = 'folder-tree-root';
+            } else if (segment.type === 'folder') {
+                span.className = 'folder-tree-folder';
+            } else if (segment.type === 'file') {
+                span.className = 'folder-tree-file';
+            } else if (segment.type === 'connector') {
+                span.className = 'folder-tree-connector';
+            }
+            span.textContent = segment.text;
+            lineEl.appendChild(span);
+        });
+
+        frag.appendChild(lineEl);
+    });
+
+    treeEl.appendChild(frag);
+}
+
+function createTreeRoot(name) {
+    return {name, children: [], files: []};
+}
+
+function addPathToTree(root, path, folderName) {
+    const parts = path.split(/[\\/]/).filter(Boolean);
+    let idx = 0;
+    if (parts[0] === folderName) {
+        idx = 1; // skip duplicated root segment
+    }
+
+    let node = root;
+    for (; idx < parts.length; idx++) {
+        const part = parts[idx];
+        const isFile = idx === parts.length - 1;
+        if (isFile && path && path.endsWith('/')) {
+            // directory marker encoded with trailing slash
+            const dirNode = createTreeRoot(part);
+            node.children.push(dirNode);
+            node = dirNode;
+        } else if (isFile && part.includes('.')) {
+            node.files.push(part);
+        } else {
+            let child = node.children.find((c) => c.name === part);
+            if (!child) {
+                child = createTreeRoot(part);
+                node.children.push(child);
+            }
+            node = child;
+        }
+    }
+}
+
+function printTree(node, prefix, isLast, lines, isRoot = false) {
+    const connector = prefix === '' ? '' : (isLast ? '└─ ' : '├─ ');
+    const lineSegments = [
+        {text: `${prefix}${connector}`, type: 'connector'},
+        {text: node.name, type: isRoot ? 'root' : 'folder'},
+    ];
+    lines.push(lineSegments);
+
+    const nextPrefix = prefix === '' ? '   ' : (isLast ? `${prefix}   ` : `${prefix}│  `);
+    const children = [...node.children.sort((a, b) => a.name.localeCompare(b.name)), ...node.files.sort()];
+
+    children.forEach((child, index) => {
+        const lastChild = index === children.length - 1;
+        if (typeof child === 'string') {
+            const fileLine = [
+                {text: `${nextPrefix}${lastChild ? '└─ ' : '├─ '}`, type: 'connector'},
+                {text: child, type: 'file'},
+            ];
+            lines.push(fileLine);
+        } else {
+            printTree(child, nextPrefix, lastChild, lines, false);
+        }
+    });
+}

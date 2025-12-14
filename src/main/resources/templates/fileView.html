@@ -83,6 +83,14 @@
                     <span class="font-semibold">File Size:</span>
                     <span th:text="${fileSize}"></span>
                 </div>
+                <div class="border-t pt-4" th:if="${file.folderUpload}">
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="text-sm font-semibold">Folder contents</div>
+                    </div>
+                    <div id="folderTree" class="text-sm font-mono whitespace-pre-wrap bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-100 rounded-lg p-3 max-h-64 overflow-auto folder-tree-box"
+                         th:attr="data-manifest=${file.folderManifest},data-folder-name=${file.folderName}"></div>
+                    <script id="folderManifestData" type="application/json" th:utext="${file.folderManifest}"></script>
+                </div>
                 <div class="hidden bg-sky-50 dark:bg-sky-900 text-sky-800 dark:text-sky-300 rounded-lg p-2"
                      id="preparingMessage">Your file is
                     being prepared for download. Please wait...

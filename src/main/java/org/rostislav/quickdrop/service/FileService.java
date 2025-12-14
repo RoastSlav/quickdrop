@@ -436,7 +436,7 @@ public class FileService {
         }
 
         boolean notExpired = token.tokenExpirationDate == null || !LocalDate.now().isAfter(token.tokenExpirationDate);
-        boolean hasDownloads = token.numberOfAllowedDownloads != null && token.numberOfAllowedDownloads > 0;
+        boolean hasDownloads = token.numberOfAllowedDownloads == null || token.numberOfAllowedDownloads > 0;
         return notExpired && hasDownloads;
     }
 
@@ -496,7 +496,10 @@ public class FileService {
     }
 
     private void updateShareTokenAfterDownload(ShareTokenEntity shareTokenEntity, FileEntity fileEntity) {
-        shareTokenEntity.numberOfAllowedDownloads--;
+        if (shareTokenEntity.numberOfAllowedDownloads != null) {
+            shareTokenEntity.numberOfAllowedDownloads--;
+        }
+
         if (!validateShareToken(shareTokenEntity)) {
             shareTokenRepository.delete(shareTokenEntity);
         } else {
@@ -580,7 +583,7 @@ public class FileService {
         return builder.reverse().toString();
     }
 
-    public ShareTokenEntity generateShareToken(String uuid, LocalDate tokenExpirationDate, int numberOfDownloads) {
+    public ShareTokenEntity generateShareToken(String uuid, LocalDate tokenExpirationDate, Integer numberOfDownloads) {
         Optional<FileEntity> optionalFile = fileRepository.findByUUID(uuid);
         if (optionalFile.isEmpty()) {
             throw new IllegalArgumentException("File not found");
@@ -594,7 +597,7 @@ public class FileService {
         return shareToken;
     }
 
-    public ShareTokenEntity generateShareToken(String uuid, LocalDate tokenExpirationDate, String sessionToken, int numberOfDownloads) {
+    public ShareTokenEntity generateShareToken(String uuid, LocalDate tokenExpirationDate, String sessionToken, Integer numberOfDownloads) {
         Optional<FileEntity> optionalFile = fileRepository.findByUUID(uuid);
         if (optionalFile.isEmpty()) {
             throw new IllegalArgumentException("File not found");

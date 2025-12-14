@@ -14,34 +14,47 @@ function updateCheckboxState(event, checkbox) {
 }
 
 function initializeModal() {
-    const downloadLinkEl = document.getElementById("downloadLink");
-    const unrestricted = document.getElementById('unrestrictedLink');
-    const linkOptions = document.getElementById('linkOptions');
-    const generateButton = document.getElementById('generateLinkButton');
+    updateShareLink("");
 
-    if (downloadLinkEl) {
-        updateShareLink(downloadLinkEl.innerText);
-    }
+    const daysValidInput = document.getElementById('daysValid');
+    const downloadsInput = document.getElementById('allowedNumberOfDownloadsCount');
+    const noExpiration = document.getElementById('noExpiration');
+    const unlimitedDownloads = document.getElementById('unlimitedDownloads');
 
-    if (unrestricted) {
-        unrestricted.checked = false;
+    if (daysValidInput) {
+        daysValidInput.disabled = false;
+        daysValidInput.value = "30";
     }
-    if (linkOptions) {
-        linkOptions.classList.add('hidden');
+    if (downloadsInput) {
+        downloadsInput.disabled = false;
+        downloadsInput.value = "1";
     }
-    if (generateButton) {
-        generateButton.disabled = true;
-        generateButton.classList.add('hidden');
+    if (noExpiration) {
+        noExpiration.checked = false;
+    }
+    if (unlimitedDownloads) {
+        unlimitedDownloads.checked = false;
     }
 }
 
 function generateShareLink(fileUuid, daysValid, allowedNumberOfDownloads) {
     const csrfToken = document.querySelector('meta[name="_csrf"]').content;
-    const expirationDate = new Date();
-    expirationDate.setDate(expirationDate.getDate() + daysValid);
-    const expirationDateStr = expirationDate.toISOString().split('T')[0];
+    const params = new URLSearchParams();
 
-    return fetch(`/api/file/share/${fileUuid}?expirationDate=${expirationDateStr}&nOfDownloads=${allowedNumberOfDownloads}`, {
+    if (typeof daysValid === 'number' && daysValid > 0) {
+        const expirationDate = new Date();
+        expirationDate.setDate(expirationDate.getDate() + daysValid);
+        params.append('expirationDate', expirationDate.toISOString().split('T')[0]);
+    }
+
+    if (allowedNumberOfDownloads !== null && allowedNumberOfDownloads !== undefined) {
+        params.append('nOfDownloads', allowedNumberOfDownloads);
+    }
+
+    const query = params.toString();
+    const url = query ? `/api/file/share/${fileUuid}?${query}` : `/api/file/share/${fileUuid}`;
+
+    return fetch(url, {
         method: 'POST',
         credentials: 'same-origin',
         headers: {
@@ -58,6 +71,10 @@ function generateShareLink(fileUuid, daysValid, allowedNumberOfDownloads) {
 
 function copyShareLink() {
     const shareLinkInput = document.getElementById('shareLink');
+    if (!shareLinkInput.value) {
+        alert("Generate a share link first.");
+        return;
+    }
     navigator.clipboard.writeText(shareLinkInput.value)
         .then(() => {
             alert("Link copied to clipboard!");
@@ -70,27 +87,37 @@ function copyShareLink() {
 function createShareLink() {
     const fileUuid = document.getElementById('fileUuid').textContent.trim();
     const daysValidInput = document.getElementById('daysValid');
+    const noExpiration = document.getElementById('noExpiration');
     const daysValid = parseInt(daysValidInput.value, 10);
     const allowedNumberOfDownloadsInput = document.getElementById('allowedNumberOfDownloadsCount');
+    const unlimitedDownloads = document.getElementById('unlimitedDownloads');
     const allowedNumberOfDownloads = parseInt(allowedNumberOfDownloadsInput.value, 10);
 
-    if (isNaN(daysValid) || daysValid < 1) {
-        alert("Please enter a valid number of days.");
+    if (!noExpiration.checked && !isNaN(daysValid) && daysValid < 0) {
+        alert("Days valid cannot be negative.");
         return;
     }
 
-    if (isNaN(allowedNumberOfDownloads) || allowedNumberOfDownloads < 1) {
-        alert("Please enter a valid number of downloads.");
+    if (!unlimitedDownloads.checked && !isNaN(allowedNumberOfDownloads) && allowedNumberOfDownloads < 0) {
+        alert("Allowed downloads cannot be negative.");
         return;
     }
 
     const spinner = document.getElementById('spinner');
     const generateLinkButton = document.getElementById('generateLinkButton');
 
-    spinner.style.display = 'inline-block';
+    if (spinner) {
+        spinner.classList.remove('hidden');
+        spinner.style.display = 'inline-block';
+    }
     generateLinkButton.disabled = true;
 
-    generateShareLink(fileUuid, daysValid, allowedNumberOfDownloads)
+    const effectiveDaysValid = noExpiration.checked || isNaN(daysValid) || daysValid === 0 ? null : daysValid;
+    const effectiveDownloads = unlimitedDownloads.checked || isNaN(allowedNumberOfDownloads) || allowedNumberOfDownloads === 0
+        ? null
+        : allowedNumberOfDownloads;
+
+    generateShareLink(fileUuid, effectiveDaysValid, effectiveDownloads)
         .then((shareLink) => {
             updateShareLink(shareLink); // Update with the token-based link
         })
@@ -98,7 +125,10 @@ function createShareLink() {
             console.error(error);
             alert("Failed to generate share link.");
         }).finally(() => {
-        spinner.style.display = 'none';
+        if (spinner) {
+            spinner.classList.add('hidden');
+            spinner.style.display = 'none';
+        }
         generateLinkButton.disabled = false;
     });
 }
@@ -107,29 +137,47 @@ function updateShareLink(link) {
     const shareLinkInput = document.getElementById('shareLink');
     const canvas = document.getElementById('shareQRCode');
 
-    shareLinkInput.value = link;
+    shareLinkInput.value = link || '';
 
     const ctx = canvas.getContext('2d');
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+    if (!link) {
+        return;
+    }
+
     QRCode.toCanvas(canvas, link, {width: 150, height: 150});
 }
 
+function toggleExpirationLimit() {
+    const checkbox = document.getElementById('noExpiration');
+    const input = document.getElementById('daysValid');
+    if (!checkbox || !input) return;
 
-function toggleLinkType() {
-    const unrestrictedLinkCheckbox = document.getElementById('unrestrictedLink');
-    const linkOptions = document.getElementById('linkOptions');
-    const generateLinkButton = document.getElementById('generateLinkButton');
+    if (checkbox.checked) {
+        input.disabled = true;
+        input.value = "";
+    } else {
+        input.disabled = false;
+        if (!input.value) {
+            input.value = "30";
+        }
+    }
+}
 
-    if (unrestrictedLinkCheckbox && unrestrictedLinkCheckbox.checked) {
-        linkOptions.classList.remove('hidden');
-        generateLinkButton.classList.remove('hidden');
-        generateLinkButton.disabled = false;
-    } else if (unrestrictedLinkCheckbox) {
-        linkOptions.classList.add('hidden');
-        generateLinkButton.classList.add('hidden');
-        generateLinkButton.disabled = true;
-        initializeModal();
+function toggleDownloadLimit() {
+    const checkbox = document.getElementById('unlimitedDownloads');
+    const input = document.getElementById('allowedNumberOfDownloadsCount');
+    if (!checkbox || !input) return;
+
+    if (checkbox.checked) {
+        input.disabled = true;
+        input.value = "";
+    } else {
+        input.disabled = false;
+        if (!input.value) {
+            input.value = "1";
+        }
     }
 }
 

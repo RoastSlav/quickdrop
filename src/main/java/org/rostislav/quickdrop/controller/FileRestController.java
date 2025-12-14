@@ -90,10 +90,17 @@ public class FileRestController {
     }
 
     @PostMapping("/share/{uuid}")
-    public ResponseEntity<String> generateShareableLink(@PathVariable String uuid, @RequestParam("expirationDate") LocalDate expirationDate, @RequestParam("nOfDownloads") int numberOfDownloads, HttpServletRequest request) {
+    public ResponseEntity<String> generateShareableLink(@PathVariable String uuid,
+                                                        @RequestParam(value = "expirationDate", required = false) LocalDate expirationDate,
+                                                        @RequestParam(value = "nOfDownloads", required = false) Integer numberOfDownloads,
+                                                        HttpServletRequest request) {
         FileEntity fileEntity = fileService.getFile(uuid);
         if (fileEntity == null) {
             return ResponseEntity.badRequest().body("File not found.");
+        }
+
+        if (numberOfDownloads != null && numberOfDownloads < 0) {
+            return ResponseEntity.badRequest().body("Number of downloads cannot be negative.");
         }
 
         ShareTokenEntity token;

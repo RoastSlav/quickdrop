@@ -161,19 +161,16 @@
                  id="sharePanel">
                 <h2 class="text-xl font-semibold tracking-tight">Share</h2>
 
-                <div class="text-sm text-gray-600 dark:text-gray-400"
-                     th:if="${file.passwordHash != null || isAppPasswordSet}">
-                    <p>
-                        By default, this link requires a password to access the file if the file is password-protected
-                        or if the app password is enabled.
-                        <br>You can generate an unrestricted link valid for a specific number of days and downloads.
-                    </p>
+                <div class="text-sm text-gray-700 dark:text-gray-300 space-y-1">
+                    <p>Share links always bypass file and app passwords.</p>
+                    <p class="text-amber-600 dark:text-amber-400">Add an expiration date and/or download limit, or choose unlimited to keep the link open-ended.</p>
                 </div>
 
                 <div class="flex flex-col sm:flex-row gap-2">
-                    <input class="w-full min-w-0 flex-1 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2"
-                           id="shareLink" readonly
-                           type="text">
+                          <input class="w-full min-w-0 flex-1 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2"
+                              id="shareLink" readonly
+                              placeholder="Generate a share link that bypasses passwords"
+                              type="text">
                     <button class="w-full sm:w-auto shrink-0 rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium px-4 py-2"
                             onclick="copyShareLink()"
                             type="button">
@@ -186,38 +183,37 @@
                 </div>
 
                 <div class="space-y-4">
-                    <div class="flex items-center gap-2"
-                         th:if="${file.passwordHash != null || isAppPasswordSet == true}">
-                        <input class="h-4 w-4 rounded border-gray-400 dark:border-gray-600 accent-sky-500 dark:accent-sky-400 focus:ring-sky-500"
-                               id="unrestrictedLink" onchange="toggleLinkType()"
-                               type="checkbox">
-                        <label class="text-sm" for="unrestrictedLink">Generate an unrestricted link</label>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4" id="linkOptions">
+                        <div class="space-y-2">
+                            <label class="block text-sm" for="daysValid">Days valid</label>
+                            <input class="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2"
+                                   id="daysValid" min="0" type="number" value="30">
+                            <label class="flex items-center gap-2 text-sm" for="noExpiration">
+                                <input class="h-4 w-4 rounded border-gray-400 dark:border-gray-600 accent-sky-500 dark:accent-sky-400 focus:ring-sky-500"
+                                       id="noExpiration" onchange="toggleExpirationLimit()" type="checkbox">
+                                No expiration (unlimited time)
+                            </label>
+                        </div>
+                        <div class="space-y-2">
+                            <label class="block text-sm" for="allowedNumberOfDownloadsCount">Allowed downloads</label>
+                            <input class="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2"
+                                   id="allowedNumberOfDownloadsCount" min="0" type="number" value="1">
+                            <label class="flex items-center gap-2 text-sm" for="unlimitedDownloads">
+                                <input class="h-4 w-4 rounded border-gray-400 dark:border-gray-600 accent-sky-500 dark:accent-sky-400 focus:ring-sky-500"
+                                       id="unlimitedDownloads" onchange="toggleDownloadLimit()" type="checkbox">
+                                Unlimited downloads
+                            </label>
+                        </div>
                     </div>
 
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 hidden" id="linkOptions">
-                        <div>
-                            <label class="block text-sm" for="daysValid">Days valid:</label>
-                            <input class="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2"
-                                   id="daysValid" min="1" type="number"
-                                   value="30">
-                        </div>
-                        <div>
-                            <label class="block text-sm" for="allowedNumberOfDownloadsCount">Allowed downloads:</label>
-                            <input class="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2"
-                                   id="allowedNumberOfDownloadsCount" min="1" type="number"
-                                   value="1">
-                        </div>
-                    </div>
-
-                    <div class="flex justify-end items-center gap-2"
-                         th:if="${file.passwordHash != null || isAppPasswordSet == true}">
+                    <div class="flex justify-end items-center gap-2">
                         <div class="hidden animate-spin rounded-full h-5 w-5 border-2 border-sky-500 border-t-transparent"
                              id="spinner"></div>
-                        <button class="hidden rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium px-4 py-2"
-                                disabled id="generateLinkButton"
+                        <button class="rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium px-4 py-2"
+                                id="generateLinkButton"
                                 onclick="createShareLink()"
                                 type="button">
-                            Generate
+                            Generate link
                         </button>
                     </div>
                 </div>

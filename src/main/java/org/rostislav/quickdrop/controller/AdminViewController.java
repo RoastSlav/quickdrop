@@ -74,7 +74,7 @@ public class AdminViewController {
     }
 
     @GetMapping("/settings")
-    public String getSettingsPage(Model model) {
+    public String getSettingsPage(@RequestParam(value = "error", required = false) String error, Model model) {
         ApplicationSettingsEntity settings = applicationSettingsService.getApplicationSettings();
 
         ApplicationSettingsViewModel applicationSettingsViewModel = new ApplicationSettingsViewModel(settings);
@@ -82,6 +82,19 @@ public class AdminViewController {
 
         model.addAttribute("settings", applicationSettingsViewModel);
         model.addAttribute("aboutInfo", systemInfoService.getAboutInfo());
+
+        try {
+            var cron = CronExpression.parse(settings.getFileDeletionCron());
+            var next = cron.next(java.time.LocalDateTime.now());
+            String nextText = next != null ? next.toString() : "No upcoming run";
+            model.addAttribute("cronNextRunText", nextText);
+        } catch (IllegalArgumentException e) {
+            model.addAttribute("cronNextRunText", "Invalid cron expression");
+        }
+
+        if (error != null) {
+            model.addAttribute("error", error);
+        }
         return "settings";
     }
 

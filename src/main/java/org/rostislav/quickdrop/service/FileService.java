@@ -117,6 +117,18 @@ public class FileService {
         return request.password != null && !request.password.isBlank() && applicationSettingsService.isEncryptionEnabled();
     }
 
+    public boolean isPreviewableImage(FileEntity fileEntity) {
+        if (fileEntity == null || fileEntity.name == null) return false;
+        String lower = fileEntity.name.toLowerCase();
+        return lower.endsWith(".png") || lower.endsWith(".jpg") || lower.endsWith(".jpeg") || lower.endsWith(".gif") || lower.endsWith(".webp") || lower.endsWith(".bmp") || lower.endsWith(".svg");
+    }
+
+    public boolean isPreviewableText(FileEntity fileEntity) {
+        if (fileEntity == null || fileEntity.name == null) return false;
+        String lower = fileEntity.name.toLowerCase();
+        return lower.endsWith(".txt") || lower.endsWith(".log") || lower.endsWith(".md") || lower.endsWith(".json") || lower.endsWith(".yaml") || lower.endsWith(".yml") || lower.endsWith(".csv") || lower.endsWith(".xml");
+    }
+
     private FileEntity populateFileEntity(FileUploadRequest request, String uuid) {
         FileEntity fileEntity = new FileEntity();
         fileEntity.name = request.fileName;
@@ -214,6 +226,91 @@ public class FileService {
             logger.error("Error preparing file download response: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
+    }
+
+    public ResponseEntity<StreamingResponseBody> previewFile(String uuid, HttpServletRequest request) {
+        FileEntity fileEntity = fileRepository.findByUUID(uuid).orElse(null);
+        if (fileEntity == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        if (!applicationSettingsService.isPreviewEnabled()) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        boolean isImage = isPreviewableImage(fileEntity);
+        boolean isText = isPreviewableText(fileEntity);
+        if (!isImage && !isText) {
+            return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE).build();
+        }
+
+        if (fileEntity.size > applicationSettingsService.getMaxPreviewSizeBytes()) {
+            return ResponseEntity.status(HttpStatus.PRECONDITION_REQUIRED).build();
+        }
+
+        Path filePath = Path.of(applicationSettingsService.getFileStoragePath(), fileEntity.uuid);
+        String password = getFilePasswordFromSessionToken(request);
+
+        InputStream inputStream;
+        try {
+            if (fileEntity.encrypted) {
+                inputStream = fileEncryptionService.getDecryptedInputStream(filePath.toFile(), password);
+            } else {
+                inputStream = new FileInputStream(filePath.toFile());
+            }
+        } catch (Exception e) {
+            logger.error("Error preparing preview for file {}: {}", uuid, e.getMessage());
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        String contentType = guessContentType(fileEntity.name, isImage, isText);
+
+        StreamingResponseBody body = getStreamingResponseBody(inputStream);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + fileEntity.name + "\"")
+                .header(HttpHeaders.CONTENT_TYPE, contentType)
+                .header(HttpHeaders.CACHE_CONTROL, "no-cache, no-store, must-revalidate")
+                .header("Pragma", "no-cache")
+                .header("Expires", "0")
+                .body(body);
+    }
+
+    private String guessContentType(String fileName, boolean isImage, boolean isText) {
+        if (isImage) {
+            if (fileName.toLowerCase().endsWith(".svg")) return "image/svg+xml";
+            if (fileName.toLowerCase().endsWith(".webp")) return "image/webp";
+            if (fileName.toLowerCase().endsWith(".gif")) return "image/gif";
+            if (fileName.toLowerCase().endsWith(".png")) return "image/png";
+            return "image/jpeg";
+        }
+        if (isText) {
+            if (fileName.toLowerCase().endsWith(".json")) return "application/json";
+            if (fileName.toLowerCase().endsWith(".xml")) return "application/xml";
+            if (fileName.toLowerCase().endsWith(".csv")) return "text/csv";
+            if (fileName.toLowerCase().endsWith(".md")) return "text/markdown";
+            return "text/plain; charset=UTF-8";
+        }
+        return "application/octet-stream";
+    }
+
+    public boolean isAuthorizedForFile(String uuid, HttpServletRequest request) {
+        FileEntity fileEntity = fileRepository.findByUUID(uuid).orElse(null);
+        if (fileEntity == null) {
+            return false;
+        }
+        if (fileEntity.passwordHash == null || fileEntity.passwordHash.isBlank()) {
+            return true;
+        }
+        Object sessionToken = request.getSession().getAttribute("file-session-token");
+        return sessionToken != null && sessionService.validateFileSessionToken(sessionToken.toString(), uuid);
+    }
+
+    public void logDownload(String uuid, HttpServletRequest request) {
+        FileEntity fileEntity = fileRepository.findByUUID(uuid).orElse(null);
+        if (fileEntity == null) return;
+        RequesterInfo requesterInfo = getRequesterInfo(request);
+        fileHistoryLogRepository.save(new FileHistoryLog(fileEntity, FileHistoryType.DOWNLOAD, requesterInfo.ipAddress, requesterInfo.userAgent));
+        notificationService.notifyFileAction(fileEntity, FileHistoryType.DOWNLOAD, requesterInfo.ipAddress, requesterInfo.userAgent);
     }
 
     private String getFilePasswordFromSessionToken(HttpServletRequest request) {

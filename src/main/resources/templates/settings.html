@@ -353,6 +353,25 @@
                 <div class="text-sm text-gray-600 dark:text-gray-400">OS Info</div>
                 <div class="text-lg font-semibold mt-1" th:text="${aboutInfo.osInfo}">N/A</div>
             </div>
+
+                <div class="rounded-xl border border-slate-200 dark:border-slate-700 p-4">
+                    <label class="flex items-start gap-3">
+                        <input class="mt-1 h-4 w-4 rounded border-gray-400 dark:border-gray-600 accent-sky-500 dark:accent-sky-400 focus:ring-sky-500" id="disablePreview" th:field="*{disablePreview}"
+                               type="checkbox">
+                        <span>
+                            <span class="text-sm font-medium">Disable file previews</span><br>
+                            <span class="text-xs text-gray-600 dark:text-gray-400">Hide inline previews for images/text on the file page.</span>
+                        </span>
+                    </label>
+                </div>
+
+                <div class="rounded-xl border border-slate-200 dark:border-slate-700 p-4">
+                    <label class="block text-sm font-medium mb-1" for="maxPreviewSizeBytes">Max preview size (MB)</label>
+                    <input class="w-full max-w-xs rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500" id="maxPreviewSizeBytes"
+                           min="1" step="1" th:value="${settings.maxPreviewSizeBytes / 1024 / 1024}" type="number"
+                           name="maxPreviewSizeBytes">
+                    <p class="text-xs text-gray-600 dark:text-gray-400 mt-1">Above this size users must click "Load preview".</p>
+                </div>
         </div>
     </section>
 </main>

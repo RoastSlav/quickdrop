@@ -78,6 +78,14 @@ public class AdminViewController {
     @PostMapping("/save")
     public Object saveSettings(ApplicationSettingsViewModel settings, HttpServletRequest request) {
         settings.setMaxFileSize(megabytesToBytes(settings.getMaxFileSize()));
+        if (request.getParameter("maxPreviewSizeBytes") != null) {
+            try {
+                long previewMb = Long.parseLong(request.getParameter("maxPreviewSizeBytes"));
+                settings.setMaxPreviewSizeBytes(previewMb * 1024 * 1024);
+            } catch (NumberFormatException ignored) {
+                // leave as-is if invalid
+            }
+        }
 
         applicationSettingsService.updateApplicationSettings(settings, settings.getAppPassword());
         if ("XMLHttpRequest".equalsIgnoreCase(request.getHeader("X-Requested-With"))) {

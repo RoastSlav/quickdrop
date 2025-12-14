@@ -1,7 +1,6 @@
 package org.rostislav.quickdrop.model;
 
-import org.rostislav.quickdrop.entity.DownloadLog;
-import org.rostislav.quickdrop.entity.FileRenewalLog;
+import org.rostislav.quickdrop.entity.FileHistoryLog;
 
 import java.time.LocalDateTime;
 
@@ -18,18 +17,20 @@ public class FileActionLogDTO {
         this.userAgent = userAgent;
     }
 
-    public FileActionLogDTO(DownloadLog downloadLog) {
-        this.actionType = "Download";
-        this.actionDate = downloadLog.getDownloadDate();
-        this.ipAddress = downloadLog.getDownloaderIp();
-        this.userAgent = downloadLog.getUserAgent();
+    public FileActionLogDTO(FileHistoryLog historyLog) {
+        this.actionType = mapType(historyLog.getEventType());
+        this.actionDate = historyLog.getEventDate();
+        this.ipAddress = historyLog.getIpAddress();
+        this.userAgent = historyLog.getUserAgent();
     }
 
-    public FileActionLogDTO(FileRenewalLog renewalLog) {
-        this.actionType = "Lifetime Renewed";
-        this.actionDate = renewalLog.getActionDate();
-        this.ipAddress = renewalLog.getIpAddress();
-        this.userAgent = renewalLog.getUserAgent();
+    private String mapType(FileHistoryType type) {
+        return switch (type) {
+            case DOWNLOAD -> "Download";
+            case RENEWAL -> "Lifetime Renewed";
+            case UPLOAD -> "Uploaded";
+            case DELETION -> "Deletion";
+        };
     }
 
     // Getters and setters

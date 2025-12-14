@@ -1,5 +1,6 @@
 package org.rostislav.quickdrop.service;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import jakarta.servlet.http.HttpSessionEvent;
 import jakarta.servlet.http.HttpSessionListener;
@@ -48,6 +49,11 @@ public class SessionService implements HttpSessionListener {
 
     public boolean validateAdminToken(String string) {
         return adminSessionTokens.contains(string);
+    }
+
+    public boolean hasValidAdminSession(HttpServletRequest request) {
+        Object token = request.getSession().getAttribute("admin-session-token");
+        return token != null && validateAdminToken(token.toString());
     }
 
     public boolean validateFileSessionToken(String sessionToken, String uuid) {

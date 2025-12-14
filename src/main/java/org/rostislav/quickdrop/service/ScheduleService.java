@@ -2,6 +2,7 @@ package org.rostislav.quickdrop.service;
 
 import jakarta.transaction.Transactional;
 import org.rostislav.quickdrop.entity.FileEntity;
+import org.rostislav.quickdrop.entity.ShareTokenEntity;
 import org.rostislav.quickdrop.repository.FileHistoryLogRepository;
 import org.rostislav.quickdrop.repository.FileRepository;
 import org.rostislav.quickdrop.repository.ShareTokenRepository;
@@ -13,6 +14,7 @@ import org.springframework.scheduling.support.CronTrigger;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ScheduledFuture;
 
@@ -25,6 +27,7 @@ public class ScheduleService {
     private final FileHistoryLogRepository fileHistoryLogRepository;
     private final ShareTokenRepository shareTokenRepository;
     private ScheduledFuture<?> scheduledTask;
+    private volatile String currentCron;
 
     public ScheduleService(FileRepository fileRepository, FileService fileService, FileHistoryLogRepository fileHistoryLogRepository, ShareTokenRepository shareTokenRepository) {
         this.fileRepository = fileRepository;
@@ -37,14 +40,21 @@ public class ScheduleService {
 
     @Transactional
     public void updateSchedule(String cronExpression, long maxFileLifeTime) {
-        if (scheduledTask != null) {
-            scheduledTask.cancel(false);
+        if (cronExpression != null && cronExpression.equals(currentCron) && scheduledTask != null && !scheduledTask.isCancelled()) {
+            logger.debug("Cron unchanged ({}), skipping reschedule", cronExpression);
+            return;
         }
 
-        scheduledTask = taskScheduler.schedule(
-                () -> deleteOldFiles(maxFileLifeTime),
-                new CronTrigger(cronExpression)
-        );
+        if (scheduledTask != null && cronExpression != null) {
+            scheduledTask.cancel(false);
+            scheduledTask = taskScheduler.schedule(
+                    () -> deleteOldFiles(maxFileLifeTime),
+                    new CronTrigger(cronExpression)
+            );
+        }
+
+        currentCron = cronExpression;
+        logger.info("Scheduled cleanup with cron: {}", cronExpression);
     }
 
     @Transactional
@@ -52,18 +62,22 @@ public class ScheduleService {
         logger.info("Deleting old files");
         LocalDate thresholdDate = LocalDate.now().minusDays(maxFileLifeTime);
         List<FileEntity> filesForDeletion = fileRepository.getFilesForDeletion(thresholdDate);
+
+        List<Long> deletedIds = new ArrayList<>();
         for (FileEntity file : filesForDeletion) {
-            logger.info("Deleting file: {}", file);
+            logger.info("Attempting filesystem delete for file: {}", file);
             boolean deleted = fileService.deleteFileFromFileSystem(file.uuid);
             if (deleted) {
-                fileHistoryLogRepository.deleteByFileId(file.id);
-                shareTokenRepository.deleteAllByFile(file);
-                fileRepository.delete(file);
+                deletedIds.add(file.id);
             } else {
-                logger.error("Failed to delete file {} ", file);
+                logger.error("Failed to delete file from filesystem: {}", file);
             }
         }
-        logger.info("Deleted {} files", filesForDeletion.size());
+
+        if (!deletedIds.isEmpty()) {
+            deletedIds.forEach(fileHistoryLogRepository::deleteByFileId);
+            fileRepository.deleteAllById(deletedIds);
+        }
     }
 
     @Transactional
@@ -71,21 +85,23 @@ public class ScheduleService {
     public void cleanDatabaseFromDeletedFiles() {
         logger.info("Cleaning database from deleted files");
 
-        List<FileEntity> toDelete = fileRepository.findAll().stream()
-                .filter(file -> !fileService.fileExistsInFileSystem(file.uuid))
-                .toList();
-
-        toDelete.forEach(file -> fileService.removeFileFromDatabase(file.uuid));
+        fileRepository.findAll().forEach(file -> {
+            if (!fileService.fileExistsInFileSystem(file.uuid)) {
+                fileService.removeFileFromDatabase(file.uuid);
+            }
+        });
     }
 
     @Transactional
     @Scheduled(cron = "0 30 3 * * *")
     public void cleanShareTokens() {
         logger.info("Cleaning invalid share tokens");
-        shareTokenRepository.getShareTokenEntitiesForDeletion().forEach(e -> {
-                    logger.info("Deleting share token: {}", e);
-                    shareTokenRepository.delete(e);
-                }
-        );
+        List<ShareTokenEntity> toDelete = shareTokenRepository.getShareTokenEntitiesForDeletion();
+        if (!toDelete.isEmpty()) {
+            shareTokenRepository.deleteAll(toDelete);
+            logger.info("Deleted {} invalid share tokens", toDelete.size());
+        } else {
+            logger.debug("No invalid share tokens found");
+        }
     }
 }

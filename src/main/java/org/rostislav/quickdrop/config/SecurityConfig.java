@@ -42,18 +42,18 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         if (applicationSettingsService.isAppPasswordEnabled()) {
             http.authorizeHttpRequests(authz -> authz
-                .requestMatchers(
-                    "/password/login",
-                    "/favicon.ico",
-                    "/error",
-                    "/share/**",
-                    "/file/share/**",
-                    "/api/file/download/**",
-                    "/css/**",
-                    "/js/**",
-                    "/images/**",
-                    "/webjars/**"
-                ).permitAll()
+                    .requestMatchers(
+                            "/password/login",
+                            "/favicon.ico",
+                            "/error",
+                            "/share/**",
+                            "/file/share/**",
+                            "/api/file/download/**",
+                            "/css/**",
+                            "/js/**",
+                            "/images/**",
+                            "/webjars/**"
+                    ).permitAll()
                     .anyRequest().authenticated()
             ).formLogin(form -> form
                     .loginPage("/password/login")
@@ -68,7 +68,7 @@ public class SecurityConfig {
         }
 
         http.csrf(csrf -> csrf
-            .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
         ).headers(headers -> headers
                 .frameOptions(HeadersConfigurer.FrameOptionsConfig::disable)
                 .contentSecurityPolicy(csp -> csp.policyDirectives("frame-ancestors *;"))

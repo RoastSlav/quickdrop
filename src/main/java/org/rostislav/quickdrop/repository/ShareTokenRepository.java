@@ -1,7 +1,7 @@
 package org.rostislav.quickdrop.repository;
 
-import org.rostislav.quickdrop.entity.ShareTokenEntity;
 import org.rostislav.quickdrop.entity.FileEntity;
+import org.rostislav.quickdrop.entity.ShareTokenEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 

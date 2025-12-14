@@ -76,7 +76,7 @@ html:not(.dark) .dark\:text-slate-400{
 .dark .nav-menu-item:hover{background-color:rgba(255,255,255,0.08);}
 @media (min-width:768px){
 	.nav-menu-panel{border:none;background-color:transparent;box-shadow:none;}
-	.nav-menu-item{border:none;background-color:transparent;padding:0;margin-top:0;width:auto;}
+	.nav-menu-item{border:none;background-color:transparent;padding:0.35rem 0.5rem;margin-top:0;width:auto;}
 }
 
 

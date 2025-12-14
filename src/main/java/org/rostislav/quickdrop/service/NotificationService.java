@@ -22,14 +22,15 @@ import static org.rostislav.quickdrop.util.DataValidator.safeString;
 public class NotificationService {
     private static final Logger logger = LoggerFactory.getLogger(NotificationService.class);
     private static final long DEFAULT_FLUSH_POLL_SECONDS = 60;
+    private static final RestTemplate REST_TEMPLATE = new RestTemplate();
     private final ApplicationSettingsService applicationSettingsService;
-    private final RestTemplate restTemplate = new RestTemplate();
     private final Queue<String> pendingMessages = new ConcurrentLinkedQueue<>();
     private final Object schedulerLock = new Object();
     private volatile JavaMailSenderImpl cachedMailSender;
     private volatile String mailSenderKey;
     private volatile long lastFlushEpochMillis = System.currentTimeMillis();
     private ScheduledExecutorService scheduler;
+
 
     public NotificationService(ApplicationSettingsService applicationSettingsService) {
         this.applicationSettingsService = applicationSettingsService;
@@ -79,8 +80,8 @@ public class NotificationService {
     }
 
     private boolean hasEmailRecipients() {
-        String emailTo = applicationSettingsService.getEmailTo();
-        if (emailTo == null) {
+        String emailTo = safeString(applicationSettingsService.getEmailTo());
+        if (emailTo.isBlank()) {
             return false;
         }
         return Arrays.stream(emailTo.split(","))
@@ -90,7 +91,7 @@ public class NotificationService {
 
     private void sendDiscord(String content) {
         try {
-            restTemplate.postForEntity(safeString(applicationSettingsService.getDiscordWebhookUrl()), Map.of("content", content), Void.class);
+            REST_TEMPLATE.postForEntity(safeString(applicationSettingsService.getDiscordWebhookUrl()), Map.of("content", content), Void.class);
         } catch (Exception e) {
             logger.warn("Discord notification failed: {}", e.getMessage());
         }
@@ -103,7 +104,7 @@ public class NotificationService {
         }
 
         try {
-            restTemplate.postForEntity(url, Map.of("content", "QuickDrop notification test (Discord)"), Void.class);
+            REST_TEMPLATE.postForEntity(url, Map.of("content", "QuickDrop notification test (Discord)"), Void.class);
             return NotificationTestResult.success("Discord test notification sent.");
         } catch (Exception e) {
             logger.warn("Discord test notification failed: {}", e.getMessage());
@@ -183,14 +184,22 @@ public class NotificationService {
         }
     }
 
-    private void flushPending(boolean sendDiscord, boolean sendEmail) {
-        List<String> drained = pendingMessages.stream().toList();
-        lastFlushEpochMillis = System.currentTimeMillis();
-        pendingMessages.clear();
+    private List<String> drainPendingMessages() {
+        List<String> drained = new ArrayList<>();
+        String msg;
+        while ((msg = pendingMessages.poll()) != null) {
+            drained.add(msg);
+        }
+        return drained;
+    }
 
+    private void flushPending(boolean sendDiscord, boolean sendEmail) {
+        List<String> drained = drainPendingMessages();
         if (drained.isEmpty()) {
             return;
         }
+
+        lastFlushEpochMillis = System.currentTimeMillis();
 
         String intervalLabel = Optional.ofNullable(applicationSettingsService.getNotificationBatchMinutes())
                 .map(Object::toString)

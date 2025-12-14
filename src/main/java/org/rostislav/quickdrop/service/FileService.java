@@ -228,7 +228,7 @@ public class FileService {
         }
     }
 
-    public ResponseEntity<StreamingResponseBody> previewFile(String uuid, HttpServletRequest request) {
+    public ResponseEntity<StreamingResponseBody> previewFile(String uuid, HttpServletRequest request, boolean manualOverride) {
         FileEntity fileEntity = fileRepository.findByUUID(uuid).orElse(null);
         if (fileEntity == null) {
             return ResponseEntity.notFound().build();
@@ -244,7 +244,7 @@ public class FileService {
             return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE).build();
         }
 
-        if (fileEntity.size > applicationSettingsService.getMaxPreviewSizeBytes()) {
+        if (fileEntity.size > applicationSettingsService.getMaxPreviewSizeBytes() && !manualOverride) {
             return ResponseEntity.status(HttpStatus.PRECONDITION_REQUIRED).build();
         }
 

@@ -263,6 +263,45 @@ function extractExtension(name) {
     return name.slice(idx + 1).toLowerCase();
 }
 
+function normalizeLanguageExtension(ext) {
+    switch (ext) {
+        case 'cxx':
+        case 'hpp':
+        case 'hh':
+            return 'cpp';
+        case 'h':
+            return 'c';
+        case 'js':
+            return 'javascript';
+        case 'ts':
+            return 'typescript';
+        case 'jsx':
+            return 'javascript';
+        case 'tsx':
+            return 'typescript';
+        case 'py':
+            return 'python';
+        case 'rb':
+            return 'ruby';
+        case 'sh':
+        case 'bash':
+        case 'zsh':
+            return 'shell';
+        case 'rs':
+            return 'rust';
+        case 'cs':
+            return 'csharp';
+        case 'yml':
+            return 'yaml';
+        case 'md':
+            return 'markdown';
+        case 'htm':
+            return 'html';
+        default:
+            return ext;
+    }
+}
+
 function renderImagePreview(container, objectUrl) {
     const img = document.createElement('img');
     img.src = objectUrl;
@@ -438,7 +477,7 @@ function parseDelimited(text, delimiter) {
 }
 
 function renderCodePreview(container, text, extension) {
-    const block = renderCodeBlock(text, extension);
+    const block = renderCodeBlock(text, normalizeLanguageExtension(extension));
     container.appendChild(block);
 }
 

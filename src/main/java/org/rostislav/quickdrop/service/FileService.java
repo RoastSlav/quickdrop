@@ -126,7 +126,12 @@ public class FileService {
     public boolean isPreviewableText(FileEntity fileEntity) {
         if (fileEntity == null || fileEntity.name == null) return false;
         String lower = fileEntity.name.toLowerCase();
-        return lower.endsWith(".txt") || lower.endsWith(".log") || lower.endsWith(".md") || lower.endsWith(".json") || lower.endsWith(".jsonl") || lower.endsWith(".yaml") || lower.endsWith(".yml") || lower.endsWith(".csv") || lower.endsWith(".tsv") || lower.endsWith(".xml");
+        return lower.endsWith(".txt") || lower.endsWith(".log") || lower.endsWith(".md") || lower.endsWith(".json") || lower.endsWith(".jsonl") || lower.endsWith(".yaml") || lower.endsWith(".yml") || lower.endsWith(".csv") || lower.endsWith(".tsv") || lower.endsWith(".xml")
+            || lower.endsWith(".c") || lower.endsWith(".cpp") || lower.endsWith(".cxx") || lower.endsWith(".h") || lower.endsWith(".hpp")
+            || lower.endsWith(".java") || lower.endsWith(".js") || lower.endsWith(".jsx") || lower.endsWith(".ts") || lower.endsWith(".tsx")
+            || lower.endsWith(".py") || lower.endsWith(".rb") || lower.endsWith(".go") || lower.endsWith(".rs") || lower.endsWith(".cs")
+            || lower.endsWith(".php") || lower.endsWith(".sh") || lower.endsWith(".bash") || lower.endsWith(".zsh") || lower.endsWith(".css")
+            || lower.endsWith(".html") || lower.endsWith(".htm") || lower.endsWith(".sql");
     }
 
     public boolean isPreviewablePdf(FileEntity fileEntity) {

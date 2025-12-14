@@ -66,6 +66,19 @@ html:not(.dark) .dark\:text-slate-400{
 .upload-shell-button:focus{outline:none;background-color:transparent;}
 .dark .upload-shell-button:focus{background-color:transparent;}
 
+/* Nav dropdown styling */
+.nav-menu-panel{border:1px solid #cbd5e1;background-color:#0f172a;box-shadow:0 12px 30px rgba(0,0,0,0.25);}
+.dark .nav-menu-panel{border-color:#1e293b;background-color:#0b1224;}
+.nav-menu-item{display:block;padding:10px 12px;border:1px solid #cbd5e1;border-radius:10px;background-color:rgba(255,255,255,0.04);}
+.nav-menu-item + .nav-menu-item{margin-top:8px;}
+.dark .nav-menu-item{border-color:#1e293b;background-color:rgba(255,255,255,0.05);}
+.nav-menu-item:hover{background-color:rgba(255,255,255,0.08);}
+.dark .nav-menu-item:hover{background-color:rgba(255,255,255,0.08);}
+@media (min-width:768px){
+	.nav-menu-panel{border:none;background-color:transparent;box-shadow:none;}
+	.nav-menu-item{border:none;background-color:transparent;padding:0;margin-top:0;}
+}
+
 
 /* Reset borders/placeholders that are dark-only. */
 html:not(.dark) .dark\:border-gray-600,

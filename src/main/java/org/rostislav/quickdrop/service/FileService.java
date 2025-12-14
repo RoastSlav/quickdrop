@@ -202,8 +202,11 @@ public class FileService {
 
         FileEntity fileEntity = referenceById.get();
         notificationService.notifyFileAction(fileEntity, FileHistoryType.DELETION, null, null);
-        fileRepository.delete(fileEntity);
+
+        shareTokenRepository.deleteAllByFile(fileEntity);
         fileHistoryLogRepository.deleteByFileId(fileEntity.id);
+        fileRepository.delete(fileEntity);
+
         return deleteFileFromFileSystem(fileEntity.uuid);
     }
 
@@ -217,8 +220,10 @@ public class FileService {
 
         FileEntity fileEntity = referenceById.get();
         notificationService.notifyFileAction(fileEntity, FileHistoryType.DELETION, null, null);
-        fileRepository.delete(fileEntity);
+
+        shareTokenRepository.deleteAllByFile(fileEntity);
         fileHistoryLogRepository.deleteByFileId(fileEntity.id);
+        fileRepository.delete(fileEntity);
         return true;
     }
 

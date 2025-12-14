@@ -18,6 +18,10 @@ public class FileEntity {
     public String passwordHash;
     public boolean hidden;
     public boolean encrypted;
+    public boolean folderUpload;
+    public String folderName;
+    @Column(columnDefinition = "TEXT")
+    public String folderManifest;
 
     @PrePersist
     public void prePersist() {
@@ -36,6 +40,8 @@ public class FileEntity {
                 ", uploadDate=" + uploadDate +
                 ", hidden=" + hidden +
                 ", encrypted=" + encrypted +
+                ", folderUpload=" + folderUpload +
+                ", folderName='" + folderName + '\'' +
                 '}';
     }
 }

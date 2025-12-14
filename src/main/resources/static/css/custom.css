@@ -66,6 +66,24 @@ html:not(.dark) .dark\:text-slate-400{
 .upload-shell-button:focus{outline:none;background-color:transparent;}
 .dark .upload-shell-button:focus{background-color:transparent;}
 
+/* Nav dropdown styling */
+.nav-menu-panel{border:1px solid #cbd5e1;background-color:#0f172a;box-shadow:0 12px 30px rgba(0,0,0,0.25);}
+.dark .nav-menu-panel{border-color:#1e293b;background-color:#0b1224;}
+.nav-menu-item{display:flex;align-items:center;gap:0.35rem;width:100%;padding:8px 10px;border:1px solid #cbd5e1;border-radius:10px;background-color:rgba(255,255,255,0.04);line-height:1.2;}
+.nav-menu-item + .nav-menu-item{margin-top:8px;}
+.dark .nav-menu-item{border-color:#1e293b;background-color:rgba(255,255,255,0.05);}
+.nav-menu-item:hover{background-color:rgba(255,255,255,0.08);}
+.dark .nav-menu-item:hover{background-color:rgba(255,255,255,0.08);}
+.nav-menu-item.theme-toggle{width:auto;}
+@media (min-width:768px){
+	.nav-menu-panel{border:none!important;background-color:transparent!important;box-shadow:none!important;align-items:center;padding:0!important;margin-top:0!important;}
+	.nav-menu-panel .md\:space-x-4>:not([hidden])~:not([hidden]){margin-left:0.35rem!important;}
+	.nav-menu-item{border:none!important;background-color:transparent!important;padding:0 0.25rem!important;margin-top:0;width:auto;border-radius:0!important;line-height:1.05;box-shadow:none!important;}
+	.nav-menu-item.theme-toggle{padding:0.1rem 0.25rem!important;}
+	.nav-menu-item + .nav-menu-item{margin-top:0;}
+	.nav-menu-item:hover{background-color:transparent!important;}
+}
+
 
 /* Reset borders/placeholders that are dark-only. */
 html:not(.dark) .dark\:border-gray-600,

@@ -229,10 +229,13 @@ async function initPreview() {
 
         const objectUrl = URL.createObjectURL(blob);
         if (isImage) {
+            content.classList.remove('preview-stack');
             renderImagePreview(content, objectUrl);
         } else if (isPdf || previewType === 'pdf') {
+            content.classList.add('preview-stack');
             renderPdfPreview(content, objectUrl, fileName);
         } else {
+            content.classList.add('preview-stack');
             const text = await blob.text();
             const extension = extractExtension(fileName);
             if (isJson || previewType === 'json') {

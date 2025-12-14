@@ -413,9 +413,16 @@ public class FileService {
         return fileRepository.findAllNotHiddenFiles();
     }
 
-    @Cacheable(value = "adminFiles", key = "'page:' + #pageable.pageNumber + ':size:' + #pageable.pageSize")
+    @Cacheable(value = "adminFiles", key = "'page:' + #pageable.pageNumber + ':size:' + #pageable.pageSize + ':q:' + (#query == null ? '' : #query.toLowerCase())")
+    public Page<FileEntityView> getFilesWithDownloadCounts(Pageable pageable, String query) {
+        if (query == null || query.isBlank()) {
+            return fileRepository.findFilesWithDownloadCounts(pageable);
+        }
+        return fileRepository.searchFilesWithDownloadCounts(query, pageable);
+    }
+
     public Page<FileEntityView> getFilesWithDownloadCounts(Pageable pageable) {
-        return fileRepository.findFilesWithDownloadCounts(pageable);
+        return getFilesWithDownloadCounts(pageable, null);
     }
 
     public List<FileEntityView> getAllFilesWithDownloadCounts() {

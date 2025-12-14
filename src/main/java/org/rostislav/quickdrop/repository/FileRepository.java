@@ -61,4 +61,20 @@ public interface FileRepository extends JpaRepository<FileEntity, Long> {
             """,
             countQuery = "SELECT COUNT(f) FROM FileEntity f")
     Page<FileEntityView> findFilesWithDownloadCounts(Pageable pageable);
+
+    @Query(value = """
+                SELECT new org.rostislav.quickdrop.model.FileEntityView(
+                    f,
+                    CAST(SUM(CASE WHEN dl.id IS NOT NULL THEN 1 ELSE 0 END) AS long)
+                )
+                FROM FileEntity f
+                LEFT JOIN FileHistoryLog dl ON dl.file.id = f.id AND dl.eventType = 'DOWNLOAD'
+                WHERE (LOWER(f.name) LIKE LOWER(CONCAT('%', :searchString, '%'))
+                    OR LOWER(f.description) LIKE LOWER(CONCAT('%', :searchString, '%'))
+                    OR LOWER(f.uuid) LIKE LOWER(CONCAT('%', :searchString, '%')))
+                GROUP BY f
+                ORDER BY f.uploadDate DESC
+            """,
+            countQuery = "SELECT COUNT(f) FROM FileEntity f WHERE (LOWER(f.name) LIKE LOWER(CONCAT('%', :searchString, '%')) OR LOWER(f.description) LIKE LOWER(CONCAT('%', :searchString, '%')) OR LOWER(f.uuid) LIKE LOWER(CONCAT('%', :searchString, '%')))")
+    Page<FileEntityView> searchFilesWithDownloadCounts(@Param("searchString") String query, Pageable pageable);
 }

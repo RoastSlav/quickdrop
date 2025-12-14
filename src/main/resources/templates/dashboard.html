@@ -66,6 +66,20 @@
 
     <div class="bg-white dark:bg-slate-800 p-6 md:p-8 rounded-2xl shadow-lg">
         <h2 class="text-xl font-semibold tracking-tight mb-4">Files</h2>
+        <div class="mb-6">
+            <form action="/admin/dashboard" class="w-full flex flex-col md:flex-row md:items-center md:gap-3 gap-3" method="get">
+                <input name="page" type="hidden" value="0"/>
+                <input name="size" th:value="${pageSize}" type="hidden"/>
+                <label class="sr-only" for="adminSearch">Search files</label>
+                <div class="flex-1 h-12 flex items-center space-x-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-gray-800 rounded-full px-4 shadow-sm focus-within:border-sky-500 focus-within:ring-2 focus-within:ring-sky-500">
+                    <svg aria-hidden="true" class="w-5 h-5 text-gray-500 dark:text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                        <path clip-rule="evenodd" d="M12.9 14.32a8 8 0 111.414-1.414l4.387 4.387a1 1 0 01-1.414 1.414l-4.387-4.387zM14 8a6 6 0 11-12 0 6 6 0 0112 0z" fill-rule="evenodd" />
+                    </svg>
+                    <input class="flex-grow bg-transparent py-2 focus:outline-none focus-visible:ring-0" id="adminSearch" name="query" placeholder="Search by name, description, or UUID" th:value="${query}" type="text"/>
+                </div>
+                <button class="rounded-full bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium px-4 py-2 h-12 transition-colors active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500" type="submit">Search</button>
+            </form>
+        </div>
         <div class="overflow-x-auto w-full" th:if="${filesPage.totalElements > 0}">
             <table class="min-w-full w-full divide-y divide-slate-200 dark:divide-slate-700 light-table-zebra">
                 <thead class="bg-gray-100 dark:bg-gray-800 divide-x divide-slate-200 dark:divide-slate-600">
@@ -149,10 +163,10 @@
             <div class="flex items-center gap-2" th:if="${filesPage.totalPages > 1}">
                 <a class="px-4 py-2 rounded-lg bg-slate-200 dark:bg-slate-700 text-sm font-semibold transition disabled:opacity-50 disabled:pointer-events-none"
                    th:classappend="${filesPage.first} ? ' opacity-50 pointer-events-none' : ' hover:bg-slate-300 dark:hover:bg-slate-600'"
-                   th:href="@{/admin/dashboard(page=${filesPage.first ? filesPage.number : filesPage.number - 1}, size=${pageSize})}">Previous</a>
+                   th:href="@{/admin/dashboard(page=${filesPage.first ? filesPage.number : filesPage.number - 1}, size=${pageSize}, query=${query})}">Previous</a>
                 <a class="px-4 py-2 rounded-lg bg-slate-200 dark:bg-slate-700 text-sm font-semibold transition disabled:opacity-50 disabled:pointer-events-none"
                    th:classappend="${filesPage.last} ? ' opacity-50 pointer-events-none' : ' hover:bg-slate-300 dark:hover:bg-slate-600'"
-                   th:href="@{/admin/dashboard(page=${filesPage.last ? filesPage.number : filesPage.number + 1}, size=${pageSize})}">Next</a>
+                   th:href="@{/admin/dashboard(page=${filesPage.last ? filesPage.number : filesPage.number + 1}, size=${pageSize}, query=${query})}">Next</a>
             </div>
             <form action="/admin/dashboard" class="flex items-center gap-2" method="get">
                 <label class="text-sm text-gray-700 dark:text-gray-300" for="adminPageSize">Per page</label>
@@ -163,6 +177,7 @@
                     <option th:selected="${pageSize == 100}" value="100">100</option>
                 </select>
                 <input name="page" type="hidden" value="0"/>
+                <input name="query" th:value="${query}" type="hidden"/>
             </form>
             <div class="text-sm text-gray-600 dark:text-gray-300">Page <span th:text="${filesPage.number + 1}"></span> of <span th:text="${filesPage.totalPages}"></span></div>
         </div>

@@ -166,7 +166,129 @@ function positionShareModal() {
 document.addEventListener('DOMContentLoaded', () => {
     initializeModal();
     renderFolderTree();
+    setupPreviewInit();
 });
+
+let previewBlob = null;
+let previewFetched = false;
+let previewFetching = false;
+let previewReadyPromise = null;
+
+function setupPreviewInit() {
+    const container = document.getElementById('previewContainer');
+    if (!container) return;
+    const requireManual = container.dataset.requireManual === 'true';
+    const loadBtn = document.getElementById('loadPreviewBtn');
+
+    const startFetch = () => {
+        if (!previewReadyPromise) {
+            previewReadyPromise = initPreview();
+        }
+    };
+
+    if (requireManual && loadBtn) {
+        loadBtn.addEventListener('click', startFetch, {once: true});
+    } else {
+        window.addEventListener('load', () => startFetch(), {once: true});
+    }
+}
+
+async function initPreview() {
+    const container = document.getElementById('previewContainer');
+    const content = document.getElementById('previewContent');
+    const status = document.getElementById('previewStatus');
+    if (!container || !content) return;
+
+    const previewUrl = container.dataset.previewUrl;
+    const isImage = container.dataset.previewImage === 'true';
+    const isText = container.dataset.previewText === 'true';
+    const fileName = container.dataset.fileName || 'download';
+
+    if (previewFetching || previewFetched) return;
+    previewFetching = true;
+
+    try {
+        const resp = await fetch(previewUrl, {credentials: 'same-origin'});
+        if (!resp.ok) throw new Error('Preview unavailable');
+        const blob = await resp.blob();
+        previewBlob = blob;
+        previewFetched = true;
+
+        if (status) status.remove();
+        content.innerHTML = '';
+
+        if (isImage) {
+            const img = document.createElement('img');
+            img.src = URL.createObjectURL(blob);
+            img.alt = 'Preview';
+            img.className = 'max-h-96 rounded-lg shadow';
+            content.appendChild(img);
+        } else if (isText) {
+            const text = await blob.text();
+            const pre = document.createElement('pre');
+            pre.className = 'text-xs bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-100 p-3 rounded-lg max-h-96 overflow-auto whitespace-pre-wrap';
+            const limit = 20000;
+            pre.textContent = text.length > limit ? text.slice(0, limit) + '\n... (truncated)' : text;
+            content.appendChild(pre);
+        }
+
+        attachDownloadOverride(fileName);
+    } catch (e) {
+        if (status) {
+            status.textContent = 'Preview unavailable.';
+            status.className = 'text-sm text-red-600 dark:text-red-400';
+        }
+    }
+    previewFetching = false;
+}
+
+function attachDownloadOverride(fileName) {
+    const btn = document.getElementById('downloadButton');
+    if (!btn || !previewBlob) return;
+
+    btn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        await ensurePreviewReady();
+        await logDownload();
+        if (!previewBlob) return;
+        const url = URL.createObjectURL(previewBlob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName || 'download';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(url), 2000);
+    }, {once: true});
+}
+
+async function ensurePreviewReady() {
+    if (previewFetched && previewBlob) return;
+    if (previewReadyPromise) {
+        await previewReadyPromise;
+    } else {
+        previewReadyPromise = initPreview();
+        await previewReadyPromise;
+    }
+}
+
+async function logDownload() {
+    const fileUuidEl = document.getElementById('fileUuid');
+    const csrfMeta = document.querySelector('meta[name="_csrf"]');
+    if (!fileUuidEl || !csrfMeta) return;
+    try {
+        await fetch(`/file/download/log/${fileUuidEl.textContent.trim()}`, {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: {
+                'X-XSRF-TOKEN': csrfMeta.content,
+                'X-CSRF-TOKEN': csrfMeta.content,
+            },
+        });
+    } catch (e) {
+        console.warn('Download log failed', e);
+    }
+}
 
 function renderFolderTree() {
     const treeEl = document.getElementById('folderTree');

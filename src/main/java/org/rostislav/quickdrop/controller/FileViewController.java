@@ -65,7 +65,33 @@ public class FileViewController {
 
         populateModelAttributes(fileEntity, model, request);
 
+        boolean previewsEnabled = applicationSettingsService.isPreviewEnabled();
+        boolean isImage = previewsEnabled && fileService.isPreviewableImage(fileEntity);
+        boolean isText = previewsEnabled && fileService.isPreviewableText(fileEntity);
+        long previewLimit = applicationSettingsService.getMaxPreviewSizeBytes();
+        boolean requireManualPreview = fileEntity != null && fileEntity.size > previewLimit;
+        model.addAttribute("isPreviewEnabled", previewsEnabled);
+        model.addAttribute("isPreviewableImage", isImage);
+        model.addAttribute("isPreviewableText", isText);
+        model.addAttribute("previewUrl", "/file/preview/" + uuid);
+        model.addAttribute("requireManualPreview", requireManualPreview);
+        model.addAttribute("maxPreviewSizeMB", previewLimit / 1024 / 1024);
+
         return "fileView";
+    }
+
+    @GetMapping("/preview/{uuid}")
+    public ResponseEntity<StreamingResponseBody> previewFile(@PathVariable String uuid, HttpServletRequest request) {
+        return fileService.previewFile(uuid, request);
+    }
+
+    @PostMapping("/download/log/{uuid}")
+    public ResponseEntity<Void> logDownload(@PathVariable String uuid, HttpServletRequest request) {
+        if (!fileService.isAuthorizedForFile(uuid, request)) {
+            return ResponseEntity.status(403).build();
+        }
+        fileService.logDownload(uuid, request);
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/history/{uuid}")

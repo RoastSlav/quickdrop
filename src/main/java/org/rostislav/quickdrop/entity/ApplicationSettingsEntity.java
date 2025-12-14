@@ -24,6 +24,8 @@ public class ApplicationSettingsEntity {
     private boolean isAdminDashboardButtonEnabled;
     private boolean disableEncryption;
     private boolean disableUploadPassword;
+    private boolean disablePreview;
+    private long maxPreviewSizeBytes;
     private String defaultHomePage;
     private boolean keepIndefinitelyAdminOnly;
     private boolean discordWebhookEnabled;
@@ -54,6 +56,8 @@ public class ApplicationSettingsEntity {
         this.isAdminDashboardButtonEnabled = settings.isAdminDashboardButtonEnabled();
         this.disableEncryption = settings.isEncryptionDisabled();
         this.disableUploadPassword = settings.isDisableUploadPassword();
+        this.disablePreview = settings.isDisablePreview();
+        this.maxPreviewSizeBytes = settings.getMaxPreviewSizeBytes();
         this.defaultHomePage = settings.getDefaultHomePage();
         this.keepIndefinitelyAdminOnly = settings.isKeepIndefinitelyAdminOnly();
         this.discordWebhookEnabled = settings.isDiscordWebhookEnabled();
@@ -180,6 +184,22 @@ public class ApplicationSettingsEntity {
 
     public void setDisableUploadPassword(boolean disableUploadPassword) {
         this.disableUploadPassword = disableUploadPassword;
+    }
+
+    public boolean isDisablePreview() {
+        return disablePreview;
+    }
+
+    public void setDisablePreview(boolean disablePreview) {
+        this.disablePreview = disablePreview;
+    }
+
+    public long getMaxPreviewSizeBytes() {
+        return maxPreviewSizeBytes;
+    }
+
+    public void setMaxPreviewSizeBytes(long maxPreviewSizeBytes) {
+        this.maxPreviewSizeBytes = maxPreviewSizeBytes;
     }
 
     public String getDefaultHomePage() {

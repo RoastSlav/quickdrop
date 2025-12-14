@@ -38,6 +38,8 @@ public class ApplicationSettingsService {
             settings.setAdminDashboardButtonEnabled(true);
             settings.setDisableEncryption(false);
             settings.setDisableUploadPassword(false);
+            settings.setDisablePreview(false);
+            settings.setMaxPreviewSizeBytes(5L * 1024L * 1024L);
             settings.setDefaultHomePage("upload");
             settings.setKeepIndefinitelyAdminOnly(false);
             settings.setDiscordWebhookEnabled(false);
@@ -79,6 +81,8 @@ public class ApplicationSettingsService {
         } else {
             applicationSettingsEntity.setDisableEncryption(settings.isEncryptionDisabled());
         }
+        applicationSettingsEntity.setDisablePreview(settings.isDisablePreview());
+        applicationSettingsEntity.setMaxPreviewSizeBytes(settings.getMaxPreviewSizeBytes());
         applicationSettingsEntity.setDefaultHomePage(settings.getDefaultHomePage());
         applicationSettingsEntity.setKeepIndefinitelyAdminOnly(settings.isKeepIndefinitelyAdminOnly());
         applicationSettingsEntity.setDiscordWebhookEnabled(settings.isDiscordWebhookEnabled());
@@ -187,6 +191,14 @@ public class ApplicationSettingsService {
 
     public boolean isUploadPasswordEnabled() {
         return !applicationSettings.isDisableUploadPassword();
+    }
+
+    public boolean isPreviewEnabled() {
+        return !applicationSettings.isDisablePreview();
+    }
+
+    public long getMaxPreviewSizeBytes() {
+        return applicationSettings.getMaxPreviewSizeBytes();
     }
 
     public String getDefaultHomePage() {

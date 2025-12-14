@@ -11,7 +11,7 @@
 /* Light-mode overrides to ensure readability when the OS prefers dark. */
 :root{color-scheme:light;}
 html.dark{color-scheme:dark;}
-html:not(.dark) nav{background-color:#f3f4f6!important;color:#0f172a!important;}
+html:not(.dark) nav{background-color:#dce3ec!important;color:#0c1220!important;}
 html:not(.dark) nav a,html:not(.dark) nav button{color:#0f172a!important;}
 
 /* Reset dark backgrounds to light in light theme (cards, inputs, sections). */

@@ -1,30 +1,44 @@
 package org.rostislav.quickdrop.entity;
 
 import jakarta.persistence.*;
+import org.rostislav.quickdrop.model.FileHistoryType;
 
 import java.time.LocalDateTime;
 
 @Entity
-public class FileRenewalLog {
+public class FileHistoryLog {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "file_id", nullable = false)
     private FileEntity file;
-    private LocalDateTime actionDate;
+
+    @Enumerated(EnumType.STRING)
+    private FileHistoryType eventType;
+
+    private LocalDateTime eventDate;
+
     private String ipAddress;
+
+    @Column(columnDefinition = "TEXT")
     private String userAgent;
 
-    public FileRenewalLog() {
-        this.actionDate = LocalDateTime.now();
+    public FileHistoryLog() {
+        this.eventDate = LocalDateTime.now();
     }
 
-    public FileRenewalLog(FileEntity file, String ipAddress, String userAgent) {
+    public FileHistoryLog(FileEntity file, FileHistoryType eventType, String ipAddress, String userAgent) {
         this.file = file;
+        this.eventType = eventType;
         this.ipAddress = ipAddress;
         this.userAgent = userAgent;
-        this.actionDate = LocalDateTime.now();
+        this.eventDate = LocalDateTime.now();
+    }
+
+    public Long getId() {
+        return id;
     }
 
     public FileEntity getFile() {
@@ -35,12 +49,20 @@ public class FileRenewalLog {
         this.file = file;
     }
 
-    public LocalDateTime getActionDate() {
-        return actionDate;
+    public FileHistoryType getEventType() {
+        return eventType;
     }
 
-    public void setActionDate(LocalDateTime actionDate) {
-        this.actionDate = actionDate;
+    public void setEventType(FileHistoryType eventType) {
+        this.eventType = eventType;
+    }
+
+    public LocalDateTime getEventDate() {
+        return eventDate;
+    }
+
+    public void setEventDate(LocalDateTime eventDate) {
+        this.eventDate = eventDate;
     }
 
     public String getIpAddress() {
@@ -57,13 +79,5 @@ public class FileRenewalLog {
 
     public void setUserAgent(String userAgent) {
         this.userAgent = userAgent;
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
     }
 }

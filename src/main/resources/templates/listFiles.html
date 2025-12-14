@@ -11,20 +11,30 @@
 </head>
 <body class="bg-gray-50 text-gray-800 dark:bg-slate-900 dark:text-gray-100">
 <nav class="bg-gray-800 dark:bg-gray-900 text-gray-100">
-    <div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-        <a class="flex items-center space-x-2" href="/">
-            <img alt="Website Logo" class="h-10" src="/images/favicon.png">
-            <span class="font-semibold tracking-tight">QuickDrop</span>
-        </a>
-        <div class="flex items-center space-x-4">
-            <a class="hover:text-white" href="/file/upload">Upload File</a>
-            <a class="hover:text-white" href="/admin/dashboard" onclick="requestAdminPassword()"
-               th:if="${isAdminDashboardButtonEnabled}">Admin Dashboard</a>
-            <button class="rounded-lg p-2 transition-colors hover:bg-sky-600 dark:hover:bg-sky-500 active:scale-95 focus:outline-none focus:ring-2 focus:ring-sky-500"
-                    id="themeToggle"
-                    type="button">
-                🌙
+    <div class="max-w-7xl mx-auto px-4 py-4 relative">
+        <div class="flex items-center justify-between">
+            <a class="flex items-center space-x-2" href="/">
+                <img alt="Website Logo" class="h-10" src="/images/favicon.png">
+                <span class="font-semibold tracking-tight">QuickDrop</span>
+            </a>
+            <button aria-controls="navMenu" aria-expanded="false" aria-label="Toggle navigation"
+                    class="md:hidden rounded-lg p-2 hover:bg-sky-600 dark:hover:bg-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                    id="navToggle" type="button">
+                <svg aria-hidden="true" class="h-6 w-6" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M4 6h16M4 12h16M4 18h16"></path>
+                </svg>
             </button>
+            <div class="nav-menu-panel hidden md:flex flex-col md:flex-row md:items-center md:space-x-4 w-full md:w-auto mt-3 md:mt-0 space-y-2 md:space-y-0 bg-gray-800 dark:bg-gray-900 md:bg-transparent md:dark:bg-transparent rounded-lg md:rounded-none p-4 md:p-0 shadow md:shadow-none absolute left-0 right-0 top-full md:static z-20 md:ml-auto" id="navMenu">
+                <div class="flex flex-col space-y-2 md:flex-row md:items-center md:space-x-4 md:space-y-0">
+                    <a class="nav-menu-item hover:text-white" href="/file/upload">Upload File</a>
+                    <a class="nav-menu-item hover:text-white" href="/admin/dashboard" onclick="requestAdminPassword()"
+                       th:if="${isAdminDashboardButtonEnabled}">Admin Dashboard</a>
+                </div>
+                <button class="nav-menu-item theme-toggle rounded-lg p-2 transition-colors hover:bg-sky-600 dark:hover:bg-sky-500 active:scale-95 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                        type="button">
+                    🌙
+                </button>
+            </div>
         </div>
     </div>
 </nav>
@@ -35,7 +45,7 @@
         <h1 class="text-3xl md:text-4xl font-semibold tracking-tight">All files</h1>
     </header>
     <div class="mx-auto w-full max-w-xl mb-8">
-        <form action="/file/search" class="w-full" method="GET">
+        <form action="/file/list" class="w-full" method="GET">
             <label class="sr-only" for="searchInput">Search files</label>
             <div class="h-14 flex items-center space-x-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-gray-800 rounded-full px-4 shadow-sm focus-within:border-sky-500 focus-within:ring-2 focus-within:ring-sky-500">
                 <svg aria-hidden="true" class="w-5 h-5 text-gray-500 dark:text-gray-400" fill="currentColor"
@@ -46,7 +56,10 @@
                 </svg>
                 <input class="flex-grow bg-transparent py-2 focus:outline-none focus-visible:ring-0" id="searchInput"
                        name="query" placeholder="Search files by name or date…"
+                       th:value="${query}"
                        type="text"/>
+                <input name="page" type="hidden" value="0"/>
+                <input name="size" th:value="${pageSize}" type="hidden"/>
                 <button class="rounded-full bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium px-4 py-2 h-10 transition-colors active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500"
                         id="search-button"
                         type="submit">
@@ -55,13 +68,13 @@
             </div>
         </form>
     </div>
-    <div class="text-center text-gray-600 dark:text-gray-300 my-5" th:if="${#lists.isEmpty(files)}">
+    <div class="text-center text-gray-600 dark:text-gray-300 my-5" th:if="${filesPage.totalElements == 0}">
         <h3 class="mb-2">No files have been uploaded yet.</h3>
         <p>Start by <a class="text-sky-600 dark:text-sky-400 hover:underline" href="/file/upload">uploading a file</a>.
         </p>
     </div>
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
-        <div class="h-full" th:each="file : ${files}">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 p-6" th:if="${filesPage.totalElements > 0}">
+        <div class="h-full" th:each="file : ${filesPage.content}">
             <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-lg flex flex-col h-full p-6 md:p-8">
                 <div class="flex-grow space-y-3 overflow-hidden">
                     <h2 class="text-xl font-semibold tracking-tight truncate" th:text="${file.name}">File Name</h2>
@@ -83,6 +96,29 @@
                 </div>
             </div>
         </div>
+    </div>
+
+    <div class="flex flex-col md:flex-row items-center justify-between gap-4 mt-6" th:if="${filesPage.totalElements > 0}">
+        <div class="flex items-center gap-2">
+                <a class="px-4 py-2 rounded-lg bg-slate-200 dark:bg-slate-700 text-sm font-semibold transition disabled:opacity-50 disabled:pointer-events-none"
+                    th:classappend="${filesPage.first} ? ' opacity-50 pointer-events-none' : ' hover:bg-slate-300 dark:hover:bg-slate-600'"
+                    th:href="@{/file/list(page=${filesPage.first ? filesPage.number : filesPage.number - 1}, size=${pageSize}, query=${query})}">Previous</a>
+                <a class="px-4 py-2 rounded-lg bg-slate-200 dark:bg-slate-700 text-sm font-semibold transition disabled:opacity-50 disabled:pointer-events-none"
+                    th:classappend="${filesPage.last} ? ' opacity-50 pointer-events-none' : ' hover:bg-slate-300 dark:hover:bg-slate-600'"
+                    th:href="@{/file/list(page=${filesPage.last ? filesPage.number : filesPage.number + 1}, size=${pageSize}, query=${query})}">Next</a>
+        </div>
+        <form action="/file/list" class="flex items-center gap-2" method="get">
+            <input name="query" th:value="${query}" type="hidden"/>
+            <input name="page" type="hidden" value="0"/>
+            <label class="text-sm text-gray-700 dark:text-gray-300" for="pageSize">Per page</label>
+            <select class="rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" id="pageSize" name="size" onchange="this.form.submit()">
+                <option th:selected="${pageSize == 10}" value="10">10</option>
+                <option th:selected="${pageSize == 20}" value="20">20</option>
+                <option th:selected="${pageSize == 50}" value="50">50</option>
+                <option th:selected="${pageSize == 100}" value="100">100</option>
+            </select>
+        </form>
+        <div class="text-sm text-gray-600 dark:text-gray-300">Page <span th:text="${filesPage.number + 1}"></span> of <span th:text="${filesPage.totalPages}"></span></div>
     </div>
 </main>
 </body>

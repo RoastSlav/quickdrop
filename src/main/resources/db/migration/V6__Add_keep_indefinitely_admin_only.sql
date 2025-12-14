@@ -1,0 +1,1 @@
+ALTER TABLE application_settings_entity ADD COLUMN keep_indefinitely_admin_only BOOLEAN NOT NULL DEFAULT 0;

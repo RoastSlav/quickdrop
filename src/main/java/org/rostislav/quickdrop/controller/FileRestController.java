@@ -4,6 +4,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.rostislav.quickdrop.entity.FileEntity;
 import org.rostislav.quickdrop.entity.ShareTokenEntity;
 import org.rostislav.quickdrop.model.FileUploadRequest;
+import org.rostislav.quickdrop.service.ApplicationSettingsService;
 import org.rostislav.quickdrop.service.AsyncFileMergeService;
 import org.rostislav.quickdrop.service.FileService;
 import org.rostislav.quickdrop.service.SessionService;
@@ -18,7 +19,9 @@ import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBo
 
 import java.io.IOException;
 import java.time.LocalDate;
+import java.util.Optional;
 
+import static org.rostislav.quickdrop.util.FileUtils.validateShareToken;
 import static org.springframework.http.ResponseEntity.ok;
 
 @RestController
@@ -28,11 +31,13 @@ public class FileRestController {
     private final FileService fileService;
     private final SessionService sessionService;
     private final AsyncFileMergeService asyncFileMergeService;
+    private final ApplicationSettingsService applicationSettingsService;
 
-    public FileRestController(FileService fileService, SessionService sessionService, AsyncFileMergeService asyncFileMergeService) {
+    public FileRestController(FileService fileService, SessionService sessionService, AsyncFileMergeService asyncFileMergeService, ApplicationSettingsService applicationSettingsService) {
         this.fileService = fileService;
         this.sessionService = sessionService;
         this.asyncFileMergeService = asyncFileMergeService;
+        this.applicationSettingsService = applicationSettingsService;
     }
 
     @PostMapping("/upload-chunk")
@@ -45,7 +50,11 @@ public class FileRestController {
             @RequestParam(value = "description", required = false) String description,
             @RequestParam(value = "keepIndefinitely", defaultValue = "false") Boolean keepIndefinitely,
             @RequestParam(value = "password", required = false) String password,
-            @RequestParam(value = "hidden", defaultValue = "false") Boolean hidden) {
+            @RequestParam(value = "hidden", defaultValue = "false") Boolean hidden,
+            @RequestParam(value = "folderUpload", defaultValue = "false") Boolean folderUpload,
+            @RequestParam(value = "folderName", required = false) String folderName,
+            @RequestParam(value = "folderManifest", required = false) String folderManifest,
+            HttpServletRequest request) {
 
         if (chunkNumber == 0) {
             logger.info("Upload started for file: {}", fileName);
@@ -54,7 +63,24 @@ public class FileRestController {
         try {
             logger.info("Submitting chunk {} of {} for file: {}", chunkNumber, totalChunks, fileName);
 
-            FileUploadRequest fileUploadRequest = new FileUploadRequest(description, keepIndefinitely, password, hidden, fileName, totalChunks, fileSize);
+            boolean uploadPasswordEnabled = applicationSettingsService.isUploadPasswordEnabled();
+            if (!uploadPasswordEnabled && password != null && !password.isBlank()) {
+                return ResponseEntity.badRequest().body("{\"error\": \"Upload passwords are disabled\"}");
+            }
+
+            boolean adminSession = sessionService.hasValidAdminSession(request);
+            boolean allowKeepIndefinitely = !applicationSettingsService.isKeepIndefinitelyAdminOnly() || adminSession;
+            boolean keepIndefinitelyValue = allowKeepIndefinitely && Boolean.TRUE.equals(keepIndefinitely);
+            boolean allowHideFromList = !applicationSettingsService.isHideFromListAdminOnly() || adminSession;
+            boolean hiddenValue = allowHideFromList && Boolean.TRUE.equals(hidden);
+
+            String forwardedFor = request.getHeader("X-Forwarded-For");
+            String uploaderIp = forwardedFor != null && !forwardedFor.isBlank() ? forwardedFor.split(",")[0].trim() : request.getRemoteAddr();
+            String uploaderUserAgent = request.getHeader("User-Agent");
+
+            String effectivePassword = uploadPasswordEnabled ? password : null;
+
+            FileUploadRequest fileUploadRequest = new FileUploadRequest(description, keepIndefinitelyValue, effectivePassword, hiddenValue, fileName, totalChunks, fileSize, uploaderIp, uploaderUserAgent, Boolean.TRUE.equals(folderUpload), folderName, folderManifest);
             FileEntity fileEntity = asyncFileMergeService.submitChunk(fileUploadRequest, file, chunkNumber);
             return ResponseEntity.ok(fileEntity);
         } catch (IOException e) {
@@ -65,10 +91,17 @@ public class FileRestController {
     }
 
     @PostMapping("/share/{uuid}")
-    public ResponseEntity<String> generateShareableLink(@PathVariable String uuid, @RequestParam("expirationDate") LocalDate expirationDate, @RequestParam("nOfDownloads") int numberOfDownloads, HttpServletRequest request) {
+    public ResponseEntity<String> generateShareableLink(@PathVariable String uuid,
+                                                        @RequestParam(value = "expirationDate", required = false) LocalDate expirationDate,
+                                                        @RequestParam(value = "nOfDownloads", required = false) Integer numberOfDownloads,
+                                                        HttpServletRequest request) {
         FileEntity fileEntity = fileService.getFile(uuid);
         if (fileEntity == null) {
             return ResponseEntity.badRequest().body("File not found.");
+        }
+
+        if (numberOfDownloads != null && numberOfDownloads < 0) {
+            return ResponseEntity.badRequest().body("Number of downloads cannot be negative.");
         }
 
         ShareTokenEntity token;
@@ -85,15 +118,21 @@ public class FileRestController {
         return ok(shareLink);
     }
 
-    @GetMapping("/download/{uuid}/{token}")
-    public ResponseEntity<StreamingResponseBody> downloadFile(@PathVariable String uuid, @PathVariable String token, HttpServletRequest request) {
+    @GetMapping("/download/{token}")
+    public ResponseEntity<StreamingResponseBody> downloadFile(@PathVariable String token, HttpServletRequest request) {
         try {
-            StreamingResponseBody responseBody = fileService.streamFileAndUpdateToken(uuid, token, request);
-            if (responseBody == null) {
+            Optional<ShareTokenEntity> shareTokenEntity = fileService.getShareTokenEntityByToken(token);
+            if (shareTokenEntity.isEmpty() || !validateShareToken(shareTokenEntity.get())) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
             }
 
-            FileEntity fileEntity = fileService.getFile(uuid);
+            ShareTokenEntity tokenEntity = shareTokenEntity.get();
+            FileEntity fileEntity = tokenEntity.file;
+            StreamingResponseBody responseBody = fileService.streamFileByShareToken(tokenEntity, request);
+
+            if (responseBody == null) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            }
 
             return ok()
                     .header("Content-Disposition", "attachment; filename=\"" + fileEntity.name + "\"")

@@ -1,11 +1,10 @@
 package org.rostislav.quickdrop.service;
 
-
-import org.rostislav.quickdrop.entity.DownloadLog;
-import org.rostislav.quickdrop.entity.FileRenewalLog;
+import org.rostislav.quickdrop.entity.FileHistoryLog;
 import org.rostislav.quickdrop.model.AnalyticsDataView;
-import org.rostislav.quickdrop.repository.DownloadLogRepository;
-import org.rostislav.quickdrop.repository.RenewalLogRepository;
+import org.rostislav.quickdrop.model.FileHistoryType;
+import org.rostislav.quickdrop.repository.FileHistoryLogRepository;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -15,17 +14,16 @@ import static org.rostislav.quickdrop.util.FileUtils.formatFileSize;
 @Service
 public class AnalyticsService {
     private final FileService fileService;
-    private final DownloadLogRepository downloadLogRepository;
-    private final RenewalLogRepository renewalLogRepository;
+    private final FileHistoryLogRepository fileHistoryLogRepository;
 
-    public AnalyticsService(FileService fileService, DownloadLogRepository downloadLogRepository, RenewalLogRepository renewalLogRepository) {
+    public AnalyticsService(FileService fileService, FileHistoryLogRepository fileHistoryLogRepository) {
         this.fileService = fileService;
-        this.downloadLogRepository = downloadLogRepository;
-        this.renewalLogRepository = renewalLogRepository;
+        this.fileHistoryLogRepository = fileHistoryLogRepository;
     }
 
+    @Cacheable("analytics")
     public AnalyticsDataView getAnalytics() {
-        long totalDownloads = downloadLogRepository.countAllDownloads();
+        long totalDownloads = fileHistoryLogRepository.countByEventType(FileHistoryType.DOWNLOAD);
         long totalSpaceUsed = fileService.calculateTotalSpaceUsed();
         long fileCount = fileService.getFileCount();
 
@@ -41,19 +39,11 @@ public class AnalyticsService {
         return analytics;
     }
 
-    public long getTotalDownloads() {
-        return downloadLogRepository.countAllDownloads();
-    }
-
     public long getTotalDownloadsByFile(String uuid) {
-        return downloadLogRepository.countDownloadsByFileId(uuid);
+        return fileHistoryLogRepository.countByFileAndType(uuid, FileHistoryType.DOWNLOAD);
     }
 
-    public List<DownloadLog> getDownloadsByFile(String fileUUID) {
-        return downloadLogRepository.findByFileUuid(fileUUID);
-    }
-
-    public List<FileRenewalLog> getRenewalLogsByFile(String fileUUID) {
-        return renewalLogRepository.findByFileUuid(fileUUID);
+    public List<FileHistoryLog> getHistoryByFile(String fileUUID) {
+        return fileHistoryLogRepository.findByFileUuidOrderByEventDateDesc(fileUUID);
     }
 }

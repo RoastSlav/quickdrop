@@ -18,37 +18,34 @@ public class DataValidator {
         return true;
     }
 
-    public static double nullToZero(Double value) {
+    public static String safeString(String value) {
+        return value == null ? "" : value;
+    }
+
+    public static double safeNumber(Double value) {
         if (value == null) {
             return 0;
         }
         return value;
     }
 
-    public static int nullToZero(Integer value) {
+    public static int safeNumber(Integer value) {
         if (value == null) {
             return 0;
         }
         return value;
     }
 
-    public static long nullToZero(Long value) {
+    public static long safeNumber(Long value) {
         if (value == null) {
             return 0;
         }
         return value;
     }
 
-    public static boolean nullToFalse(Boolean value) {
+    public static boolean safeBoolean(Boolean value) {
         if (value == null) {
             return false;
-        }
-        return value;
-    }
-
-    public static String nullToEmpty(String value) {
-        if (value == null) {
-            return "";
         }
         return value;
     }

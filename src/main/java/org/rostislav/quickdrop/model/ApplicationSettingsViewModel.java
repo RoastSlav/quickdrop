@@ -16,7 +16,24 @@ public class ApplicationSettingsViewModel {
     private boolean isFileListPageEnabled;
     private boolean isAdminDashboardButtonEnabled;
     private boolean encryptionDisabled;
+    private boolean disableUploadPassword;
+    private boolean disablePreview;
+    private long maxPreviewSizeBytes;
     private String defaultHomePage;
+    private boolean keepIndefinitelyAdminOnly;
+    private boolean hideFromListAdminOnly;
+    private boolean discordWebhookEnabled;
+    private String discordWebhookUrl;
+    private boolean emailNotificationsEnabled;
+    private String emailFrom;
+    private String emailTo;
+    private String smtpHost;
+    private Integer smtpPort;
+    private String smtpUsername;
+    private String smtpPassword;
+    private boolean smtpUseTls;
+    private boolean notificationBatchEnabled;
+    private Integer notificationBatchMinutes;
 
     public ApplicationSettingsViewModel() {
     }
@@ -33,7 +50,24 @@ public class ApplicationSettingsViewModel {
         this.isFileListPageEnabled = settings.isFileListPageEnabled();
         this.isAdminDashboardButtonEnabled = settings.isAdminDashboardButtonEnabled();
         this.encryptionDisabled = settings.isDisableEncryption();
+        this.disableUploadPassword = settings.isDisableUploadPassword();
+        this.disablePreview = settings.isDisablePreview();
+        this.maxPreviewSizeBytes = settings.getMaxPreviewSizeBytes();
         this.defaultHomePage = settings.getDefaultHomePage();
+        this.keepIndefinitelyAdminOnly = settings.isKeepIndefinitelyAdminOnly();
+        this.hideFromListAdminOnly = settings.isHideFromListAdminOnly();
+        this.discordWebhookEnabled = settings.isDiscordWebhookEnabled();
+        this.discordWebhookUrl = settings.getDiscordWebhookUrl();
+        this.emailNotificationsEnabled = settings.isEmailNotificationsEnabled();
+        this.emailFrom = settings.getEmailFrom();
+        this.emailTo = settings.getEmailTo();
+        this.smtpHost = settings.getSmtpHost();
+        this.smtpPort = settings.getSmtpPort();
+        this.smtpUsername = settings.getSmtpUsername();
+        this.smtpPassword = settings.getSmtpPassword();
+        this.smtpUseTls = settings.isSmtpUseTls();
+        this.notificationBatchEnabled = settings.isNotificationBatchEnabled();
+        this.notificationBatchMinutes = settings.getNotificationBatchMinutes();
     }
 
     public Long getId() {
@@ -132,11 +166,147 @@ public class ApplicationSettingsViewModel {
         this.encryptionDisabled = encryptionDisabled;
     }
 
+    public boolean isDisableUploadPassword() {
+        return disableUploadPassword;
+    }
+
+    public void setDisableUploadPassword(boolean disableUploadPassword) {
+        this.disableUploadPassword = disableUploadPassword;
+    }
+
+    public boolean isDisablePreview() {
+        return disablePreview;
+    }
+
+    public void setDisablePreview(boolean disablePreview) {
+        this.disablePreview = disablePreview;
+    }
+
+    public long getMaxPreviewSizeBytes() {
+        return maxPreviewSizeBytes;
+    }
+
+    public void setMaxPreviewSizeBytes(long maxPreviewSizeBytes) {
+        this.maxPreviewSizeBytes = maxPreviewSizeBytes;
+    }
+
     public String getDefaultHomePage() {
         return defaultHomePage;
     }
 
     public void setDefaultHomePage(String defaultHomePage) {
         this.defaultHomePage = defaultHomePage;
+    }
+
+    public boolean isKeepIndefinitelyAdminOnly() {
+        return keepIndefinitelyAdminOnly;
+    }
+
+    public void setKeepIndefinitelyAdminOnly(boolean keepIndefinitelyAdminOnly) {
+        this.keepIndefinitelyAdminOnly = keepIndefinitelyAdminOnly;
+    }
+
+    public boolean isHideFromListAdminOnly() {
+        return hideFromListAdminOnly;
+    }
+
+    public void setHideFromListAdminOnly(boolean hideFromListAdminOnly) {
+        this.hideFromListAdminOnly = hideFromListAdminOnly;
+    }
+
+    public boolean isDiscordWebhookEnabled() {
+        return discordWebhookEnabled;
+    }
+
+    public void setDiscordWebhookEnabled(boolean discordWebhookEnabled) {
+        this.discordWebhookEnabled = discordWebhookEnabled;
+    }
+
+    public String getDiscordWebhookUrl() {
+        return discordWebhookUrl;
+    }
+
+    public void setDiscordWebhookUrl(String discordWebhookUrl) {
+        this.discordWebhookUrl = discordWebhookUrl;
+    }
+
+    public boolean isEmailNotificationsEnabled() {
+        return emailNotificationsEnabled;
+    }
+
+    public void setEmailNotificationsEnabled(boolean emailNotificationsEnabled) {
+        this.emailNotificationsEnabled = emailNotificationsEnabled;
+    }
+
+    public String getEmailFrom() {
+        return emailFrom;
+    }
+
+    public void setEmailFrom(String emailFrom) {
+        this.emailFrom = emailFrom;
+    }
+
+    public String getEmailTo() {
+        return emailTo;
+    }
+
+    public void setEmailTo(String emailTo) {
+        this.emailTo = emailTo;
+    }
+
+    public String getSmtpHost() {
+        return smtpHost;
+    }
+
+    public void setSmtpHost(String smtpHost) {
+        this.smtpHost = smtpHost;
+    }
+
+    public Integer getSmtpPort() {
+        return smtpPort;
+    }
+
+    public void setSmtpPort(Integer smtpPort) {
+        this.smtpPort = smtpPort;
+    }
+
+    public String getSmtpUsername() {
+        return smtpUsername;
+    }
+
+    public void setSmtpUsername(String smtpUsername) {
+        this.smtpUsername = smtpUsername;
+    }
+
+    public String getSmtpPassword() {
+        return smtpPassword;
+    }
+
+    public void setSmtpPassword(String smtpPassword) {
+        this.smtpPassword = smtpPassword;
+    }
+
+    public boolean isSmtpUseTls() {
+        return smtpUseTls;
+    }
+
+    public void setSmtpUseTls(boolean smtpUseTls) {
+        this.smtpUseTls = smtpUseTls;
+    }
+
+    public boolean isNotificationBatchEnabled() {
+        return notificationBatchEnabled;
+    }
+
+    public void setNotificationBatchEnabled(boolean notificationBatchEnabled) {
+        this.notificationBatchEnabled = notificationBatchEnabled;
+    }
+
+    public Integer getNotificationBatchMinutes() {
+        return notificationBatchMinutes;
+    }
+
+    public void setNotificationBatchMinutes(Integer notificationBatchMinutes) {
+        this.notificationBatchMinutes = notificationBatchMinutes;
     }
 }

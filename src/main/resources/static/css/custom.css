@@ -78,10 +78,10 @@ html:not(.dark) .dark\:text-slate-400{
 @media (min-width:768px){
 	.nav-menu-panel{border:none!important;background-color:transparent!important;box-shadow:none!important;align-items:center;padding:0!important;margin-top:0!important;}
 	.nav-menu-panel .md\:space-x-4>:not([hidden])~:not([hidden]){margin-left:0.35rem!important;}
-	.nav-menu-item{border:none;background-color:transparent;padding:0 0.25rem!important;margin-top:0;width:auto;border-radius:0;line-height:1.05;}
+	.nav-menu-item{border:none!important;background-color:transparent!important;padding:0 0.25rem!important;margin-top:0;width:auto;border-radius:0!important;line-height:1.05;box-shadow:none!important;}
 	.nav-menu-item.theme-toggle{padding:0.1rem 0.25rem!important;}
 	.nav-menu-item + .nav-menu-item{margin-top:0;}
-	.nav-menu-item:hover{background-color:transparent;}
+	.nav-menu-item:hover{background-color:transparent!important;}
 }
 
 

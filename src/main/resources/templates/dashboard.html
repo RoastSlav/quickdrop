@@ -66,7 +66,7 @@
 
     <div class="bg-white dark:bg-slate-800 p-6 md:p-8 rounded-2xl shadow-lg">
         <h2 class="text-xl font-semibold tracking-tight mb-4">Files</h2>
-        <div class="overflow-x-auto w-full">
+        <div class="overflow-x-auto w-full" th:if="${filesPage.totalElements > 0}">
             <table class="min-w-full w-full divide-y divide-slate-200 dark:divide-slate-700 light-table-zebra">
                 <thead class="bg-gray-100 dark:bg-gray-800 divide-x divide-slate-200 dark:divide-slate-600">
                 <tr>
@@ -77,7 +77,7 @@
                 </tr>
                 </thead>
                 <tbody>
-                <th:block th:each="file,iter : ${files}">
+                <th:block th:each="file,iter : ${filesPage.content}">
                     <tr class="dark:bg-slate-800 divide-x divide-slate-200 dark:divide-slate-600" th:classappend="${iter.index % 2 == 0} ? ' bg-gray-50' : ' bg-white'">
                         <td class="px-6 py-4" th:text="${file.name}">File Name</td>
                         <td class="px-6 py-4" th:text="${#temporals.format(file.uploadDate, 'dd.MM.yyyy')}">Date</td>
@@ -141,6 +141,30 @@
                 </th:block>
                 </tbody>
             </table>
+        </div>
+        <div class="text-center text-gray-600 dark:text-gray-300" th:if="${filesPage.totalElements == 0}">
+            <p>No files found.</p>
+        </div>
+        <div class="flex flex-col md:flex-row items-center justify-between gap-4 mt-6" th:if="${filesPage.totalElements > 0}">
+            <div class="flex items-center gap-2" th:if="${filesPage.totalPages > 1}">
+                <a class="px-4 py-2 rounded-lg bg-slate-200 dark:bg-slate-700 text-sm font-semibold transition disabled:opacity-50 disabled:pointer-events-none"
+                   th:classappend="${filesPage.first} ? ' opacity-50 pointer-events-none' : ' hover:bg-slate-300 dark:hover:bg-slate-600'"
+                   th:href="@{/admin/dashboard(page=${filesPage.first ? filesPage.number : filesPage.number - 1}, size=${pageSize})}">Previous</a>
+                <a class="px-4 py-2 rounded-lg bg-slate-200 dark:bg-slate-700 text-sm font-semibold transition disabled:opacity-50 disabled:pointer-events-none"
+                   th:classappend="${filesPage.last} ? ' opacity-50 pointer-events-none' : ' hover:bg-slate-300 dark:hover:bg-slate-600'"
+                   th:href="@{/admin/dashboard(page=${filesPage.last ? filesPage.number : filesPage.number + 1}, size=${pageSize})}">Next</a>
+            </div>
+            <form action="/admin/dashboard" class="flex items-center gap-2" method="get">
+                <label class="text-sm text-gray-700 dark:text-gray-300" for="adminPageSize">Per page</label>
+                <select class="rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" id="adminPageSize" name="size" onchange="this.form.submit()">
+                    <option th:selected="${pageSize == 10}" value="10">10</option>
+                    <option th:selected="${pageSize == 20}" value="20">20</option>
+                    <option th:selected="${pageSize == 50}" value="50">50</option>
+                    <option th:selected="${pageSize == 100}" value="100">100</option>
+                </select>
+                <input name="page" type="hidden" value="0"/>
+            </form>
+            <div class="text-sm text-gray-600 dark:text-gray-300">Page <span th:text="${filesPage.number + 1}"></span> of <span th:text="${filesPage.totalPages}"></span></div>
         </div>
     </div>
 </main>

@@ -85,7 +85,7 @@ html:not(.dark) .dark\:text-slate-400{
 }
 
 /* Ensure nav stays darker than page background */
-nav.bg-gray-800{background-color:#e9edf3!important;color:#0f172a!important;}
+nav.bg-gray-800{background-color:#b6b9bd!important;color:#0f172a!important;}
 html.dark nav.bg-gray-800,html.dark nav.dark\:bg-gray-900{background-color:#0b1524!important;color:#e8f0ff!important;}
 
 

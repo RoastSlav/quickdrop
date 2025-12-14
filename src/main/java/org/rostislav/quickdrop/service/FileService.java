@@ -13,7 +13,11 @@ import org.rostislav.quickdrop.repository.FileRepository;
 import org.rostislav.quickdrop.repository.ShareTokenRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -90,6 +94,7 @@ public class FileService {
         return new RequesterInfo(ipAddress, userAgent);
     }
 
+    @CacheEvict(value = {"publicFiles", "adminFiles", "analytics"}, allEntries = true)
     public FileEntity saveFile(File file, FileUploadRequest fileUploadRequest, String uuid) {
         if (!validateObjects(file, fileUploadRequest)) {
             return null;
@@ -188,6 +193,7 @@ public class FileService {
     }
 
     @Transactional
+    @CacheEvict(value = {"publicFiles", "adminFiles", "analytics"}, allEntries = true)
     public boolean deleteFileFromDatabaseAndFileSystem(String uuid) {
         Optional<FileEntity> referenceById = fileRepository.findByUUID(uuid);
         if (referenceById.isEmpty()) {
@@ -202,6 +208,7 @@ public class FileService {
     }
 
     @Transactional
+    @CacheEvict(value = {"publicFiles", "adminFiles", "analytics"}, allEntries = true)
     public boolean removeFileFromDatabase(String uuid) {
         Optional<FileEntity> referenceById = fileRepository.findByUUID(uuid);
         if (referenceById.isEmpty()) {
@@ -215,6 +222,7 @@ public class FileService {
         return true;
     }
 
+    @CacheEvict(value = {"adminFiles", "analytics"}, allEntries = true)
     public ResponseEntity<StreamingResponseBody> downloadFile(String uuid, HttpServletRequest request) {
         FileEntity fileEntity = fileRepository.findByUUID(uuid).orElse(null);
         if (fileEntity == null) {
@@ -332,6 +340,7 @@ public class FileService {
         return sessionToken != null && sessionService.validateFileSessionToken(sessionToken.toString(), uuid);
     }
 
+    @CacheEvict(value = {"adminFiles", "analytics"}, allEntries = true)
     public void logDownload(String uuid, HttpServletRequest request) {
         FileEntity fileEntity = fileRepository.findByUUID(uuid).orElse(null);
         if (fileEntity == null) return;
@@ -349,8 +358,12 @@ public class FileService {
         return sessionService.getPasswordForFileSessionToken(sessionToken.toString()).getPassword();
     }
 
-    public List<FileEntity> searchNotHiddenFiles(String query) {
-        return fileRepository.searchNotHiddenFiles(query);
+    @Cacheable(value = "publicFiles", key = "'page:' + #pageable.pageNumber + ':size:' + #pageable.pageSize + ':q:' + (#query == null ? '' : #query.toLowerCase())")
+    public Page<FileEntity> getVisibleFiles(Pageable pageable, String query) {
+        if (query == null || query.isBlank()) {
+            return fileRepository.findAllNotHiddenFiles(pageable);
+        }
+        return fileRepository.searchNotHiddenFiles(query, pageable);
     }
 
     public long calculateTotalSpaceUsed() {
@@ -361,6 +374,7 @@ public class FileService {
         return fileRepository.count();
     }
 
+    @CacheEvict(value = {"publicFiles", "adminFiles", "analytics"}, allEntries = true)
     public void extendFile(String uuid, HttpServletRequest request) {
         Optional<FileEntity> referenceById = fileRepository.findByUUID(uuid);
         if (referenceById.isEmpty()) {
@@ -374,6 +388,7 @@ public class FileService {
         logHistory(fileEntity, request, FileHistoryType.RENEWAL);
     }
 
+    @CacheEvict(value = {"publicFiles", "adminFiles", "analytics"}, allEntries = true)
     public FileEntity toggleHidden(String uuid, HttpServletRequest request) {
         Optional<FileEntity> referenceById = fileRepository.findByUUID(uuid);
         if (referenceById.isEmpty()) {
@@ -396,6 +411,11 @@ public class FileService {
 
     public List<FileEntity> getNotHiddenFiles() {
         return fileRepository.findAllNotHiddenFiles();
+    }
+
+    @Cacheable(value = "adminFiles", key = "'page:' + #pageable.pageNumber + ':size:' + #pageable.pageSize")
+    public Page<FileEntityView> getFilesWithDownloadCounts(Pageable pageable) {
+        return fileRepository.findFilesWithDownloadCounts(pageable);
     }
 
     public List<FileEntityView> getAllFilesWithDownloadCounts() {
@@ -423,6 +443,7 @@ public class FileService {
         return passwordEncoder.matches(password, fileEntity.passwordHash);
     }
 
+    @CacheEvict(value = {"adminFiles", "analytics"}, allEntries = true)
     public StreamingResponseBody streamFileByShareToken(ShareTokenEntity shareTokenEntity, HttpServletRequest request) {
         if (!validateShareToken(shareTokenEntity)) {
             return null;
@@ -477,6 +498,7 @@ public class FileService {
         logger.info("Share token updated/invalidated. File streamed successfully: {}", fileEntity.name);
     }
 
+    @CacheEvict(value = {"publicFiles", "adminFiles", "analytics"}, allEntries = true)
     public FileEntity updateKeepIndefinitely(String uuid, boolean keepIndefinitely, HttpServletRequest request) {
         Optional<FileEntity> referenceById = fileRepository.findByUUID(uuid);
         if (referenceById.isEmpty()) {

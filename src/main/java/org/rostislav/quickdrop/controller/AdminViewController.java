@@ -7,13 +7,14 @@ import org.rostislav.quickdrop.model.AnalyticsDataView;
 import org.rostislav.quickdrop.model.ApplicationSettingsViewModel;
 import org.rostislav.quickdrop.model.FileEntityView;
 import org.rostislav.quickdrop.service.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCrypt;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.UUID;
 
 import static org.rostislav.quickdrop.util.FileUtils.bytesToMegabytes;
@@ -39,9 +40,15 @@ public class AdminViewController {
     }
 
     @GetMapping("/dashboard")
-    public String getDashboardPage(Model model) {
-        List<FileEntityView> files = fileService.getAllFilesWithDownloadCounts();
-        model.addAttribute("files", files);
+    public String getDashboardPage(@RequestParam(name = "page", defaultValue = "0") int page,
+                                   @RequestParam(name = "size", defaultValue = "20") int size,
+                                   Model model) {
+        int pageNumber = Math.max(page, 0);
+        int pageSize = Math.min(Math.max(size, 1), 100);
+
+        Page<FileEntityView> filesPage = fileService.getFilesWithDownloadCounts(PageRequest.of(pageNumber, pageSize));
+        model.addAttribute("filesPage", filesPage);
+        model.addAttribute("pageSize", pageSize);
 
         AnalyticsDataView analytics = analyticsService.getAnalytics();
         model.addAttribute("analytics", analytics);

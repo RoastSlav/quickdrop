@@ -126,7 +126,24 @@ public class FileService {
     public boolean isPreviewableText(FileEntity fileEntity) {
         if (fileEntity == null || fileEntity.name == null) return false;
         String lower = fileEntity.name.toLowerCase();
-        return lower.endsWith(".txt") || lower.endsWith(".log") || lower.endsWith(".md") || lower.endsWith(".json") || lower.endsWith(".yaml") || lower.endsWith(".yml") || lower.endsWith(".csv") || lower.endsWith(".xml");
+        return lower.endsWith(".txt") || lower.endsWith(".log") || lower.endsWith(".md") || lower.endsWith(".json") || lower.endsWith(".jsonl") || lower.endsWith(".yaml") || lower.endsWith(".yml") || lower.endsWith(".csv") || lower.endsWith(".tsv") || lower.endsWith(".xml");
+    }
+
+    public boolean isPreviewablePdf(FileEntity fileEntity) {
+        if (fileEntity == null || fileEntity.name == null) return false;
+        return fileEntity.name.toLowerCase().endsWith(".pdf");
+    }
+
+    public boolean isPreviewableJson(FileEntity fileEntity) {
+        if (fileEntity == null || fileEntity.name == null) return false;
+        String lower = fileEntity.name.toLowerCase();
+        return lower.endsWith(".json") || lower.endsWith(".jsonl");
+    }
+
+    public boolean isPreviewableCsvOrTsv(FileEntity fileEntity) {
+        if (fileEntity == null || fileEntity.name == null) return false;
+        String lower = fileEntity.name.toLowerCase();
+        return lower.endsWith(".csv") || lower.endsWith(".tsv");
     }
 
     private FileEntity populateFileEntity(FileUploadRequest request, String uuid) {
@@ -240,7 +257,8 @@ public class FileService {
 
         boolean isImage = isPreviewableImage(fileEntity);
         boolean isText = isPreviewableText(fileEntity);
-        if (!isImage && !isText) {
+        boolean isPdf = isPreviewablePdf(fileEntity);
+        if (!isImage && !isText && !isPdf) {
             return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE).build();
         }
 
@@ -263,7 +281,7 @@ public class FileService {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
-        String contentType = guessContentType(fileEntity.name, isImage, isText);
+        String contentType = guessContentType(fileEntity.name, isImage, isText, isPdf);
 
         StreamingResponseBody body = getStreamingResponseBody(inputStream);
         return ResponseEntity.ok()
@@ -275,7 +293,7 @@ public class FileService {
                 .body(body);
     }
 
-    private String guessContentType(String fileName, boolean isImage, boolean isText) {
+    private String guessContentType(String fileName, boolean isImage, boolean isText, boolean isPdf) {
         if (isImage) {
             if (fileName.toLowerCase().endsWith(".svg")) return "image/svg+xml";
             if (fileName.toLowerCase().endsWith(".webp")) return "image/webp";
@@ -283,10 +301,14 @@ public class FileService {
             if (fileName.toLowerCase().endsWith(".png")) return "image/png";
             return "image/jpeg";
         }
+        if (isPdf) {
+            return "application/pdf";
+        }
         if (isText) {
             if (fileName.toLowerCase().endsWith(".json")) return "application/json";
             if (fileName.toLowerCase().endsWith(".xml")) return "application/xml";
             if (fileName.toLowerCase().endsWith(".csv")) return "text/csv";
+            if (fileName.toLowerCase().endsWith(".tsv")) return "text/tab-separated-values";
             if (fileName.toLowerCase().endsWith(".md")) return "text/markdown";
             return "text/plain; charset=UTF-8";
         }

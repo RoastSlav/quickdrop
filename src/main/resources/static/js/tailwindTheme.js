@@ -31,5 +31,31 @@
                 updateToggleButtons(nextTheme);
             });
         });
+
+        const navToggle = document.getElementById('navToggle');
+        const navMenu = document.getElementById('navMenu');
+        if (navToggle && navMenu) {
+            const closeMenu = () => {
+                navMenu.classList.add('hidden');
+                navToggle.setAttribute('aria-expanded', 'false');
+            };
+
+            navToggle.addEventListener('click', () => {
+                const isHidden = navMenu.classList.contains('hidden');
+                navMenu.classList.toggle('hidden');
+                navToggle.setAttribute('aria-expanded', isHidden ? 'true' : 'false');
+            });
+
+            document.addEventListener('click', (e) => {
+                const isMenuClick = navMenu.contains(e.target) || navToggle.contains(e.target);
+                if (!isMenuClick && !navMenu.classList.contains('hidden')) {
+                    closeMenu();
+                }
+            });
+
+            navMenu.querySelectorAll('a, button').forEach((el) => {
+                el.addEventListener('click', () => closeMenu());
+            });
+        }
     });
 })();

@@ -168,6 +168,9 @@ document.addEventListener('DOMContentLoaded', () => {
     renderFolderTree();
     setupPreviewInit();
     setupDeleteConfirm();
+    if (window.hljs && typeof window.hljs.highlightAll === 'function') {
+        window.hljs.highlightAll();
+    }
 });
 
 let previewBlob = null;
@@ -485,7 +488,6 @@ function renderCodeBlock(text, extension) {
     const pre = document.createElement('pre');
     pre.className = 'code-preview max-h-[28rem] overflow-auto';
     const code = document.createElement('code');
-    code.className = 'hljs';
     const limit = 20000;
     const body = text.length > limit ? `${text.slice(0, limit)}\n... (truncated)` : text;
     code.textContent = body;

@@ -16,6 +16,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import static org.rostislav.quickdrop.util.DataValidator.safeString;
+
 @Service
 public class NotificationService {
     private static final Logger logger = LoggerFactory.getLogger(NotificationService.class);
@@ -251,10 +253,6 @@ public class NotificationService {
                         .filter(s -> !s.isEmpty())
                         .toArray(String[]::new))
                 .orElseGet(() -> new String[0]);
-    }
-
-    private String safeString(String value) {
-        return value == null ? "" : value;
     }
 
     private boolean shouldSendDiscord() {

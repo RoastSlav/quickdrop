@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.util.Optional;
 
+import static org.rostislav.quickdrop.util.FileUtils.validateShareToken;
 import static org.springframework.http.ResponseEntity.ok;
 
 @RestController
@@ -121,7 +122,7 @@ public class FileRestController {
     public ResponseEntity<StreamingResponseBody> downloadFile(@PathVariable String token, HttpServletRequest request) {
         try {
             Optional<ShareTokenEntity> shareTokenEntity = fileService.getShareTokenEntityByToken(token);
-            if (shareTokenEntity.isEmpty() || !fileService.validateShareToken(shareTokenEntity.get())) {
+            if (shareTokenEntity.isEmpty() || !validateShareToken(shareTokenEntity.get())) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
             }
 

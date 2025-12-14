@@ -97,3 +97,36 @@ html:not(.dark) .dark\:placeholder-gray-400::placeholder{color:#6b7280!important
 html:not(.dark) .light-table-zebra thead{background-color:#e5e7eb!important;}
 html:not(.dark) .light-table-zebra tbody tr:nth-child(odd){background-color:#f9fafb!important;}
 html:not(.dark) .light-table-zebra tbody tr:nth-child(even){background-color:#ffffff!important;}
+
+/* Preview helpers */
+.preview-pdf-frame{width:100%;height:36rem;border:1px solid #cbd5e1;border-radius:12px;overflow:hidden;background-color:#f8fafc;}
+.dark .preview-pdf-frame{border-color:#1e293b;background-color:#0f172a;}
+.preview-table{width:100%;border-collapse:collapse;font-size:13px;overflow:auto;display:block;max-height:32rem;border:1px solid #cbd5e1;border-radius:10px;}
+.dark .preview-table{border-color:#1e293b;}
+.preview-table thead{position:sticky;top:0;background-color:#e2e8f0;z-index:1;}
+.dark .preview-table thead{background-color:#0b1224;}
+.preview-table th,.preview-table td{padding:8px 10px;border-bottom:1px solid #e2e8f0;text-align:left;white-space:nowrap;}
+.preview-table tbody tr:nth-child(odd){background-color:#f8fafc;}
+.preview-table tbody tr:nth-child(even){background-color:#ffffff;}
+.dark .preview-table th,.dark .preview-table td{border-bottom-color:#1e293b;}
+.dark .preview-table tbody tr:nth-child(odd){background-color:#0f172a;}
+.dark .preview-table tbody tr:nth-child(even){background-color:#0b1224;}
+
+.code-preview{background-color:#f8fafc;border:1px solid #cbd5e1;border-radius:10px;padding:12px;color:#0f172a;font-size:12px;}
+.dark .code-preview{background-color:#0f172a;border-color:#1e293b;color:#e2e8f0;}
+
+.preview-toolbar{display:flex;gap:8px;margin-bottom:8px;}
+.preview-toggle-button{padding:6px 10px;border:1px solid #cbd5e1;background-color:#fff;border-radius:8px;font-size:12px;color:#0f172a;transition:background-color .15s ease,border-color .15s ease;}
+.preview-toggle-button.active{background-color:#0ea5e9;color:#fff;border-color:#0284c7;}
+.preview-toggle-button:not(.active):hover{background-color:#e2e8f0;}
+.dark .preview-toggle-button{background-color:#0f172a;border-color:#1e293b;color:#e2e8f0;}
+.dark .preview-toggle-button.active{background-color:#0ea5e9;border-color:#0284c7;color:#0b1224;}
+.dark .preview-toggle-button:not(.active):hover{background-color:#1f2937;}
+
+.json-tree{background-color:#f8fafc;border:1px solid #cbd5e1;border-radius:10px;padding:10px;font-size:12px;max-height:32rem;overflow:auto;}
+.dark .json-tree{background-color:#0f172a;border-color:#1e293b;color:#e2e8f0;}
+.json-node{margin-left:10px;}
+.json-leaf{padding:2px 0;}
+
+/* Highlight.js dark tweaks */
+html.dark pre.hljs,html.dark code.hljs{background:#0f172a;color:#e2e8f0;}

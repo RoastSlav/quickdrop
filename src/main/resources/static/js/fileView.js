@@ -203,6 +203,10 @@ async function initPreview() {
     let previewUrl = container.dataset.previewUrl;
     const isImage = container.dataset.previewImage === 'true';
     const isText = container.dataset.previewText === 'true';
+    const isPdf = container.dataset.previewPdf === 'true';
+    const isJson = container.dataset.previewJson === 'true';
+    const isCsv = container.dataset.previewCsv === 'true';
+    const previewType = container.dataset.previewType || '';
     const fileName = container.dataset.fileName || 'download';
     const requireManual = container.dataset.requireManual === 'true';
 
@@ -223,19 +227,21 @@ async function initPreview() {
         if (status) status.remove();
         content.innerHTML = '';
 
+        const objectUrl = URL.createObjectURL(blob);
         if (isImage) {
-            const img = document.createElement('img');
-            img.src = URL.createObjectURL(blob);
-            img.alt = 'Preview';
-            img.className = 'max-h-96 rounded-lg shadow';
-            content.appendChild(img);
-        } else if (isText) {
+            renderImagePreview(content, objectUrl);
+        } else if (isPdf || previewType === 'pdf') {
+            renderPdfPreview(content, objectUrl, fileName);
+        } else {
             const text = await blob.text();
-            const pre = document.createElement('pre');
-            pre.className = 'text-xs bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-100 p-3 rounded-lg max-h-96 overflow-auto whitespace-pre-wrap';
-            const limit = 20000;
-            pre.textContent = text.length > limit ? text.slice(0, limit) + '\n... (truncated)' : text;
-            content.appendChild(pre);
+            const extension = extractExtension(fileName);
+            if (isJson || previewType === 'json') {
+                renderJsonPreview(content, text);
+            } else if (isCsv || previewType === 'csv') {
+                renderCsvPreview(content, text, extension);
+            } else if (isText || previewType === 'text') {
+                renderCodePreview(content, text, extension);
+            }
         }
 
         attachDownloadOverride(fileName);
@@ -246,6 +252,217 @@ async function initPreview() {
         }
     }
     previewFetching = false;
+}
+
+function extractExtension(name) {
+    const idx = name.lastIndexOf('.');
+    if (idx === -1 || idx === name.length - 1) return '';
+    return name.slice(idx + 1).toLowerCase();
+}
+
+function renderImagePreview(container, objectUrl) {
+    const img = document.createElement('img');
+    img.src = objectUrl;
+    img.alt = 'Preview';
+    img.className = 'max-h-[28rem] rounded-lg shadow';
+    img.onload = () => URL.revokeObjectURL(objectUrl);
+    container.appendChild(img);
+}
+
+function renderPdfPreview(container, objectUrl, fileName) {
+    const frame = document.createElement('object');
+    frame.type = 'application/pdf';
+    frame.data = objectUrl;
+    frame.className = 'preview-pdf-frame';
+    const fallback = document.createElement('div');
+    fallback.className = 'text-sm text-gray-600 dark:text-gray-300 mt-2';
+    const link = document.createElement('a');
+    link.href = objectUrl;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    link.textContent = `Open ${fileName} in a new tab`;
+    fallback.appendChild(link);
+    frame.appendChild(fallback);
+    container.appendChild(frame);
+}
+
+function renderJsonPreview(container, text) {
+    let parsed;
+    try {
+        parsed = JSON.parse(text);
+    } catch (err) {
+        renderCodePreview(container, text, 'json');
+        return;
+    }
+
+    const toolbar = document.createElement('div');
+    toolbar.className = 'preview-toolbar';
+    const formattedBtn = document.createElement('button');
+    formattedBtn.type = 'button';
+    formattedBtn.textContent = 'Formatted';
+    formattedBtn.className = 'preview-toggle-button active';
+    const treeBtn = document.createElement('button');
+    treeBtn.type = 'button';
+    treeBtn.textContent = 'Tree';
+    treeBtn.className = 'preview-toggle-button';
+    toolbar.append(formattedBtn, treeBtn);
+
+    const formatted = renderCodeBlock(JSON.stringify(parsed, null, 2), 'json');
+    const tree = document.createElement('div');
+    tree.className = 'json-tree hidden';
+    tree.appendChild(buildJsonNode(parsed, null));
+
+    const swap = (showTree) => {
+        if (showTree) {
+            tree.classList.remove('hidden');
+            formatted.classList.add('hidden');
+            treeBtn.classList.add('active');
+            formattedBtn.classList.remove('active');
+        } else {
+            tree.classList.add('hidden');
+            formatted.classList.remove('hidden');
+            formattedBtn.classList.add('active');
+            treeBtn.classList.remove('active');
+        }
+    };
+
+    formattedBtn.addEventListener('click', () => swap(false));
+    treeBtn.addEventListener('click', () => swap(true));
+
+    container.append(toolbar, formatted, tree);
+}
+
+function buildJsonNode(value, label) {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'json-node';
+
+    if (value !== null && typeof value === 'object') {
+        const isArray = Array.isArray(value);
+        const details = document.createElement('details');
+        details.open = true;
+        const summary = document.createElement('summary');
+        summary.textContent = label ? `${label} ${isArray ? '[ ]' : '{ }'}` : isArray ? '[ ]' : '{ }';
+        details.appendChild(summary);
+        Object.entries(value).forEach(([key, val]) => {
+            details.appendChild(buildJsonNode(val, key));
+        });
+        wrapper.appendChild(details);
+    } else {
+        const leaf = document.createElement('div');
+        leaf.className = 'json-leaf';
+        const name = label ? `${label}: ` : '';
+        leaf.textContent = `${name}${String(value)}`;
+        wrapper.appendChild(leaf);
+    }
+
+    return wrapper;
+}
+
+function renderCsvPreview(container, text, extension) {
+    const delimiter = extension === 'tsv' ? '\t' : ',';
+    const rows = parseDelimited(text, delimiter);
+    if (!rows.length) {
+        const empty = document.createElement('div');
+        empty.className = 'text-sm text-gray-600 dark:text-gray-300';
+        empty.textContent = 'No rows to display.';
+        container.appendChild(empty);
+        return;
+    }
+
+    const table = document.createElement('table');
+    table.className = 'preview-table';
+    const thead = document.createElement('thead');
+    const headerRow = document.createElement('tr');
+    rows[0].forEach((cell) => {
+        const th = document.createElement('th');
+        th.textContent = cell;
+        headerRow.appendChild(th);
+    });
+    thead.appendChild(headerRow);
+    table.appendChild(thead);
+
+    const tbody = document.createElement('tbody');
+    const maxRows = 200;
+    const renderRows = rows.slice(1, maxRows + 1);
+    renderRows.forEach((row) => {
+        const tr = document.createElement('tr');
+        row.forEach((cell) => {
+            const td = document.createElement('td');
+            td.textContent = cell;
+            tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+    container.appendChild(table);
+
+    if (rows.length - 1 > maxRows) {
+        const note = document.createElement('div');
+        note.className = 'text-xs text-gray-500 dark:text-gray-400 mt-2';
+        note.textContent = `Showing first ${maxRows} rows out of ${rows.length - 1}.`;
+        container.appendChild(note);
+    }
+}
+
+function parseDelimited(text, delimiter) {
+    const lines = text.split(/\r?\n/).filter((l) => l.trim().length > 0);
+    const rows = [];
+    lines.forEach((line) => {
+        const cells = [];
+        let current = '';
+        let inQuotes = false;
+        for (let i = 0; i < line.length; i++) {
+            const char = line[i];
+            const next = line[i + 1];
+            if (char === '"') {
+                if (inQuotes && next === '"') {
+                    current += '"';
+                    i++;
+                } else {
+                    inQuotes = !inQuotes;
+                }
+            } else if (!inQuotes && char === delimiter) {
+                cells.push(current);
+                current = '';
+            } else {
+                current += char;
+            }
+        }
+        cells.push(current);
+        rows.push(cells);
+    });
+    return rows;
+}
+
+function renderCodePreview(container, text, extension) {
+    const block = renderCodeBlock(text, extension);
+    container.appendChild(block);
+}
+
+function renderCodeBlock(text, extension) {
+    const pre = document.createElement('pre');
+    pre.className = 'code-preview max-h-[28rem] overflow-auto';
+    const code = document.createElement('code');
+    code.className = 'hljs';
+    const limit = 20000;
+    const body = text.length > limit ? `${text.slice(0, limit)}\n... (truncated)` : text;
+    code.textContent = body;
+    if (extension) {
+        code.classList.add(`language-${extension}`);
+    }
+    pre.appendChild(code);
+    applyHighlight(code);
+    return pre;
+}
+
+function applyHighlight(codeEl) {
+    if (window.hljs && codeEl) {
+        try {
+            hljs.highlightElement(codeEl);
+        } catch (err) {
+            // Highlighting is best-effort; fall back silently
+        }
+    }
 }
 
 function attachDownloadOverride(fileName) {

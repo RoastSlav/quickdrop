@@ -84,6 +84,10 @@ html:not(.dark) .dark\:text-slate-400{
 	.nav-menu-item:hover{background-color:transparent!important;}
 }
 
+/* Ensure nav stays darker than page background */
+nav.bg-gray-800{background-color:#0d1627!important;color:#e2e8f0!important;}
+html.dark nav.bg-gray-800,html.dark nav.dark\:bg-gray-900{background-color:#050a12!important;color:#e2e8f0!important;}
+
 
 /* Reset borders/placeholders that are dark-only. */
 html:not(.dark) .dark\:border-gray-600,

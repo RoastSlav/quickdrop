@@ -1,5 +1,6 @@
 package org.rostislav.quickdrop.service;
 
+import jakarta.mail.internet.MimeMessage;
 import org.rostislav.quickdrop.entity.FileEntity;
 import org.rostislav.quickdrop.model.FileHistoryType;
 import org.slf4j.Logger;
@@ -9,13 +10,7 @@ import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
-import jakarta.mail.internet.MimeMessage;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Queue;
+import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -27,11 +22,11 @@ public class NotificationService {
     private static final long DEFAULT_FLUSH_POLL_SECONDS = 60;
     private final ApplicationSettingsService applicationSettingsService;
     private final RestTemplate restTemplate = new RestTemplate();
+    private final Queue<String> pendingMessages = new ConcurrentLinkedQueue<>();
+    private final Object schedulerLock = new Object();
     private volatile JavaMailSenderImpl cachedMailSender;
     private volatile String mailSenderKey;
-    private final Queue<String> pendingMessages = new ConcurrentLinkedQueue<>();
     private volatile long lastFlushEpochMillis = System.currentTimeMillis();
-    private final Object schedulerLock = new Object();
     private ScheduledExecutorService scheduler;
 
     public NotificationService(ApplicationSettingsService applicationSettingsService) {
@@ -39,7 +34,7 @@ public class NotificationService {
         startSchedulerIfNeeded(shouldSendDiscord(), shouldSendEmail());
     }
 
-    public void notifyFileAction(FileEntity fileEntity, FileHistoryType type, String ipAddress, String userAgent) {
+    public void notifyFileAction(FileEntity fileEntity, FileHistoryType type) {
         if (fileEntity == null) {
             return;
         }
@@ -88,9 +83,7 @@ public class NotificationService {
         }
         return Arrays.stream(emailTo.split(","))
                 .map(String::trim)
-                .filter(s -> !s.isEmpty())
-                .findAny()
-                .isPresent();
+                .anyMatch(s -> !s.isEmpty());
     }
 
     private void sendDiscord(String content) {
@@ -212,16 +205,6 @@ public class NotificationService {
         }
     }
 
-    public record NotificationTestResult(boolean success, String message) {
-        public static NotificationTestResult success(String message) {
-            return new NotificationTestResult(true, message);
-        }
-
-        public static NotificationTestResult failure(String message) {
-            return new NotificationTestResult(false, message);
-        }
-    }
-
     private JavaMailSenderImpl resolveMailSender() {
         String host = safeString(applicationSettingsService.getSmtpHost());
         Integer port = applicationSettingsService.getSmtpPort();
@@ -270,10 +253,6 @@ public class NotificationService {
                 .orElseGet(() -> new String[0]);
     }
 
-    private String safeValue(String value) {
-        return value == null ? "unknown" : value;
-    }
-
     private String safeString(String value) {
         return value == null ? "" : value;
     }
@@ -320,6 +299,16 @@ public class NotificationService {
 
             scheduler.shutdownNow();
             scheduler = null;
+        }
+    }
+
+    public record NotificationTestResult(boolean success, String message) {
+        public static NotificationTestResult success(String message) {
+            return new NotificationTestResult(true, message);
+        }
+
+        public static NotificationTestResult failure(String message) {
+            return new NotificationTestResult(false, message);
         }
     }
 }

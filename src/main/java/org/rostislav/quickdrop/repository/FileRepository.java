@@ -19,35 +19,15 @@ public interface FileRepository extends JpaRepository<FileEntity, Long> {
     @Query("SELECT f FROM FileEntity f WHERE f.keepIndefinitely = false AND f.uploadDate < :thresholdDate")
     List<FileEntity> getFilesForDeletion(@Param("thresholdDate") LocalDate thresholdDate);
 
-    @Query("SELECT f FROM FileEntity f WHERE (LOWER(f.name) LIKE LOWER(CONCAT('%', :searchString, '%')) OR LOWER(f.description) LIKE LOWER(CONCAT('%', :searchString, '%')) OR LOWER(f.uuid) LIKE LOWER(CONCAT('%', :searchString, '%')))")
-    List<FileEntity> searchFiles(@Param("searchString") String searchString);
-
-    @Query("SELECT f FROM FileEntity f WHERE f.hidden = false")
-    List<FileEntity> findAllNotHiddenFiles();
-
     @Query("SELECT f FROM FileEntity f WHERE f.hidden = false ORDER BY f.uploadDate DESC")
     Page<FileEntity> findAllNotHiddenFiles(Pageable pageable);
 
     @Query("SELECT SUM(f.size) FROM FileEntity f")
     Long totalFileSizeForAllFiles();
 
-    @Query("SELECT f FROM FileEntity f WHERE f.hidden = false AND (LOWER(f.name) LIKE LOWER(CONCAT('%', :searchString, '%')) OR LOWER(f.description) LIKE LOWER(CONCAT('%', :searchString, '%')) OR LOWER(f.uuid) LIKE LOWER(CONCAT('%', :searchString, '%')))")
-    List<FileEntity> searchNotHiddenFiles(@Param("searchString") String query);
-
-        @Query(value = "SELECT f FROM FileEntity f WHERE f.hidden = false AND (LOWER(f.name) LIKE LOWER(CONCAT('%', :searchString, '%')) OR LOWER(f.description) LIKE LOWER(CONCAT('%', :searchString, '%')) OR LOWER(f.uuid) LIKE LOWER(CONCAT('%', :searchString, '%'))) ORDER BY f.uploadDate DESC",
+    @Query(value = "SELECT f FROM FileEntity f WHERE f.hidden = false AND (LOWER(f.name) LIKE LOWER(CONCAT('%', :searchString, '%')) OR LOWER(f.description) LIKE LOWER(CONCAT('%', :searchString, '%')) OR LOWER(f.uuid) LIKE LOWER(CONCAT('%', :searchString, '%'))) ORDER BY f.uploadDate DESC",
             countQuery = "SELECT COUNT(f) FROM FileEntity f WHERE f.hidden = false AND (LOWER(f.name) LIKE LOWER(CONCAT('%', :searchString, '%')) OR LOWER(f.description) LIKE LOWER(CONCAT('%', :searchString, '%')) OR LOWER(f.uuid) LIKE LOWER(CONCAT('%', :searchString, '%')))")
-        Page<FileEntity> searchNotHiddenFiles(@Param("searchString") String query, Pageable pageable);
-
-    @Query("""
-                SELECT new org.rostislav.quickdrop.model.FileEntityView(
-                    f,
-                    CAST(SUM(CASE WHEN dl.id IS NOT NULL THEN 1 ELSE 0 END) AS long)
-                )
-                FROM FileEntity f
-                LEFT JOIN FileHistoryLog dl ON dl.file.id = f.id AND dl.eventType = 'DOWNLOAD'
-                GROUP BY f
-            """)
-    List<FileEntityView> findAllFilesWithDownloadCounts();
+    Page<FileEntity> searchNotHiddenFiles(@Param("searchString") String query, Pageable pageable);
 
     @Query(value = """
                 SELECT new org.rostislav.quickdrop.model.FileEntityView(

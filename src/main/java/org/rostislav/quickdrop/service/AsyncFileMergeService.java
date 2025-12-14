@@ -130,7 +130,6 @@ public class AsyncFileMergeService {
                 logger.error("Error merging chunks for file {}: {}", request.fileName, e.getMessage());
                 mergeCompletionFuture.completeExceptionally(e);
                 cleanUpChunks(request);
-                e.printStackTrace();
             } finally {
                 mergeTasks.remove(request.fileName);
             }

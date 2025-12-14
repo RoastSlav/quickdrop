@@ -109,7 +109,7 @@ public class FileService {
 
         // Log initial upload event using client-provided context
         fileHistoryLogRepository.save(new FileHistoryLog(saved, FileHistoryType.UPLOAD, fileUploadRequest.uploaderIp, fileUploadRequest.uploaderUserAgent));
-        notificationService.notifyFileAction(saved, FileHistoryType.UPLOAD, fileUploadRequest.uploaderIp, fileUploadRequest.uploaderUserAgent);
+        notificationService.notifyFileAction(saved, FileHistoryType.UPLOAD);
 
         return saved;
     }
@@ -132,11 +132,11 @@ public class FileService {
         if (fileEntity == null || fileEntity.name == null) return false;
         String lower = fileEntity.name.toLowerCase();
         return lower.endsWith(".txt") || lower.endsWith(".log") || lower.endsWith(".md") || lower.endsWith(".json") || lower.endsWith(".jsonl") || lower.endsWith(".yaml") || lower.endsWith(".yml") || lower.endsWith(".csv") || lower.endsWith(".tsv") || lower.endsWith(".xml")
-            || lower.endsWith(".c") || lower.endsWith(".cpp") || lower.endsWith(".cxx") || lower.endsWith(".h") || lower.endsWith(".hpp")
-            || lower.endsWith(".java") || lower.endsWith(".js") || lower.endsWith(".jsx") || lower.endsWith(".ts") || lower.endsWith(".tsx")
-            || lower.endsWith(".py") || lower.endsWith(".rb") || lower.endsWith(".go") || lower.endsWith(".rs") || lower.endsWith(".cs")
-            || lower.endsWith(".php") || lower.endsWith(".sh") || lower.endsWith(".bash") || lower.endsWith(".zsh") || lower.endsWith(".css")
-            || lower.endsWith(".html") || lower.endsWith(".htm") || lower.endsWith(".sql");
+                || lower.endsWith(".c") || lower.endsWith(".cpp") || lower.endsWith(".cxx") || lower.endsWith(".h") || lower.endsWith(".hpp")
+                || lower.endsWith(".java") || lower.endsWith(".js") || lower.endsWith(".jsx") || lower.endsWith(".ts") || lower.endsWith(".tsx")
+                || lower.endsWith(".py") || lower.endsWith(".rb") || lower.endsWith(".go") || lower.endsWith(".rs") || lower.endsWith(".cs")
+                || lower.endsWith(".php") || lower.endsWith(".sh") || lower.endsWith(".bash") || lower.endsWith(".zsh") || lower.endsWith(".css")
+                || lower.endsWith(".html") || lower.endsWith(".htm") || lower.endsWith(".sql");
     }
 
     public boolean isPreviewablePdf(FileEntity fileEntity) {
@@ -195,19 +195,19 @@ public class FileService {
     @Transactional
     @CacheEvict(value = {"publicFiles", "adminFiles", "analytics"}, allEntries = true)
     public boolean deleteFileFromDatabaseAndFileSystem(String uuid) {
-        Optional<FileEntity> referenceById = fileRepository.findByUUID(uuid);
-        if (referenceById.isEmpty()) {
+        boolean fsRemoved = deleteFileFromFileSystem(uuid);
+        if (!fsRemoved) {
+            logger.error("Failed to delete file from file system: {}", uuid);
             return false;
         }
 
-        FileEntity fileEntity = referenceById.get();
-        notificationService.notifyFileAction(fileEntity, FileHistoryType.DELETION, null, null);
+        boolean dbRemoved = removeFileFromDatabase(uuid);
+        if (!dbRemoved) {
+            logger.info("File not found in database for deletion: {}", uuid);
+            return false;
+        }
 
-        shareTokenRepository.deleteAllByFile(fileEntity);
-        fileHistoryLogRepository.deleteByFileId(fileEntity.id);
-        fileRepository.delete(fileEntity);
-
-        return deleteFileFromFileSystem(fileEntity.uuid);
+        return true;
     }
 
     @Transactional
@@ -219,7 +219,7 @@ public class FileService {
         }
 
         FileEntity fileEntity = referenceById.get();
-        notificationService.notifyFileAction(fileEntity, FileHistoryType.DELETION, null, null);
+        notificationService.notifyFileAction(fileEntity, FileHistoryType.DELETION);
 
         shareTokenRepository.deleteAllByFile(fileEntity);
         fileHistoryLogRepository.deleteByFileId(fileEntity.id);
@@ -351,7 +351,7 @@ public class FileService {
         if (fileEntity == null) return;
         RequesterInfo requesterInfo = getRequesterInfo(request);
         fileHistoryLogRepository.save(new FileHistoryLog(fileEntity, FileHistoryType.DOWNLOAD, requesterInfo.ipAddress, requesterInfo.userAgent));
-        notificationService.notifyFileAction(fileEntity, FileHistoryType.DOWNLOAD, requesterInfo.ipAddress, requesterInfo.userAgent);
+        notificationService.notifyFileAction(fileEntity, FileHistoryType.DOWNLOAD);
     }
 
     private String getFilePasswordFromSessionToken(HttpServletRequest request) {
@@ -414,24 +414,12 @@ public class FileService {
         return fileEntity;
     }
 
-    public List<FileEntity> getNotHiddenFiles() {
-        return fileRepository.findAllNotHiddenFiles();
-    }
-
     @Cacheable(value = "adminFiles", key = "'page:' + #pageable.pageNumber + ':size:' + #pageable.pageSize + ':q:' + (#query == null ? '' : #query.toLowerCase())")
     public Page<FileEntityView> getFilesWithDownloadCounts(Pageable pageable, String query) {
         if (query == null || query.isBlank()) {
             return fileRepository.findFilesWithDownloadCounts(pageable);
         }
         return fileRepository.searchFilesWithDownloadCounts(query, pageable);
-    }
-
-    public Page<FileEntityView> getFilesWithDownloadCounts(Pageable pageable) {
-        return getFilesWithDownloadCounts(pageable, null);
-    }
-
-    public List<FileEntityView> getAllFilesWithDownloadCounts() {
-        return fileRepository.findAllFilesWithDownloadCounts();
     }
 
 
@@ -540,7 +528,7 @@ public class FileService {
     private void logHistory(FileEntity fileEntity, HttpServletRequest request, FileHistoryType eventType) {
         RequesterInfo info = getRequesterInfo(request);
         fileHistoryLogRepository.save(new FileHistoryLog(fileEntity, eventType, info.ipAddress(), info.userAgent()));
-        notificationService.notifyFileAction(fileEntity, eventType, info.ipAddress(), info.userAgent());
+        notificationService.notifyFileAction(fileEntity, eventType);
     }
 
     private String generateUniqueShareToken(FileEntity fileEntity) {

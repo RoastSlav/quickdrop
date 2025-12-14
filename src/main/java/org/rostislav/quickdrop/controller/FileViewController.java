@@ -28,11 +28,11 @@ import static org.rostislav.quickdrop.util.FileUtils.populateModelAttributes;
 @Controller
 @RequestMapping("/file")
 public class FileViewController {
+    private static final Logger logger = LoggerFactory.getLogger(FileViewController.class);
     private final FileService fileService;
     private final ApplicationSettingsService applicationSettingsService;
     private final AnalyticsService analyticsService;
     private final SessionService sessionService;
-    private static final Logger logger = LoggerFactory.getLogger(FileViewController.class);
 
     public FileViewController(FileService fileService, ApplicationSettingsService applicationSettingsService, AnalyticsService analyticsService, SessionService sessionService) {
         this.fileService = fileService;
@@ -119,9 +119,9 @@ public class FileViewController {
         FileEntityView fileEntityView = new FileEntityView(fileEntity, totalDownloads);
 
         List<FileActionLogDTO> actionLogs = analyticsService.getHistoryByFile(uuid)
-            .stream()
-            .map(FileActionLogDTO::new)
-            .toList();
+                .stream()
+                .map(FileActionLogDTO::new)
+                .toList();
 
         model.addAttribute("file", fileEntityView);
         model.addAttribute("actionLogs", actionLogs);

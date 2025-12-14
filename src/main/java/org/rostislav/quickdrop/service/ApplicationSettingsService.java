@@ -1,6 +1,5 @@
 package org.rostislav.quickdrop.service;
 
-import jakarta.servlet.http.HttpServletRequest;
 import org.rostislav.quickdrop.entity.ApplicationSettingsEntity;
 import org.rostislav.quickdrop.model.ApplicationSettingsViewModel;
 import org.rostislav.quickdrop.repository.ApplicationSettingsRepository;
@@ -171,12 +170,6 @@ public class ApplicationSettingsService {
         applicationSettingsEntity.setAdminPasswordHash(BCrypt.hashpw(adminPassword, BCrypt.gensalt()));
         applicationSettingsRepository.save(applicationSettingsEntity);
         this.applicationSettings = applicationSettingsEntity;
-    }
-
-    public boolean checkForAdminPassword(HttpServletRequest request) {
-        String password = (String) request.getSession().getAttribute("adminPassword");
-        String adminPasswordHash = getAdminPasswordHash();
-        return password != null && password.equals(adminPasswordHash);
     }
 
     public long getSessionLifetime() {

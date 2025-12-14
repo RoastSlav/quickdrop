@@ -39,10 +39,6 @@ public class AnalyticsService {
         return analytics;
     }
 
-    public long getTotalDownloads() {
-        return fileHistoryLogRepository.countByEventType(FileHistoryType.DOWNLOAD);
-    }
-
     public long getTotalDownloadsByFile(String uuid) {
         return fileHistoryLogRepository.countByFileAndType(uuid, FileHistoryType.DOWNLOAD);
     }

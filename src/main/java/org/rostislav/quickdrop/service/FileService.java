@@ -62,35 +62,6 @@ public class FileService {
         this.notificationService = notificationService;
     }
 
-    private static StreamingResponseBody getStreamingResponseBody(InputStream inputStream) {
-        return outputStream -> {
-            byte[] buffer = new byte[8192];
-            int bytesRead;
-            while ((bytesRead = inputStream.read(buffer)) != -1) {
-                outputStream.write(buffer, 0, bytesRead);
-            }
-            outputStream.flush();
-        };
-    }
-
-    private static RequesterInfo getRequesterInfo(HttpServletRequest request) {
-        String forwardedFor = request.getHeader("X-Forwarded-For");
-        String realIp = request.getHeader("X-Real-IP");
-        String ipAddress;
-
-        if (forwardedFor != null && !forwardedFor.isEmpty()) {
-            // The X-Forwarded-For header can contain multiple IPs, pick the first one
-            ipAddress = forwardedFor.split(",")[0].trim();
-        } else if (realIp != null && !realIp.isEmpty()) {
-            ipAddress = realIp;
-        } else {
-            ipAddress = request.getRemoteAddr();
-        }
-
-        String userAgent = request.getHeader(HttpHeaders.USER_AGENT);
-        return new RequesterInfo(ipAddress, userAgent);
-    }
-
     @CacheEvict(value = {"publicFiles", "adminFiles", "analytics"}, allEntries = true)
     public FileEntity saveFile(File file, FileUploadRequest fileUploadRequest, String uuid) {
         if (!validateObjects(file, fileUploadRequest)) {
@@ -506,6 +477,6 @@ public class FileService {
         return request.password != null && !request.password.isBlank() && applicationSettingsService.isEncryptionEnabled();
     }
 
-    private record RequesterInfo(String ipAddress, String userAgent) {
+    public record RequesterInfo(String ipAddress, String userAgent) {
     }
 }

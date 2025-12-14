@@ -62,7 +62,7 @@
                 </div>
                 <small class="text-gray-600 dark:text-gray-400" th:if="${file.keepIndefinitely == false}">Files are kept
                     only for <span th:text="${maxFileLifeTime}">30</span> days after this date.</small>
-                <div class="flex justify-between items-center pt-4" th:if="${file.keepIndefinitely or file.passwordHash != null or hasAdminSession}">
+                <div class="flex justify-between items-center pt-4">
                     <span class="font-semibold">Keep indefinitely:</span>
                     <form method="post" th:action="@{/file/keep-indefinitely/{uuid}(uuid=${file.uuid})}">
                         <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden">
@@ -71,12 +71,12 @@
                             <input class="h-4 w-4 rounded border-gray-400 dark:border-gray-600 accent-sky-500 dark:accent-sky-400 focus:ring-sky-500"
                                    id="keepIndefinitely" name="keepIndefinitely"
                                    onchange="updateCheckboxState(event,this)" th:checked="${file.keepIndefinitely}"
-                                   th:disabled="${isKeepIndefinitelyAdminOnly and !hasAdminSession}" type="checkbox"
+                                   th:disabled="${(isKeepIndefinitelyAdminOnly and !hasAdminSession) or (!hasAdminSession and file.passwordHash == null)}" type="checkbox"
                                    value="true">
                         </label>
                     </form>
                 </div>
-                <div class="flex justify-between items-center" th:if="${file.hidden or file.passwordHash != null or hasAdminSession}">
+                <div class="flex justify-between items-center">
                     <span class="font-semibold">Hide file from list:</span>
                     <form method="post" th:action="@{/file/toggle-hidden/{uuid}(uuid=${file.uuid})}">
                         <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden">
@@ -85,7 +85,7 @@
                             <input class="h-4 w-4 rounded border-gray-400 dark:border-gray-600 accent-sky-500 dark:accent-sky-400 focus:ring-sky-500"
                                    id="hidden" name="hidden" onchange="updateCheckboxState(event,this)"
                                    th:checked="${file.hidden}"
-                                   th:disabled="${isHideFromListAdminOnly and !hasAdminSession}"
+                                   th:disabled="${(isHideFromListAdminOnly and !hasAdminSession) or (!hasAdminSession and file.passwordHash == null)}"
                                    type="checkbox"
                                    value="true">
                         </label>

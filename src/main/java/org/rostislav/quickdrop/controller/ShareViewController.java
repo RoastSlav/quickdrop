@@ -11,12 +11,14 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
 
 import java.util.Optional;
 
 import static org.rostislav.quickdrop.util.FileUtils.validateShareToken;
 
 @Controller
+@RequestMapping("/share")
 public class ShareViewController {
     private static final Logger logger = LoggerFactory.getLogger(ShareViewController.class);
     private final FileService fileService;
@@ -27,7 +29,7 @@ public class ShareViewController {
         this.analyticsService = analyticsService;
     }
 
-    @GetMapping("/share/{token}")
+    @GetMapping("/{token}")
     public String viewSharedFile(@PathVariable String token, Model model) {
         Optional<ShareTokenEntity> tokenEntity = fileService.getShareTokenEntityByToken(token);
 

@@ -64,7 +64,7 @@ lifetime policies, cleanup schedules, notifications, and privacy settings.
 
 ---
 
-<img width="1315" height="1211" alt="image" src="https://github.com/user-attachments/assets/980df6f1-b63d-49f6-8b67-43c240886fcd" />
+<img width="1315" height="1211" alt="fixed" src="https://github.com/user-attachments/assets/4cc67404-7631-4126-851c-75330a1c4321" />
 <img width="1270" height="1211" alt="image" src="https://github.com/user-attachments/assets/9e6a95d4-48e2-4fad-8d56-edfea63df119" />
 
 

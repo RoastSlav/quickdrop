@@ -81,8 +81,9 @@ public class FileViewController {
     }
 
     @GetMapping("/preview/{uuid}")
-    public ResponseEntity<StreamingResponseBody> previewFile(@PathVariable String uuid, HttpServletRequest request) {
-        return fileService.previewFile(uuid, request);
+    public ResponseEntity<StreamingResponseBody> previewFile(@PathVariable String uuid, HttpServletRequest request,
+                                                             @RequestParam(name = "manual", defaultValue = "false") boolean manual) {
+        return fileService.previewFile(uuid, request, manual);
     }
 
     @PostMapping("/download/log/{uuid}")

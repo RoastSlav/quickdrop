@@ -199,15 +199,20 @@ async function initPreview() {
     const status = document.getElementById('previewStatus');
     if (!container || !content) return;
 
-    const previewUrl = container.dataset.previewUrl;
+    let previewUrl = container.dataset.previewUrl;
     const isImage = container.dataset.previewImage === 'true';
     const isText = container.dataset.previewText === 'true';
     const fileName = container.dataset.fileName || 'download';
+    const requireManual = container.dataset.requireManual === 'true';
 
     if (previewFetching || previewFetched) return;
     previewFetching = true;
 
     try {
+        if (requireManual) {
+            previewUrl = `${previewUrl}?manual=true`;
+        }
+
         const resp = await fetch(previewUrl, {credentials: 'same-origin'});
         if (!resp.ok) throw new Error('Preview unavailable');
         const blob = await resp.blob();

@@ -86,9 +86,9 @@
 
                 <div class="rounded-xl border border-slate-200 dark:border-slate-700 p-4">
                     <label class="block text-sm font-medium mb-1" for="maxPreviewSizeBytes">Max preview size (MB)</label>
-                    <input class="w-full max-w-xs rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500" id="maxPreviewSizeBytes"
-                           min="1" step="1" th:value="${settings.maxPreviewSizeBytes / 1024 / 1024}" type="number"
-                           name="maxPreviewSizeBytes">
+                          <input class="w-full max-w-xs rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500" id="maxPreviewSizeBytes"
+                              min="1" step="1" th:value="${settings.maxPreviewSizeBytes / 1024 / 1024}" type="number"
+                              name="maxPreviewSizeBytes" th:disabled="${settings.disablePreview}">
                     <p class="text-xs text-gray-600 dark:text-gray-400 mt-1">Above this size users must click "Load preview".</p>
                 </div>
 

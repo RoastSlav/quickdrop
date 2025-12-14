@@ -132,3 +132,10 @@ html:not(.dark) .light-table-zebra tbody tr:nth-child(even){background-color:#ff
 
 /* Highlight.js dark tweaks */
 html.dark pre.hljs,html.dark code.hljs{background:#0f172a;color:#e2e8f0;}
+.dark .hljs{color:#d1e9ff;}
+.dark .hljs-attr,.dark .hljs-attribute,.dark .hljs-name{color:#9fcbff;}
+.dark .hljs-string,.dark .hljs-meta-string{color:#7ce0a3;}
+.dark .hljs-number,.dark .hljs-literal{color:#f7c566;}
+.dark .hljs-keyword,.dark .hljs-selector-tag{color:#f28bff;}
+.dark .hljs-comment{color:#94a3b8;}
+.dark .hljs-title{color:#8ad5ff;}

@@ -9,6 +9,7 @@ import org.rostislav.quickdrop.model.FileEntityView;
 import org.rostislav.quickdrop.service.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.scheduling.support.CronExpression;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCrypt;
 import org.springframework.stereotype.Controller;
@@ -94,6 +95,15 @@ public class AdminViewController {
             } catch (NumberFormatException ignored) {
                 // leave as-is if invalid
             }
+        }
+
+        try {
+            CronExpression.parse(settings.getFileDeletionCron());
+        } catch (IllegalArgumentException ex) {
+            if ("XMLHttpRequest".equalsIgnoreCase(request.getHeader("X-Requested-With"))) {
+                return ResponseEntity.badRequest().body("Invalid cron expression");
+            }
+            return "redirect:settings?error=invalidCron";
         }
 
         applicationSettingsService.updateApplicationSettings(settings, settings.getAppPassword());

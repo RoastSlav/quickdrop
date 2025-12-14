@@ -99,9 +99,157 @@ function buildCsrfHeaders(csrf) {
     return headers;
 }
 
+function parsePositiveNumber(value) {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+}
+
+function markValidity(input, message) {
+    if (!input) return;
+    input.setCustomValidity(message || '');
+    input.classList.toggle('border-red-500', Boolean(message));
+    input.classList.toggle('focus:ring-red-500', Boolean(message));
+    if (message) {
+        input.reportValidity();
+    }
+}
+
+function validateSettingsForm() {
+    let firstInvalid = null;
+
+    const maxFileSize = document.getElementById('maxFileSize');
+    const maxFileLife = document.getElementById('maxFileLifeTime');
+    const fileStoragePath = document.getElementById('fileStoragePath');
+    const fileDeletionCron = document.getElementById('fileDeletionCron');
+    const sessionLifeTime = document.getElementById('sessionLifeTime');
+    const maxPreviewSizeBytes = document.getElementById('maxPreviewSizeBytes');
+    const disablePreview = document.getElementById('disablePreview');
+    const defaultHomePage = document.getElementById('defaultHomePage');
+
+    const appPasswordEnabled = document.getElementById('appPasswordEnabled');
+    const appPassword = document.getElementById('appPassword');
+
+    const discordEnabled = document.getElementById('discordWebhookEnabled');
+    const discordUrl = document.getElementById('discordWebhookUrl');
+
+    const emailEnabled = document.getElementById('emailNotificationsEnabled');
+    const emailFrom = document.getElementById('emailFrom');
+    const emailTo = document.getElementById('emailTo');
+    const smtpHost = document.getElementById('smtpHost');
+    const smtpPort = document.getElementById('smtpPort');
+
+    const batchEnabled = document.getElementById('notificationBatchEnabled');
+    const batchMinutes = document.getElementById('notificationBatchMinutes');
+
+    // reset
+    [maxFileSize, maxFileLife, fileStoragePath, fileDeletionCron, sessionLifeTime, maxPreviewSizeBytes, defaultHomePage,
+        appPassword, discordUrl, emailFrom, emailTo, smtpHost, smtpPort, batchMinutes].forEach((el) => markValidity(el, ''));
+
+    const maxSizeVal = parsePositiveNumber(maxFileSize?.value);
+    if (!maxSizeVal) {
+        markValidity(maxFileSize, 'Enter a max file size (MB) greater than 0.');
+        firstInvalid = firstInvalid || maxFileSize;
+    }
+
+    const maxLifeVal = parsePositiveNumber(maxFileLife?.value);
+    if (!maxLifeVal) {
+        markValidity(maxFileLife, 'Enter a max file lifetime (days) greater than 0.');
+        firstInvalid = firstInvalid || maxFileLife;
+    }
+
+    if (!fileStoragePath?.value.trim()) {
+        markValidity(fileStoragePath, 'File storage path is required.');
+        firstInvalid = firstInvalid || fileStoragePath;
+    }
+
+    if (!fileDeletionCron?.value.trim()) {
+        markValidity(fileDeletionCron, 'Cron expression is required.');
+        firstInvalid = firstInvalid || fileDeletionCron;
+    }
+
+    const sessionVal = parsePositiveNumber(sessionLifeTime?.value);
+    if (!sessionVal && sessionVal !== 0) {
+        markValidity(sessionLifeTime, 'Enter a session lifetime in minutes (positive number).');
+        firstInvalid = firstInvalid || sessionLifeTime;
+    }
+
+    if (!disablePreview?.checked) {
+        const previewVal = parsePositiveNumber(maxPreviewSizeBytes?.value);
+        if (!previewVal) {
+            markValidity(maxPreviewSizeBytes, 'Enter preview size (MB) greater than 0.');
+            firstInvalid = firstInvalid || maxPreviewSizeBytes;
+        }
+    }
+
+    if (defaultHomePage && !['upload', 'list'].includes(defaultHomePage.value)) {
+        markValidity(defaultHomePage, 'Choose upload or list.');
+        firstInvalid = firstInvalid || defaultHomePage;
+    }
+
+    if (appPasswordEnabled?.checked && appPassword && !appPassword.value.trim()) {
+        markValidity(appPassword, 'App password is required when protection is enabled.');
+        firstInvalid = firstInvalid || appPassword;
+    }
+
+    if (discordEnabled?.checked) {
+        const urlVal = discordUrl?.value.trim();
+        if (!urlVal || !(urlVal.startsWith('http://') || urlVal.startsWith('https://'))) {
+            markValidity(discordUrl, 'Enter a valid Discord webhook URL.');
+            firstInvalid = firstInvalid || discordUrl;
+        }
+    }
+
+    if (emailEnabled?.checked) {
+        const emailFromVal = emailFrom?.value.trim();
+        const emailToVal = emailTo?.value.trim();
+        const hostVal = smtpHost?.value.trim();
+        const portVal = parsePositiveNumber(smtpPort?.value);
+
+        const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailFromVal || !emailPattern.test(emailFromVal)) {
+            markValidity(emailFrom, 'Enter a valid From email.');
+            firstInvalid = firstInvalid || emailFrom;
+        }
+        if (!emailToVal) {
+            markValidity(emailTo, 'Enter at least one recipient.');
+            firstInvalid = firstInvalid || emailTo;
+        }
+        if (!hostVal) {
+            markValidity(smtpHost, 'SMTP host is required.');
+            firstInvalid = firstInvalid || smtpHost;
+        }
+        if (!portVal) {
+            markValidity(smtpPort, 'Enter a valid SMTP port.');
+            firstInvalid = firstInvalid || smtpPort;
+        }
+    }
+
+    const anyChannel = Boolean(discordEnabled?.checked) || Boolean(emailEnabled?.checked);
+    if (batchEnabled?.checked) {
+        const minutesVal = parsePositiveNumber(batchMinutes?.value);
+        if (!anyChannel) {
+            markValidity(batchMinutes, 'Enable Discord or Email before batching.');
+            firstInvalid = firstInvalid || batchMinutes;
+        } else if (!minutesVal) {
+            markValidity(batchMinutes, 'Enter a batch interval in minutes.');
+            firstInvalid = firstInvalid || batchMinutes;
+        }
+    }
+
+    if (firstInvalid) {
+        firstInvalid.focus();
+    }
+
+    return !firstInvalid;
+}
+
 async function saveSettings(csrf) {
     const form = document.querySelector('form[method="post"][action="/admin/save"]');
     if (!form) return;
+
+    if (!validateSettingsForm()) {
+        throw new Error('Validation failed');
+    }
 
     const formData = new FormData(form);
     await fetch('/admin/save', {
@@ -150,6 +298,16 @@ document.addEventListener('DOMContentLoaded', function () {
     updateBatchAvailability();
     syncUploadPasswordSetting();
     togglePreviewSizeField();
+
+    const form = document.querySelector('form[method="post"][action="/admin/save"]');
+    if (form) {
+        form.addEventListener('submit', (e) => {
+            if (!validateSettingsForm()) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+        });
+    }
 
     document.getElementById('discordWebhookEnabled')?.addEventListener('change', toggleDiscordField);
     document.getElementById('emailNotificationsEnabled')?.addEventListener('change', toggleEmailFields);

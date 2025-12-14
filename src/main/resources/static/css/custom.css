@@ -128,5 +128,7 @@ html:not(.dark) .light-table-zebra tbody tr:nth-child(even){background-color:#ff
 .json-node{margin-left:10px;}
 .json-leaf{padding:2px 0;}
 
+.preview-stack{display:flex;flex-direction:column;align-items:stretch;gap:8px;}
+
 /* Highlight.js dark tweaks */
 html.dark pre.hljs,html.dark code.hljs{background:#0f172a;color:#e2e8f0;}

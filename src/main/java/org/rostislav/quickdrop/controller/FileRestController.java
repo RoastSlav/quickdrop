@@ -70,6 +70,8 @@ public class FileRestController {
             boolean adminSession = sessionService.hasValidAdminSession(request);
             boolean allowKeepIndefinitely = !applicationSettingsService.isKeepIndefinitelyAdminOnly() || adminSession;
             boolean keepIndefinitelyValue = allowKeepIndefinitely && Boolean.TRUE.equals(keepIndefinitely);
+            boolean allowHideFromList = !applicationSettingsService.isHideFromListAdminOnly() || adminSession;
+            boolean hiddenValue = allowHideFromList && Boolean.TRUE.equals(hidden);
 
             String forwardedFor = request.getHeader("X-Forwarded-For");
             String uploaderIp = forwardedFor != null && !forwardedFor.isBlank() ? forwardedFor.split(",")[0].trim() : request.getRemoteAddr();
@@ -77,7 +79,7 @@ public class FileRestController {
 
             String effectivePassword = uploadPasswordEnabled ? password : null;
 
-            FileUploadRequest fileUploadRequest = new FileUploadRequest(description, keepIndefinitelyValue, effectivePassword, hidden, fileName, totalChunks, fileSize, uploaderIp, uploaderUserAgent, Boolean.TRUE.equals(folderUpload), folderName, folderManifest);
+            FileUploadRequest fileUploadRequest = new FileUploadRequest(description, keepIndefinitelyValue, effectivePassword, hiddenValue, fileName, totalChunks, fileSize, uploaderIp, uploaderUserAgent, Boolean.TRUE.equals(folderUpload), folderName, folderManifest);
             FileEntity fileEntity = asyncFileMergeService.submitChunk(fileUploadRequest, file, chunkNumber);
             return ResponseEntity.ok(fileEntity);
         } catch (IOException e) {

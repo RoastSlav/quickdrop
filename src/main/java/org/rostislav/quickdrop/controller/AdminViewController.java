@@ -121,8 +121,8 @@ public class AdminViewController {
 
 
     @PostMapping("/toggle-hidden/{uuid}")
-    public String toggleHidden(@PathVariable String uuid) {
-        fileService.toggleHidden(uuid);
+    public String toggleHidden(@PathVariable String uuid, HttpServletRequest request) {
+        fileService.toggleHidden(uuid, request);
         return "redirect:/admin/dashboard";
     }
 

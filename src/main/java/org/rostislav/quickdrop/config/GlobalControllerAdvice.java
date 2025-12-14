@@ -22,6 +22,7 @@ public class GlobalControllerAdvice {
     public void addGlobalAttributes(Model model, HttpServletRequest request) {
         boolean hasAdminSession = sessionService.hasValidAdminSession(request);
         boolean keepIndefinitelyAdminOnly = applicationSettingsService.isKeepIndefinitelyAdminOnly();
+        boolean hideFromListAdminOnly = applicationSettingsService.isHideFromListAdminOnly();
 
         model.addAttribute("isFileListPageEnabled", applicationSettingsService.isFileListPageEnabled());
         model.addAttribute("isAppPasswordSet", applicationSettingsService.isAppPasswordEnabled());
@@ -32,5 +33,7 @@ public class GlobalControllerAdvice {
         model.addAttribute("hasAdminSession", hasAdminSession);
         model.addAttribute("isKeepIndefinitelyAdminOnly", keepIndefinitelyAdminOnly);
         model.addAttribute("canUseKeepIndefinitely", !keepIndefinitelyAdminOnly || hasAdminSession);
+        model.addAttribute("isHideFromListAdminOnly", hideFromListAdminOnly);
+        model.addAttribute("canHideFromList", !hideFromListAdminOnly || hasAdminSession);
     }
 }

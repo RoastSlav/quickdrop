@@ -56,19 +56,19 @@
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
+                <div class="rounded-xl border border-slate-200 dark:border-slate-700 p-4">
                     <label class="block text-sm font-medium mb-1">Max File Size (MB)</label>
                     <input class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500" required th:field="*{maxFileSize}"
                            type="text">
                 </div>
 
-                <div>
+                <div class="rounded-xl border border-slate-200 dark:border-slate-700 p-4">
                     <label class="block text-sm font-medium mb-1">Max File Lifetime (days)</label>
                     <input class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500" required th:field="*{maxFileLifeTime}"
                            type="text">
                 </div>
 
-                <div class="md:col-span-2">
+                <div class="md:col-span-2 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
                     <label class="block text-sm font-medium mb-1">File Storage Path</label>
                     <input class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500" required th:field="*{fileStoragePath}"
                            type="text">
@@ -130,7 +130,7 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
                 <!-- MIDDLE: Lifetime (left) -->
-                <div>
+                <div class="rounded-xl border border-slate-200 dark:border-slate-700 p-4">
                     <label class="block text-sm font-medium mb-1">Session Lifetime (minutes)</label>
                     <p class="text-xs text-gray-600 dark:text-gray-400 mb-1">
                         This impacts how long file and admin sessions are kept.
@@ -150,7 +150,7 @@
                 </div>
 
                 <!-- Cron + Next Run side by side -->
-                <div class="rounded-xl border border-slate-200 dark:border-slate-700 p-4 bg-slate-50:col-span-2">
+                <div class="rounded-xl border border-slate-200 dark:border-slate-700 p-4 bg-slate-50 md:col-span-2">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
                         <div>
                             <label class="block text-sm font-medium mb-1" for="fileDeletionCron">File Deletion Cron Expression</label>

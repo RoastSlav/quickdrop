@@ -167,6 +167,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initializeModal();
     renderFolderTree();
     setupPreviewInit();
+    setupDeleteConfirm();
 });
 
 let previewBlob = null;
@@ -265,6 +266,28 @@ function attachDownloadOverride(fileName) {
         document.body.removeChild(a);
         setTimeout(() => URL.revokeObjectURL(url), 2000);
     }, {once: true});
+}
+
+function setupDeleteConfirm() {
+    const startBtn = document.getElementById('deleteStartBtn');
+    const confirmBtn = document.getElementById('deleteConfirmBtn');
+    const cancelBtn = document.getElementById('deleteCancelBtn');
+    if (!startBtn || !confirmBtn || !cancelBtn) return;
+
+    const showConfirm = () => {
+        startBtn.classList.add('hidden');
+        confirmBtn.classList.remove('hidden');
+        cancelBtn.classList.remove('hidden');
+    };
+
+    const reset = () => {
+        startBtn.classList.remove('hidden');
+        confirmBtn.classList.add('hidden');
+        cancelBtn.classList.add('hidden');
+    };
+
+    startBtn.addEventListener('click', showConfirm);
+    cancelBtn.addEventListener('click', reset);
 }
 
 async function ensurePreviewReady() {

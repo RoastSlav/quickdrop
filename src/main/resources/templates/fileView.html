@@ -107,25 +107,33 @@
                      id="preparingMessage">Your file is
                     being prepared for download. Please wait...
                 </div>
-                <div class="mt-4 flex flex-wrap justify-center gap-4">
+                <div class="mt-4 flex flex-wrap justify-center gap-4 items-center">
                     <a class="rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium px-4 py-2 transition-colors active:scale-95"
                        id="downloadButton"
                        th:href="@{/file/download/{uuid}(uuid=${file.uuid})}"
                        th:onclick="${file.passwordHash != null} ? 'showPreparingMessage()' : ''">Download</a>
-                    <form method="post" onsubmit="return confirmDelete();"
-                          th:action="@{/file/delete/{uuid}(uuid=${file.uuid})}" th:if="${file.passwordHash != null}">
-                        <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden">
-                        <button class="rounded-lg bg-red-600 hover:bg-red-700 text-white font-medium px-4 py-2 transition-colors active:scale-95"
-                                type="submit">
-                            Delete File
-                        </button>
-                    </form>
                     <form method="post" th:action="@{/file/extend/{uuid}(uuid=${file.uuid})}"
                           th:if="${file.keepIndefinitely == false}">
                         <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden">
                         <button class="rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium px-4 py-2 transition-colors active:scale-95"
                                 type="submit">
                             Renew File Lifetime
+                        </button>
+                    </form>
+                    <form class="flex gap-2 items-center" method="post"
+                          th:action="@{/file/delete/{uuid}(uuid=${file.uuid})}" th:if="${file.passwordHash != null}">
+                        <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden">
+                        <button class="rounded-lg bg-red-600 hover:bg-red-700 text-white font-medium px-4 py-2 transition-colors active:scale-95"
+                                id="deleteStartBtn" type="button">
+                            Delete File
+                        </button>
+                        <button class="hidden rounded-lg bg-red-700 hover:bg-red-800 text-white font-medium px-4 py-2 transition-colors active:scale-95"
+                                id="deleteConfirmBtn" type="submit">
+                            Confirm
+                        </button>
+                        <button class="hidden rounded-lg bg-slate-300 hover:bg-slate-400 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-900 dark:text-slate-100 font-medium px-4 py-2 transition-colors active:scale-95"
+                                id="deleteCancelBtn" type="button">
+                            Cancel
                         </button>
                     </form>
                 </div>

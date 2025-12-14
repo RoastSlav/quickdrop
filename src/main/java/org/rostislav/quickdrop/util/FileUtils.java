@@ -5,8 +5,8 @@ import org.rostislav.quickdrop.entity.FileEntity;
 import org.rostislav.quickdrop.entity.ShareTokenEntity;
 import org.springframework.ui.Model;
 
-import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
@@ -15,11 +15,30 @@ import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.LocalDate;
+import java.util.Locale;
+import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 
 import static org.rostislav.quickdrop.service.FileService.logger;
 
 public class FileUtils {
+    private static final Set<String> TEXT_EXTENSIONS = Set.of(
+            ".txt", ".log", ".md", ".json", ".jsonl", ".yaml", ".yml", ".csv", ".tsv", ".xml",
+            ".c", ".cpp", ".cxx", ".h", ".hpp",
+            ".java", ".js", ".jsx", ".ts", ".tsx",
+            ".py", ".rb", ".go", ".rs", ".cs",
+            ".php", ".sh", ".bash", ".zsh", ".css",
+            ".html", ".htm", ".sql"
+    );
+
+    private static final Set<String> IMAGE_EXTENSIONS = Set.of(
+            ".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp", ".svg"
+    );
+
+    private static final Set<String> PDF_EXTENSIONS = Set.of(".pdf");
+    private static final Set<String> JSON_EXTENSIONS = Set.of(".json", ".jsonl");
+    private static final Set<String> CSV_TSV_EXTENSIONS = Set.of(".csv", ".tsv");
+
     private FileUtils() {
         // To prevent instantiation
     }
@@ -67,38 +86,33 @@ public class FileUtils {
         model.addAttribute("downloadLink", getDownloadLink(request, fileEntity));
     }
 
+    private static String lowerName(FileEntity fileEntity) {
+        return fileEntity == null || fileEntity.name == null ? "" : fileEntity.name.toLowerCase(Locale.ROOT);
+    }
+
     public static boolean isPreviewableText(FileEntity fileEntity) {
-        if (fileEntity == null || fileEntity.name == null) return false;
-        String lower = fileEntity.name.toLowerCase();
-        return lower.endsWith(".txt") || lower.endsWith(".log") || lower.endsWith(".md") || lower.endsWith(".json") || lower.endsWith(".jsonl") || lower.endsWith(".yaml") || lower.endsWith(".yml") || lower.endsWith(".csv") || lower.endsWith(".tsv") || lower.endsWith(".xml")
-                || lower.endsWith(".c") || lower.endsWith(".cpp") || lower.endsWith(".cxx") || lower.endsWith(".h") || lower.endsWith(".hpp")
-                || lower.endsWith(".java") || lower.endsWith(".js") || lower.endsWith(".jsx") || lower.endsWith(".ts") || lower.endsWith(".tsx")
-                || lower.endsWith(".py") || lower.endsWith(".rb") || lower.endsWith(".go") || lower.endsWith(".rs") || lower.endsWith(".cs")
-                || lower.endsWith(".php") || lower.endsWith(".sh") || lower.endsWith(".bash") || lower.endsWith(".zsh") || lower.endsWith(".css")
-                || lower.endsWith(".html") || lower.endsWith(".htm") || lower.endsWith(".sql");
+        String lower = lowerName(fileEntity);
+        return TEXT_EXTENSIONS.stream().anyMatch(lower::endsWith);
     }
 
     public static boolean isPreviewableImage(FileEntity fileEntity) {
-        if (fileEntity == null || fileEntity.name == null) return false;
-        String lower = fileEntity.name.toLowerCase();
-        return lower.endsWith(".png") || lower.endsWith(".jpg") || lower.endsWith(".jpeg") || lower.endsWith(".gif") || lower.endsWith(".webp") || lower.endsWith(".bmp") || lower.endsWith(".svg");
+        String lower = lowerName(fileEntity);
+        return IMAGE_EXTENSIONS.stream().anyMatch(lower::endsWith);
     }
 
     public static boolean isPreviewablePdf(FileEntity fileEntity) {
-        if (fileEntity == null || fileEntity.name == null) return false;
-        return fileEntity.name.toLowerCase().endsWith(".pdf");
+        String lower = lowerName(fileEntity);
+        return PDF_EXTENSIONS.stream().anyMatch(lower::endsWith);
     }
 
     public static boolean isPreviewableJson(FileEntity fileEntity) {
-        if (fileEntity == null || fileEntity.name == null) return false;
-        String lower = fileEntity.name.toLowerCase();
-        return lower.endsWith(".json") || lower.endsWith(".jsonl");
+        String lower = lowerName(fileEntity);
+        return JSON_EXTENSIONS.stream().anyMatch(lower::endsWith);
     }
 
     public static boolean isPreviewableCsvOrTsv(FileEntity fileEntity) {
-        if (fileEntity == null || fileEntity.name == null) return false;
-        String lower = fileEntity.name.toLowerCase();
-        return lower.endsWith(".csv") || lower.endsWith(".tsv");
+        String lower = lowerName(fileEntity);
+        return CSV_TSV_EXTENSIONS.stream().anyMatch(lower::endsWith);
     }
 
     public static String guessContentType(String fileName, boolean isImage, boolean isText, boolean isPdf) {
@@ -171,19 +185,19 @@ public class FileUtils {
     }
 
     public static void streamFile(Path filePathToStream, Path decryptedFilePath, String uuid, OutputStream outputStream) throws IOException {
-        try (FileInputStream inputStream = new FileInputStream(filePathToStream.toFile())) {
-            byte[] buffer = new byte[1024];
+        try (InputStream in = Files.newInputStream(filePathToStream)) {
+            byte[] buffer = new byte[8192];
             int bytesRead;
-            while ((bytesRead = inputStream.read(buffer)) != -1) {
+            while ((bytesRead = in.read(buffer)) != -1) {
                 outputStream.write(buffer, 0, bytesRead);
             }
             outputStream.flush();
-        } catch (Exception e) {
+        } catch (IOException e) {
             logger.error("Error streaming file for UUID: {}", uuid, e);
             throw e;
         } finally {
             // If there's a decrypted file, remove it after streaming
-            if (filePathToStream.equals(decryptedFilePath)) {
+            if (filePathToStream != null && filePathToStream.equals(decryptedFilePath)) {
                 try {
                     Files.deleteIfExists(decryptedFilePath);
                     logger.info("Deleted decrypted file after download: {}", decryptedFilePath);

@@ -12,31 +12,53 @@ lifetime policies, cleanup schedules, notifications, and privacy settings.
 # Features
 
 ## Uploads & storage
-- Anonymous uploads with **chunked upload** support for reliability on large files.
-- Configurable max file size, storage paths (files/logs), and max lifetime (default 30d) with “keep indefinitely” (admin-only toggleable) and renewals.
-- Optional **encryption at rest** for stored files; per-file passwords hash + encrypt uploads when enabled.
+
+- Anonymous uploads with **chunked upload** support for reliable large-file transfers.
+- **Folder uploads** (directory picker) with preserved structure + improved manifest handling.
+- Configurable max file size, storage paths (files/logs), and max lifetime (default 30d) with renewals.
+- “Keep indefinitely” and “Hide from list” controls (with admin-governed rules; can disable “Keep indefinitely”
+  globally).
+- Optional **encryption at rest** for stored files; per-file passwords supported.
+
+## File previews
+
+- Optional built-in previews for **images and text files**.
+- Extended previews for **PDF / JSON / CSV** (and additional formats).
+- Configurable preview settings (enable/disable + maximum preview size).
+- **Syntax highlighting** for code previews (including dark theme styling).
 
 ## Sharing & access
-- Direct links plus **token-based share links** with expirations and max-download limits; QR code generation for quick sharing.
+
+- Direct links plus **token-based share links** with **expiration dates** and **download limits**; QR code generation
+  for quick sharing.
+- Improved share token validation/uniqueness; download endpoint uses token directly.
+- Share tokens are automatically cleaned up when deleting files.
 - Hidden files (link-only) and option to disable the public file list entirely; switchable default home page (upload vs. file list).
-- On-the-fly decryption for downloads; streaming responses to avoid holding files in memory.
 
 ## Security
 - Whole-app password mode and separate **admin password** gate for the admin area.
-- Per-file passwords; server-side session tokens for admin and file access.
+- Per-file passwords; server-side session tokens for admin/file access.
 - CSRF cookie enabled.
 
 ## Admin & settings
-- Single-page settings UI; adjustments apply without app restart.
-- Admin dashboard with file list, history, toggle hidden/visibility, delete, extend life, keep indefinitely switches, and admin dashboard button toggle.
-- Configurable session timeout, file deletion cron expression, and feature flags (file list enabled, admin button enabled, encryption enabled).
+
+- Single-page settings UI; changes apply without app restart.
+- Admin dashboard with file list/history, delete (with confirmation), extend life, visibility toggles, and admin
+  dashboard button toggle.
+- Dashboard **search + pagination** for easier browsing at scale.
+- Configurable session timeout, file deletion cron expression, and feature flags (file list, admin button, encryption,
+  previews, notifications, etc.).
+- Cron expression validation with clearer error handling (and next run visibility when supported).
 
 ## Notifications & logging
-- Unified file history log for uploads, renewals, and downloads (IP + user agent).
-- Email and Discord webhook notifications with optional batching (interval minutes configurable).
+
+- Unified file history log for uploads, renewals, downloads (and related actions), including IP + user agent.
+- **Email and Discord webhook notifications** with built-in test actions.
+- Optional **notification batching** (interval minutes configurable) to avoid spam.
 
 ## Cleanup & maintenance
-- Scheduled cleanup for expired files, missing-file DB rows, and expired share tokens.
+
+- Scheduled cleanup for expired files, missing-file DB rows, expired share tokens, and other maintenance tasks.
 
 ---
 

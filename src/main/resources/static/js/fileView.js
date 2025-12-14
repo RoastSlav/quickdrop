@@ -69,18 +69,45 @@ function generateShareLink(fileUuid, daysValid, allowedNumberOfDownloads) {
 }
 
 
+function setCopyButtonState(state) {
+    const button = document.getElementById('copyShareButton');
+    if (!button) return;
+
+    const baseClasses = [
+        'w-full', 'sm:w-auto', 'shrink-0', 'rounded-lg', 'text-white', 'font-medium', 'px-4', 'py-2'
+    ];
+    const skyClasses = ['bg-sky-500', 'hover:bg-sky-600', 'dark:bg-sky-400', 'dark:hover:bg-sky-500'];
+    const greenClasses = ['bg-green-600', 'hover:bg-green-700', 'dark:bg-green-500', 'dark:hover:bg-green-600'];
+    const redClasses = ['bg-red-600', 'hover:bg-red-700', 'dark:bg-red-600', 'dark:hover:bg-red-500'];
+
+    button.className = [...baseClasses, ...(state === 'success' ? greenClasses : state === 'error' ? redClasses : skyClasses)].join(' ');
+
+    if (state === 'success') {
+        button.textContent = 'Copied';
+    } else if (state === 'error') {
+        button.textContent = 'Failed';
+    } else {
+        button.textContent = 'Copy';
+    }
+}
+
 function copyShareLink() {
     const shareLinkInput = document.getElementById('shareLink');
     if (!shareLinkInput.value) {
-        alert("Generate a share link first.");
+        setCopyButtonState('error');
+        setTimeout(() => setCopyButtonState('default'), 1500);
         return;
     }
+
     navigator.clipboard.writeText(shareLinkInput.value)
         .then(() => {
-            alert("Link copied to clipboard!");
+            setCopyButtonState('success');
+            setTimeout(() => setCopyButtonState('default'), 1500);
         })
         .catch((err) => {
             console.error("Failed to copy link:", err);
+            setCopyButtonState('error');
+            setTimeout(() => setCopyButtonState('default'), 1500);
         });
 }
 

@@ -74,13 +74,19 @@ function setCopyButtonState(state) {
     if (!button) return;
 
     const baseClasses = [
-        'w-full', 'sm:w-auto', 'shrink-0', 'rounded-lg', 'text-white', 'font-medium', 'px-4', 'py-2'
+        'w-full', 'sm:w-auto', 'shrink-0', 'rounded-lg', 'text-white', 'font-medium', 'px-4', 'py-2',
+        'transition-colors', 'active:scale-95', 'focus:outline-none', 'focus:ring-2'
     ];
     const skyClasses = ['bg-sky-500', 'hover:bg-sky-600', 'dark:bg-sky-400', 'dark:hover:bg-sky-500'];
     const greenClasses = ['bg-green-600', 'hover:bg-green-700', 'dark:bg-green-500', 'dark:hover:bg-green-600'];
     const redClasses = ['bg-red-600', 'hover:bg-red-700', 'dark:bg-red-600', 'dark:hover:bg-red-500'];
 
     button.className = [...baseClasses, ...(state === 'success' ? greenClasses : state === 'error' ? redClasses : skyClasses)].join(' ');
+
+    // Inline fallback colors to avoid transient invisibility if Tailwind classes are purged in some builds
+    const bgFallback = state === 'success' ? '#16a34a' : state === 'error' ? '#dc2626' : '#0284c7';
+    button.style.backgroundColor = bgFallback;
+    button.style.color = '#ffffff';
 
     if (state === 'success') {
         button.textContent = 'Copied';

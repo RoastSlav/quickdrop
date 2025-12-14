@@ -62,7 +62,7 @@
                 </div>
                 <small class="text-gray-600 dark:text-gray-400" th:if="${file.keepIndefinitely == false}">Files are kept
                     only for <span th:text="${maxFileLifeTime}">30</span> days after this date.</small>
-                <div class="flex justify-between items-center pt-4" th:if="${file.passwordHash != null and (!isKeepIndefinitelyAdminOnly or hasAdminSession)}">
+                <div class="flex justify-between items-center pt-4" th:if="${(file.passwordHash != null or hasAdminSession) and (!isKeepIndefinitelyAdminOnly or hasAdminSession)}">
                     <span class="font-semibold">Keep indefinitely:</span>
                     <form method="post" th:action="@{/file/keep-indefinitely/{uuid}(uuid=${file.uuid})}">
                         <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden">
@@ -76,7 +76,7 @@
                         </label>
                     </form>
                 </div>
-                <div class="flex justify-between items-center" th:if="${file.passwordHash != null}">
+                <div class="flex justify-between items-center" th:if="${(file.passwordHash != null or hasAdminSession) and canHideFromList}">
                     <span class="font-semibold">Hide file from list:</span>
                     <form method="post" th:action="@{/file/toggle-hidden/{uuid}(uuid=${file.uuid})}">
                         <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden">

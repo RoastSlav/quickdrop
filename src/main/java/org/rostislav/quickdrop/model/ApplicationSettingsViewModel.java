@@ -21,6 +21,7 @@ public class ApplicationSettingsViewModel {
     private long maxPreviewSizeBytes;
     private String defaultHomePage;
     private boolean keepIndefinitelyAdminOnly;
+    private boolean hideFromListAdminOnly;
     private boolean discordWebhookEnabled;
     private String discordWebhookUrl;
     private boolean emailNotificationsEnabled;
@@ -54,6 +55,7 @@ public class ApplicationSettingsViewModel {
         this.maxPreviewSizeBytes = settings.getMaxPreviewSizeBytes();
         this.defaultHomePage = settings.getDefaultHomePage();
         this.keepIndefinitelyAdminOnly = settings.isKeepIndefinitelyAdminOnly();
+        this.hideFromListAdminOnly = settings.isHideFromListAdminOnly();
         this.discordWebhookEnabled = settings.isDiscordWebhookEnabled();
         this.discordWebhookUrl = settings.getDiscordWebhookUrl();
         this.emailNotificationsEnabled = settings.isEmailNotificationsEnabled();
@@ -202,6 +204,14 @@ public class ApplicationSettingsViewModel {
 
     public void setKeepIndefinitelyAdminOnly(boolean keepIndefinitelyAdminOnly) {
         this.keepIndefinitelyAdminOnly = keepIndefinitelyAdminOnly;
+    }
+
+    public boolean isHideFromListAdminOnly() {
+        return hideFromListAdminOnly;
+    }
+
+    public void setHideFromListAdminOnly(boolean hideFromListAdminOnly) {
+        this.hideFromListAdminOnly = hideFromListAdminOnly;
     }
 
     public boolean isDiscordWebhookEnabled() {

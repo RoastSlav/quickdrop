@@ -90,7 +90,7 @@
                             will not be auto-deleted after <span class="maxFileLifeTime"
                                                                  th:text="${maxFileLifeTime}">30</span> days.</small>
                     </div>
-                    <div th:if="${isFileListPageEnabled}">
+                    <div th:if="${isFileListPageEnabled and canHideFromList}">
                         <label class="inline-flex items-start gap-2">
                             <input class="h-4 w-4 rounded border-gray-400 dark:border-gray-600 accent-sky-500 dark:accent-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-500"
                                    id="hidden" name="hidden"

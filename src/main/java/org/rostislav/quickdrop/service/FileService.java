@@ -347,7 +347,7 @@ public class FileService {
         logHistory(fileEntity, request, FileHistoryType.RENEWAL);
     }
 
-    public FileEntity toggleHidden(String uuid) {
+    public FileEntity toggleHidden(String uuid, HttpServletRequest request) {
         Optional<FileEntity> referenceById = fileRepository.findByUUID(uuid);
         if (referenceById.isEmpty()) {
             logger.info("File not found for 'toggle hidden': {}", uuid);
@@ -355,6 +355,12 @@ public class FileService {
         }
 
         FileEntity fileEntity = referenceById.get();
+
+        if (applicationSettingsService.isHideFromListAdminOnly() && (request == null || !sessionService.hasValidAdminSession(request))) {
+            logger.info("Hide toggle blocked (admin only) for file UUID: {}", uuid);
+            return fileEntity;
+        }
+
         fileEntity.hidden = !fileEntity.hidden;
         logger.info("File hidden updated: {}", fileEntity);
         fileRepository.save(fileEntity);

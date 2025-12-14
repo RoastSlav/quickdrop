@@ -185,8 +185,8 @@ public class FileViewController {
 
 
     @PostMapping("/toggle-hidden/{uuid}")
-    public String toggleHidden(@PathVariable String uuid) {
-        FileEntity fileEntity = fileService.toggleHidden(uuid);
+    public String toggleHidden(@PathVariable String uuid, HttpServletRequest request) {
+        FileEntity fileEntity = fileService.toggleHidden(uuid, request);
         if (fileEntity != null) {
             logger.info("Updated hidden for file UUID: {} to {}", uuid, fileEntity.hidden);
             return "redirect:/file/" + fileEntity.uuid;

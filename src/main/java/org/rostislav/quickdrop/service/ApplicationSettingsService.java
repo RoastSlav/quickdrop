@@ -42,6 +42,7 @@ public class ApplicationSettingsService {
             settings.setMaxPreviewSizeBytes(5L * 1024L * 1024L);
             settings.setDefaultHomePage("upload");
             settings.setKeepIndefinitelyAdminOnly(false);
+            settings.setHideFromListAdminOnly(false);
             settings.setDiscordWebhookEnabled(false);
             settings.setDiscordWebhookUrl("");
             settings.setEmailNotificationsEnabled(false);
@@ -85,6 +86,7 @@ public class ApplicationSettingsService {
         applicationSettingsEntity.setMaxPreviewSizeBytes(settings.getMaxPreviewSizeBytes());
         applicationSettingsEntity.setDefaultHomePage(settings.getDefaultHomePage());
         applicationSettingsEntity.setKeepIndefinitelyAdminOnly(settings.isKeepIndefinitelyAdminOnly());
+        applicationSettingsEntity.setHideFromListAdminOnly(settings.isHideFromListAdminOnly());
         applicationSettingsEntity.setDiscordWebhookEnabled(settings.isDiscordWebhookEnabled());
         applicationSettingsEntity.setDiscordWebhookUrl(settings.getDiscordWebhookUrl());
         applicationSettingsEntity.setEmailNotificationsEnabled(settings.isEmailNotificationsEnabled());
@@ -207,6 +209,10 @@ public class ApplicationSettingsService {
 
     public boolean isKeepIndefinitelyAdminOnly() {
         return applicationSettings.isKeepIndefinitelyAdminOnly();
+    }
+
+    public boolean isHideFromListAdminOnly() {
+        return applicationSettings.isHideFromListAdminOnly();
     }
 
     public boolean isDiscordWebhookEnabled() {

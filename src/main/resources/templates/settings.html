@@ -103,6 +103,18 @@
                         </span>
                     </label>
                 </div>
+
+                <div class="md:col-span-2 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
+                    <div class="text-sm font-medium mb-2">Hide from list</div>
+                    <label class="flex items-start gap-3 pl-2">
+                        <input class="mt-1 h-4 w-4 rounded border-gray-400 dark:border-gray-600 accent-sky-500 dark:accent-sky-400 focus:ring-sky-500"
+                               id="hideFromListAdminOnly" th:field="*{hideFromListAdminOnly}" type="checkbox">
+                        <span>
+                            <span class="text-sm">Require admin session to hide files</span><br>
+                            <span class="text-xs text-gray-600 dark:text-gray-400">When enabled, only admins can set or change “Hide from file list”.</span>
+                        </span>
+                    </label>
+                </div>
             </div>
         </section>
 

@@ -3,7 +3,10 @@ package org.rostislav.quickdrop.util;
 import jakarta.servlet.http.HttpServletRequest;
 import org.rostislav.quickdrop.entity.FileEntity;
 import org.rostislav.quickdrop.entity.ShareTokenEntity;
+import org.rostislav.quickdrop.service.FileService;
+import org.springframework.http.HttpHeaders;
 import org.springframework.ui.Model;
+import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -41,6 +44,35 @@ public class FileUtils {
 
     private FileUtils() {
         // To prevent instantiation
+    }
+
+    public static StreamingResponseBody getStreamingResponseBody(InputStream inputStream) {
+        return outputStream -> {
+            byte[] buffer = new byte[8192];
+            int bytesRead;
+            while ((bytesRead = inputStream.read(buffer)) != -1) {
+                outputStream.write(buffer, 0, bytesRead);
+            }
+            outputStream.flush();
+        };
+    }
+
+    public static FileService.RequesterInfo getRequesterInfo(HttpServletRequest request) {
+        String forwardedFor = request.getHeader("X-Forwarded-For");
+        String realIp = request.getHeader("X-Real-IP");
+        String ipAddress;
+
+        if (forwardedFor != null && !forwardedFor.isEmpty()) {
+            // The X-Forwarded-For header can contain multiple IPs, pick the first one
+            ipAddress = forwardedFor.split(",")[0].trim();
+        } else if (realIp != null && !realIp.isEmpty()) {
+            ipAddress = realIp;
+        } else {
+            ipAddress = request.getRemoteAddr();
+        }
+
+        String userAgent = request.getHeader(HttpHeaders.USER_AGENT);
+        return new FileService.RequesterInfo(ipAddress, userAgent);
     }
 
     public static String formatFileSize(long size) {

@@ -23,7 +23,7 @@ import org.springframework.web.util.UriUtils;
 import java.util.List;
 import java.util.UUID;
 
-import static org.rostislav.quickdrop.util.FileUtils.populateModelAttributes;
+import static org.rostislav.quickdrop.util.FileUtils.*;
 
 @Controller
 @RequestMapping("/file")
@@ -75,11 +75,11 @@ public class FileViewController {
         populateModelAttributes(fileEntity, model, request);
 
         boolean previewsEnabled = applicationSettingsService.isPreviewEnabled();
-        boolean isImage = previewsEnabled && fileService.isPreviewableImage(fileEntity);
-        boolean isText = previewsEnabled && fileService.isPreviewableText(fileEntity);
-        boolean isPdf = previewsEnabled && fileService.isPreviewablePdf(fileEntity);
-        boolean isJson = previewsEnabled && fileService.isPreviewableJson(fileEntity);
-        boolean isCsv = previewsEnabled && fileService.isPreviewableCsvOrTsv(fileEntity);
+        boolean isImage = previewsEnabled && isPreviewableImage(fileEntity);
+        boolean isText = previewsEnabled && isPreviewableText(fileEntity);
+        boolean isPdf = previewsEnabled && isPreviewablePdf(fileEntity);
+        boolean isJson = previewsEnabled && isPreviewableJson(fileEntity);
+        boolean isCsv = previewsEnabled && isPreviewableCsvOrTsv(fileEntity);
         String previewType = isImage ? "image" : isPdf ? "pdf" : isJson ? "json" : isCsv ? "csv" : isText ? "text" : "";
         long previewLimit = applicationSettingsService.getMaxPreviewSizeBytes();
         boolean requireManualPreview = fileEntity != null && fileEntity.size > previewLimit;

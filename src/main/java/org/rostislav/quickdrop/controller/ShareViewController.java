@@ -14,6 +14,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 
 import java.util.Optional;
 
+import static org.rostislav.quickdrop.util.FileUtils.validateShareToken;
+
 @Controller
 public class ShareViewController {
     private static final Logger logger = LoggerFactory.getLogger(ShareViewController.class);
@@ -29,7 +31,7 @@ public class ShareViewController {
     public String viewSharedFile(@PathVariable String token, Model model) {
         Optional<ShareTokenEntity> tokenEntity = fileService.getShareTokenEntityByToken(token);
 
-        if (tokenEntity.isEmpty() || !fileService.validateShareToken(tokenEntity.get())) {
+        if (tokenEntity.isEmpty() || !validateShareToken(tokenEntity.get())) {
             return "invalid-share-link";
         }
 

@@ -2,6 +2,8 @@ package org.rostislav.quickdrop.repository;
 
 import org.rostislav.quickdrop.entity.FileEntity;
 import org.rostislav.quickdrop.model.FileEntityView;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -23,11 +25,18 @@ public interface FileRepository extends JpaRepository<FileEntity, Long> {
     @Query("SELECT f FROM FileEntity f WHERE f.hidden = false")
     List<FileEntity> findAllNotHiddenFiles();
 
+    @Query("SELECT f FROM FileEntity f WHERE f.hidden = false ORDER BY f.uploadDate DESC")
+    Page<FileEntity> findAllNotHiddenFiles(Pageable pageable);
+
     @Query("SELECT SUM(f.size) FROM FileEntity f")
     Long totalFileSizeForAllFiles();
 
     @Query("SELECT f FROM FileEntity f WHERE f.hidden = false AND (LOWER(f.name) LIKE LOWER(CONCAT('%', :searchString, '%')) OR LOWER(f.description) LIKE LOWER(CONCAT('%', :searchString, '%')) OR LOWER(f.uuid) LIKE LOWER(CONCAT('%', :searchString, '%')))")
     List<FileEntity> searchNotHiddenFiles(@Param("searchString") String query);
+
+        @Query(value = "SELECT f FROM FileEntity f WHERE f.hidden = false AND (LOWER(f.name) LIKE LOWER(CONCAT('%', :searchString, '%')) OR LOWER(f.description) LIKE LOWER(CONCAT('%', :searchString, '%')) OR LOWER(f.uuid) LIKE LOWER(CONCAT('%', :searchString, '%'))) ORDER BY f.uploadDate DESC",
+            countQuery = "SELECT COUNT(f) FROM FileEntity f WHERE f.hidden = false AND (LOWER(f.name) LIKE LOWER(CONCAT('%', :searchString, '%')) OR LOWER(f.description) LIKE LOWER(CONCAT('%', :searchString, '%')) OR LOWER(f.uuid) LIKE LOWER(CONCAT('%', :searchString, '%')))")
+        Page<FileEntity> searchNotHiddenFiles(@Param("searchString") String query, Pageable pageable);
 
     @Query("""
                 SELECT new org.rostislav.quickdrop.model.FileEntityView(
@@ -39,4 +48,17 @@ public interface FileRepository extends JpaRepository<FileEntity, Long> {
                 GROUP BY f
             """)
     List<FileEntityView> findAllFilesWithDownloadCounts();
+
+    @Query(value = """
+                SELECT new org.rostislav.quickdrop.model.FileEntityView(
+                    f,
+                    CAST(SUM(CASE WHEN dl.id IS NOT NULL THEN 1 ELSE 0 END) AS long)
+                )
+                FROM FileEntity f
+                LEFT JOIN FileHistoryLog dl ON dl.file.id = f.id AND dl.eventType = 'DOWNLOAD'
+                GROUP BY f
+                ORDER BY f.uploadDate DESC
+            """,
+            countQuery = "SELECT COUNT(f) FROM FileEntity f")
+    Page<FileEntityView> findFilesWithDownloadCounts(Pageable pageable);
 }

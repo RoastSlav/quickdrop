@@ -4,6 +4,7 @@ import org.rostislav.quickdrop.entity.FileHistoryLog;
 import org.rostislav.quickdrop.model.AnalyticsDataView;
 import org.rostislav.quickdrop.model.FileHistoryType;
 import org.rostislav.quickdrop.repository.FileHistoryLogRepository;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -20,6 +21,7 @@ public class AnalyticsService {
         this.fileHistoryLogRepository = fileHistoryLogRepository;
     }
 
+    @Cacheable("analytics")
     public AnalyticsDataView getAnalytics() {
         long totalDownloads = fileHistoryLogRepository.countByEventType(FileHistoryType.DOWNLOAD);
         long totalSpaceUsed = fileService.calculateTotalSpaceUsed();

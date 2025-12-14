@@ -45,7 +45,7 @@
         <h1 class="text-3xl md:text-4xl font-semibold tracking-tight">All files</h1>
     </header>
     <div class="mx-auto w-full max-w-xl mb-8">
-        <form action="/file/search" class="w-full" method="GET">
+        <form action="/file/list" class="w-full" method="GET">
             <label class="sr-only" for="searchInput">Search files</label>
             <div class="h-14 flex items-center space-x-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-gray-800 rounded-full px-4 shadow-sm focus-within:border-sky-500 focus-within:ring-2 focus-within:ring-sky-500">
                 <svg aria-hidden="true" class="w-5 h-5 text-gray-500 dark:text-gray-400" fill="currentColor"
@@ -56,7 +56,10 @@
                 </svg>
                 <input class="flex-grow bg-transparent py-2 focus:outline-none focus-visible:ring-0" id="searchInput"
                        name="query" placeholder="Search files by name or date…"
+                       th:value="${query}"
                        type="text"/>
+                <input name="page" type="hidden" value="0"/>
+                <input name="size" th:value="${pageSize}" type="hidden"/>
                 <button class="rounded-full bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium px-4 py-2 h-10 transition-colors active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500"
                         id="search-button"
                         type="submit">
@@ -65,13 +68,13 @@
             </div>
         </form>
     </div>
-    <div class="text-center text-gray-600 dark:text-gray-300 my-5" th:if="${#lists.isEmpty(files)}">
+    <div class="text-center text-gray-600 dark:text-gray-300 my-5" th:if="${filesPage.totalElements == 0}">
         <h3 class="mb-2">No files have been uploaded yet.</h3>
         <p>Start by <a class="text-sky-600 dark:text-sky-400 hover:underline" href="/file/upload">uploading a file</a>.
         </p>
     </div>
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
-        <div class="h-full" th:each="file : ${files}">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 p-6" th:if="${filesPage.totalElements > 0}">
+        <div class="h-full" th:each="file : ${filesPage.content}">
             <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-lg flex flex-col h-full p-6 md:p-8">
                 <div class="flex-grow space-y-3 overflow-hidden">
                     <h2 class="text-xl font-semibold tracking-tight truncate" th:text="${file.name}">File Name</h2>
@@ -93,6 +96,29 @@
                 </div>
             </div>
         </div>
+    </div>
+
+    <div class="flex flex-col md:flex-row items-center justify-between gap-4 mt-6" th:if="${filesPage.totalElements > 0}">
+        <div class="flex items-center gap-2">
+                <a class="px-4 py-2 rounded-lg bg-slate-200 dark:bg-slate-700 text-sm font-semibold transition disabled:opacity-50 disabled:pointer-events-none"
+                    th:classappend="${filesPage.first} ? ' opacity-50 pointer-events-none' : ' hover:bg-slate-300 dark:hover:bg-slate-600'"
+                    th:href="@{/file/list(page=${filesPage.first ? filesPage.number : filesPage.number - 1}, size=${pageSize}, query=${query})}">Previous</a>
+                <a class="px-4 py-2 rounded-lg bg-slate-200 dark:bg-slate-700 text-sm font-semibold transition disabled:opacity-50 disabled:pointer-events-none"
+                    th:classappend="${filesPage.last} ? ' opacity-50 pointer-events-none' : ' hover:bg-slate-300 dark:hover:bg-slate-600'"
+                    th:href="@{/file/list(page=${filesPage.last ? filesPage.number : filesPage.number + 1}, size=${pageSize}, query=${query})}">Next</a>
+        </div>
+        <form action="/file/list" class="flex items-center gap-2" method="get">
+            <input name="query" th:value="${query}" type="hidden"/>
+            <input name="page" type="hidden" value="0"/>
+            <label class="text-sm text-gray-700 dark:text-gray-300" for="pageSize">Per page</label>
+            <select class="rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" id="pageSize" name="size" onchange="this.form.submit()">
+                <option th:selected="${pageSize == 10}" value="10">10</option>
+                <option th:selected="${pageSize == 20}" value="20">20</option>
+                <option th:selected="${pageSize == 50}" value="50">50</option>
+                <option th:selected="${pageSize == 100}" value="100">100</option>
+            </select>
+        </form>
+        <div class="text-sm text-gray-600 dark:text-gray-300">Page <span th:text="${filesPage.number + 1}"></span> of <span th:text="${filesPage.totalPages}"></span></div>
     </div>
 </main>
 </body>

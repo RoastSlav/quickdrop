@@ -12,14 +12,15 @@ import org.rostislav.quickdrop.service.FileService;
 import org.rostislav.quickdrop.service.SessionService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
+import org.springframework.web.util.UriUtils;
 
-import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 import static org.rostislav.quickdrop.util.FileUtils.populateModelAttributes;
@@ -48,13 +49,21 @@ public class FileViewController {
     }
 
     @GetMapping("/list")
-    public String listFiles(Model model) {
+    public String listFiles(@RequestParam(name = "page", defaultValue = "0") int page,
+                            @RequestParam(name = "size", defaultValue = "20") int size,
+                            @RequestParam(name = "query", required = false) String query,
+                            Model model) {
         if (!applicationSettingsService.isFileListPageEnabled()) {
             return "redirect:/";
         }
 
-        List<FileEntity> files = fileService.getNotHiddenFiles();
-        model.addAttribute("files", files);
+        int pageNumber = Math.max(page, 0);
+        int pageSize = Math.min(Math.max(size, 1), 100);
+
+        Page<FileEntity> filesPage = fileService.getVisibleFiles(PageRequest.of(pageNumber, pageSize), query);
+        model.addAttribute("filesPage", filesPage);
+        model.addAttribute("query", query == null ? "" : query);
+        model.addAttribute("pageSize", pageSize);
         return "listFiles";
     }
 
@@ -175,10 +184,11 @@ public class FileViewController {
     }
 
     @GetMapping("/search")
-    public String searchFiles(String query, Model model) {
-        List<FileEntity> files = fileService.searchNotHiddenFiles(query);
-        model.addAttribute("files", files);
-        return "listFiles";
+    public String searchFiles(@RequestParam String query,
+                              @RequestParam(name = "size", defaultValue = "20") int size) {
+        int pageSize = Math.min(Math.max(size, 1), 100);
+        String encodedQuery = UriUtils.encodeQueryParam(query, java.nio.charset.StandardCharsets.UTF_8);
+        return "redirect:/file/list?query=" + encodedQuery + "&page=0&size=" + pageSize;
     }
 
     @PostMapping("/keep-indefinitely/{uuid}")

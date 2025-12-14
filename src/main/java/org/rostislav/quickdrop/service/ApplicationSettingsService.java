@@ -37,6 +37,7 @@ public class ApplicationSettingsService {
             settings.setFileListPageEnabled(true);
             settings.setAdminDashboardButtonEnabled(true);
             settings.setDisableEncryption(false);
+            settings.setDisableUploadPassword(false);
             settings.setDefaultHomePage("upload");
             settings.setKeepIndefinitelyAdminOnly(false);
             settings.setDiscordWebhookEnabled(false);
@@ -71,7 +72,13 @@ public class ApplicationSettingsService {
         applicationSettingsEntity.setSessionLifetime(settings.getSessionLifeTime());
         applicationSettingsEntity.setFileListPageEnabled(settings.isFileListPageEnabled());
         applicationSettingsEntity.setAdminDashboardButtonEnabled(settings.isAdminDashboardButtonEnabled());
-        applicationSettingsEntity.setDisableEncryption(settings.isEncryptionDisabled());
+        applicationSettingsEntity.setDisableUploadPassword(settings.isDisableUploadPassword());
+        // If upload passwords are disabled, force encryption off and lock the toggle
+        if (settings.isDisableUploadPassword()) {
+            applicationSettingsEntity.setDisableEncryption(true);
+        } else {
+            applicationSettingsEntity.setDisableEncryption(settings.isEncryptionDisabled());
+        }
         applicationSettingsEntity.setDefaultHomePage(settings.getDefaultHomePage());
         applicationSettingsEntity.setKeepIndefinitelyAdminOnly(settings.isKeepIndefinitelyAdminOnly());
         applicationSettingsEntity.setDiscordWebhookEnabled(settings.isDiscordWebhookEnabled());
@@ -176,6 +183,10 @@ public class ApplicationSettingsService {
 
     public boolean isEncryptionEnabled() {
         return !applicationSettings.isDisableEncryption();
+    }
+
+    public boolean isUploadPasswordEnabled() {
+        return !applicationSettings.isDisableUploadPassword();
     }
 
     public String getDefaultHomePage() {

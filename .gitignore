@@ -35,3 +35,5 @@ build/
 /log/
 /files/
 .qodo
+
+/node_modules

@@ -228,6 +228,7 @@ function createShareLink() {
 function updateShareLink(link) {
   const shareLinkInput = document.getElementById("shareLink");
   const canvas = document.getElementById("shareQRCode");
+  const qrContainer = document.getElementById("shareQRCodeContainer");
 
   shareLinkInput.value = link || "";
 
@@ -235,9 +236,11 @@ function updateShareLink(link) {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   if (!link) {
+    if (qrContainer) qrContainer.classList.add("hidden");
     return;
   }
 
+  if (qrContainer) qrContainer.classList.remove("hidden");
   QRCode.toCanvas(canvas, link, { width: 150, height: 150 });
 }
 

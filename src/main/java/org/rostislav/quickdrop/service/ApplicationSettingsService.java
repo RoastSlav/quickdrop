@@ -59,6 +59,9 @@ public class ApplicationSettingsService {
             scheduleService.updateSchedule(settings.getFileDeletionCron(), settings.getMaxFileLifeTime());
             return settings;
         });
+
+        // Ensure cleanup scheduling is initialized even when settings already exist (common on restarts)
+        scheduleService.updateSchedule(applicationSettings.getFileDeletionCron(), applicationSettings.getMaxFileLifeTime());
     }
 
     public ApplicationSettingsEntity getApplicationSettings() {

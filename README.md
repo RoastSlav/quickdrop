@@ -2,7 +2,6 @@
 [![MIT License](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Docker Pulls](https://img.shields.io/docker/pulls/roastslav/quickdrop?logo=docker&style=flat)](https://hub.docker.com/r/roastslav/quickdrop)
 
-
 # QuickDrop
 
 QuickDrop is a self-hosted file sharing app for fast, anonymous uploads with chunked transfer, optional encryption,
@@ -38,9 +37,11 @@ lifetime policies, cleanup schedules, notifications, and privacy settings.
 - Hidden files (link-only) and option to disable the public file list entirely, also option to disable the feature.
 
 ## Security
+
 - Whole-app password mode and separate **admin password** gate for the admin area.
 - Per-file passwords; server-side session tokens for admin/file access.
 - CSRF cookie enabled.
+- Client-side **metadata stripping** for uploads (Documents: PDF, DOCX, PPTX, XLSX, ODT, ODS, ODP, EPUB; Images: JPEG/PNG/WebP; Graphics: SVG; Text: TXT/CSV/JSON/etc. usually carry no structured metadata). Stripping runs in-browser with a 25 MB guard; if stripping fails or a type is unsupported, uploads show warnings and require Confirm/Cancel.
 
 ## Admin & settings
 
@@ -66,8 +67,6 @@ lifetime policies, cleanup schedules, notifications, and privacy settings.
 
 <img width="1315" height="1211" alt="fixed" src="https://github.com/user-attachments/assets/4cc67404-7631-4126-851c-75330a1c4321" />
 <img width="1270" height="1211" alt="image" src="https://github.com/user-attachments/assets/9e6a95d4-48e2-4fad-8d56-edfea63df119" />
-
-
 
 ## Technologies Used
 

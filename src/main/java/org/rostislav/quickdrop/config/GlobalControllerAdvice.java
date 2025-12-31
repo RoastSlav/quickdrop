@@ -30,6 +30,7 @@ public class GlobalControllerAdvice {
         model.addAttribute("isEncryptionEnabled", applicationSettingsService.isEncryptionEnabled());
         model.addAttribute("uploadPasswordEnabled", applicationSettingsService.isUploadPasswordEnabled());
         model.addAttribute("isPreviewEnabled", applicationSettingsService.isPreviewEnabled());
+        model.addAttribute("isMetadataStrippingEnabled", applicationSettingsService.isMetadataStrippingEnabled());
         model.addAttribute("hasAdminSession", hasAdminSession);
         model.addAttribute("isKeepIndefinitelyAdminOnly", keepIndefinitelyAdminOnly);
         model.addAttribute("canUseKeepIndefinitely", !keepIndefinitelyAdminOnly || hasAdminSession);

@@ -18,6 +18,7 @@ public class ApplicationSettingsViewModel {
     private boolean encryptionDisabled;
     private boolean disableUploadPassword;
     private boolean disablePreview;
+    private boolean metadataStrippingEnabled;
     private long maxPreviewSizeBytes;
     private String defaultHomePage;
     private boolean keepIndefinitelyAdminOnly;
@@ -52,6 +53,7 @@ public class ApplicationSettingsViewModel {
         this.encryptionDisabled = settings.isDisableEncryption();
         this.disableUploadPassword = settings.isDisableUploadPassword();
         this.disablePreview = settings.isDisablePreview();
+        this.metadataStrippingEnabled = settings.isMetadataStrippingEnabled();
         this.maxPreviewSizeBytes = settings.getMaxPreviewSizeBytes();
         this.defaultHomePage = settings.getDefaultHomePage();
         this.keepIndefinitelyAdminOnly = settings.isKeepIndefinitelyAdminOnly();
@@ -180,6 +182,14 @@ public class ApplicationSettingsViewModel {
 
     public void setDisablePreview(boolean disablePreview) {
         this.disablePreview = disablePreview;
+    }
+
+    public boolean isMetadataStrippingEnabled() {
+        return metadataStrippingEnabled;
+    }
+
+    public void setMetadataStrippingEnabled(boolean metadataStrippingEnabled) {
+        this.metadataStrippingEnabled = metadataStrippingEnabled;
     }
 
     public long getMaxPreviewSizeBytes() {

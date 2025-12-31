@@ -38,6 +38,7 @@ public class ApplicationSettingsService {
             settings.setDisableEncryption(false);
             settings.setDisableUploadPassword(false);
             settings.setDisablePreview(false);
+            settings.setMetadataStrippingEnabled(false);
             settings.setMaxPreviewSizeBytes(5L * 1024L * 1024L);
             settings.setDefaultHomePage("upload");
             settings.setKeepIndefinitelyAdminOnly(false);
@@ -82,6 +83,7 @@ public class ApplicationSettingsService {
             applicationSettingsEntity.setDisableEncryption(settings.isEncryptionDisabled());
         }
         applicationSettingsEntity.setDisablePreview(settings.isDisablePreview());
+        applicationSettingsEntity.setMetadataStrippingEnabled(settings.isMetadataStrippingEnabled());
         applicationSettingsEntity.setMaxPreviewSizeBytes(settings.getMaxPreviewSizeBytes());
         applicationSettingsEntity.setDefaultHomePage(settings.getDefaultHomePage());
         applicationSettingsEntity.setKeepIndefinitelyAdminOnly(settings.isKeepIndefinitelyAdminOnly());
@@ -190,6 +192,10 @@ public class ApplicationSettingsService {
 
     public boolean isPreviewEnabled() {
         return !applicationSettings.isDisablePreview();
+    }
+
+    public boolean isMetadataStrippingEnabled() {
+        return applicationSettings.isMetadataStrippingEnabled();
     }
 
     public long getMaxPreviewSizeBytes() {

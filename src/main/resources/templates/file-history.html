@@ -1,109 +1,188 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+  <head>
+    <meta charset="UTF-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
     <title>Download History</title>
-    <link href="/css/tailwind.css" rel="stylesheet">
-    <link href="/css/custom.css" rel="stylesheet">
-    <link href="/images/favicon.png" rel="icon" type="image/png">
+    <link href="/css/tailwind.css" rel="stylesheet" />
+    <link href="/css/custom.css" rel="stylesheet" />
+    <link href="/images/favicon.png" rel="icon" type="image/png" />
     <script src="/js/tailwindTheme.js"></script>
-</head>
-<body class="bg-gray-50 text-gray-800 dark:bg-slate-900 dark:text-gray-100">
-
-<!-- Navbar -->
-<nav class="bg-gray-800 dark:bg-gray-900 text-gray-100">
-    <div class="max-w-7xl mx-auto px-4 py-4 relative">
+  </head>
+  <body class="bg-gray-50 text-gray-800 dark:bg-slate-900 dark:text-gray-100">
+    <!-- Navbar -->
+    <nav class="bg-gray-800 dark:bg-gray-900 text-gray-100">
+      <div class="max-w-7xl mx-auto px-4 py-4 relative">
         <div class="flex items-center justify-between">
-            <a class="flex items-center space-x-2" href="/">
-                <img alt="QuickDrop Logo" class="h-10" src="/images/favicon.png">
-                <span class="font-semibold tracking-tight">QuickDrop Admin</span>
-            </a>
-            <button aria-controls="navMenu" aria-expanded="false" aria-label="Toggle navigation"
-                    class="md:hidden rounded-lg p-2 hover:bg-sky-600 dark:hover:bg-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500"
-                    id="navToggle" type="button">
-                <svg aria-hidden="true" class="h-6 w-6" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24">
-                    <path d="M4 6h16M4 12h16M4 18h16"></path>
-                </svg>
-            </button>
-            <div class="nav-menu-panel hidden md:flex flex-col md:flex-row md:items-center md:space-x-4 w-full md:w-auto mt-3 md:mt-0 space-y-2 md:space-y-0 bg-gray-800 dark:bg-gray-900 md:bg-transparent md:dark:bg-transparent rounded-lg md:rounded-none p-4 md:p-0 shadow md:shadow-none absolute left-0 right-0 top-full md:static z-20 md:ml-auto" id="navMenu">
-                <div class="flex flex-col space-y-2 md:flex-row md:items-center md:space-x-4 md:space-y-0">
-                    <a class="nav-menu-item hover:text-white" href="/admin/dashboard">Dashboard</a>
-                </div>
-                <button aria-label="Toggle theme" class="nav-menu-item theme-toggle rounded-lg p-2 transition-colors hover:bg-sky-600 dark:hover:bg-sky-500 active:scale-95 focus:outline-none focus:ring-2 focus:ring-sky-500" id="themeToggle" type="button">🌙</button>
+          <a class="flex items-center space-x-2" href="/">
+            <img alt="QuickDrop Logo" class="h-10" src="/images/favicon.png" />
+            <span class="font-semibold tracking-tight">QuickDrop Admin</span>
+          </a>
+          <button
+            aria-controls="navMenu"
+            aria-expanded="false"
+            aria-label="Toggle navigation"
+            class="md:hidden rounded-lg p-2 hover:bg-sky-600 dark:hover:bg-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500"
+            id="navToggle"
+            type="button"
+          >
+            <svg
+              aria-hidden="true"
+              class="h-6 w-6"
+              fill="none"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <path d="M4 6h16M4 12h16M4 18h16"></path>
+            </svg>
+          </button>
+          <div
+            class="nav-menu-panel hidden md:flex flex-col md:flex-row md:items-center md:space-x-4 w-full md:w-auto mt-3 md:mt-0 space-y-2 md:space-y-0 bg-gray-800 dark:bg-gray-900 md:bg-transparent md:dark:bg-transparent rounded-lg md:rounded-none p-4 md:p-0 shadow md:shadow-none absolute left-0 right-0 top-full md:static z-20 md:ml-auto"
+            id="navMenu"
+          >
+            <div
+              class="flex flex-col space-y-2 md:flex-row md:items-center md:space-x-4 md:space-y-0"
+            >
+              <a class="nav-menu-item hover:text-white" href="/admin/dashboard"
+                >Dashboard</a
+              >
             </div>
+            <button
+              aria-label="Toggle theme"
+              class="nav-menu-item theme-toggle rounded-lg p-2 transition-colors hover:bg-sky-600 dark:hover:bg-sky-500 active:scale-95 focus:outline-none focus:ring-2 focus:ring-sky-500"
+              id="themeToggle"
+              type="button"
+            >
+              🌙
+            </button>
+          </div>
         </div>
-    </div>
-</nav>
+      </div>
+    </nav>
 
-<!-- Main Content -->
-<div class="container mx-auto mt-5 px-4">
-    <h1 class="text-center text-3xl font-semibold mb-4">History</h1>
+    <!-- Main Content -->
+    <div class="container mx-auto mt-5 px-4">
+      <h1 class="text-center text-3xl font-semibold mb-4">History</h1>
 
-    <!-- File Name and Description -->
-    <div class="text-center mb-8">
-        <p class="text-xl font-semibold text-blue-600" th:text="${file.name}">File Name</p>
-        <p class="text-lg text-gray-600 dark:text-gray-300" th:text="${file.description ?: 'No description provided'}">
-            File Description</p>
-    </div>
+      <!-- File Name and Description -->
+      <div class="text-center mb-8">
+        <p class="text-xl font-semibold text-blue-600" th:text="${file.name}">
+          File Name
+        </p>
+        <p
+          class="text-lg text-gray-600 dark:text-gray-300"
+          th:text="${file.description ?: 'No description provided'}"
+        >
+          File Description
+        </p>
+      </div>
 
-    <!-- File Details Grid -->
-    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-lg mb-8 p-6">
+      <!-- File Details Grid -->
+      <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-lg mb-8 p-6">
         <div class="text-center text-xl font-semibold mb-4">File Details</div>
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
-            <div class="bg-sky-500 text-white p-4 rounded-lg">
-                <p class="text-2xl font-semibold" th:text="${file.size}">--</p>
-                <p class="text-sm">Size</p>
-            </div>
-            <div class="bg-sky-500 text-white p-4 rounded-lg">
-                <p class="text-2xl font-semibold" th:text="${#temporals.format(file.uploadDate, 'dd.MM.yyyy')}">--</p>
-                <p class="text-sm">Upload Date</p>
-            </div>
-            <div class="bg-sky-500 text-white p-4 rounded-lg">
-                <p class="text-2xl font-semibold" th:text="${file.totalDownloads}">--</p>
-                <p class="text-sm">Total Downloads</p>
-            </div>
+          <div class="bg-sky-500 text-white p-4 rounded-lg">
+            <p class="text-2xl font-semibold" th:text="${file.size}">--</p>
+            <p class="text-sm">Size</p>
+          </div>
+          <div class="bg-sky-500 text-white p-4 rounded-lg">
+            <p
+              class="text-2xl font-semibold"
+              th:text="${#temporals.format(file.uploadDate, 'dd.MM.yyyy')}"
+            >
+              --
+            </p>
+            <p class="text-sm">Upload Date</p>
+          </div>
+          <div class="bg-sky-500 text-white p-4 rounded-lg">
+            <p class="text-2xl font-semibold" th:text="${file.totalDownloads}">
+              --
+            </p>
+            <p class="text-sm">Total Downloads</p>
+          </div>
         </div>
-    </div>
+      </div>
 
-    <!-- History Table -->
-    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-6">
-        <h2 class="text-xl font-semibold tracking-tight mb-4">Download History</h2>
+      <!-- History Table -->
+      <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-6">
+        <h2 class="text-xl font-semibold tracking-tight mb-4">
+          Download History
+        </h2>
 
         <!-- scroll container -->
         <div class="-mx-6 overflow-x-auto">
-            <div class="inline-block min-w-full align-middle px-6">
-                <table class="min-w-max w-full divide-y divide-slate-200 dark:divide-slate-700 light-table-zebra">
-                    <thead class="bg-gray-100 dark:bg-gray-800">
-                    <tr>
-                        <th class="px-6 py-4 text-left text-sm font-semibold whitespace-nowrap">Date</th>
-                        <th class="px-6 py-4 text-left text-sm font-semibold whitespace-nowrap">Action</th>
-                        <th class="px-6 py-4 text-left text-sm font-semibold whitespace-nowrap">IP Address</th>
-                        <th class="px-6 py-4 text-left text-sm font-semibold whitespace-nowrap">User Agent</th>
-                    </tr>
-                    </thead>
+          <div class="inline-block min-w-full align-middle px-6">
+            <table
+              class="min-w-max w-full divide-y divide-slate-200 dark:divide-slate-700 light-table-zebra"
+            >
+              <thead class="bg-gray-100 dark:bg-gray-800">
+                <tr>
+                  <th
+                    class="px-6 py-4 text-left text-sm font-semibold whitespace-nowrap"
+                  >
+                    Date
+                  </th>
+                  <th
+                    class="px-6 py-4 text-left text-sm font-semibold whitespace-nowrap"
+                  >
+                    Action
+                  </th>
+                  <th
+                    class="px-6 py-4 text-left text-sm font-semibold whitespace-nowrap"
+                  >
+                    IP Address
+                  </th>
+                  <th
+                    class="px-6 py-4 text-left text-sm font-semibold whitespace-nowrap"
+                  >
+                    User Agent
+                  </th>
+                </tr>
+              </thead>
 
-                    <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
-                    <tr class="dark:bg-slate-800" th:each="log,iter : ${actionLogs}" th:classappend="${iter.index % 2 == 0} ? ' bg-gray-50' : ' bg-white'">
-                        <td class="px-6 py-4 whitespace-nowrap"
-                            th:text="${#temporals.format(log.actionDate, 'dd.MM.yyyy HH:mm:ss')}">01.12.2024 20:12:22
-                        </td>
+              <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
+                <tr
+                  class="dark:bg-slate-800"
+                  th:each="log,iter : ${actionLogs}"
+                  th:classappend="${iter.index % 2 == 0} ? ' bg-gray-50' : ' bg-white'"
+                >
+                  <td
+                    class="px-6 py-4 whitespace-nowrap"
+                    th:text="${#temporals.format(log.actionDate, 'dd.MM.yyyy HH:mm:ss')}"
+                  >
+                    01.12.2024 20:12:22
+                  </td>
 
-                        <td class="px-6 py-4 whitespace-nowrap" th:text="${log.actionType}">Download</td>
+                  <td
+                    class="px-6 py-4 whitespace-nowrap"
+                    th:text="${log.actionType}"
+                  >
+                    Download
+                  </td>
 
-                        <td class="px-6 py-4 whitespace-nowrap" th:text="${log.ipAddress}">127.0.0.1</td>
+                  <td
+                    class="px-6 py-4 whitespace-nowrap"
+                    th:text="${log.ipAddress}"
+                  >
+                    127.0.0.1
+                  </td>
 
-                        <!-- key: allow breaking long UA strings -->
-                        <td class="px-6 py-4 max-w-[28rem] break-words"
-                            th:text="${log.userAgent}">Mozilla/5.0 ...
-                        </td>
-                    </tr>
-                    </tbody>
-                </table>
-            </div>
+                  <!-- key: allow breaking long UA strings -->
+                  <td
+                    class="px-6 py-4 max-w-[28rem] break-words"
+                    th:text="${log.userAgent}"
+                  >
+                    Mozilla/5.0 ...
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
+      </div>
     </div>
-</div>
-
-</body>
+  </body>
 </html>

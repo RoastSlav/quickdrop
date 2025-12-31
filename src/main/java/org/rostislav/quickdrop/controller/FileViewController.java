@@ -44,6 +44,7 @@ public class FileViewController {
     public String showUploadFile(Model model) {
         model.addAttribute("maxFileSize", applicationSettingsService.getFormattedMaxFileSize());
         model.addAttribute("maxFileLifeTime", applicationSettingsService.getMaxFileLifeTime());
+        model.addAttribute("isMetadataStrippingEnabled", applicationSettingsService.isMetadataStrippingEnabled());
         return "upload";
     }
 

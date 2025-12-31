@@ -1,136 +1,286 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
+  <head>
+    <meta charset="UTF-8" />
     <title>Upload File</title>
-    <meta content="width=device-width, initial-scale=1" name="viewport">
-    <link href="/css/tailwind.css" rel="stylesheet">
-    <link href="/css/custom.css" rel="stylesheet">
-    <link href="/images/favicon.png" rel="icon" type="image/png">
+    <meta content="width=device-width, initial-scale=1" name="viewport" />
+    <link href="/css/tailwind.css" rel="stylesheet" />
+    <link href="/css/custom.css" rel="stylesheet" />
+    <link href="/images/favicon.png" rel="icon" type="image/png" />
     <script src="/js/tailwindTheme.js"></script>
+    <script src="/js/metadata.js"></script>
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
-</head>
-<body class="bg-gray-50 text-gray-800 dark:bg-slate-900 dark:text-gray-100">
-<nav class="bg-gray-800 dark:bg-gray-900 text-gray-100">
-    <div class="max-w-7xl mx-auto px-4 py-4 relative">
+  </head>
+  <body class="bg-gray-50 text-gray-800 dark:bg-slate-900 dark:text-gray-100">
+    <nav class="bg-gray-800 dark:bg-gray-900 text-gray-100">
+      <div class="max-w-7xl mx-auto px-4 py-4 relative">
         <div class="flex items-center justify-between">
-            <a class="flex items-center space-x-2" href="/">
-                <img alt="Website Logo" class="h-10" src="/images/favicon.png">
-                <span class="font-semibold tracking-tight">QuickDrop</span>
-            </a>
-            <button aria-controls="navMenu" aria-expanded="false" aria-label="Toggle navigation"
-                    class="md:hidden rounded-lg p-2 hover:bg-sky-600 dark:hover:bg-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500"
-                    id="navToggle" type="button">
-                <svg aria-hidden="true" class="h-6 w-6" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24">
-                    <path d="M4 6h16M4 12h16M4 18h16"></path>
-                </svg>
-            </button>
-            <div class="nav-menu-panel hidden md:flex flex-col md:flex-row md:items-center md:space-x-4 w-full md:w-auto mt-3 md:mt-0 space-y-2 md:space-y-0 bg-gray-800 dark:bg-gray-900 md:bg-transparent md:dark:bg-transparent rounded-lg md:rounded-none p-4 md:p-0 shadow md:shadow-none absolute left-0 right-0 top-full md:static z-20 md:ml-auto" id="navMenu">
-                <div class="flex flex-col space-y-2 md:flex-row md:items-center md:space-x-4 md:space-y-0">
-                    <a class="nav-menu-item hover:text-white" href="/file/list" th:if="${isFileListPageEnabled}">View Files</a>
-                    <a class="nav-menu-item hover:text-white" href="/admin/dashboard" th:if="${isAdminDashboardButtonEnabled}">Admin Dashboard</a>
-                </div>
-                <button aria-label="Toggle theme"
-                        class="nav-menu-item theme-toggle rounded-lg p-2 transition-colors hover:bg-sky-600 dark:hover:bg-sky-500 active:scale-95 focus:outline-none focus:ring-2 focus:ring-sky-500"
-                        type="button">
-                    🌙
-                </button>
+          <a class="flex items-center space-x-2" href="/">
+            <img alt="Website Logo" class="h-10" src="/images/favicon.png" />
+            <span class="font-semibold tracking-tight">QuickDrop</span>
+          </a>
+          <button
+            aria-controls="navMenu"
+            aria-expanded="false"
+            aria-label="Toggle navigation"
+            class="md:hidden rounded-lg p-2 hover:bg-sky-600 dark:hover:bg-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500"
+            id="navToggle"
+            type="button"
+          >
+            <svg
+              aria-hidden="true"
+              class="h-6 w-6"
+              fill="none"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <path d="M4 6h16M4 12h16M4 18h16"></path>
+            </svg>
+          </button>
+          <div
+            class="nav-menu-panel hidden md:flex flex-col md:flex-row md:items-center md:space-x-4 w-full md:w-auto mt-3 md:mt-0 space-y-2 md:space-y-0 bg-gray-800 dark:bg-gray-900 md:bg-transparent md:dark:bg-transparent rounded-lg md:rounded-none p-4 md:p-0 shadow md:shadow-none absolute left-0 right-0 top-full md:static z-20 md:ml-auto"
+            id="navMenu"
+          >
+            <div
+              class="flex flex-col space-y-2 md:flex-row md:items-center md:space-x-4 md:space-y-0"
+            >
+              <a
+                class="nav-menu-item hover:text-white"
+                href="/file/list"
+                th:if="${isFileListPageEnabled}"
+                >View Files</a
+              >
+              <a
+                class="nav-menu-item hover:text-white"
+                href="/admin/dashboard"
+                th:if="${isAdminDashboardButtonEnabled}"
+                >Admin Dashboard</a
+              >
             </div>
+            <button
+              aria-label="Toggle theme"
+              class="nav-menu-item theme-toggle rounded-lg p-2 transition-colors hover:bg-sky-600 dark:hover:bg-sky-500 active:scale-95 focus:outline-none focus:ring-2 focus:ring-sky-500"
+              type="button"
+            >
+              🌙
+            </button>
+          </div>
         </div>
-    </div>
-</nav>
-<main class="max-w-7xl mx-auto px-4 p-6 md:p-8">
-    <header class="text-center mb-8 space-y-1">
-        <h1 class="text-3xl md:text-4xl font-semibold tracking-tight">Upload a File or Folder</h1>
+      </div>
+    </nav>
+    <main class="max-w-7xl mx-auto px-4 p-6 md:p-8">
+      <header class="text-center mb-8 space-y-1">
+        <h1 class="text-3xl md:text-4xl font-semibold tracking-tight">
+          Upload a File or Folder
+        </h1>
         <p class="text-gray-600 dark:text-gray-300">
-            Accepted file types: any • Max size <span class="maxFileSize" th:text="${maxFileSize}">1GB</span>
+          Accepted file types: any • Max size
+          <span class="maxFileSize" th:text="${maxFileSize}">1GB</span>
         </p>
         <p class="text-gray-600 dark:text-gray-300">
-            Files are deleted after <span class="maxFileLifeTime" th:text="${maxFileLifeTime}">30</span> days unless
-            “Keep indefinitely” is selected.
+          Files are deleted after
+          <span class="maxFileLifeTime" th:text="${maxFileLifeTime}">30</span>
+          days unless “Keep indefinitely” is selected.
         </p>
-    </header>
-    <div class="grid grid-cols-12 gap-6">
-        <div class="col-span-12 md:col-span-8 md:col-start-3 lg:col-span-6 lg:col-start-4">
-            <form class="bg-white dark:bg-gray-800 p-6 md:p-8 rounded-2xl shadow-lg flex flex-col gap-6"
-                  enctype="multipart/form-data"
-                  id="uploadForm" method="post" th:action="@{/file/upload}">
-                <div id="messageContainer"></div>
-                <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden"/>
-                <input name="uuid" th:value="${uuid}" type="hidden"/>
-                <div class="upload-shell cursor-default" id="dropZone">
-                    <div class="upload-shell-body">
-                        <span class="block text-gray-700 dark:text-gray-100 text-xl font-semibold"
-                              data-default-text="Drop file or folder"
-                              id="dropZoneInstructions">Drop file or folder</span>
-                        <p class="hidden mt-2 text-sm text-gray-700 dark:text-gray-300" id="selectedFile"></p>
-                    </div>
-                    <div class="upload-shell-buttons">
-                        <button class="upload-shell-button" type="button" id="fileSelectButton">Select file</button>
-                        <button class="upload-shell-button" type="button" id="folderSelectButton">Select folder</button>
-                    </div>
-                </div>
-                <input class="hidden" id="file" name="file" type="file" />
-                <input class="hidden" id="folderInput" name="folderInput" type="file" webkitdirectory multiple />
-                <label class="block">
-                    <span class="sr-only">Description</span>
-                    <input class="mt-1 w-full rounded-lg border border-gray-400 dark:border-gray-600 bg-white dark:bg-slate-700 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500"
-                           id="description" name="description" placeholder="Description"
-                           type="text"/>
-                </label>
-                <div class="flex flex-wrap gap-6">
-                    <div th:if="${canUseKeepIndefinitely}">
-                        <label class="inline-flex items-start gap-2">
-                                <input class="h-4 w-4 rounded border-gray-400 dark:border-gray-600 accent-sky-500 dark:accent-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-500"
-                                   id="keepIndefinitely" name="keepIndefinitely"
-                                   type="checkbox">
-                            <span class="text-sm">Keep indefinitely</span>
-                        </label>
-                        <small class="block ml-6 mt-1 text-sm text-gray-600 dark:text-gray-300">If checked, this file
-                            will not be auto-deleted after <span class="maxFileLifeTime"
-                                                                 th:text="${maxFileLifeTime}">30</span> days.</small>
-                    </div>
-                    <div th:if="${isFileListPageEnabled and canHideFromList}">
-                        <label class="inline-flex items-start gap-2">
-                            <input class="h-4 w-4 rounded border-gray-400 dark:border-gray-600 accent-sky-500 dark:accent-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-500"
-                                   id="hidden" name="hidden"
-                                   type="checkbox">
-                            <span class="text-sm">Hide from file list</span>
-                        </label>
-                        <small class="block ml-6 mt-1 text-sm text-gray-600 dark:text-gray-300">If checked, this file
-                            won’t appear on the “View Files” page.</small>
-                    </div>
-                </div>
-                <label class="block" th:if="${uploadPasswordEnabled}">
-                    <span class="sr-only">Password (Optional)</span>
-                    <input class="mt-1 w-full rounded-lg border border-gray-400 dark:border-gray-600 bg-white dark:bg-slate-700 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500"
-                           id="password" name="password" placeholder="Password (Optional)"
-                           type="password"/>
-                </label>
-                <button class="rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium py-2 transition-colors active:scale-95 focus:outline-none focus:ring-2 focus:ring-sky-500"
-                        type="submit">
-                    Upload
+      </header>
+      <div class="grid grid-cols-12 gap-6">
+        <div
+          class="col-span-12 md:col-span-8 md:col-start-3 lg:col-span-6 lg:col-start-4"
+        >
+          <form
+            class="bg-white dark:bg-gray-800 p-6 md:p-8 rounded-2xl shadow-lg flex flex-col gap-6"
+            enctype="multipart/form-data"
+            id="uploadForm"
+            method="post"
+            th:action="@{/file/upload}"
+          >
+            <div id="messageContainer"></div>
+            <input
+              th:name="${_csrf.parameterName}"
+              th:value="${_csrf.token}"
+              type="hidden"
+            />
+            <input name="uuid" th:value="${uuid}" type="hidden" />
+            <div class="upload-shell cursor-default" id="dropZone">
+              <div class="upload-shell-body">
+                <span
+                  class="block text-gray-700 dark:text-gray-100 text-xl font-semibold"
+                  data-default-text="Drop file or folder"
+                  id="dropZoneInstructions"
+                  >Drop file or folder</span
+                >
+                <p
+                  class="hidden mt-2 text-sm text-gray-700 dark:text-gray-300"
+                  id="selectedFile"
+                ></p>
+              </div>
+              <div class="upload-shell-buttons">
+                <button
+                  class="upload-shell-button"
+                  type="button"
+                  id="fileSelectButton"
+                >
+                  Select file
                 </button>
-            </form>
+                <button
+                  class="upload-shell-button"
+                  type="button"
+                  id="folderSelectButton"
+                >
+                  Select folder
+                </button>
+              </div>
+            </div>
+            <input class="hidden" id="file" name="file" type="file" />
+            <input
+              class="hidden"
+              id="folderInput"
+              name="folderInput"
+              type="file"
+              webkitdirectory
+              multiple
+            />
+            <label class="block">
+              <span class="sr-only">Description</span>
+              <input
+                class="mt-1 w-full rounded-lg border border-gray-400 dark:border-gray-600 bg-white dark:bg-slate-700 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                id="description"
+                name="description"
+                placeholder="Description"
+                type="text"
+              />
+            </label>
+            <div class="flex flex-wrap gap-6">
+              <div th:if="${canUseKeepIndefinitely}">
+                <label class="inline-flex items-start gap-2">
+                  <input
+                    class="h-4 w-4 rounded border-gray-400 dark:border-gray-600 accent-sky-500 dark:accent-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                    id="keepIndefinitely"
+                    name="keepIndefinitely"
+                    type="checkbox"
+                  />
+                  <span class="text-sm">Keep indefinitely</span>
+                </label>
+                <small
+                  class="block ml-6 mt-1 text-sm text-gray-600 dark:text-gray-300"
+                  >If checked, this file will not be auto-deleted after
+                  <span class="maxFileLifeTime" th:text="${maxFileLifeTime}"
+                    >30</span
+                  >
+                  days.</small
+                >
+              </div>
+              <div th:if="${isFileListPageEnabled and canHideFromList}">
+                <label class="inline-flex items-start gap-2">
+                  <input
+                    class="h-4 w-4 rounded border-gray-400 dark:border-gray-600 accent-sky-500 dark:accent-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                    id="hidden"
+                    name="hidden"
+                    type="checkbox"
+                  />
+                  <span class="text-sm">Hide from file list</span>
+                </label>
+                <small
+                  class="block ml-6 mt-1 text-sm text-gray-600 dark:text-gray-300"
+                  >If checked, this file won’t appear on the “View Files”
+                  page.</small
+                >
+              </div>
+            </div>
+            <label class="block" th:if="${uploadPasswordEnabled}">
+              <span class="sr-only">Password (Optional)</span>
+              <input
+                class="mt-1 w-full rounded-lg border border-gray-400 dark:border-gray-600 bg-white dark:bg-slate-700 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                id="password"
+                name="password"
+                placeholder="Password (Optional)"
+                type="password"
+              />
+            </label>
+            <div
+              id="uploadWarning"
+              class="hidden rounded-lg border border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-200 px-4 py-3 text-sm"
+            ></div>
+
+            <div id="uploadActions" class="flex flex-col items-center gap-2">
+              <div class="flex gap-3">
+                <button
+                  id="uploadPrimary"
+                  class="rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium px-6 py-2 transition-colors active:scale-95 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                  type="button"
+                >
+                  Upload
+                </button>
+                <button
+                  id="uploadCancel"
+                  class="hidden rounded-lg border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-100 font-medium px-4 py-2 transition-colors active:scale-95 focus:outline-none focus:ring-2 focus:ring-slate-400"
+                  type="button"
+                >
+                  Cancel
+                </button>
+              </div>
+              <button
+                id="uploadWarningDetails"
+                type="button"
+                class="hidden text-xs text-sky-600 dark:text-sky-400 underline"
+              >
+                Show details
+              </button>
+              <div
+                id="uploadWarningList"
+                class="hidden max-h-32 overflow-y-auto text-xs text-gray-700 dark:text-gray-300 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 px-3 py-2 w-full"
+              ></div>
+            </div>
+          </form>
         </div>
-    </div>
-    <div class="mt-6 text-center hidden" id="uploadIndicator">
-        <p aria-live="polite" class="text-gray-600 dark:text-gray-300 mb-2" id="uploadStatus">Upload started...</p>
-        <div class="w-full max-w-md mx-auto bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
-            <div aria-valuemax="100" aria-valuemin="0"
-                 aria-valuenow="0" class="h-2 bg-sky-500 dark:bg-sky-400 transition-[width] duration-300"
-                 id="uploadProgress" role="progressbar" style="width:0%"></div>
+      </div>
+      <div class="mt-6 text-center hidden" id="uploadIndicator">
+        <p
+          aria-live="polite"
+          class="text-gray-600 dark:text-gray-300 mb-2"
+          id="uploadStatus"
+        >
+          Upload started...
+        </p>
+        <div
+          class="w-full max-w-md mx-auto bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden"
+        >
+          <div
+            aria-valuemax="100"
+            aria-valuemin="0"
+            aria-valuenow="0"
+            class="h-2 bg-sky-500 dark:bg-sky-400 transition-[width] duration-300"
+            id="uploadProgress"
+            role="progressbar"
+            style="width: 0%"
+          ></div>
         </div>
-    </div>
-    <div class="mt-4 text-center text-gray-600 dark:text-gray-300" th:if="${isEncryptionEnabled and uploadPasswordEnabled}">
+      </div>
+      <div
+        class="mt-4 text-center text-gray-600 dark:text-gray-300"
+        th:if="${isEncryptionEnabled and uploadPasswordEnabled}"
+      >
         All password-protected files are also encrypted for additional security.
-    </div>
-</main>
-<script th:inline="javascript">
-    /*<![CDATA[*/
-    window.uploadPasswordEnabled = [[${uploadPasswordEnabled}]];
-    /*]]>*/
-</script>
-<script src="/js/upload.js"></script>
-</body>
+      </div>
+
+      <div
+        class="mt-2 text-center text-gray-600 dark:text-gray-300"
+        th:if="${isMetadataStrippingEnabled}"
+      >
+        Metadata stripping is enabled. Supported:
+        <span data-supported-metadata></span>.
+      </div>
+    </main>
+    <script th:inline="javascript">
+      /*<![CDATA[*/
+      window.uploadPasswordEnabled = [[${uploadPasswordEnabled}]];
+      window.isMetadataStrippingEnabled = [[${isMetadataStrippingEnabled}]];
+      /*]]>*/
+    </script>
+    <script type="module" src="/js/upload.js"></script>
+  </body>
 </html>

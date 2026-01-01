@@ -22,6 +22,8 @@ pipeline {
       steps {
         withMaven(maven: 'Maven') {
           script {
+            echo "Branch: ${env.BRANCH_NAME} | PR: ${env.CHANGE_ID ?: 'no'}"
+
             env.APP_VERSION = sh(
               returnStdout: true,
               script: "mvn -q -DforceStdout help:evaluate -Dexpression=project.version"
@@ -37,11 +39,51 @@ pipeline {
             env.VERSION_CHANGED = (env.APP_VERSION != env.PREV_VERSION) ? 'true' : 'false'
 
             def verTag = (env.TAG_PREFIX?.trim()) ? "${env.TAG_PREFIX}${env.APP_VERSION}" : env.APP_VERSION
-            env.IMAGE_LATEST  = "${env.DOCKER_REPO}:latest"
-            env.IMAGE_VERSION = "${env.DOCKER_REPO}:${verTag}"
+            env.IMAGE_LATEST   = "${env.DOCKER_REPO}:latest"
+            env.IMAGE_VERSION  = "${env.DOCKER_REPO}:${verTag}"
+
+            // dev branch tag
+            env.IMAGE_DEVELOP  = "${env.DOCKER_REPO}:develop"
 
             echo "POM version: ${env.APP_VERSION} | Previous: ${env.PREV_VERSION} | Changed: ${env.VERSION_CHANGED}"
-            echo "Tags -> latest: ${env.IMAGE_LATEST} ; version: ${env.IMAGE_VERSION}"
+            echo "Tags -> develop: ${env.IMAGE_DEVELOP} ; latest: ${env.IMAGE_LATEST} ; version: ${env.IMAGE_VERSION}"
+          }
+        }
+      }
+    }
+
+    stage('Docker Build and Push (develop)') {
+      when {
+        allOf {
+          branch 'dev'
+          not { changeRequest() }
+        }
+      }
+      steps {
+        script {
+          withCredentials([usernamePassword(credentialsId: DOCKER_CREDENTIALS_ID,
+            passwordVariable: 'DOCKER_PASS', usernameVariable: 'DOCKER_USER')]) {
+
+            sh '''
+              set -e
+              docker version
+              docker buildx version || true
+              docker run --privileged --rm tonistiigi/binfmt --install arm64,amd64
+              BUILDER_NAME=$(docker buildx create --use || true)
+              docker buildx inspect --bootstrap
+
+              echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+
+              docker buildx build \
+                --platform linux/amd64,linux/arm64 \
+                -t "${IMAGE_DEVELOP}" \
+                --label "org.opencontainers.image.version=${APP_VERSION}" \
+                --label "org.opencontainers.image.revision=${GIT_COMMIT}" \
+                --push .
+
+              docker logout
+              [ -n "$BUILDER_NAME" ] && docker buildx rm "$BUILDER_NAME" || true
+            '''
           }
         }
       }
@@ -49,7 +91,11 @@ pipeline {
 
     stage('Docker Build and Push Multi-Arch') {
       when {
-        expression { env.VERSION_CHANGED == 'true' }
+        allOf {
+          branch 'master'
+          expression { env.VERSION_CHANGED == 'true' }
+          not { changeRequest() }
+        }
       }
       steps {
         script {
@@ -84,7 +130,11 @@ pipeline {
 
     stage('Skip Docker (version unchanged)') {
       when {
-        expression { env.VERSION_CHANGED != 'true' }
+        allOf {
+          branch 'master'
+          expression { env.VERSION_CHANGED != 'true' }
+          not { changeRequest() }
+        }
       }
       steps {
         echo "Version unchanged (${APP_VERSION}). Skipping Docker build & push."

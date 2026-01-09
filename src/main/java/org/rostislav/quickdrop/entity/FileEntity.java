@@ -18,6 +18,8 @@ public class FileEntity {
     public String passwordHash;
     public boolean hidden;
     public boolean encrypted;
+    public Integer encryptionVersion;
+    public Long originalSize;
     public boolean folderUpload;
     public String folderName;
     @Column(columnDefinition = "TEXT")

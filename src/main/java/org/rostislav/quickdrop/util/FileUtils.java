@@ -93,7 +93,14 @@ public class FileUtils {
         if (scheme == null) {
             scheme = request.getScheme(); // Fallback to the default scheme
         }
-        return scheme + "://" + request.getServerName() + "/file/" + fileEntity.uuid;
+
+        int port = request.getServerPort();
+        boolean isDefaultPort = ("http".equalsIgnoreCase(scheme) && port == 80)
+                || ("https".equalsIgnoreCase(scheme) && port == 443);
+        String portPart = isDefaultPort || port <= 0 ? "" : ":" + port;
+
+        // Always point to the download endpoint (not the view page) so clients receive ciphertext
+        return scheme + "://" + request.getServerName() + portPart + "/file/download/" + fileEntity.uuid;
     }
 
     public static String getShareLink(HttpServletRequest request, String token) {

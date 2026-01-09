@@ -9,6 +9,10 @@ import {
 import { buildSingleCandidates } from "./metadata-pipeline.js";
 import { buildFolderCandidates, parseSize } from "./zip-builder.js";
 import { uploadCandidate } from "./network.js";
+import {
+  encryptStreamOrChunks,
+  getOverheadEstimate,
+} from "../crypto/crypto-v2.js";
 
 export function initUploadPage(config = {}) {
   const ui = getUIRefs();
@@ -27,6 +31,7 @@ export function initUploadPage(config = {}) {
     : "";
   const uploadPasswordEnabled = config.uploadPasswordEnabled !== false;
   const metadataEnabled = config.metadataEnabled === true;
+  const encryptionEnabled = config.encryptionEnabled === true;
 
   let uploadCandidates = null;
   let processingToken = 0;
@@ -205,16 +210,83 @@ export function initUploadPage(config = {}) {
       return;
     }
 
+    const passwordValue = document.getElementById("password")?.value.trim();
+    const shouldEncrypt =
+      encryptionEnabled && uploadPasswordEnabled && passwordValue;
+
+    console.info("[upload] prepared candidate", {
+      name: candidate.name,
+      size: candidate.size,
+      shouldEncrypt,
+      encryptionEnabled,
+      uploadPasswordEnabled,
+      hasPassword: Boolean(passwordValue),
+    });
+
+    if (form) {
+      if (shouldEncrypt) {
+        form.dataset.encryptionVersion = "2";
+        form.dataset.plaintextSize = String(candidate.size);
+        console.info("[upload] client encryption enabled; setting form dataset", {
+          encryptionVersion: form.dataset.encryptionVersion,
+          plaintextSize: form.dataset.plaintextSize,
+        });
+      } else {
+        delete form.dataset.encryptionVersion;
+        delete form.dataset.plaintextSize;
+        console.info("[upload] client encryption disabled; clearing dataset flags");
+      }
+    }
+
+    // Ensure payload (post-zip, post-encrypt) respects max size
+    const chunkSize = 1024 * 1024;
+    const overhead = getOverheadEstimate(candidate.file.size, { chunkSize });
+    const encryptedSize = shouldEncrypt
+      ? candidate.file.size + overhead.overhead
+      : candidate.file.size;
+    if (encryptedSize > maxSize) {
+      showMessage(
+        "danger",
+        "Encrypted upload exceeds the allowed size. Reduce file size or disable encryption."
+      );
+      resetUploadUI();
+      return;
+    }
+
     isUploading = true;
     applyState(UploadState.UPLOADING);
 
     try {
+      let encryptionPlan = null;
+      if (shouldEncrypt) {
+        if (uploadStatus) uploadStatus.innerText = "Encrypting...";
+        console.info("[upload] starting client-side encryption", {
+          chunkSize,
+          fileId: candidate.name,
+        });
+        encryptionPlan = await encryptStreamOrChunks(candidate.file, passwordValue, {
+          chunkSize,
+          fileId: candidate.name,
+        });
+        console.info("[upload] encryption complete", {
+          totalChunks: encryptionPlan?.totalChunks,
+          totalBytes: encryptionPlan?.totalBytes,
+        });
+      }
+
       await uploadCandidate(candidate, {
         uploadPasswordEnabled,
         form,
         progressBar: uploadProgress,
         statusEl: uploadStatus,
         indicatorEl: uploadIndicator,
+        encryptionPlan: encryptionPlan
+          ? {
+              ...encryptionPlan,
+              payloadChunkCount: encryptionPlan.totalChunks + 1,
+              totalSize: encryptedSize,
+            }
+          : null,
         onSuccess: (uuid) => {
           window.location.href = `/file/${uuid}`;
         },

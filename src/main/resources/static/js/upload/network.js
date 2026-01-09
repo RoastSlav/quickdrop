@@ -7,6 +7,7 @@ export async function uploadCandidate(
     progressBar,
     statusEl,
     indicatorEl,
+    encryptionPlan,
     onSuccess,
     onWarn,
     onError,
@@ -14,8 +15,15 @@ export async function uploadCandidate(
 ) {
   const file = candidate.file;
   const chunkSize = 1024 * 1024; // 1MB chunks
-  const totalChunks = Math.max(1, Math.ceil(file.size / chunkSize));
+  const usingEncryption = Boolean(encryptionPlan);
+  const totalChunks = usingEncryption
+    ? encryptionPlan.payloadChunkCount
+    : Math.max(1, Math.ceil(file.size / chunkSize));
   let currentChunk = 0;
+  let encIterator = null;
+  if (usingEncryption) {
+    encIterator = encryptionPlan.stream[Symbol.asyncIterator]();
+  }
 
   const progressElement =
     progressBar || document.getElementById("uploadProgress");
@@ -31,16 +39,29 @@ export async function uploadCandidate(
   }
 
   return new Promise((resolve, reject) => {
-    const uploadNextChunk = () => {
-      const start = currentChunk * chunkSize;
-      const end = Math.min(start + chunkSize, file.size);
-      const chunk = file.slice(start, end);
+    const uploadNextChunk = async () => {
+      let chunkData;
+      if (usingEncryption) {
+        const next = await encIterator.next();
+        if (next.done) {
+          onWarn?.();
+          reject(new Error("Unexpected end of encrypted stream."));
+          return;
+        }
+        chunkData = new Blob([next.value.data]);
+      } else {
+        const start = currentChunk * chunkSize;
+        const end = Math.min(start + chunkSize, file.size);
+        chunkData = file.slice(start, end);
+      }
       const formData = buildChunkFormData(
-        chunk,
+        chunkData,
         currentChunk,
         candidate.name,
         totalChunks,
-        file.size,
+        usingEncryption
+          ? encryptionPlan.totalSize || candidate.file.size
+          : file.size,
         candidate,
         uploadPasswordEnabled,
         form
@@ -113,7 +134,11 @@ export async function uploadCandidate(
       xhr.send(formData);
     };
 
-    uploadNextChunk();
+    uploadNextChunk().catch((err) => {
+      console.error("Upload failed during chunk processing", err);
+      onError?.();
+      reject(err);
+    });
   });
 }
 
@@ -135,6 +160,23 @@ function buildChunkFormData(
   formData.append("chunkNumber", chunkNumber);
   formData.append("totalChunks", totalChunks);
   formData.append("fileSize", fileSize);
+  const encVersionInput = uploadForm?.querySelector('input[name="encryptionVersion"]');
+  const plaintextSizeInput = uploadForm?.querySelector('input[name="plaintextSize"]');
+  const encVersion = encVersionInput?.value || uploadForm?.dataset?.encryptionVersion;
+  const plainSize = plaintextSizeInput?.value || uploadForm?.dataset?.plaintextSize;
+  if (encVersion) formData.append("encryptionVersion", encVersion);
+  if (plainSize) formData.append("plaintextSize", plainSize);
+
+  if (chunkNumber === 0) {
+    console.info("[upload] chunk form data prepared", {
+      chunkNumber,
+      totalChunks,
+      fileSize,
+      encVersion,
+      plainSize,
+      folderUpload: candidate?.folderUpload || false,
+    });
+  }
 
   if (candidate) {
     formData.append("folderUpload", candidate.folderUpload ? "true" : "false");

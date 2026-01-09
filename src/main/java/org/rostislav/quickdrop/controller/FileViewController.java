@@ -4,6 +4,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.rostislav.quickdrop.entity.FileEntity;
 import org.rostislav.quickdrop.model.FileActionLogDTO;
 import org.rostislav.quickdrop.model.FileEntityView;
+import org.rostislav.quickdrop.model.FileSession;
 import org.rostislav.quickdrop.service.AnalyticsService;
 import org.rostislav.quickdrop.service.ApplicationSettingsService;
 import org.rostislav.quickdrop.service.FileService;
@@ -77,6 +78,14 @@ public class FileViewController {
 
         model.addAttribute("maxFileLifeTime", applicationSettingsService.getMaxFileLifeTime());
 
+        String sessionToken = (String) request.getSession().getAttribute("file-session-token");
+        if (sessionToken != null) {
+            FileSession session = sessionService.getPasswordForFileSessionToken(sessionToken);
+            if (session != null && uuid.equals(session.getFileUuid())) {
+                model.addAttribute("filePassword", session.getPassword());
+            }
+        }
+
         populateModelAttributes(fileEntity, model, request);
 
         boolean previewsEnabled = applicationSettingsService.isPreviewEnabled();
@@ -100,6 +109,7 @@ public class FileViewController {
         model.addAttribute("previewUrl", String.format("/file/preview/%s", uuid));
         model.addAttribute("requireManualPreview", requireManualPreview);
         model.addAttribute("maxPreviewSizeMB", previewLimit / 1024 / 1024);
+        model.addAttribute("maxPreviewSizeBytes", previewLimit);
 
         return "fileView";
     }

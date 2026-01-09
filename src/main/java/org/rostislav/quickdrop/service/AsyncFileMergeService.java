@@ -95,11 +95,14 @@ public class AsyncFileMergeService {
 
         @Override
         public void run() {
-            File finalFile = Paths.get(applicationSettingsService.getFileStoragePath(), uuid).toFile();
+                File finalFile = Paths.get(applicationSettingsService.getFileStoragePath(), uuid).toFile();
 
-            try (OutputStream finalOut = fileService.shouldEncrypt(request) ?
-                    fileEncryptionService.getEncryptedOutputStream(finalFile, request.password) :
-                    new BufferedOutputStream(new FileOutputStream(finalFile, true))) {
+                boolean clientEncrypted = request.encryptionVersion != null && request.encryptionVersion >= 2;
+                boolean legacyEncrypt = !clientEncrypted && fileService.shouldEncrypt(request);
+
+                try (OutputStream finalOut = legacyEncrypt
+                    ? fileEncryptionService.getEncryptedOutputStream(finalFile, request.password)
+                    : new BufferedOutputStream(new FileOutputStream(finalFile, true))) {
 
                 while (processedChunks < request.totalChunks) {
                     ChunkInfo info = queue.take();

@@ -11,6 +11,8 @@ import java.util.Optional;
 public interface ShareTokenRepository extends JpaRepository<ShareTokenEntity, Long> {
     Optional<ShareTokenEntity> findByShareToken(String shareToken);
 
+    Optional<ShareTokenEntity> findByPublicId(String publicId);
+
     boolean existsByShareToken(String shareToken);
 
     void deleteAllByFile(FileEntity fileEntity);

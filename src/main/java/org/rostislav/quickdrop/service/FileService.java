@@ -8,6 +8,7 @@ import org.rostislav.quickdrop.entity.ShareTokenEntity;
 import org.rostislav.quickdrop.model.FileEntityView;
 import org.rostislav.quickdrop.model.FileHistoryType;
 import org.rostislav.quickdrop.model.FileUploadRequest;
+import org.rostislav.quickdrop.model.ShareTokenRequest;
 import org.rostislav.quickdrop.repository.FileHistoryLogRepository;
 import org.rostislav.quickdrop.repository.FileRepository;
 import org.rostislav.quickdrop.repository.ShareTokenRepository;
@@ -30,7 +31,10 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.LocalDate;
+import java.util.HexFormat;
 import java.util.List;
 import java.util.Optional;
 
@@ -49,6 +53,7 @@ public class FileService {
     private final FileEncryptionService fileEncryptionService;
     private final ShareTokenRepository shareTokenRepository;
     private final NotificationService notificationService;
+    private static final int PUBLIC_ID_LENGTH = 8;
 
     @Lazy
     public FileService(FileRepository fileRepository, PasswordEncoder passwordEncoder, ApplicationSettingsService applicationSettingsService, FileHistoryLogRepository fileHistoryLogRepository, SessionService sessionService, FileEncryptionService fileEncryptionService, ShareTokenRepository shareTokenRepository, NotificationService notificationService) {
@@ -93,7 +98,12 @@ public class FileService {
         fileEntity.size = request.fileSize;
         fileEntity.keepIndefinitely = request.keepIndefinitely;
         fileEntity.hidden = request.hidden;
-        fileEntity.encrypted = shouldEncrypt(request);
+        boolean clientEncrypted = request.encryptionVersion != null && request.encryptionVersion > 0;
+        fileEntity.encrypted = clientEncrypted || shouldEncrypt(request);
+        fileEntity.encryptionVersion = clientEncrypted
+            ? request.encryptionVersion
+            : (fileEntity.encrypted ? 1 : 0);
+        fileEntity.originalSize = request.plaintextSize != null ? request.plaintextSize : request.fileSize;
         fileEntity.folderUpload = request.folderUpload;
         fileEntity.folderName = request.folderName;
         fileEntity.folderManifest = request.folderManifest;
@@ -168,12 +178,19 @@ public class FileService {
         String password = getFilePasswordFromSessionToken(request);
 
         InputStream inputStream;
-        if (fileEntity.encrypted) {
+        if (fileEntity.encrypted && (fileEntity.encryptionVersion == null || fileEntity.encryptionVersion < 2)) {
             try {
                 inputStream = fileEncryptionService.getDecryptedInputStream(filePath.toFile(), password);
             } catch (Exception e) {
                 logger.error("Error decrypting file: {}", e.getMessage());
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            }
+        } else if (fileEntity.encrypted && fileEntity.encryptionVersion != null && fileEntity.encryptionVersion >= 2) {
+            try {
+                inputStream = new FileInputStream(filePath.toFile());
+            } catch (FileNotFoundException e) {
+                logger.error("File not found: {}", filePath);
+                return ResponseEntity.notFound().build();
             }
         } else {
             try {
@@ -209,7 +226,10 @@ public class FileService {
             return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE).build();
         }
 
-        if (fileEntity.size > applicationSettingsService.getMaxPreviewSizeBytes() && !manualOverride) {
+        long previewLimit = applicationSettingsService.getMaxPreviewSizeBytes();
+        long effectiveSize = fileEntity.originalSize != null ? fileEntity.originalSize : fileEntity.size;
+
+        if (effectiveSize > previewLimit && !manualOverride) {
             return ResponseEntity.status(HttpStatus.PRECONDITION_REQUIRED).build();
         }
 
@@ -218,9 +238,10 @@ public class FileService {
 
         InputStream inputStream;
         try {
-            if (fileEntity.encrypted) {
+            if (fileEntity.encrypted && (fileEntity.encryptionVersion == null || fileEntity.encryptionVersion < 2)) {
                 inputStream = fileEncryptionService.getDecryptedInputStream(filePath.toFile(), password);
             } else {
+                // For v2 (client-encrypted) and unencrypted, stream bytes as-is; client will decrypt when needed
                 inputStream = new FileInputStream(filePath.toFile());
             }
         } catch (Exception e) {
@@ -228,7 +249,9 @@ public class FileService {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
-        String contentType = guessContentType(fileEntity.name, isImage, isText, isPdf);
+        String contentType = (fileEntity.encryptionVersion != null && fileEntity.encryptionVersion >= 2)
+                ? "application/octet-stream"
+                : guessContentType(fileEntity.name, isImage, isText, isPdf);
 
         StreamingResponseBody body = getStreamingResponseBody(inputStream);
         return ResponseEntity.ok()
@@ -347,7 +370,15 @@ public class FileService {
 
         FileEntity fileEntity = shareTokenEntity.file;
         Path decryptedFilePath = Path.of(applicationSettingsService.getFileStoragePath(), fileEntity.uuid + "-decrypted");
-        Path filePathToStream = Files.exists(decryptedFilePath) ? decryptedFilePath : Path.of(applicationSettingsService.getFileStoragePath(), fileEntity.uuid);
+        Path filePathToStream;
+
+        if (fileEntity.encryptionVersion != null && fileEntity.encryptionVersion >= 2) {
+            filePathToStream = Path.of(applicationSettingsService.getFileStoragePath(), fileEntity.uuid);
+        } else {
+            filePathToStream = Files.exists(decryptedFilePath)
+                    ? decryptedFilePath
+                    : Path.of(applicationSettingsService.getFileStoragePath(), fileEntity.uuid);
+        }
 
         logHistory(fileEntity, request, FileHistoryType.DOWNLOAD);
 
@@ -425,6 +456,37 @@ public class FileService {
         return shareToken;
     }
 
+    public ShareTokenEntity generateShareTokenForEncryptedFile(String uuid, LocalDate tokenExpirationDate, Integer numberOfDownloads, ShareTokenRequest shareTokenRequest) {
+        Optional<FileEntity> optionalFile = fileRepository.findByUUID(uuid);
+        if (optionalFile.isEmpty()) {
+            throw new IllegalArgumentException("File not found");
+        }
+
+        FileEntity file = optionalFile.get();
+
+        String effectiveToken = shareTokenRequest.token;
+        if (effectiveToken == null || effectiveToken.length() <= PUBLIC_ID_LENGTH) {
+            throw new IllegalArgumentException("Encrypted share token missing secret portion");
+        }
+
+        ShareTokenEntity shareToken = new ShareTokenEntity(effectiveToken, file, tokenExpirationDate, numberOfDownloads);
+        shareToken.publicId = shareTokenRequest.publicId;
+        shareToken.wrappedDek = shareTokenRequest.wrappedDek;
+        shareToken.wrapNonce = shareTokenRequest.wrapNonce;
+        if (shareTokenRequest.secretHash != null) {
+            shareToken.secretHash = shareTokenRequest.secretHash;
+        } else {
+            String secret = effectiveToken.substring(PUBLIC_ID_LENGTH);
+            shareToken.secretHash = hashSecret(secret);
+        }
+        shareToken.encryptionVersion = shareTokenRequest.encryptionVersion != null ? shareTokenRequest.encryptionVersion : file.encryptionVersion;
+        shareToken.tokenMode = shareTokenRequest.tokenMode != null ? shareTokenRequest.tokenMode : "encrypted-v2-share";
+
+        logger.info("Generated encrypted v2 share token: publicId={}, mode={}, exp={}, downloads={}", shareToken.publicId, shareToken.tokenMode, tokenExpirationDate, numberOfDownloads);
+        shareTokenRepository.save(shareToken);
+        return shareToken;
+    }
+
     public ShareTokenEntity generateShareToken(String uuid, LocalDate tokenExpirationDate, String sessionToken, Integer numberOfDownloads) {
         Optional<FileEntity> optionalFile = fileRepository.findByUUID(uuid);
         if (optionalFile.isEmpty()) {
@@ -435,7 +497,7 @@ public class FileService {
         Path encryptedFilePath = Path.of(applicationSettingsService.getFileStoragePath(), file.uuid);
         Path decryptedFilePath = encryptedFilePath.resolveSibling(file.uuid + "-decrypted");
 
-        if (file.encrypted && !Files.exists(decryptedFilePath)) {
+        if (file.encrypted && (file.encryptionVersion == null || file.encryptionVersion < 2) && !Files.exists(decryptedFilePath)) {
             try {
                 String password = sessionService.getPasswordForFileSessionToken(sessionToken).getPassword();
                 fileEncryptionService.decryptFile(encryptedFilePath.toFile(), decryptedFilePath.toFile(), password);
@@ -452,7 +514,76 @@ public class FileService {
     }
 
     public Optional<ShareTokenEntity> getShareTokenEntityByToken(String token) {
-        return shareTokenRepository.findByShareToken(token);
+        if (token == null || token.length() < PUBLIC_ID_LENGTH) {
+            logger.warn("Share token lookup failed: token too short");
+            return Optional.empty();
+        }
+
+        String publicId = token.substring(0, PUBLIC_ID_LENGTH);
+
+        Optional<ShareTokenEntity> byPublicId = shareTokenRepository.findByPublicId(publicId);
+        if (byPublicId.isPresent()) {
+            logger.info("Share token lookup by publicId succeeded (v2 path)");
+            return byPublicId;
+        }
+
+        Optional<ShareTokenEntity> legacy = shareTokenRepository.findByShareToken(token);
+        if (legacy.isPresent()) {
+            logger.info("Share token lookup by full token succeeded (legacy path)");
+            return legacy;
+        }
+
+        logger.warn("Share token lookup failed: no entity for publicId={} or full token", publicId);
+        return Optional.empty();
+    }
+
+    public boolean tokenSecretMatches(String token, ShareTokenEntity entity) {
+        if (entity == null) return false;
+        if (entity.encryptionVersion == null || entity.encryptionVersion < 2) {
+            return true; // legacy tokens
+        }
+
+        if (token == null || token.length() <= PUBLIC_ID_LENGTH) {
+            // Public-id-only tokens are allowed for v2; secret checked client-side via wrapped DEK
+            return token != null && token.length() == PUBLIC_ID_LENGTH && token.equals(entity.publicId);
+        }
+
+        if (entity.publicId == null || entity.secretHash == null) {
+            return false;
+        }
+
+        if (!token.startsWith(entity.publicId)) {
+            logger.warn("Token secret mismatch: token does not start with publicId={}", entity.publicId);
+            return false;
+        }
+
+        String secret = token.substring(PUBLIC_ID_LENGTH);
+        String computed = hashSecret(secret);
+        boolean matches = constantTimeEquals(computed, entity.secretHash);
+        if (!matches) {
+            logger.warn("Token secret hash mismatch for publicId={}", entity.publicId);
+        }
+        return matches;
+    }
+
+    private String hashSecret(String secret) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(secret.getBytes(StandardCharsets.UTF_8));
+            return HexFormat.of().formatHex(hash);
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 not available", e);
+        }
+    }
+
+    private boolean constantTimeEquals(String a, String b) {
+        if (a == null || b == null) return false;
+        if (a.length() != b.length()) return false;
+        int result = 0;
+        for (int i = 0; i < a.length(); i++) {
+            result |= a.charAt(i) ^ b.charAt(i);
+        }
+        return result == 0;
     }
 
     private ResponseEntity<StreamingResponseBody> createFileDownloadResponse(InputStream inputStream, FileEntity fileEntity, HttpServletRequest request) throws IOException {
@@ -474,6 +605,9 @@ public class FileService {
 
 
     public boolean shouldEncrypt(FileUploadRequest request) {
+        if (request.encryptionVersion != null && request.encryptionVersion >= 2) {
+            return false;
+        }
         return request.password != null && !request.password.isBlank() && applicationSettingsService.isEncryptionEnabled();
     }
 

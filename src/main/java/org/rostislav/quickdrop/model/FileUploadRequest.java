@@ -13,11 +13,13 @@ public class FileUploadRequest {
     public boolean folderUpload;
     public String folderName;
     public String folderManifest;
+    public Integer encryptionVersion;
+    public Long plaintextSize;
 
     public FileUploadRequest() {
     }
 
-    public FileUploadRequest(String description, boolean keepIndefinitely, String password, boolean hidden, String fileName, int totalChunks, Long fileSize, String uploaderIp, String uploaderUserAgent, boolean folderUpload, String folderName, String folderManifest) {
+    public FileUploadRequest(String description, boolean keepIndefinitely, String password, boolean hidden, String fileName, int totalChunks, Long fileSize, String uploaderIp, String uploaderUserAgent, boolean folderUpload, String folderName, String folderManifest, Integer encryptionVersion, Long plaintextSize) {
         this.description = description;
         this.keepIndefinitely = keepIndefinitely;
         this.password = password;
@@ -30,5 +32,7 @@ public class FileUploadRequest {
         this.folderUpload = folderUpload;
         this.folderName = folderName;
         this.folderManifest = folderManifest;
+        this.encryptionVersion = encryptionVersion;
+        this.plaintextSize = plaintextSize;
     }
 }

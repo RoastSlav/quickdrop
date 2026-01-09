@@ -43,7 +43,60 @@ function initializeModal() {
   }
 }
 
-function generateShareLink(fileUuid, daysValid, allowedNumberOfDownloads) {
+const PUBLIC_ID_LENGTH = 8;
+const SECRET_LENGTH = 24;
+const PBKDF2_ITERATIONS = 300000;
+const WRAP_NONCE_LEN = 12;
+
+function randomString(length) {
+  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  const bytes = new Uint8Array(length);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, (b) => alphabet[b % alphabet.length]).join("").slice(0, length);
+}
+
+function toBase64(bytes) {
+  let binary = "";
+  bytes.forEach((b) => (binary += String.fromCharCode(b)));
+  return btoa(binary);
+}
+
+async function deriveKek(secret, saltBytes) {
+  const encoder = new TextEncoder();
+  const keyMaterial = await crypto.subtle.importKey(
+    "raw",
+    encoder.encode(secret),
+    "PBKDF2",
+    false,
+    ["deriveKey"]
+  );
+  return crypto.subtle.deriveKey(
+    {
+      name: "PBKDF2",
+      salt: saltBytes,
+      iterations: PBKDF2_ITERATIONS,
+      hash: "SHA-256",
+    },
+    keyMaterial,
+    { name: "AES-GCM", length: 256 },
+    false,
+    ["encrypt", "decrypt"]
+  );
+}
+
+async function wrapDek({ secret, publicId, filePassword }) {
+  const saltBytes = new TextEncoder().encode(publicId || "");
+  const kek = await deriveKek(secret, saltBytes);
+  const iv = crypto.getRandomValues(new Uint8Array(WRAP_NONCE_LEN));
+  const cipherBuf = await crypto.subtle.encrypt(
+    { name: "AES-GCM", iv },
+    kek,
+    new TextEncoder().encode(filePassword)
+  );
+  return { wrappedDek: toBase64(new Uint8Array(cipherBuf)), wrapNonce: toBase64(iv) };
+}
+
+function generateShareLink(fileUuid, daysValid, allowedNumberOfDownloads, shareTokenRequest) {
   const csrfToken = document.querySelector('meta[name="_csrf"]').content;
   const params = new URLSearchParams();
 
@@ -65,6 +118,8 @@ function generateShareLink(fileUuid, daysValid, allowedNumberOfDownloads) {
     ? `/api/file/share/${fileUuid}?${query}`
     : `/api/file/share/${fileUuid}`;
 
+  const body = shareTokenRequest ? JSON.stringify(shareTokenRequest) : null;
+
   return fetch(url, {
     method: "POST",
     credentials: "same-origin",
@@ -72,6 +127,7 @@ function generateShareLink(fileUuid, daysValid, allowedNumberOfDownloads) {
       "Content-Type": "application/json",
       "X-XSRF-TOKEN": csrfToken,
     },
+    body,
   }).then((response) => {
     if (!response.ok) throw new Error("Failed to generate share link");
     return response.text();
@@ -160,7 +216,7 @@ function copyShareLink() {
     });
 }
 
-function createShareLink() {
+async function createShareLink() {
   const fileUuid = document.getElementById("fileUuid").textContent.trim();
   const daysValidInput = document.getElementById("daysValid");
   const noExpiration = document.getElementById("noExpiration");
@@ -208,21 +264,112 @@ function createShareLink() {
       ? null
       : allowedNumberOfDownloads;
 
-  generateShareLink(fileUuid, effectiveDaysValid, effectiveDownloads)
-    .then((shareLink) => {
-      updateShareLink(shareLink); // Update with the token-based link
-    })
-    .catch((error) => {
-      console.error(error);
-      alert("Failed to generate share link.");
-    })
-    .finally(() => {
-      if (spinner) {
-        spinner.classList.add("hidden");
-        spinner.style.display = "none";
+  try {
+    const encryptionVersionEl = document.getElementById("encryptionVersion");
+    const encryptionVersion = Number(encryptionVersionEl?.textContent || "0");
+    let shareTokenRequest = null;
+
+    if (encryptionVersion >= 2) {
+      const passwordInput = document.getElementById("decryptPassword");
+      let filePassword = passwordInput?.value?.trim();
+
+      if (!filePassword) {
+        const stored = getStoredPassword(fileUuid);
+        if (stored) {
+          filePassword = stored;
+          if (passwordInput) passwordInput.value = stored;
+        }
       }
-      generateLinkButton.disabled = false;
-    });
+
+      if (!filePassword) {
+        alert("Enter the file password before generating a share link.");
+        return;
+      }
+
+      const publicId = randomString(PUBLIC_ID_LENGTH);
+      const secret = randomString(SECRET_LENGTH);
+      const token = `${publicId}${secret}`;
+      const { wrappedDek, wrapNonce } = await wrapDek({ secret, publicId, filePassword });
+
+      shareTokenRequest = {
+        token,
+        publicId,
+        wrappedDek,
+        wrapNonce,
+        encryptionVersion,
+        tokenMode: "encrypted-v2-share",
+      };
+    }
+
+    const shareLinkResponse = await generateShareLink(
+      fileUuid,
+      effectiveDaysValid,
+      effectiveDownloads,
+      shareTokenRequest
+    );
+
+    // Backend now returns the short link (publicId). Prefer that, fall back to publicId, then token.
+    let effectiveLink = shareLinkResponse;
+    if (!effectiveLink && shareTokenRequest?.publicId) {
+      effectiveLink = `${window.location.origin}/share/${shareTokenRequest.publicId}`;
+    } else if (!effectiveLink && shareTokenRequest?.token) {
+      effectiveLink = `${window.location.origin}/share/${shareTokenRequest.token}`;
+    }
+
+    updateShareLink(effectiveLink);
+  } catch (error) {
+    console.error(error);
+    alert("Failed to generate share link.");
+  } finally {
+    if (spinner) {
+      spinner.classList.add("hidden");
+      spinner.style.display = "none";
+    }
+    generateLinkButton.disabled = false;
+  }
+}
+
+function showPreparingMessage() {
+  const el = document.getElementById("preparingMessage");
+  if (!el) return;
+  el.classList.remove("hidden");
+}
+
+function renderShareQr(link) {
+  const canvas = document.getElementById("shareQRCode");
+  const qrContainer = document.getElementById("shareQRCodeContainer");
+  const fallbackImg = document.getElementById("shareQRCodeImg");
+  if (!qrContainer) return;
+
+  // Remove previous img if any
+  if (fallbackImg) {
+    fallbackImg.classList.add("hidden");
+    fallbackImg.src = "";
+  }
+
+  if (window.QRCode && canvas) {
+    const ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    canvas.classList.remove("hidden");
+    if (fallbackImg) fallbackImg.classList.add("hidden");
+    QRCode.toCanvas(canvas, link, { width: 150, height: 150 });
+    return;
+  }
+
+  // Fallback to hosted QR image if QRCode library is unavailable
+  if (canvas) {
+    canvas.getContext("2d")?.clearRect(0, 0, canvas.width, canvas.height);
+    canvas.classList.add("hidden");
+  }
+  if (fallbackImg) {
+    fallbackImg.width = 180;
+    fallbackImg.height = 180;
+    fallbackImg.alt = "QR code";
+    fallbackImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(
+      link
+    )}`;
+    fallbackImg.classList.remove("hidden");
+  }
 }
 
 function updateShareLink(link) {
@@ -232,8 +379,10 @@ function updateShareLink(link) {
 
   shareLinkInput.value = link || "";
 
-  const ctx = canvas.getContext("2d");
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  if (canvas) {
+    const ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  }
 
   if (!link) {
     if (qrContainer) qrContainer.classList.add("hidden");
@@ -241,7 +390,7 @@ function updateShareLink(link) {
   }
 
   if (qrContainer) qrContainer.classList.remove("hidden");
-  QRCode.toCanvas(canvas, link, { width: 150, height: 150 });
+  renderShareQr(link);
 }
 
 function toggleExpirationLimit() {
@@ -307,8 +456,10 @@ function positionShareModal() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+  preloadFilePassword();
   initializeModal();
   renderFolderTree();
+  setupDecryptionFlow();
   setupPreviewInit();
   setupDeleteConfirm();
   if (window.hljs && typeof window.hljs.highlightAll === "function") {
@@ -320,12 +471,109 @@ let previewBlob = null;
 let previewFetched = false;
 let previewFetching = false;
 let previewReadyPromise = null;
+let cachedCryptoV2 = null;
+
+function preloadFilePassword() {
+  const fileUuid = document.getElementById("fileUuid")?.textContent?.trim();
+  if (!fileUuid) return;
+  const key = `filePass:${fileUuid}`;
+  let stored = sessionStorage.getItem(key);
+
+  if (!stored) {
+    const serverPassword = document.getElementById("filePasswordFromSession")?.textContent?.trim();
+    if (serverPassword) {
+      sessionStorage.setItem(key, serverPassword);
+      stored = serverPassword;
+    }
+  }
+
+  if (!stored) return;
+  const passwordInput = document.getElementById("decryptPassword");
+  if (passwordInput) {
+    passwordInput.value = stored;
+  }
+}
+
+async function loadCryptoV2() {
+  if (cachedCryptoV2) return cachedCryptoV2;
+  if (!window.crypto || !window.crypto.subtle) {
+    throw new Error("This browser cannot decrypt files");
+  }
+  cachedCryptoV2 = await import("/js/crypto/crypto-v2.js");
+  return cachedCryptoV2;
+}
+
+function setupDecryptionFlow() {
+  const btn = document.getElementById("downloadDecryptedBtn");
+  if (!btn) return;
+  const statusEl = document.getElementById("decryptStatus");
+  const downloadLinkEl = document.getElementById("downloadLink");
+  const fileUuidEl = document.getElementById("fileUuid");
+  const container = document.getElementById("previewContainer");
+  const fileName = container?.dataset.fileName || "download";
+  const downloadUrl = downloadLinkEl?.textContent?.trim();
+  const fileUuid = fileUuidEl?.textContent?.trim();
+
+  if (!downloadUrl) return;
+
+  btn.addEventListener("click", async () => {
+    setStatus(statusEl, "");
+    const password = getStoredPassword(fileUuid);
+    if (!password) {
+      setStatus(statusEl, "Missing file password. Redirecting to password page…", true);
+      if (fileUuid) window.location.href = `/file/password/${fileUuid}`;
+      return;
+    }
+
+    btn.disabled = true;
+    setStatus(statusEl, "Decrypting…", false);
+    try {
+      const cipherBlob = await fetchCipherBlob(downloadUrl);
+      const { data: plainData } = await decryptCipherBlob(cipherBlob, password, {
+        fileId: fileName,
+      });
+      const plainBlob = new Blob([plainData], {
+        type: guessMimeFromName(fileName),
+      });
+      await logDownload();
+      triggerBrowserDownload(plainBlob, fileName);
+      if (fileUuid) {
+        sessionStorage.removeItem(`filePass:${fileUuid}`);
+      }
+      setStatus(statusEl, "Decrypted and ready.");
+    } catch (err) {
+      console.error("Decrypt download failed", err);
+      const existing = statusEl?.textContent?.trim();
+      if (statusEl) {
+        statusEl.textContent = existing ? existing : err?.message || "Download failed.";
+        statusEl.className = "text-sm text-red-600 dark:text-red-400";
+      }
+    } finally {
+      btn.disabled = false;
+    }
+  });
+}
+
+function getStoredPassword(fileUuid) {
+  const key = fileUuid ? `filePass:${fileUuid}` : null;
+  if (!key) return null;
+  const value = sessionStorage.getItem(key);
+  if (!value) return null;
+  const trimmed = value.trim();
+  return trimmed.length ? trimmed : null;
+}
 
 function setupPreviewInit() {
   const container = document.getElementById("previewContainer");
   if (!container) return;
-  const requireManual = container.dataset.requireManual === "true";
+  const encryptionVersion = Number(container.dataset.encryptionVersion || "0");
+  const requireManual =
+    container.dataset.requireManual === "true" || encryptionVersion >= 2;
   const loadBtn = document.getElementById("loadPreviewBtn");
+  const fileUuid = document.getElementById("fileUuid")?.textContent?.trim();
+  const originalSize = Number(container.dataset.originalSize || "0");
+  const maxPreviewBytes = Number(container.dataset.maxPreviewBytes || "0");
+  const overLimit = maxPreviewBytes > 0 && originalSize > maxPreviewBytes;
 
   const startFetch = () => {
     if (!previewReadyPromise) {
@@ -334,9 +582,34 @@ function setupPreviewInit() {
   };
 
   if (requireManual && loadBtn) {
-    loadBtn.addEventListener("click", startFetch, { once: true });
+    const options = encryptionVersion >= 2 ? undefined : { once: true };
+    loadBtn.addEventListener("click", startFetch, options);
+    if (encryptionVersion >= 2 && getStoredPassword(fileUuid)) {
+      // Auto-start when password was already provided
+      startFetch();
+    }
+    if (!overLimit) {
+      // Size is within limit; auto-load and hide button
+      startFetch();
+    }
   } else {
     window.addEventListener("load", () => startFetch(), { once: true });
+  }
+
+  if (encryptionVersion >= 2) {
+    const passwordInput = document.getElementById("decryptPassword");
+    if (passwordInput) {
+      passwordInput.addEventListener("keypress", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          if (loadBtn) {
+            loadBtn.click();
+          } else {
+            startFetch();
+          }
+        }
+      });
+    }
   }
 }
 
@@ -354,19 +627,64 @@ async function initPreview() {
   const isCsv = container.dataset.previewCsv === "true";
   const previewType = container.dataset.previewType || "";
   const fileName = container.dataset.fileName || "download";
+  const fileUuid = document.getElementById("fileUuid")?.textContent?.trim();
   const requireManual = container.dataset.requireManual === "true";
+  const encryptionVersion = Number(container.dataset.encryptionVersion || "0");
+  const originalSize = Number(container.dataset.originalSize || "0");
+  const maxPreviewBytes = Number(container.dataset.maxPreviewBytes || "0");
+  const hasPassword = container.dataset.hasPassword === "true";
+  const loadBtn = document.getElementById("loadPreviewBtn");
+
+  // Autofill password if it was stored from the file-password gate page
+  const storedPassword = fileUuid ? getStoredPassword(fileUuid) : null;
 
   if (previewFetching || previewFetched) return;
   previewFetching = true;
+
+  const abortPreview = (message, isError = true) => {
+    if (status) {
+      status.textContent = message;
+      status.className = isError
+        ? "text-sm text-red-600 dark:text-red-400"
+        : "text-sm text-gray-600 dark:text-gray-300";
+    }
+    previewFetching = false;
+    previewReadyPromise = null;
+    throw new Error(message || "Preview aborted");
+  };
 
   try {
     if (requireManual) {
       previewUrl = `${previewUrl}?manual=true`;
     }
 
+    if (encryptionVersion >= 2) {
+      if (!storedPassword) {
+        return abortPreview("Password missing. Redirecting to password page.");
+      }
+      if (maxPreviewBytes && originalSize && originalSize > maxPreviewBytes) {
+        const mb = container.dataset.maxPreviewSize || Math.round(maxPreviewBytes / (1024 * 1024));
+        return abortPreview(`Preview disabled: exceeds ${mb} MB limit.`);
+      }
+    }
+
     const resp = await fetch(previewUrl, { credentials: "same-origin" });
     if (!resp.ok) throw new Error("Preview unavailable");
-    const blob = await resp.blob();
+    let blob = await resp.blob();
+
+    if (encryptionVersion >= 2) {
+      const { data: plainBytes, header } = await decryptCipherBlob(
+        blob,
+        storedPassword,
+        { fileId: fileName, maxBytes: maxPreviewBytes || 0 }
+      );
+      if (maxPreviewBytes && header && header.plaintextSize > maxPreviewBytes) {
+        const mb = container.dataset.maxPreviewSize || Math.round(maxPreviewBytes / (1024 * 1024));
+        return abortPreview(`Preview disabled: exceeds ${mb} MB limit.`);
+      }
+      blob = new Blob([plainBytes], { type: guessMimeFromName(fileName) });
+    }
+
     previewBlob = blob;
     previewFetched = true;
 
@@ -394,6 +712,9 @@ async function initPreview() {
     }
 
     attachDownloadOverride(fileName);
+
+    // Hide the load button after successful render
+    if (loadBtn) loadBtn.classList.add("hidden");
   } catch (e) {
     if (status) {
       status.textContent = "Preview unavailable.";
@@ -401,6 +722,111 @@ async function initPreview() {
     }
   }
   previewFetching = false;
+}
+
+function setStatus(el, message, isError = false) {
+  if (!el) return;
+  const base = "mt-2 rounded-lg border px-3 py-2 text-sm transition-colors";
+  const ok = "border-slate-300 bg-slate-100 text-slate-800 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100";
+  const err = "border-red-200 bg-red-50 text-red-700 dark:border-red-800 dark:bg-red-950 dark:text-red-100";
+  const hasMessage = Boolean(message);
+
+  el.textContent = message || "";
+  el.className = `${base} ${isError ? err : ok}`;
+  el.classList.toggle("hidden", !hasMessage);
+}
+
+async function fetchCipherBlob(url) {
+  const resp = await fetch(url, { credentials: "same-origin" });
+  const ctype = resp.headers.get("content-type") || "";
+  if (ctype.includes("text/html")) {
+    throw new Error("Not authorized for file bytes. Please re-enter password.");
+  }
+  if (!resp.ok) throw new Error("Download failed");
+  return resp.blob();
+}
+
+async function decryptCipherBlob(blob, password, { fileId, maxBytes } = {}) {
+  const crypto = await loadCryptoV2();
+  const format = await crypto.detectFormat(blob);
+  if (format.version !== 2) throw new Error("Unsupported encryption format");
+  const { header, stream } = await crypto.decryptStreamOrChunks(blob, password, {
+    fileId,
+  });
+
+  const chunks = [];
+  let total = 0;
+  try {
+    for await (const part of stream) {
+      total += part.data.length;
+      if (maxBytes && total > maxBytes) {
+        throw new Error("Preview size limit exceeded");
+      }
+      chunks.push(part.data);
+    }
+  } catch (err) {
+    if (err?.name === "OperationError" || err instanceof DOMException) {
+      throw new Error("Incorrect password or corrupted file");
+    }
+    throw err;
+  }
+  const merged = mergeChunks(chunks, header?.plaintextSize);
+  return { data: merged, header };
+}
+
+function mergeChunks(chunks, expectedSize) {
+  const totalLength = chunks.reduce((sum, chunk) => sum + chunk.length, 0);
+  if (expectedSize && totalLength < expectedSize) {
+    throw new Error("Decryption produced incomplete data");
+  }
+  const total = expectedSize && expectedSize > 0 ? expectedSize : totalLength;
+  const out = new Uint8Array(total);
+  let offset = 0;
+  chunks.forEach((chunk) => {
+    out.set(chunk, offset);
+    offset += chunk.length;
+  });
+  return out;
+}
+
+function guessMimeFromName(name) {
+  const ext = extractExtension(name);
+  switch (ext) {
+    case "png":
+      return "image/png";
+    case "jpg":
+    case "jpeg":
+      return "image/jpeg";
+    case "webp":
+      return "image/webp";
+    case "gif":
+      return "image/gif";
+    case "pdf":
+      return "application/pdf";
+    case "json":
+      return "application/json";
+    case "csv":
+      return "text/csv";
+    case "tsv":
+      return "text/tab-separated-values";
+    case "txt":
+    case "md":
+    case "log":
+      return "text/plain";
+    default:
+      return "application/octet-stream";
+  }
+}
+
+function triggerBrowserDownload(blob, fileName) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = fileName || "download";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
 }
 
 function extractExtension(name) {

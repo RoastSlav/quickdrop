@@ -31,19 +31,31 @@ public class ShareViewController {
 
     @GetMapping("/{token}")
     public String viewSharedFile(@PathVariable String token, Model model) {
+        logger.info("Share view requested for token={}", token);
         Optional<ShareTokenEntity> tokenEntity = fileService.getShareTokenEntityByToken(token);
 
-        if (tokenEntity.isEmpty() || !validateShareToken(tokenEntity.get())) {
+        if (tokenEntity.isEmpty() || !validateShareToken(tokenEntity.get()) || !fileService.tokenSecretMatches(token, tokenEntity.get())) {
+            logger.warn("Share view invalid: token={} entityPresent={} validated={} secretMatch={}", token, tokenEntity.isPresent(), tokenEntity.isPresent() && validateShareToken(tokenEntity.get()), tokenEntity.isPresent() && fileService.tokenSecretMatches(token, tokenEntity.get()));
             return "invalid-share-link";
         }
 
-        FileEntity file = tokenEntity.get().file;
+        ShareTokenEntity shareTokenEntity = tokenEntity.get();
+        FileEntity file = shareTokenEntity.file;
         if (file == null) {
             return "redirect:/file/list";
         }
 
         model.addAttribute("file", new FileEntityView(file, analyticsService.getTotalDownloadsByFile(file.uuid)));
-        model.addAttribute("downloadLink", "/api/file/download/" + token);
+        String downloadToken = shareTokenEntity.publicId != null ? shareTokenEntity.publicId : token;
+
+        model.addAttribute("downloadLink", "/api/file/download/" + downloadToken);
+        model.addAttribute("secretToken", shareTokenEntity.shareToken);
+        model.addAttribute("encryptionVersion", file.encryptionVersion);
+        model.addAttribute("wrappedDek", shareTokenEntity.wrappedDek);
+        model.addAttribute("wrapNonce", shareTokenEntity.wrapNonce);
+        model.addAttribute("tokenMode", shareTokenEntity.tokenMode != null ? shareTokenEntity.tokenMode : "legacy");
+        model.addAttribute("publicId", shareTokenEntity.publicId);
+        model.addAttribute("fileUuid", file.uuid);
 
         logger.info("Accessed shared file view for file UUID: {} via short link", file.uuid);
         return "file-share-view";

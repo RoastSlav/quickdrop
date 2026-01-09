@@ -264,7 +264,8 @@
         class="mt-4 text-center text-gray-600 dark:text-gray-300"
         th:if="${isEncryptionEnabled and uploadPasswordEnabled}"
       >
-        All password-protected files are also encrypted for additional security.
+        File encryption happens in your browser using modern authenticated
+        encryption. The server stores only ciphertext.
       </div>
 
       <div
@@ -279,6 +280,7 @@
       /*<![CDATA[*/
       window.uploadPasswordEnabled = [[${uploadPasswordEnabled}]];
       window.isMetadataStrippingEnabled = [[${isMetadataStrippingEnabled}]];
+      window.isEncryptionEnabled = [[${isEncryptionEnabled}]];
       /*]]>*/
     </script>
     <script type="module" src="/js/upload.js"></script>

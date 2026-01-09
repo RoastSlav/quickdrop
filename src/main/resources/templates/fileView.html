@@ -13,11 +13,6 @@
     />
     <link href="/images/favicon.png" rel="icon" type="image/png" />
     <script src="/js/tailwindTheme.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.4.4/build/qrcode.min.js"></script>
-    <script
-      defer
-      src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"
-    ></script>
   </head>
   <body class="bg-gray-50 text-gray-800 dark:bg-slate-900 dark:text-gray-100">
     <nav class="bg-gray-800 dark:bg-gray-900 text-gray-100">
@@ -73,6 +68,7 @@
               >
             </div>
             <button
+              aria-label="Toggle theme"
               class="nav-menu-item theme-toggle rounded-lg p-2 transition-colors hover:bg-sky-600 dark:hover:bg-sky-500 active:scale-95 focus:outline-none focus:ring-2 focus:ring-sky-500"
               type="button"
             >
@@ -91,6 +87,9 @@
       <span hidden id="fileUuid" th:text="${file.uuid}"></span>
       <span hidden id="downloadLink" th:text="${downloadLink}"></span>
       <span hidden id="previewUrl" th:text="${previewUrl}"></span>
+      <span hidden id="encryptionVersion" th:text="${file.encryptionVersion}"></span>
+      <span hidden id="originalSize" th:text="${file.originalSize}"></span>
+      <span hidden id="filePasswordFromSession" th:if="${filePassword}" th:text="${filePassword}"></span>
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 items-start">
         <section class="sm:col-span-2">
           <div
@@ -201,71 +200,88 @@
             >
               Your file is being prepared for download. Please wait...
             </div>
-            <div class="mt-4 flex flex-wrap justify-center gap-4 items-center">
-              <a
-                class="rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium px-4 py-2 transition-colors active:scale-95"
-                id="downloadButton"
-                th:href="@{/file/download/{uuid}(uuid=${file.uuid})}"
-                th:onclick="${file.passwordHash != null} ? 'showPreparingMessage()' : ''"
-                >Download</a
-              >
-              <form
-                method="post"
-                th:action="@{/file/extend/{uuid}(uuid=${file.uuid})}"
-                th:if="${file.keepIndefinitely == false}"
-              >
-                <input
-                  th:name="${_csrf.parameterName}"
-                  th:value="${_csrf.token}"
-                  type="hidden"
-                />
+            <div class="mt-4 flex flex-col gap-2">
+              <div
+                th:if="${file.encryptionVersion != null and file.encryptionVersion >= 2}"
+                id="decryptStatus"
+                class="hidden w-full rounded-lg border border-slate-300 bg-slate-100 px-3 py-2 text-sm text-slate-800 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+              ></div>
+              <div class="flex flex-wrap items-center gap-3">
                 <button
+                  th:if="${file.encryptionVersion != null and file.encryptionVersion >= 2}"
+                  type="button"
+                  id="downloadDecryptedBtn"
                   class="rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium px-4 py-2 transition-colors active:scale-95"
-                  type="submit"
                 >
-                  Renew File Lifetime
+                  Download
                 </button>
-              </form>
-              <form
-                class="flex gap-2 items-center"
-                method="post"
-                th:action="@{/file/delete/{uuid}(uuid=${file.uuid})}"
-                th:if="${file.passwordHash != null}"
-              >
-                <input
-                  th:name="${_csrf.parameterName}"
-                  th:value="${_csrf.token}"
-                  type="hidden"
-                />
-                <button
-                  class="rounded-lg bg-red-600 hover:bg-red-700 text-white font-medium px-4 py-2 transition-colors active:scale-95"
-                  id="deleteStartBtn"
-                  type="button"
+                <a
+                  class="rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium px-4 py-2 transition-colors active:scale-95"
+                  id="downloadButton"
+                  th:if="${file.encryptionVersion == null or file.encryptionVersion < 2}"
+                  th:href="@{/file/download/{uuid}(uuid=${file.uuid})}"
+                  th:onclick="${file.passwordHash != null} ? 'showPreparingMessage()' : ''"
+                  >Download</a
                 >
-                  Delete File
-                </button>
-                <button
-                  class="hidden rounded-lg bg-red-600 hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-500 text-white font-medium px-4 py-2 transition-all active:scale-95 focus:outline-none focus:ring-2 focus:ring-red-300 dark:focus:ring-red-700 shadow-sm"
-                  id="deleteConfirmBtn"
-                  type="submit"
+                <form
+                  method="post"
+                  th:action="@{/file/extend/{uuid}(uuid=${file.uuid})}"
+                  th:if="${file.keepIndefinitely == false}"
+                  class="flex items-center"
                 >
-                  Confirm
-                </button>
-                <button
-                  class="hidden rounded-lg border border-slate-400/70 bg-slate-200 hover:bg-slate-300 dark:border-slate-500 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-900 dark:text-slate-100 font-medium px-4 py-2 transition-all active:scale-95 focus:outline-none focus:ring-2 focus:ring-slate-400 dark:focus:ring-slate-600"
-                  id="deleteCancelBtn"
-                  type="button"
+                  <input
+                    th:name="${_csrf.parameterName}"
+                    th:value="${_csrf.token}"
+                    type="hidden"
+                  />
+                  <button
+                    class="rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium px-4 py-2 transition-colors active:scale-95"
+                    type="submit"
+                  >
+                    Renew File Lifetime
+                  </button>
+                </form>
+                <form
+                  class="flex gap-2 items-center"
+                  method="post"
+                  th:action="@{/file/delete/{uuid}(uuid=${file.uuid})}"
+                  th:if="${file.passwordHash != null}"
                 >
-                  Cancel
-                </button>
-              </form>
+                  <input
+                    th:name="${_csrf.parameterName}"
+                    th:value="${_csrf.token}"
+                    type="hidden"
+                  />
+                  <button
+                    class="rounded-lg bg-red-600 hover:bg-red-700 text-white font-medium px-4 py-2 transition-colors active:scale-95"
+                    id="deleteStartBtn"
+                    type="button"
+                  >
+                    Delete File
+                  </button>
+                  <button
+                    class="hidden rounded-lg bg-red-600 hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-500 text-white font-medium px-4 py-2 transition-all active:scale-95 focus:outline-none focus:ring-2 focus:ring-red-300 dark:focus:ring-red-700 shadow-sm"
+                    id="deleteConfirmBtn"
+                    type="submit"
+                  >
+                    Confirm
+                  </button>
+                  <button
+                    class="hidden rounded-lg border border-slate-400/70 bg-slate-200 hover:bg-slate-300 dark:border-slate-500 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-900 dark:text-slate-100 font-medium px-4 py-2 transition-all active:scale-95 focus:outline-none focus:ring-2 focus:ring-slate-400 dark:focus:ring-slate-600"
+                    id="deleteCancelBtn"
+                    type="button"
+                  >
+                    Cancel
+                  </button>
+                </form>
+              </div>
             </div>
 
             <div
               class="rounded-xl border border-slate-200 dark:border-slate-700 p-3 bg-slate-50 dark:bg-slate-900"
               id="previewContainer"
               th:if="${isPreviewEnabled and (isPreviewableImage or isPreviewableText or isPreviewablePdf)}"
-              th:attr="data-preview-url=${previewUrl},data-preview-image=${isPreviewableImage},data-preview-text=${isPreviewableText},data-preview-pdf=${isPreviewablePdf},data-preview-json=${isPreviewableJson},data-preview-csv=${isPreviewableCsv},data-preview-type=${previewType},data-file-name=${file.name},data-require-manual=${requireManualPreview},data-max-preview-mb=${maxPreviewSizeMB}"
+              th:attr="data-preview-url=${previewUrl},data-preview-image=${isPreviewableImage},data-preview-text=${isPreviewableText},data-preview-pdf=${isPreviewablePdf},data-preview-json=${isPreviewableJson},data-preview-csv=${isPreviewableCsv},data-preview-type=${previewType},data-file-name=${file.name},data-file-size=${file.size},data-original-size=${file.originalSize},data-require-manual=${requireManualPreview},data-max-preview-size=${maxPreviewSizeMB},data-max-preview-bytes=${maxPreviewSizeBytes},data-has-password=${file.passwordHash != null},data-encryption-version=${file.encryptionVersion}"
             >
               <div
                 class="flex items-center justify-between mb-2 text-sm text-gray-600 dark:text-gray-400"
@@ -275,7 +291,7 @@
                   class="text-xs px-2 py-1 rounded bg-sky-500 text-white hover:bg-sky-600 disabled:opacity-50"
                   type="button"
                   id="loadPreviewBtn"
-                  th:if="${requireManualPreview}"
+                  th:if="${requireManualPreview or (file.encryptionVersion != null and file.encryptionVersion >= 2)}"
                 >
                   Load preview (<span th:text="${maxPreviewSizeMB}">5</span> MB
                   limit)
@@ -399,18 +415,32 @@
               </button>
             </div>
 
-            <div class="text-center hidden" id="shareQRCodeContainer">
-              <canvas
-                class="mx-auto"
-                height="150"
-                id="shareQRCode"
-                width="150"
-              ></canvas>
+            <div class="hidden w-full" id="shareQRCodeContainer">
+              <div class="flex flex-col items-center gap-2 w-full">
+                <div class="text-sm font-medium text-slate-600 dark:text-slate-300">Share QR</div>
+                <div class="p-3 bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 w-fit">
+                  <canvas
+                    class="block"
+                    height="180"
+                    id="shareQRCode"
+                    width="180"
+                  ></canvas>
+                  <img
+                    id="shareQRCodeImg"
+                    class="hidden"
+                    width="180"
+                    height="180"
+                    alt="QR code"
+                    src=""
+                  />
+                </div>
+              </div>
             </div>
           </div>
         </aside>
       </div>
     </main>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <script src="/js/fileView.js"></script>
   </body>
 </html>

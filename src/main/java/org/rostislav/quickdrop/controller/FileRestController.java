@@ -4,6 +4,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.rostislav.quickdrop.entity.FileEntity;
 import org.rostislav.quickdrop.entity.ShareTokenEntity;
 import org.rostislav.quickdrop.model.FileUploadRequest;
+import org.rostislav.quickdrop.model.ShareTokenRequest;
 import org.rostislav.quickdrop.service.ApplicationSettingsService;
 import org.rostislav.quickdrop.service.AsyncFileMergeService;
 import org.rostislav.quickdrop.service.FileService;
@@ -54,6 +55,8 @@ public class FileRestController {
             @RequestParam(value = "folderUpload", defaultValue = "false") Boolean folderUpload,
             @RequestParam(value = "folderName", required = false) String folderName,
             @RequestParam(value = "folderManifest", required = false) String folderManifest,
+            @RequestParam(value = "encryptionVersion", required = false) Integer encryptionVersion,
+            @RequestParam(value = "plaintextSize", required = false) Long plaintextSize,
             HttpServletRequest request) {
 
         if (chunkNumber == 0) {
@@ -80,7 +83,7 @@ public class FileRestController {
 
             String effectivePassword = uploadPasswordEnabled ? password : null;
 
-            FileUploadRequest fileUploadRequest = new FileUploadRequest(description, keepIndefinitelyValue, effectivePassword, hiddenValue, fileName, totalChunks, fileSize, uploaderIp, uploaderUserAgent, Boolean.TRUE.equals(folderUpload), folderName, folderManifest);
+            FileUploadRequest fileUploadRequest = new FileUploadRequest(description, keepIndefinitelyValue, effectivePassword, hiddenValue, fileName, totalChunks, fileSize, uploaderIp, uploaderUserAgent, Boolean.TRUE.equals(folderUpload), folderName, folderManifest, encryptionVersion, plaintextSize);
             FileEntity fileEntity = asyncFileMergeService.submitChunk(fileUploadRequest, file, chunkNumber);
             return ResponseEntity.ok(fileEntity);
         } catch (IOException e) {
@@ -94,7 +97,9 @@ public class FileRestController {
     public ResponseEntity<String> generateShareableLink(@PathVariable String uuid,
                                                         @RequestParam(value = "expirationDate", required = false) LocalDate expirationDate,
                                                         @RequestParam(value = "nOfDownloads", required = false) Integer numberOfDownloads,
+                                                        @RequestBody(required = false) ShareTokenRequest shareTokenRequest,
                                                         HttpServletRequest request) {
+        logger.info("Share link requested: uuid={}, exp={}, downloads={} mode={}", uuid, expirationDate, numberOfDownloads, (shareTokenRequest != null ? shareTokenRequest.tokenMode : "none"));
         FileEntity fileEntity = fileService.getFile(uuid);
         if (fileEntity == null) {
             return ResponseEntity.badRequest().body("File not found.");
@@ -105,6 +110,17 @@ public class FileRestController {
         }
 
         ShareTokenEntity token;
+        boolean isEncryptedV2 = fileEntity.encryptionVersion != null && fileEntity.encryptionVersion >= 2;
+
+        if (isEncryptedV2) {
+            if (shareTokenRequest == null || shareTokenRequest.publicId == null || shareTokenRequest.wrappedDek == null || shareTokenRequest.wrapNonce == null || shareTokenRequest.token == null) {
+                logger.warn("Encrypted share link missing data: request={}", shareTokenRequest);
+                return ResponseEntity.badRequest().body("Missing share token data for encrypted file.");
+            }
+            token = fileService.generateShareTokenForEncryptedFile(uuid, expirationDate, numberOfDownloads, shareTokenRequest);
+            return ok(FileUtils.getShareLink(request, token.publicId));
+        }
+
         if (fileEntity.passwordHash != null && !fileEntity.passwordHash.isEmpty()) {
             String sessionToken = (String) request.getSession().getAttribute("file-session-token");
             if (sessionToken == null || !sessionService.validateFileSessionToken(sessionToken, uuid)) {
@@ -127,6 +143,9 @@ public class FileRestController {
             }
 
             ShareTokenEntity tokenEntity = shareTokenEntity.get();
+            if (!fileService.tokenSecretMatches(token, tokenEntity)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            }
             FileEntity fileEntity = tokenEntity.file;
             StreamingResponseBody responseBody = fileService.streamFileByShareToken(tokenEntity, request);
 

@@ -4,9 +4,9 @@
 
 # QuickDrop
 
-QuickDrop is a self-hosted file sharing app for fast, anonymous uploads with chunked transfer, optional encryption,
-per-file passwords, share tokens with expiry/download limits, and an admin console to govern storage limits,
-lifetime policies, cleanup schedules, notifications, and privacy settings.
+QuickDrop is a self-hosted file sharing app for fast, anonymous uploads with chunked transfer, optional client-side
+encryption, per-file passwords, share tokens with expiry/download limits, and an admin console to govern storage
+limits, lifetime policies, cleanup schedules, notifications, and privacy settings.
 
 <img width="1296" height="998" alt="image" src="https://github.com/user-attachments/assets/724267eb-7f43-4351-9167-6703ce6b5c1c" />
 
@@ -19,7 +19,8 @@ lifetime policies, cleanup schedules, notifications, and privacy settings.
 - Configurable max file size, storage paths (files/logs), and max lifetime (default 30d) with renewals.
 - “Keep indefinitely” and “Hide from list” controls (with admin-governed rules; can disable “Keep indefinitely”
   globally).
-- Optional **encryption at rest** for stored files; per-file passwords supported.
+- Optional **client-side encryption (AES-GCM)** for passworded files; server stores only ciphertext. Legacy AES-CBC
+  downloads remain compatible.
 
 ## File previews
 
@@ -31,7 +32,7 @@ lifetime policies, cleanup schedules, notifications, and privacy settings.
 ## Sharing & access
 
 - Direct links plus **token-based share links** with **expiration dates** and **download limits**; QR code generation
-  for quick sharing.
+  for quick sharing. Encrypted files use wrapped-key share tokens so the server never needs a decrypted copy.
 - Improved share token validation/uniqueness; download endpoint uses token directly.
 - Share tokens are automatically cleaned up when deleting files.
 - Hidden files (link-only) and option to disable the public file list entirely, also option to disable the feature.

@@ -113,6 +113,61 @@ function updateBatchAvailability() {
   toggleBatchFields();
 }
 
+function setLogoLabel(text) {
+  const label = document.getElementById("appLogoLabelText");
+  if (label) {
+    label.textContent = text || "Browse";
+  }
+}
+
+function showLogoStatus(message, toneClass) {
+  const status = document.getElementById("logoStatus");
+  if (!status) return;
+  status.textContent = message || "";
+  status.classList.remove(
+    "text-sky-600",
+    "dark:text-sky-400",
+    "text-amber-600",
+    "dark:text-amber-400",
+    "hidden"
+  );
+  if (toneClass) {
+    status.classList.add(toneClass);
+  } else {
+    status.classList.add("text-sky-600", "dark:text-sky-400");
+  }
+}
+
+function hideLogoStatus() {
+  const status = document.getElementById("logoStatus");
+  if (status) {
+    status.classList.add("hidden");
+  }
+}
+
+function resetLogoSelection() {
+  const fileInput = document.getElementById("appLogo");
+  const clearInput = document.getElementById("clearLogo");
+  if (fileInput) {
+    fileInput.value = "";
+  }
+  if (clearInput) {
+    clearInput.value = "true";
+  }
+  setLogoLabel("Browse");
+  showLogoStatus("Default logo will be restored on save.");
+}
+
+function markLogoAsReplaced(event) {
+  const clearInput = document.getElementById("clearLogo");
+  if (clearInput) {
+    clearInput.value = "false";
+  }
+  const fileName = event?.target?.files?.[0]?.name || "Browse";
+  setLogoLabel(fileName);
+  hideLogoStatus();
+}
+
 function getCsrfToken() {
   const csrfInput = document.querySelector('input[name="_csrf"]');
   return csrfInput ? csrfInput.value : null;
@@ -409,6 +464,17 @@ document.addEventListener("DOMContentLoaded", function () {
   document
     .getElementById("simplifiedShareLinks")
     ?.addEventListener("change", syncShareLinkSettings);
+
+  document
+    .getElementById("clearLogoButton")
+    ?.addEventListener("click", (event) => {
+      event.preventDefault();
+      resetLogoSelection();
+    });
+
+  document
+    .getElementById("appLogo")
+    ?.addEventListener("change", markLogoAsReplaced);
 
   const appPassword = document.getElementById("appPassword");
   if (appPassword) {

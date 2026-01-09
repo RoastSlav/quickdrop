@@ -37,6 +37,8 @@ public class ApplicationSettingsViewModel {
     private Integer notificationBatchMinutes;
     private boolean simplifiedShareLinks;
     private boolean shareLinksDisabled;
+    private String appName;
+    private String logoFileName;
 
     public ApplicationSettingsViewModel() {
     }
@@ -74,6 +76,8 @@ public class ApplicationSettingsViewModel {
         this.notificationBatchMinutes = settings.getNotificationBatchMinutes();
         this.simplifiedShareLinks = settings.isSimplifiedShareLinks();
         this.shareLinksDisabled = settings.isShareLinksDisabled();
+        this.appName = settings.getAppName();
+        this.logoFileName = settings.getLogoFileName();
     }
 
     public Long getId() {
@@ -338,5 +342,21 @@ public class ApplicationSettingsViewModel {
 
     public void setShareLinksDisabled(boolean shareLinksDisabled) {
         this.shareLinksDisabled = shareLinksDisabled;
+    }
+
+    public String getAppName() {
+        return appName;
+    }
+
+    public void setAppName(String appName) {
+        this.appName = appName;
+    }
+
+    public String getLogoFileName() {
+        return logoFileName;
+    }
+
+    public void setLogoFileName(String logoFileName) {
+        this.logoFileName = logoFileName;
     }
 }

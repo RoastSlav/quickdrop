@@ -7,5 +7,7 @@ document.addEventListener("DOMContentLoaded", () => {
     metadataEnabled:
       typeof window !== "undefined" &&
       window.isMetadataStrippingEnabled === true,
+    encryptionEnabled:
+      typeof window !== "undefined" && window.isEncryptionEnabled === true,
   });
 });

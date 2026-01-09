@@ -15,6 +15,7 @@ import org.springframework.security.crypto.bcrypt.BCrypt;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.UUID;
 
@@ -100,7 +101,10 @@ public class AdminViewController {
     }
 
     @PostMapping("/save")
-    public Object saveSettings(ApplicationSettingsViewModel settings, HttpServletRequest request) {
+    public Object saveSettings(ApplicationSettingsViewModel settings,
+                               @RequestParam(value = "appLogo", required = false) MultipartFile appLogo,
+                               @RequestParam(value = "clearLogo", required = false, defaultValue = "false") boolean clearLogo,
+                               HttpServletRequest request) {
         settings.setMaxFileSize(megabytesToBytes(settings.getMaxFileSize()));
         if (request.getParameter("maxPreviewSizeBytes") != null) {
             try {
@@ -120,7 +124,7 @@ public class AdminViewController {
             return "redirect:settings?error=invalidCron";
         }
 
-        applicationSettingsService.updateApplicationSettings(settings, settings.getAppPassword());
+        applicationSettingsService.updateApplicationSettings(settings, settings.getAppPassword(), appLogo, clearLogo);
         if ("XMLHttpRequest".equalsIgnoreCase(request.getHeader("X-Requested-With"))) {
             return ResponseEntity.ok("Settings saved");
         }

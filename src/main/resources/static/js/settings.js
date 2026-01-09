@@ -105,6 +105,11 @@ function buildCsrfHeaders(csrf) {
   return headers;
 }
 
+function hasStoredAppPassword() {
+  const form = document.getElementById("settingsForm");
+  return form?.dataset?.appPasswordSet === "true";
+}
+
 function parsePositiveNumber(value) {
   const parsed = Number(value);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
@@ -146,6 +151,8 @@ function validateSettingsForm() {
 
   const batchEnabled = document.getElementById("notificationBatchEnabled");
   const batchMinutes = document.getElementById("notificationBatchMinutes");
+
+  const storedAppPassword = hasStoredAppPassword();
 
   // reset
   [
@@ -215,12 +222,19 @@ function validateSettingsForm() {
     firstInvalid = firstInvalid || defaultHomePage;
   }
 
-  if (appPasswordEnabled?.checked && appPassword && !appPassword.value.trim()) {
+  if (
+    appPasswordEnabled?.checked &&
+    appPassword &&
+    !appPassword.value.trim() &&
+    !storedAppPassword
+  ) {
     markValidity(
       appPassword,
       "App password is required when protection is enabled."
     );
     firstInvalid = firstInvalid || appPassword;
+  } else if (appPassword) {
+    markValidity(appPassword, "");
   }
 
   if (discordEnabled?.checked) {
@@ -366,6 +380,11 @@ document.addEventListener("DOMContentLoaded", function () {
   document
     .getElementById("disablePreview")
     ?.addEventListener("change", togglePreviewSizeField);
+
+  const appPassword = document.getElementById("appPassword");
+  if (appPassword) {
+    appPassword.addEventListener("input", () => markValidity(appPassword, ""));
+  }
 
   document
     .getElementById("testDiscord")

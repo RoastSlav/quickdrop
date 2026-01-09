@@ -95,10 +95,21 @@
           Accepted file types: any • Max size
           <span class="maxFileSize" th:text="${maxFileSize}">1GB</span>
         </p>
-        <p class="text-gray-600 dark:text-gray-300">
+        <p
+          class="text-gray-600 dark:text-gray-300"
+          th:if="${!isKeepIndefinitelyAdminOnly}"
+        >
           Files are deleted after
           <span class="maxFileLifeTime" th:text="${maxFileLifeTime}">30</span>
           days unless “Keep indefinitely” is selected.
+        </p>
+        <p
+          class="text-gray-600 dark:text-gray-300"
+          th:if="${isKeepIndefinitelyAdminOnly}"
+        >
+          Files are deleted after
+          <span class="maxFileLifeTime" th:text="${maxFileLifeTime}">30</span>
+          days.
         </p>
       </header>
       <div class="grid grid-cols-12 gap-6">

@@ -144,6 +144,15 @@ public class AdminViewController {
     @PostMapping("/logout")
     public String logout(HttpServletRequest request) {
         sessionService.invalidateAdminSession(request);
+        try {
+            request.logout();
+        } catch (Exception ignored) {
+            // Best-effort logout of Spring Security session
+        }
+        var session = request.getSession(false);
+        if (session != null) {
+            session.invalidate();
+        }
         return "redirect:/";
     }
 

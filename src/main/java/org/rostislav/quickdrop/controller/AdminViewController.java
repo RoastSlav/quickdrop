@@ -52,6 +52,7 @@ public class AdminViewController {
         model.addAttribute("filesPage", filesPage);
         model.addAttribute("pageSize", pageSize);
         model.addAttribute("query", query == null ? "" : query);
+        model.addAttribute("isAdminDashboardPage", true);
 
         AnalyticsDataView analytics = analyticsService.getAnalytics();
         model.addAttribute("analytics", analytics);
@@ -138,6 +139,12 @@ public class AdminViewController {
         } else {
             return "redirect:password";
         }
+    }
+
+    @PostMapping("/logout")
+    public String logout(HttpServletRequest request) {
+        sessionService.invalidateAdminSession(request);
+        return "redirect:/";
     }
 
     @GetMapping("/password")

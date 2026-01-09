@@ -2,22 +2,29 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>Welcome to QuickDrop</title>
+    <title th:text="'Welcome to ' + ${appName}">Welcome to QuickDrop</title>
     <meta content="width=device-width, initial-scale=1" name="viewport" />
     <link href="/css/tailwind.css" rel="stylesheet" />
     <link href="/css/custom.css" rel="stylesheet" />
-    <link href="/images/favicon.png" rel="icon" type="image/png" />
+    <link
+      th:href="${appLogoPath}"
+      href="/images/favicon.png"
+      rel="icon"
+      type="image/png"
+    />
     <script src="/js/tailwindTheme.js"></script>
   </head>
   <body class="bg-gray-50 text-gray-800 dark:bg-slate-900 dark:text-gray-100">
     <main class="max-w-7xl mx-auto px-4 py-6 md:py-8">
       <header class="text-center mb-8 space-y-1">
         <h1 class="text-3xl md:text-4xl font-semibold tracking-tight">
-          Welcome to QuickDrop
+          <span th:text="'Welcome to ' + ${appName}">Welcome to QuickDrop</span>
         </h1>
         <p class="text-gray-600 dark:text-gray-300">
-          Thank you for setting up QuickDrop! Please set an admin password for
-          the dashboard.
+          <span th:text="'Thank you for setting up ' + ${appName} + '!'">
+            Thank you for setting up QuickDrop!
+          </span>
+          Please set an admin password for the dashboard.
         </p>
       </header>
       <div class="grid grid-cols-12 gap-4">

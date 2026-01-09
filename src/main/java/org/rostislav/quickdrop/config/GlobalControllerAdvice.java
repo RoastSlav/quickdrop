@@ -34,6 +34,8 @@ public class GlobalControllerAdvice {
         model.addAttribute("isMetadataStrippingEnabled", applicationSettingsService.isMetadataStrippingEnabled());
         model.addAttribute("isSimplifiedShareLinksEnabled", applicationSettingsService.isSimplifiedShareLinksEnabled());
         model.addAttribute("isShareLinksDisabled", applicationSettingsService.isShareLinksDisabled());
+        model.addAttribute("appName", applicationSettingsService.getAppName());
+        model.addAttribute("appLogoPath", applicationSettingsService.getLogoPath());
         model.addAttribute("hasAdminSession", hasAdminSession);
         model.addAttribute("hasAppSession", hasAppSession);
         model.addAttribute("isKeepIndefinitelyAdminOnly", keepIndefinitelyAdminOnly);

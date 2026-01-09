@@ -2,21 +2,44 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>Shared File View</title>
+    <title th:text="${appName} + ' - Shared File'">Shared File View</title>
     <meta content="width=device-width, initial-scale=1" name="viewport" />
     <link href="/css/tailwind.css" rel="stylesheet" />
     <link href="/css/custom.css" rel="stylesheet" />
-    <link href="/images/favicon.png" rel="icon" type="image/png" />
+    <link
+      th:href="${appLogoPath}"
+      href="/images/favicon.png"
+      rel="icon"
+      type="image/png"
+    />
     <script src="/js/tailwindTheme.js"></script>
   </head>
   <body class="bg-gray-50 text-gray-800 dark:bg-slate-900 dark:text-gray-100">
     <nav class="bg-gray-800 dark:bg-gray-900 text-gray-100">
       <div class="max-w-5xl mx-auto px-4 py-4 relative">
         <div class="flex items-center justify-between">
-          <a class="flex items-center space-x-2" href="/">
-            <img alt="QuickDrop Logo" class="h-10" src="/images/favicon.png" />
-            <span class="font-semibold tracking-tight">QuickDrop</span>
-          </a>
+          <div class="flex items-center space-x-2">
+            <a class="flex items-center space-x-2" href="/">
+              <img
+                alt="QuickDrop Logo"
+                class="h-10"
+                th:src="${appLogoPath}"
+                src="/images/favicon.png"
+              />
+              <span class="font-semibold tracking-tight" th:text="${appName}"
+                >QuickDrop</span
+              >
+            </a>
+            <a
+              class="text-xs text-gray-400 dark:text-gray-500 hover:text-white"
+              href="https://github.com/roastslav/quickdrop"
+              rel="noopener noreferrer"
+              target="_blank"
+              th:if="${!#strings.equalsIgnoreCase(#strings.trim(appName), 'QuickDrop')}"
+            >
+              Powered by QuickDrop
+            </a>
+          </div>
           <button
             aria-controls="navMenu"
             aria-expanded="false"

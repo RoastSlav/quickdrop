@@ -52,8 +52,10 @@ public class FileViewController {
     public String listFiles(@RequestParam(name = "page", defaultValue = "0") int page,
                             @RequestParam(name = "size", defaultValue = "20") int size,
                             @RequestParam(name = "query", required = false) String query,
-                            Model model) {
-        if (!applicationSettingsService.isFileListPageEnabled()) {
+                            Model model,
+                            HttpServletRequest request) {
+        boolean hasAdminSession = sessionService.hasValidAdminSession(request);
+        if (!applicationSettingsService.isFileListPageEnabled() && !hasAdminSession) {
             return "redirect:/";
         }
 

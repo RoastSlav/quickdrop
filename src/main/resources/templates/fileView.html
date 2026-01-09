@@ -58,7 +58,7 @@
               <a
                 class="nav-menu-item hover:text-white"
                 href="/file/list"
-                th:if="${isFileListPageEnabled}"
+                th:if="${isFileListPageEnabled or hasAdminSession}"
                 >View Files</a
               >
               <a class="nav-menu-item hover:text-white" href="/file/upload"

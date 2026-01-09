@@ -17,4 +17,6 @@ public interface ShareTokenRepository extends JpaRepository<ShareTokenEntity, Lo
 
     @Query("SELECT s FROM ShareTokenEntity s WHERE s.tokenExpirationDate < CURRENT_DATE OR s.numberOfAllowedDownloads = 0")
     List<ShareTokenEntity> getShareTokenEntitiesForDeletion();
+
+    Optional<ShareTokenEntity> findFirstByFileAndTokenExpirationDateIsNullAndNumberOfAllowedDownloadsIsNull(FileEntity file);
 }

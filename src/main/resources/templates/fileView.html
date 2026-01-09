@@ -105,8 +105,12 @@
       <span hidden id="fileUuid" th:text="${file.uuid}"></span>
       <span hidden id="downloadLink" th:text="${downloadLink}"></span>
       <span hidden id="previewUrl" th:text="${previewUrl}"></span>
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 items-start">
-        <section class="sm:col-span-2">
+      <div
+        th:class="${isShareLinksDisabled} ? 'grid grid-cols-1 gap-6 items-start' : 'grid grid-cols-1 sm:grid-cols-3 gap-6 items-start'"
+      >
+        <section
+          th:class="${isShareLinksDisabled} ? 'w-full sm:col-span-3' : 'w-full sm:col-span-2'"
+        >
           <div
             class="bg-white dark:bg-slate-800 p-6 md:p-8 rounded-2xl shadow-lg flex flex-col gap-4 w-full"
             id="fileInfoCard"
@@ -305,11 +309,11 @@
             </div>
           </div>
         </section>
-        <aside class="sm:col-span-1">
+        <aside class="sm:col-span-1" th:if="${!isShareLinksDisabled}">
           <div
             class="bg-white dark:bg-slate-800 p-6 md:p-8 rounded-2xl shadow-lg space-y-4 w-full"
             id="sharePanel"
-            th:attr="data-simplified-share-links=${isSimplifiedShareLinksEnabled}"
+            th:attr="data-simplified-share-links=${isSimplifiedShareLinksEnabled},data-share-links-disabled=${isShareLinksDisabled}"
           >
             <h2 class="text-xl font-semibold tracking-tight">Share</h2>
 
@@ -332,7 +336,10 @@
             </div>
 
             <div class="space-y-4" th:if="${!isSimplifiedShareLinksEnabled}">
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4" id="linkOptions">
+              <div
+                class="grid grid-cols-1 sm:grid-cols-2 gap-4"
+                id="linkOptions"
+              >
                 <div class="space-y-2">
                   <label class="block text-sm" for="daysValid"
                     >Days valid</label
@@ -401,12 +408,17 @@
               </div>
             </div>
 
-            <div class="flex justify-end items-center gap-2" th:if="${isSimplifiedShareLinksEnabled}">
+            <div
+              class="flex justify-end items-center gap-2"
+              th:if="${isSimplifiedShareLinksEnabled}"
+            >
               <div
                 class="hidden animate-spin rounded-full h-5 w-5 border-2 border-sky-500 border-t-transparent"
                 id="spinner"
               ></div>
-              <span class="text-sm text-gray-600 dark:text-gray-300">Automatic share link</span>
+              <span class="text-sm text-gray-600 dark:text-gray-300"
+                >Automatic share link</span
+              >
             </div>
 
             <div class="border-t border-slate-200 dark:border-slate-700"></div>
@@ -439,6 +451,7 @@
             </div>
           </div>
         </aside>
+
       </div>
     </main>
     <script src="/js/fileView.js"></script>

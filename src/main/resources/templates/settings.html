@@ -93,10 +93,12 @@
       </header>
 
       <form
+        id="settingsForm"
         class="space-y-10"
         method="post"
         th:action="@{/admin/save}"
         th:object="${settings}"
+        th:attr="data-app-password-set=${isAppPasswordSet}"
       >
         <!-- File Settings -->
         <section
@@ -625,6 +627,7 @@
                   >App Password</label
                 >
                 <input
+                  id="appPassword"
                   class="w-full max-w-md rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500"
                   th:field="*{appPassword}"
                   type="password"

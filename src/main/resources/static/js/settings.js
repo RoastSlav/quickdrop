@@ -52,6 +52,28 @@ function syncUploadPasswordSetting() {
   }
 }
 
+function syncShareLinkSettings() {
+  const disableShareLinks = document.getElementById("shareLinksDisabled");
+  const simplifiedShareLinks = document.getElementById("simplifiedShareLinks");
+  const simplifiedRow = document.getElementById("simplifiedShareLinksRow");
+
+  const disabled = Boolean(disableShareLinks?.checked);
+
+  if (simplifiedShareLinks) {
+    simplifiedShareLinks.disabled = disabled;
+    simplifiedShareLinks.classList.toggle("cursor-not-allowed", disabled);
+    simplifiedShareLinks.classList.toggle("opacity-60", disabled);
+    if (disabled) {
+      simplifiedShareLinks.checked = false;
+    }
+  }
+
+  if (simplifiedRow) {
+    simplifiedRow.classList.toggle("opacity-60", disabled);
+    simplifiedRow.classList.toggle("cursor-not-allowed", disabled);
+  }
+}
+
 function togglePreviewSizeField() {
   const disablePreview = document.getElementById("disablePreview");
   const sizeInput = document.getElementById("maxPreviewSizeBytes");
@@ -351,6 +373,7 @@ document.addEventListener("DOMContentLoaded", function () {
   toggleEmailFields();
   updateBatchAvailability();
   syncUploadPasswordSetting();
+  syncShareLinkSettings();
   togglePreviewSizeField();
 
   const form = document.querySelector(
@@ -380,6 +403,12 @@ document.addEventListener("DOMContentLoaded", function () {
   document
     .getElementById("disablePreview")
     ?.addEventListener("change", togglePreviewSizeField);
+  document
+    .getElementById("shareLinksDisabled")
+    ?.addEventListener("change", syncShareLinkSettings);
+  document
+    .getElementById("simplifiedShareLinks")
+    ?.addEventListener("change", syncShareLinkSettings);
 
   const appPassword = document.getElementById("appPassword");
   if (appPassword) {

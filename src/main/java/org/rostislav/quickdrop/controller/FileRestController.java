@@ -95,6 +95,9 @@ public class FileRestController {
                                                         @RequestParam(value = "expirationDate", required = false) LocalDate expirationDate,
                                                         @RequestParam(value = "nOfDownloads", required = false) Integer numberOfDownloads,
                                                         HttpServletRequest request) {
+        if (applicationSettingsService.isShareLinksDisabled()) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Share links are disabled.");
+        }
         if (applicationSettingsService.isSimplifiedShareLinksEnabled()) {
             expirationDate = null;
             numberOfDownloads = null;

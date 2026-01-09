@@ -43,6 +43,7 @@ public class ApplicationSettingsEntity {
     private boolean notificationBatchEnabled;
     private Integer notificationBatchMinutes;
     private boolean simplifiedShareLinks;
+    private boolean shareLinksDisabled;
 
     public ApplicationSettingsEntity() {
     }
@@ -78,6 +79,7 @@ public class ApplicationSettingsEntity {
         this.notificationBatchEnabled = settings.isNotificationBatchEnabled();
         this.notificationBatchMinutes = settings.getNotificationBatchMinutes();
         this.simplifiedShareLinks = settings.isSimplifiedShareLinks();
+        this.shareLinksDisabled = settings.isShareLinksDisabled();
     }
 
     public long getMaxFileSize() {
@@ -342,5 +344,13 @@ public class ApplicationSettingsEntity {
 
     public void setSimplifiedShareLinks(boolean simplifiedShareLinks) {
         this.simplifiedShareLinks = simplifiedShareLinks;
+    }
+
+    public boolean isShareLinksDisabled() {
+        return shareLinksDisabled;
+    }
+
+    public void setShareLinksDisabled(boolean shareLinksDisabled) {
+        this.shareLinksDisabled = shareLinksDisabled;
     }
 }

@@ -36,6 +36,7 @@ public class ApplicationSettingsViewModel {
     private boolean notificationBatchEnabled;
     private Integer notificationBatchMinutes;
     private boolean simplifiedShareLinks;
+    private boolean shareLinksDisabled;
 
     public ApplicationSettingsViewModel() {
     }
@@ -72,6 +73,7 @@ public class ApplicationSettingsViewModel {
         this.notificationBatchEnabled = settings.isNotificationBatchEnabled();
         this.notificationBatchMinutes = settings.getNotificationBatchMinutes();
         this.simplifiedShareLinks = settings.isSimplifiedShareLinks();
+        this.shareLinksDisabled = settings.isShareLinksDisabled();
     }
 
     public Long getId() {
@@ -328,5 +330,13 @@ public class ApplicationSettingsViewModel {
 
     public void setSimplifiedShareLinks(boolean simplifiedShareLinks) {
         this.simplifiedShareLinks = simplifiedShareLinks;
+    }
+
+    public boolean isShareLinksDisabled() {
+        return shareLinksDisabled;
+    }
+
+    public void setShareLinksDisabled(boolean shareLinksDisabled) {
+        this.shareLinksDisabled = shareLinksDisabled;
     }
 }

@@ -20,6 +20,10 @@ function updateCheckboxState(event, checkbox) {
 function initializeModal() {
   updateShareLink("");
 
+  if (isShareLinksDisabled()) {
+    return;
+  }
+
   const daysValidInput = document.getElementById("daysValid");
   const downloadsInput = document.getElementById(
     "allowedNumberOfDownloadsCount"
@@ -47,7 +51,12 @@ function initializeModal() {
 
 function isSimplifiedShareLinksEnabled() {
   const panel = document.getElementById("sharePanel");
-  return panel?.dataset?.simplifiedShareLinks === "true";
+  return !isShareLinksDisabled() && panel?.dataset?.simplifiedShareLinks === "true";
+}
+
+function isShareLinksDisabled() {
+  const panel = document.getElementById("sharePanel");
+  return !panel || panel.dataset.shareLinksDisabled === "true";
 }
 
 function disableShareOptionsForSimplifiedMode() {
@@ -96,6 +105,10 @@ function setupSimplifiedShareLinks() {
 }
 
 function generateShareLink(fileUuid, daysValid, allowedNumberOfDownloads) {
+  if (isShareLinksDisabled()) {
+    return Promise.reject(new Error("Share links are disabled."));
+  }
+
   const csrfToken = document.querySelector('meta[name="_csrf"]').content;
   const params = new URLSearchParams();
 
@@ -124,9 +137,10 @@ function generateShareLink(fileUuid, daysValid, allowedNumberOfDownloads) {
       "Content-Type": "application/json",
       "X-XSRF-TOKEN": csrfToken,
     },
-  }).then((response) => {
-    if (!response.ok) throw new Error("Failed to generate share link");
-    return response.text();
+  }).then(async (response) => {
+    const text = await response.text();
+    if (!response.ok) throw new Error(text || "Failed to generate share link");
+    return text;
   });
 }
 
@@ -213,6 +227,11 @@ function copyShareLink() {
 }
 
 function createShareLink() {
+  if (isShareLinksDisabled()) {
+    alert("Share links are disabled by the administrator.");
+    return;
+  }
+
   const fileUuid = document.getElementById("fileUuid").textContent.trim();
   const daysValidInput = document.getElementById("daysValid");
   const noExpiration = document.getElementById("noExpiration");
@@ -266,7 +285,7 @@ function createShareLink() {
     })
     .catch((error) => {
       console.error(error);
-      alert("Failed to generate share link.");
+      alert(error?.message || "Failed to generate share link.");
     })
     .finally(() => {
       if (spinner) {
@@ -281,6 +300,10 @@ function updateShareLink(link) {
   const shareLinkInput = document.getElementById("shareLink");
   const canvas = document.getElementById("shareQRCode");
   const qrContainer = document.getElementById("shareQRCodeContainer");
+
+  if (!shareLinkInput || !canvas || !qrContainer) {
+    return;
+  }
 
   shareLinkInput.value = link || "";
 

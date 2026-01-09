@@ -659,20 +659,45 @@
 
             <div
               class="rounded-xl border border-slate-200 dark:border-slate-700 p-4"
+              id="shareLinksDisabledRow"
             >
               <label class="flex items-start gap-3">
                 <input
                   class="mt-1 h-4 w-4 rounded border-gray-400 dark:border-gray-600 accent-sky-500 dark:accent-sky-400 focus:ring-sky-500"
+                  id="shareLinksDisabled"
+                  onchange="syncShareLinkSettings()"
+                  th:field="*{shareLinksDisabled}"
+                  type="checkbox"
+                />
+                <span>
+                  <span class="text-sm font-medium">Disable share links</span
+                  ><br />
+                  <span class="text-xs text-gray-600 dark:text-gray-400">
+                    Hide share options on file pages and block new share links
+                    from being generated.
+                  </span>
+                </span>
+              </label>
+            </div>
+
+            <div
+              class="rounded-xl border border-slate-200 dark:border-slate-700 p-4"
+              id="simplifiedShareLinksRow"
+            >
+              <label class="flex items-start gap-3">
+                <input
+                  class="mt-1 h-4 w-4 rounded border-gray-400 dark:border-gray-600 accent-sky-500 dark:accent-sky-400 focus:ring-sky-500"
+                  id="simplifiedShareLinks"
+                  onchange="syncShareLinkSettings()"
                   th:field="*{simplifiedShareLinks}"
                   type="checkbox"
                 />
                 <span>
-                  <span class="text-sm font-medium"
-                    >Simplify share links</span
+                  <span class="text-sm font-medium">Simplify share links</span
                   ><br />
                   <span class="text-xs text-gray-600 dark:text-gray-400">
-                    Auto-generate an unlimited, non-expiring share link and
-                    hide manual share options on file pages.
+                    Auto-generate an unlimited, non-expiring share link and hide
+                    manual share options on file pages.
                   </span>
                 </span>
               </label>

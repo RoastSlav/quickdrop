@@ -56,6 +56,7 @@ public class ApplicationSettingsService {
             settings.setNotificationBatchEnabled(false);
             settings.setNotificationBatchMinutes(5);
             settings.setSimplifiedShareLinks(false);
+            settings.setShareLinksDisabled(false);
             settings = applicationSettingsRepository.save(settings);
             scheduleService.updateSchedule(settings.getFileDeletionCron(), settings.getMaxFileLifeTime());
             return settings;
@@ -92,6 +93,8 @@ public class ApplicationSettingsService {
         applicationSettingsEntity.setDefaultHomePage(settings.getDefaultHomePage());
         applicationSettingsEntity.setKeepIndefinitelyAdminOnly(settings.isKeepIndefinitelyAdminOnly());
         applicationSettingsEntity.setHideFromListAdminOnly(settings.isHideFromListAdminOnly());
+        boolean shareLinksDisabled = settings.isShareLinksDisabled();
+        applicationSettingsEntity.setShareLinksDisabled(shareLinksDisabled);
         applicationSettingsEntity.setDiscordWebhookEnabled(settings.isDiscordWebhookEnabled());
         applicationSettingsEntity.setDiscordWebhookUrl(settings.getDiscordWebhookUrl());
         applicationSettingsEntity.setEmailNotificationsEnabled(settings.isEmailNotificationsEnabled());
@@ -113,7 +116,8 @@ public class ApplicationSettingsService {
             applicationSettingsEntity.setNotificationBatchMinutes(existingBatchMinutes);
         }
 
-        applicationSettingsEntity.setSimplifiedShareLinks(settings.isSimplifiedShareLinks());
+        applicationSettingsEntity.setSimplifiedShareLinks(
+            shareLinksDisabled ? false : settings.isSimplifiedShareLinks());
 
         if (appPassword != null && !appPassword.isEmpty()) {
             applicationSettingsEntity.setAppPasswordEnabled(settings.isAppPasswordEnabled());
@@ -265,7 +269,11 @@ public class ApplicationSettingsService {
     }
 
     public boolean isSimplifiedShareLinksEnabled() {
-        return applicationSettings.isSimplifiedShareLinks();
+        return applicationSettings.isSimplifiedShareLinks() && !applicationSettings.isShareLinksDisabled();
+    }
+
+    public boolean isShareLinksDisabled() {
+        return applicationSettings.isShareLinksDisabled();
     }
 
     public Integer getNotificationBatchMinutes() {

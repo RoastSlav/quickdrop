@@ -61,7 +61,7 @@
                 >Admin Dashboard</a
               >
               <form
-                th:if="${hasAdminSession and (isAdminDashboardButtonEnabled or isAdminDashboardPage)}"
+                th:if="${hasAdminSession or hasAppSession}"
                 action="/admin/logout"
                 method="post"
               >

@@ -95,6 +95,10 @@ public class FileRestController {
                                                         @RequestParam(value = "expirationDate", required = false) LocalDate expirationDate,
                                                         @RequestParam(value = "nOfDownloads", required = false) Integer numberOfDownloads,
                                                         HttpServletRequest request) {
+        if (applicationSettingsService.isSimplifiedShareLinksEnabled()) {
+            expirationDate = null;
+            numberOfDownloads = null;
+        }
         FileEntity fileEntity = fileService.getFile(uuid);
         if (fileEntity == null) {
             return ResponseEntity.badRequest().body("File not found.");

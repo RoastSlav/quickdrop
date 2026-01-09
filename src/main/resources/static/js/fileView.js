@@ -51,7 +51,9 @@ function initializeModal() {
 
 function isSimplifiedShareLinksEnabled() {
   const panel = document.getElementById("sharePanel");
-  return !isShareLinksDisabled() && panel?.dataset?.simplifiedShareLinks === "true";
+  return (
+    !isShareLinksDisabled() && panel?.dataset?.simplifiedShareLinks === "true"
+  );
 }
 
 function isShareLinksDisabled() {

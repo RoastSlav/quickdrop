@@ -41,6 +41,58 @@ function initializeModal() {
   if (unlimitedDownloads) {
     unlimitedDownloads.checked = false;
   }
+
+  setupSimplifiedShareLinks();
+}
+
+function isSimplifiedShareLinksEnabled() {
+  const panel = document.getElementById("sharePanel");
+  return panel?.dataset?.simplifiedShareLinks === "true";
+}
+
+function disableShareOptionsForSimplifiedMode() {
+  const inputs = [
+    document.getElementById("daysValid"),
+    document.getElementById("allowedNumberOfDownloadsCount"),
+    document.getElementById("noExpiration"),
+    document.getElementById("unlimitedDownloads"),
+    document.getElementById("generateLinkButton"),
+  ];
+  inputs.forEach((el) => {
+    if (!el) return;
+    el.disabled = true;
+    el.classList.add("opacity-60", "cursor-not-allowed");
+  });
+}
+
+function setupSimplifiedShareLinks() {
+  if (!isSimplifiedShareLinksEnabled()) {
+    return;
+  }
+
+  disableShareOptionsForSimplifiedMode();
+
+  const fileUuidEl = document.getElementById("fileUuid");
+  const fileUuid = fileUuidEl?.textContent?.trim();
+  if (!fileUuid) return;
+
+  const spinner = document.getElementById("spinner");
+  if (spinner) {
+    spinner.classList.remove("hidden");
+    spinner.style.display = "inline-block";
+  }
+
+  generateShareLink(fileUuid, null, null)
+    .then((shareLink) => updateShareLink(shareLink))
+    .catch((error) => {
+      console.error("Failed to auto-generate share link", error);
+    })
+    .finally(() => {
+      if (spinner) {
+        spinner.classList.add("hidden");
+        spinner.style.display = "none";
+      }
+    });
 }
 
 function generateShareLink(fileUuid, daysValid, allowedNumberOfDownloads) {

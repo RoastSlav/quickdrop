@@ -42,6 +42,7 @@ public class ApplicationSettingsEntity {
     private boolean smtpUseTls;
     private boolean notificationBatchEnabled;
     private Integer notificationBatchMinutes;
+    private boolean simplifiedShareLinks;
 
     public ApplicationSettingsEntity() {
     }
@@ -76,6 +77,7 @@ public class ApplicationSettingsEntity {
         this.smtpUseTls = settings.isSmtpUseTls();
         this.notificationBatchEnabled = settings.isNotificationBatchEnabled();
         this.notificationBatchMinutes = settings.getNotificationBatchMinutes();
+        this.simplifiedShareLinks = settings.isSimplifiedShareLinks();
     }
 
     public long getMaxFileSize() {
@@ -332,5 +334,13 @@ public class ApplicationSettingsEntity {
 
     public void setNotificationBatchMinutes(Integer notificationBatchMinutes) {
         this.notificationBatchMinutes = notificationBatchMinutes;
+    }
+
+    public boolean isSimplifiedShareLinks() {
+        return simplifiedShareLinks;
+    }
+
+    public void setSimplifiedShareLinks(boolean simplifiedShareLinks) {
+        this.simplifiedShareLinks = simplifiedShareLinks;
     }
 }

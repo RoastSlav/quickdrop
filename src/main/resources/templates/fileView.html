@@ -309,22 +309,30 @@
           <div
             class="bg-white dark:bg-slate-800 p-6 md:p-8 rounded-2xl shadow-lg space-y-4 w-full"
             id="sharePanel"
+            th:attr="data-simplified-share-links=${isSimplifiedShareLinksEnabled}"
           >
             <h2 class="text-xl font-semibold tracking-tight">Share</h2>
 
             <div class="text-sm text-gray-700 dark:text-gray-300 space-y-1">
               <p>Share links always bypass file and app passwords.</p>
-              <p class="text-amber-600 dark:text-amber-400">
+              <p
+                class="text-amber-600 dark:text-amber-400"
+                th:if="${!isSimplifiedShareLinksEnabled}"
+              >
                 Add an expiration date and/or download limit, or choose
                 unlimited to keep the link open-ended.
               </p>
+              <p
+                class="text-amber-600 dark:text-amber-400"
+                th:if="${isSimplifiedShareLinksEnabled}"
+              >
+                Simplified share links are enabled: a non-expiring link with
+                unlimited downloads is generated automatically.
+              </p>
             </div>
 
-            <div class="space-y-4">
-              <div
-                class="grid grid-cols-1 sm:grid-cols-2 gap-4"
-                id="linkOptions"
-              >
+            <div class="space-y-4" th:if="${!isSimplifiedShareLinksEnabled}">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4" id="linkOptions">
                 <div class="space-y-2">
                   <label class="block text-sm" for="daysValid"
                     >Days valid</label
@@ -391,6 +399,14 @@
                   Generate link
                 </button>
               </div>
+            </div>
+
+            <div class="flex justify-end items-center gap-2" th:if="${isSimplifiedShareLinksEnabled}">
+              <div
+                class="hidden animate-spin rounded-full h-5 w-5 border-2 border-sky-500 border-t-transparent"
+                id="spinner"
+              ></div>
+              <span class="text-sm text-gray-600 dark:text-gray-300">Automatic share link</span>
             </div>
 
             <div class="border-t border-slate-200 dark:border-slate-700"></div>

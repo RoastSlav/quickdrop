@@ -55,6 +55,7 @@ public class ApplicationSettingsService {
             settings.setSmtpUseTls(true);
             settings.setNotificationBatchEnabled(false);
             settings.setNotificationBatchMinutes(5);
+            settings.setSimplifiedShareLinks(false);
             settings = applicationSettingsRepository.save(settings);
             scheduleService.updateSchedule(settings.getFileDeletionCron(), settings.getMaxFileLifeTime());
             return settings;
@@ -111,6 +112,8 @@ public class ApplicationSettingsService {
         } else if (existingBatchMinutes != null) {
             applicationSettingsEntity.setNotificationBatchMinutes(existingBatchMinutes);
         }
+
+        applicationSettingsEntity.setSimplifiedShareLinks(settings.isSimplifiedShareLinks());
 
         if (appPassword != null && !appPassword.isEmpty()) {
             applicationSettingsEntity.setAppPasswordEnabled(settings.isAppPasswordEnabled());
@@ -259,6 +262,10 @@ public class ApplicationSettingsService {
 
     public boolean isNotificationBatchEnabled() {
         return applicationSettings.isNotificationBatchEnabled();
+    }
+
+    public boolean isSimplifiedShareLinksEnabled() {
+        return applicationSettings.isSimplifiedShareLinks();
     }
 
     public Integer getNotificationBatchMinutes() {

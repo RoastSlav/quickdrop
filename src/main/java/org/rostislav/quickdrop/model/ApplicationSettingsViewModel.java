@@ -35,6 +35,7 @@ public class ApplicationSettingsViewModel {
     private boolean smtpUseTls;
     private boolean notificationBatchEnabled;
     private Integer notificationBatchMinutes;
+    private boolean simplifiedShareLinks;
 
     public ApplicationSettingsViewModel() {
     }
@@ -70,6 +71,7 @@ public class ApplicationSettingsViewModel {
         this.smtpUseTls = settings.isSmtpUseTls();
         this.notificationBatchEnabled = settings.isNotificationBatchEnabled();
         this.notificationBatchMinutes = settings.getNotificationBatchMinutes();
+        this.simplifiedShareLinks = settings.isSimplifiedShareLinks();
     }
 
     public Long getId() {
@@ -318,5 +320,13 @@ public class ApplicationSettingsViewModel {
 
     public void setNotificationBatchMinutes(Integer notificationBatchMinutes) {
         this.notificationBatchMinutes = notificationBatchMinutes;
+    }
+
+    public boolean isSimplifiedShareLinks() {
+        return simplifiedShareLinks;
+    }
+
+    public void setSimplifiedShareLinks(boolean simplifiedShareLinks) {
+        this.simplifiedShareLinks = simplifiedShareLinks;
     }
 }

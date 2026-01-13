@@ -1,0 +1,66 @@
+name: Bug report
+description: Something is broken or not working as expected
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. Please fill this out completely — missing info usually means we can't reproduce it.
+  - type: input
+    id: version
+    attributes:
+      label: QuickDrop version
+      description: Release tag or commit hash
+      placeholder: "v1.5.0"
+    validations:
+      required: true
+  - type: dropdown
+    id: install
+    attributes:
+      label: How are you running QuickDrop?
+      options:
+        - Docker (compose)
+        - Docker (single container)
+        - Built from source
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Describe the bug clearly.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. ...
+        2. ...
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / stack traces
+      description: Paste relevant logs. Remove secrets/tokens.
+      render: shell
+    validations:
+      required: false
+  - type: input
+    id: env
+    attributes:
+      label: Environment
+      description: OS / Browser (if relevant)
+      placeholder: "Ubuntu 24.04, Chrome 121"
+    validations:
+      required: false

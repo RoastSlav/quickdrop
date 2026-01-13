@@ -1,154 +1,221 @@
-[![Build Status](https://jenkins.tyron.rocks/buildStatus/icon?job=quickdrop)](https://jenkins.tyron.rocks/job/quickdrop)
+![Build Status](https://jenkins.tyron.rocks/buildStatus/icon?job=quickdrop/master)
 [![MIT License](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Docker Pulls](https://img.shields.io/docker/pulls/roastslav/quickdrop?logo=docker&style=flat)](https://hub.docker.com/r/roastslav/quickdrop)
 
 # QuickDrop
 
-QuickDrop is a self-hosted file sharing app for fast, anonymous uploads with chunked transfer, optional encryption,
-per-file passwords, share tokens with expiry/download limits, and an admin console to govern storage limits,
-lifetime policies, cleanup schedules, notifications, and privacy settings.
+QuickDrop is a self-hosted file sharing app for anonymous uploads with chunked transfers, optional encryption at rest,
+per-file passwords, share tokens (expiry + download limits), and an admin console for storage/lifetime policies,
+cleanup schedules, notifications, and privacy controls.
 
-<img width="1296" height="998" alt="image" src="https://github.com/user-attachments/assets/724267eb-7f43-4351-9167-6703ce6b5c1c" />
+---
 
-# Features
+## Contents
 
-## Uploads & storage
+- [Screenshots](#screenshots)
+- [Feature highlights](#feature-highlights)
+- [Technologies](#technologies)
+- [Getting started](#getting-started)
+  - [Docker (recommended)](#docker-recommended)
+  - [Docker Compose / Portainer](#docker-compose--portainer)
+  - [Run without Docker](#run-without-docker)
+- [Persistence (important)](#persistence-important)
+- [Updates](#updates)
+- [Development builds](#development-builds)
+- [License](#license)
 
-- Anonymous uploads with **chunked upload** support for reliable large-file transfers.
-- **Folder uploads** (directory picker) with preserved structure + improved manifest handling.
-- Configurable max file size, storage paths (files/logs), and max lifetime (default 30d) with renewals.
-- “Keep indefinitely” and “Hide from list” controls (with admin-governed rules; can disable “Keep indefinitely”
-  globally).
-- Optional **encryption at rest** for stored files; per-file passwords supported.
+---
 
-## File previews
+## Screenshots
 
-- Optional built-in previews for **images and text files**.
+<img width="1296" height="998" alt="QuickDrop UI" src="https://github.com/user-attachments/assets/724267eb-7f43-4351-9167-6703ce6b5c1c" />
+
+<img width="1315" height="1211" alt="Admin settings" src="https://github.com/user-attachments/assets/4cc67404-7631-4126-851c-75330a1c4321" />
+<img width="1270" height="1211" alt="Admin analytics" src="https://github.com/user-attachments/assets/9e6a95d4-48e2-4fad-8d56-edfea63df119" />
+
+---
+
+## Feature highlights
+
+### Uploads & storage
+
+- **Anonymous uploads** with **chunked upload** support (reliable large-file transfers).
+- **Folder uploads** (directory picker) with preserved structure and manifest handling.
+- Configurable maximum file size, storage paths (files/logs), and default max lifetime (e.g. 30 days) with renewals.
+- Optional per-file controls (admin-governed):
+  - **Keep indefinitely**
+  - **Hide from list** (link-only)
+- Optional **encryption at rest** for stored files; **per-file passwords** supported.
+
+### File previews
+
+- Built-in previews for **images** and **text files**.
 - Extended previews for **PDF / JSON / CSV** (and additional formats).
-- Configurable preview settings (enable/disable + maximum preview size).
-- **Syntax highlighting** for code previews (including dark theme styling).
+- Preview controls:
+  - enable/disable previews
+  - maximum preview size limit
+- **Syntax highlighting** for code previews (including dark-theme styling).
 
-## Sharing & access
+### Sharing & access
 
-- Direct links plus **token-based share links** with **expiration dates** and **download limits**; QR code generation
-  for quick sharing.
-- Improved share token validation/uniqueness; download endpoint uses token directly.
-- Share tokens are automatically cleaned up when deleting files.
-- Hidden files (link-only) and option to disable the public file list entirely, also option to disable the feature.
+- Direct links plus **token-based share links** with:
+  - **expiration date**
+  - **download limits**
+- QR code generation for quick sharing.
+- Share tokens are cleaned up when deleting files.
+- Privacy options:
+  - hidden files (link-only)
+  - disable the public file list entirely
+  - choose default home page (upload vs. list)
 
-## Security
+### Security
 
-- Whole-app password mode and separate **admin password** gate for the admin area.
+- Whole-app password mode and a separate **admin password** gate for the admin area.
 - Per-file passwords; server-side session tokens for admin/file access.
 - CSRF cookie enabled.
-- Client-side **metadata stripping** for uploads (Documents: PDF, DOCX, PPTX, XLSX, ODT, ODS, ODP, EPUB; Images: JPEG/PNG/WebP; Graphics: SVG; Text: TXT/CSV/JSON/etc. usually carry no structured metadata). Stripping runs in-browser with a 25 MB guard; if stripping fails or a type is unsupported, uploads show warnings and require Confirm/Cancel.
 
-## Admin & settings
+### Admin & settings
 
-- Single-page settings UI; changes apply without app restart.
-- Admin dashboard with file list/history, delete (with confirmation), extend life, visibility toggles, and admin
-  dashboard button toggle.
+- Single-page settings UI; changes apply **without restarting** the app.
+- Dashboard capabilities:
+  - file list/history
+  - delete (with confirmation)
+  - extend lifetime
+  - visibility toggles
+  - optional “Admin” button toggle
 - Dashboard **search + pagination** for easier browsing at scale.
-- Configurable session timeout, file deletion cron expression, and feature flags (file list, admin button, encryption,
-  previews, notifications, etc.).
-- Cron expression validation with clear error handling.
+- Configurable:
+  - session timeout
+  - cleanup cron expression
+  - feature flags (file list, admin button, encryption, previews, notifications, etc.)
+- Cron expression validation with clearer error handling (and next-run visibility when supported).
 
-## Notifications & logging
+### Notifications & logging
 
-- File history log for uploads, renewals, downloads (and related actions), including IP + user agent.
-- **Email and Discord webhook notifications**.
-- Optional **notification batching** (interval minutes configurable) to avoid spam.
+- Unified file history log for uploads, renewals, downloads (and related actions), including IP + user agent.
+- **Email** and **Discord webhook** notifications with built-in test actions.
+- Optional **notification batching** (configurable interval) to reduce spam.
 
-## Cleanup & maintenance
+### Cleanup & maintenance
 
 - Scheduled cleanup for expired files, missing-file DB rows, expired share tokens, and other maintenance tasks.
 
 ---
 
-<img width="1315" height="1211" alt="fixed" src="https://github.com/user-attachments/assets/4cc67404-7631-4126-851c-75330a1c4321" />
-<img width="1270" height="1211" alt="image" src="https://github.com/user-attachments/assets/9e6a95d4-48e2-4fad-8d56-edfea63df119" />
-
-## Technologies Used
+## Technologies
 
 - **Java 21**
 - **Spring Boot 3.5.x** (Spring Web/MVC, Actuator)
 - **Spring Security** (app/admin/password flows, CSRF cookie)
-- **Spring Data JPA with Hibernate ORM 6.6** (community dialects)
+- **Spring Data JPA** + Hibernate ORM 6.6 (community dialects)
 - **Spring Cloud Context** (refresh scope)
-- **Flyway** for DB migrations
-- **SQLite** with SQLite JDBC driver
-- **HikariCP** connection pooling
-- **Thymeleaf** with Spring Security extras
+- **Flyway** (DB migrations)
+- **SQLite** (with SQLite JDBC driver)
+- **HikariCP** (connection pooling)
+- **Thymeleaf** (with Spring Security extras)
 - **Tailwind CSS** + custom JS/CSS assets
 - **Spring Mail** (SMTP notifications)
-- **Maven** build tooling
-- **Docker** image for deployment
+- **Maven**
+- **Docker** (deployment)
 
-## Getting Started
+---
 
-### Installation
+## Getting started
 
-**Installation with Docker**
+### Docker (recommended)
 
-1. Pull the Docker image:
+Pull the image:
 
-```
+```bash
 docker pull roastslav/quickdrop:latest
 ```
 
-2. Run the Docker container:
+Run it:
 
-```
-docker run -d -p 8080:8080 roastslav/quickdrop:latest
-```
-
-Optional: Use volumes to persist the uploaded files when you update the container:
-
-```
-docker run -d -p 8080:8080 \
-  -v /path/to/db:/app/db \
-  -v /path/to/log:/app/log \
-  -v /path/to/files:/app/files \
-  roastslav/quickdrop
+```bash
+docker run -d --name quickdrop   -p 8080:8080   --restart unless-stopped   roastslav/quickdrop:latest
 ```
 
-**Installation without Docker**
+Open:
 
-Prerequisites
+- http://localhost:8080
 
-- Java 21 or higher
+### Docker Compose / Portainer
+
+Example stack:
+
+```yaml
+services:
+  quickdrop:
+    image: roastslav/quickdrop:latest
+    container_name: quickdrop
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./data/db:/app/db
+      - ./data/log:/app/log
+      - ./data/files:/app/files
+```
+
+### Run without Docker
+
+Prerequisites:
+
+- Java 21+
 - Maven
 - SQLite
 
-1. Clone the repository:
-
-```
+```bash
 git clone https://github.com/RoastSlav/quickdrop.git
 cd quickdrop
-```
-
-2. Build the application:
-
-```
-mvn clean package
-```
-
-3. Run the application:
-
-```
+mvn -B clean package
 java -jar target/quickdrop.jar
 ```
 
+---
+
+## Persistence (important)
+
+If you don’t mount volumes, your database and uploaded files live inside the container and will be lost when you recreate it.
+
+Recommended mounts:
+
+- `/app/db`   — SQLite DB and related app data
+- `/app/files` — uploaded files
+- `/app/log`   — logs (optional but useful)
+
+---
+
 ## Updates
 
-To update the app, you need to:
+Typical update flow:
 
-1. Stop and remove the old container.
-2. Pull the new image.
-3. Start the updated container.
+```bash
+docker stop quickdrop
+docker rm quickdrop
+docker pull roastslav/quickdrop:latest
+docker run -d --name quickdrop -p 8080:8080 --restart unless-stopped   -v /path/to/db:/app/db   -v /path/to/log:/app/log   -v /path/to/files:/app/files   roastslav/quickdrop:latest
+```
 
-If you want to ensure file and database persistence between updates, you can use Docker volumes. (Check docker installation above)
+If you’re using Compose/Portainer: pull the new image and redeploy the stack.
+
+---
+
+## Development builds
+
+A **development build** is published to Docker Hub under the `develop` tag:
+
+```bash
+docker pull roastslav/quickdrop:develop
+```
+
+- `:develop` tracks the latest development work and may change frequently.
+- It can include incomplete features or breaking changes.
+- For stable deployments, prefer `:latest` or a versioned tag like `:v1.5.0`.
+
+---
 
 ## License
 
-This project is licensed under the MIT License. See the `LICENSE` file for details.
+MIT — see [LICENSE](LICENSE).

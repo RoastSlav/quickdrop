@@ -56,6 +56,20 @@ public class SessionService implements HttpSessionListener {
         return token != null && validateAdminToken(token.toString());
     }
 
+    public void invalidateAdminSession(HttpServletRequest request) {
+        HttpSession session = request.getSession(false);
+        if (session == null) {
+            return;
+        }
+
+        Object token = session.getAttribute("admin-session-token");
+        if (token != null) {
+            adminSessionTokens.remove(token.toString());
+            session.removeAttribute("admin-session-token");
+            logger.info("Admin session token invalidated: {}", token);
+        }
+    }
+
     public boolean validateFileSessionToken(String sessionToken, String uuid) {
         FileSession fileSession = fileSessions.get(sessionToken);
 

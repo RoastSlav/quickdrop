@@ -9,7 +9,10 @@ import org.springframework.boot.web.servlet.ServletContextInitializer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
+import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+
+import java.nio.file.Path;
 
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
@@ -45,5 +48,12 @@ public class WebConfig implements WebMvcConfigurer {
     @Bean
     public ServletContextInitializer servletContextInitializer() {
         return servletContext -> servletContext.setSessionTimeout((int) applicationSettingsService.getSessionLifetime());
+    }
+
+    @Override
+    public void addResourceHandlers(ResourceHandlerRegistry registry) {
+        Path brandingDir = Path.of("branding").toAbsolutePath();
+        registry.addResourceHandler("/branding/**")
+            .addResourceLocations("file:" + brandingDir.toString() + "/");
     }
 }

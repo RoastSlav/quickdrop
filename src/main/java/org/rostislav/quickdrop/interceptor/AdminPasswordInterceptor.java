@@ -17,6 +17,9 @@ public class AdminPasswordInterceptor implements HandlerInterceptor {
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
+        if ("/admin/logout".equals(request.getRequestURI())) {
+            return true;
+        }
         Object sessionToken = request.getSession().getAttribute("admin-session-token");
 
 

@@ -25,6 +25,7 @@ public class ApplicationSettingsEntity {
     private boolean disableEncryption;
     private boolean disableUploadPassword;
     private boolean disablePreview;
+    private boolean metadataStrippingEnabled;
     private long maxPreviewSizeBytes;
     private String defaultHomePage;
     private boolean keepIndefinitelyAdminOnly;
@@ -41,6 +42,10 @@ public class ApplicationSettingsEntity {
     private boolean smtpUseTls;
     private boolean notificationBatchEnabled;
     private Integer notificationBatchMinutes;
+    private boolean simplifiedShareLinks;
+    private boolean shareLinksDisabled;
+    private String appName;
+    private String logoFileName;
 
     public ApplicationSettingsEntity() {
     }
@@ -58,6 +63,7 @@ public class ApplicationSettingsEntity {
         this.disableEncryption = settings.isEncryptionDisabled();
         this.disableUploadPassword = settings.isDisableUploadPassword();
         this.disablePreview = settings.isDisablePreview();
+        this.metadataStrippingEnabled = settings.isMetadataStrippingEnabled();
         this.maxPreviewSizeBytes = settings.getMaxPreviewSizeBytes();
         this.defaultHomePage = settings.getDefaultHomePage();
         this.keepIndefinitelyAdminOnly = settings.isKeepIndefinitelyAdminOnly();
@@ -74,6 +80,26 @@ public class ApplicationSettingsEntity {
         this.smtpUseTls = settings.isSmtpUseTls();
         this.notificationBatchEnabled = settings.isNotificationBatchEnabled();
         this.notificationBatchMinutes = settings.getNotificationBatchMinutes();
+        this.simplifiedShareLinks = settings.isSimplifiedShareLinks();
+        this.shareLinksDisabled = settings.isShareLinksDisabled();
+        this.appName = settings.getAppName();
+        this.logoFileName = settings.getLogoFileName();
+    }
+
+    public String getAppName() {
+        return appName;
+    }
+
+    public void setAppName(String appName) {
+        this.appName = appName;
+    }
+
+    public String getLogoFileName() {
+        return logoFileName;
+    }
+
+    public void setLogoFileName(String logoFileName) {
+        this.logoFileName = logoFileName;
     }
 
     public long getMaxFileSize() {
@@ -194,6 +220,14 @@ public class ApplicationSettingsEntity {
 
     public void setDisablePreview(boolean disablePreview) {
         this.disablePreview = disablePreview;
+    }
+
+    public boolean isMetadataStrippingEnabled() {
+        return metadataStrippingEnabled;
+    }
+
+    public void setMetadataStrippingEnabled(boolean metadataStrippingEnabled) {
+        this.metadataStrippingEnabled = metadataStrippingEnabled;
     }
 
     public long getMaxPreviewSizeBytes() {
@@ -322,5 +356,21 @@ public class ApplicationSettingsEntity {
 
     public void setNotificationBatchMinutes(Integer notificationBatchMinutes) {
         this.notificationBatchMinutes = notificationBatchMinutes;
+    }
+
+    public boolean isSimplifiedShareLinks() {
+        return simplifiedShareLinks;
+    }
+
+    public void setSimplifiedShareLinks(boolean simplifiedShareLinks) {
+        this.simplifiedShareLinks = simplifiedShareLinks;
+    }
+
+    public boolean isShareLinksDisabled() {
+        return shareLinksDisabled;
+    }
+
+    public void setShareLinksDisabled(boolean shareLinksDisabled) {
+        this.shareLinksDisabled = shareLinksDisabled;
     }
 }

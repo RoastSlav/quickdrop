@@ -1,211 +1,432 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>QuickDrop Admin</title>
-    <meta content="width=device-width, initial-scale=1" name="viewport">
-    <link href="/css/tailwind.css" rel="stylesheet">
-    <link href="/css/custom.css" rel="stylesheet">
-    <link href="/images/favicon.png" rel="icon" type="image/png">
+  <head>
+    <meta charset="UTF-8" />
+    <title th:text="${appName} + ' Admin'">QuickDrop Admin</title>
+    <meta content="width=device-width, initial-scale=1" name="viewport" />
+    <link href="/css/tailwind.css" rel="stylesheet" />
+    <link href="/css/custom.css" rel="stylesheet" />
+    <link
+      th:href="${appLogoPath}"
+      href="/images/favicon.png"
+      rel="icon"
+      type="image/png"
+    />
     <script src="/js/tailwindTheme.js"></script>
-</head>
-<body class="bg-gray-50 text-gray-800 dark:bg-slate-900 dark:text-gray-100">
-<nav class="bg-gray-800 dark:bg-gray-900 text-gray-100">
-    <div class="max-w-7xl mx-auto px-4 py-4 relative">
+  </head>
+  <body class="bg-gray-50 text-gray-800 dark:bg-slate-900 dark:text-gray-100">
+    <nav class="bg-gray-800 dark:bg-gray-900 text-gray-100">
+      <div class="max-w-7xl mx-auto px-4 py-4 relative">
         <div class="flex items-center justify-between">
+          <div class="flex items-center space-x-2">
             <a class="flex items-center space-x-2" href="/">
-                <img alt="Website Logo" class="h-10" src="/images/favicon.png">
-                <span class="font-semibold tracking-tight">QuickDrop Admin</span>
+              <img
+                alt="Website Logo"
+                class="h-10"
+                th:src="${appLogoPath}"
+                src="/images/favicon.png"
+              />
+              <span
+                class="font-semibold tracking-tight"
+                th:text="${appName} + ' Admin'"
+                >QuickDrop Admin</span
+              >
             </a>
-            <button aria-controls="navMenu" aria-expanded="false" aria-label="Toggle navigation"
-                    class="md:hidden rounded-lg p-2 hover:bg-sky-600 dark:hover:bg-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500"
-                    id="navToggle" type="button">
-                <svg aria-hidden="true" class="h-6 w-6" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24">
-                    <path d="M4 6h16M4 12h16M4 18h16"></path>
-                </svg>
-            </button>
-            <div class="nav-menu-panel hidden md:flex flex-col md:flex-row md:items-center md:space-x-4 w-full md:w-auto mt-3 md:mt-0 space-y-2 md:space-y-0 bg-gray-800 dark:bg-gray-900 md:bg-transparent md:dark:bg-transparent rounded-lg md:rounded-none p-4 md:p-0 shadow md:shadow-none absolute left-0 right-0 top-full md:static z-20 md:ml-auto" id="navMenu">
-                <div class="flex flex-col space-y-2 md:flex-row md:items-center md:space-x-4 md:space-y-0">
-                    <a class="nav-menu-item hover:text-white" href="/file/list">View Files</a>
-                    <a class="nav-menu-item hover:text-white" href="/file/upload">Upload File</a>
-                    <a class="nav-menu-item hover:text-white" href="/admin/settings">Settings</a>
-                </div>
-                <button class="nav-menu-item theme-toggle rounded-lg p-2 transition-colors hover:bg-sky-600 dark:hover:bg-sky-500 active:scale-95 focus:outline-none focus:ring-2 focus:ring-sky-500"
-                        id="themeToggle"
-                        type="button">
-                    🌙
+            <a
+              class="text-xs text-gray-400 dark:text-gray-500 hover:text-white"
+              href="https://github.com/roastslav/quickdrop"
+              rel="noopener noreferrer"
+              target="_blank"
+              th:if="${!#strings.equalsIgnoreCase(#strings.trim(appName), 'QuickDrop')}"
+            >
+              Powered by QuickDrop
+            </a>
+          </div>
+          <button
+            aria-controls="navMenu"
+            aria-expanded="false"
+            aria-label="Toggle navigation"
+            class="md:hidden rounded-lg p-2 hover:bg-sky-600 dark:hover:bg-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500"
+            id="navToggle"
+            type="button"
+          >
+            <svg
+              aria-hidden="true"
+              class="h-6 w-6"
+              fill="none"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <path d="M4 6h16M4 12h16M4 18h16"></path>
+            </svg>
+          </button>
+          <div
+            class="nav-menu-panel hidden md:flex flex-col md:flex-row md:items-center md:space-x-4 w-full md:w-auto mt-3 md:mt-0 space-y-2 md:space-y-0 bg-gray-800 dark:bg-gray-900 md:bg-transparent md:dark:bg-transparent rounded-lg md:rounded-none p-4 md:p-0 shadow md:shadow-none absolute left-0 right-0 top-full md:static z-20 md:ml-auto"
+            id="navMenu"
+          >
+            <div
+              class="flex flex-col space-y-2 md:flex-row md:items-center md:space-x-4 md:space-y-0"
+            >
+              <a class="nav-menu-item hover:text-white" href="/file/list"
+                >View Files</a
+              >
+              <a class="nav-menu-item hover:text-white" href="/file/upload"
+                >Upload File</a
+              >
+              <a class="nav-menu-item hover:text-white" href="/admin/settings"
+                >Settings</a
+              >
+              <form
+                th:if="${hasAdminSession or hasAppSession}"
+                action="/admin/logout"
+                method="post"
+              >
+                <input
+                  type="hidden"
+                  th:name="${_csrf.parameterName}"
+                  th:value="${_csrf.token}"
+                />
+                <button class="nav-menu-item hover:text-white" type="submit">
+                  Logout
                 </button>
+              </form>
             </div>
+            <button
+              class="nav-menu-item theme-toggle rounded-lg p-2 transition-colors hover:bg-sky-600 dark:hover:bg-sky-500 active:scale-95 focus:outline-none focus:ring-2 focus:ring-sky-500"
+              id="themeToggle"
+              type="button"
+            >
+              🌙
+            </button>
+          </div>
         </div>
-    </div>
-</nav>
+      </div>
+    </nav>
 
-<main class="max-w-7xl mx-auto px-4 py-6 md:py-8">
-    <header class="text-center mb-8 space-y-1">
-        <h1 class="text-3xl md:text-4xl font-semibold tracking-tight">Admin Dashboard</h1>
-    </header>
+    <main class="max-w-7xl mx-auto px-4 py-6 md:py-8">
+      <header class="text-center mb-8 space-y-1">
+        <h1 class="text-3xl md:text-4xl font-semibold tracking-tight">
+          Admin Dashboard
+        </h1>
+      </header>
 
-    <div class="bg-white dark:bg-slate-800 p-6 md:p-8 rounded-2xl shadow-lg mb-8">
+      <div
+        class="bg-white dark:bg-slate-800 p-6 md:p-8 rounded-2xl shadow-lg mb-8"
+      >
         <h2 class="text-xl font-semibold tracking-tight mb-4">Analytics</h2>
         <div class="flex flex-wrap justify-between gap-6 text-center">
-            <div class="flex-1 min-w-[8rem] space-y-1">
-                <h3 class="text-lg font-semibold tracking-tight">Total Downloads</h3>
-                <p class="text-sm text-gray-600 dark:text-gray-400">Excluding deleted files</p>
-                <p class="text-2xl font-semibold" th:text="${analytics.totalDownloads}">0</p>
-            </div>
-            <div class="flex-1 min-w-[8rem] space-y-1">
-                <h3 class="text-lg font-semibold tracking-tight">Total Space Used</h3>
-                <p class="text-2xl font-semibold" th:text="${analytics.totalSpaceUsed}">0 MB</p>
-            </div>
-            <div class="flex-1 min-w-[8rem] space-y-1">
-                <h3 class="text-lg font-semibold tracking-tight">Average File Size</h3>
-                <p class="text-2xl font-semibold" th:text="${analytics.averageFileSize}">0 MB</p>
-            </div>
+          <div class="flex-1 min-w-[8rem] space-y-1">
+            <h3 class="text-lg font-semibold tracking-tight">
+              Total Downloads
+            </h3>
+            <p class="text-sm text-gray-600 dark:text-gray-400">
+              Excluding deleted files
+            </p>
+            <p
+              class="text-2xl font-semibold"
+              th:text="${analytics.totalDownloads}"
+            >
+              0
+            </p>
+          </div>
+          <div class="flex-1 min-w-[8rem] space-y-1">
+            <h3 class="text-lg font-semibold tracking-tight">
+              Total Space Used
+            </h3>
+            <p
+              class="text-2xl font-semibold"
+              th:text="${analytics.totalSpaceUsed}"
+            >
+              0 MB
+            </p>
+          </div>
+          <div class="flex-1 min-w-[8rem] space-y-1">
+            <h3 class="text-lg font-semibold tracking-tight">
+              Average File Size
+            </h3>
+            <p
+              class="text-2xl font-semibold"
+              th:text="${analytics.averageFileSize}"
+            >
+              0 MB
+            </p>
+          </div>
         </div>
-    </div>
+      </div>
 
-    <div class="bg-white dark:bg-slate-800 p-6 md:p-8 rounded-2xl shadow-lg">
+      <div class="bg-white dark:bg-slate-800 p-6 md:p-8 rounded-2xl shadow-lg">
         <h2 class="text-xl font-semibold tracking-tight mb-4">Files</h2>
         <div class="mb-6">
-            <form action="/admin/dashboard" class="w-full flex flex-col md:flex-row md:items-center md:gap-3 gap-3" method="get">
-                <input name="page" type="hidden" value="0"/>
-                <input name="size" th:value="${pageSize}" type="hidden"/>
-                <label class="sr-only" for="adminSearch">Search files</label>
-                <div class="flex-1 h-12 flex items-center space-x-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-gray-800 rounded-full px-4 shadow-sm focus-within:border-sky-500 focus-within:ring-2 focus-within:ring-sky-500">
-                    <svg aria-hidden="true" class="w-5 h-5 text-gray-500 dark:text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                        <path clip-rule="evenodd" d="M12.9 14.32a8 8 0 111.414-1.414l4.387 4.387a1 1 0 01-1.414 1.414l-4.387-4.387zM14 8a6 6 0 11-12 0 6 6 0 0112 0z" fill-rule="evenodd" />
-                    </svg>
-                    <input class="flex-grow bg-transparent py-2 focus:outline-none focus-visible:ring-0" id="adminSearch" name="query" placeholder="Search by name, description, or UUID" th:value="${query}" type="text"/>
-                </div>
-                <button class="rounded-full bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium px-4 py-2 h-12 transition-colors active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500" type="submit">Search</button>
-            </form>
-        </div>
-        <div class="overflow-x-auto w-full" th:if="${filesPage.totalElements > 0}">
-            <table class="min-w-full w-full divide-y divide-slate-200 dark:divide-slate-700 light-table-zebra">
-                <thead class="bg-gray-100 dark:bg-gray-800 divide-x divide-slate-200 dark:divide-slate-600">
-                <tr>
-                    <th class="px-6 py-4 text-left text-sm font-semibold">Name</th>
-                    <th class="px-6 py-4 text-left text-sm font-semibold">Upload Date/Last Renewed</th>
-                    <th class="px-6 py-4 text-left text-sm font-semibold">Size</th>
-                    <th class="px-6 py-4 text-left text-sm font-semibold">Downloads</th>
-                </tr>
-                </thead>
-                <tbody>
-                <th:block th:each="file,iter : ${filesPage.content}">
-                    <tr class="dark:bg-slate-800 divide-x divide-slate-200 dark:divide-slate-600" th:classappend="${iter.index % 2 == 0} ? ' bg-gray-50' : ' bg-white'">
-                        <td class="px-6 py-4" th:text="${file.name}">File Name</td>
-                        <td class="px-6 py-4" th:text="${#temporals.format(file.uploadDate, 'dd.MM.yyyy')}">Date</td>
-                        <td class="px-6 py-4" th:text="${file.size}">--</td>
-                        <td class="px-6 py-4" th:text="${file.totalDownloads}">--</td>
-                    </tr>
-                    <tr class="dark:bg-slate-900 divide-x divide-slate-200 dark:divide-slate-600 border-b border-gray-400 dark:border-gray-600" th:classappend="${iter.index % 2 == 0} ? ' bg-gray-100' : ' bg-gray-50'">
-                        <td class="px-6 py-3" colspan="2">
-                            <div class="flex flex-wrap items-center gap-x-3 gap-y-2">
-                                <a class="inline-flex rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium px-4 py-1.5 text-sm transition-colors active:scale-95 focus:outline-none focus:ring-2 focus:ring-sky-500"
-                                   th:href="@{/file/{uuid}(uuid=${file.uuid})}">View</a>
-
-                                <a class="inline-flex rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium px-4 py-1.5 text-sm transition-colors active:scale-95 focus:outline-none focus:ring-2 focus:ring-sky-500"
-                                   th:href="@{/file/history/{uuid}(uuid=${file.uuid})}">History</a>
-
-                                <a class="inline-flex rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium px-4 py-1.5 text-sm transition-colors active:scale-95 focus:outline-none focus:ring-2 focus:ring-sky-500"
-                                   th:href="@{/file/download/{uuid}(uuid=${file.uuid})}">Download</a>
-
-                                <form class="m-0" method="post"
-                                      onsubmit="return confirmDelete();"
-                                      th:action="@{/admin/delete/{uuid}(uuid=${file.uuid})}">
-                                    <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden"/>
-                                    <button class="inline-flex rounded-lg bg-red-600 hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600 text-white font-medium px-4 py-1.5 text-sm transition-colors active:scale-95 focus:outline-none focus:ring-2 focus:ring-red-500"
-                                            type="submit">
-                                        Delete
-                                    </button>
-                                </form>
-                            </div>
-                        </td>
-                        <td class="px-6 py-3 text-center align-middle">
-                            <form class="inline" method="post"
-                                  th:action="@{/admin/keep-indefinitely/{uuid}(uuid=${file.uuid})}">
-                                <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden"/>
-                                <input name="keepIndefinitely" type="hidden" value="false"/>
-                                <label class="inline-flex items-center gap-2">
-                                    <input class="h-4 w-4 rounded border-gray-400 dark:border-gray-600 accent-sky-500 dark:accent-sky-400 focus:ring-sky-500"
-                                           name="keepIndefinitely" onchange="updateCheckboxState(event, this)"
-                                           th:checked="${file.keepIndefinitely}"
-                                           type="checkbox"
-                                           value="true"/>
-                                    <span class="text-sm">Keep indefinitely</span>
-                                </label>
-                            </form>
-                        </td>
-                        <td class="px-6 py-4 text-center">
-                            <form class="inline" method="post"
-                                  th:action="@{/admin/toggle-hidden/{uuid}(uuid=${file.uuid})}">
-                                <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden"/>
-                                <input name="hidden" type="hidden" value="false"/>
-                                <label class="inline-flex items-center gap-2">
-                                    <input class="h-4 w-4 rounded border-gray-400 dark:border-gray-600 accent-sky-500 dark:accent-sky-400 focus:ring-sky-500"
-                                           name="hidden" onchange="updateHiddenState(event, this)"
-                                           th:checked="${file.hidden}"
-                                           type="checkbox"
-                                           value="true"/>
-                                    <span class="text-sm">Hidden</span>
-                                </label>
-                            </form>
-                        </td>
-                    </tr>
-                </th:block>
-                </tbody>
-            </table>
-        </div>
-        <div class="text-center text-gray-600 dark:text-gray-300" th:if="${filesPage.totalElements == 0}">
-            <p>No files found.</p>
-        </div>
-        <div class="flex flex-col md:flex-row items-center justify-between gap-4 mt-6" th:if="${filesPage.totalElements > 0}">
-            <div class="flex items-center gap-2" th:if="${filesPage.totalPages > 1}">
-                <a class="px-4 py-2 rounded-lg bg-slate-200 dark:bg-slate-700 text-sm font-semibold transition disabled:opacity-50 disabled:pointer-events-none"
-                   th:classappend="${filesPage.first} ? ' opacity-50 pointer-events-none' : ' hover:bg-slate-300 dark:hover:bg-slate-600'"
-                   th:href="@{/admin/dashboard(page=${filesPage.first ? filesPage.number : filesPage.number - 1}, size=${pageSize}, query=${query})}">Previous</a>
-                <a class="px-4 py-2 rounded-lg bg-slate-200 dark:bg-slate-700 text-sm font-semibold transition disabled:opacity-50 disabled:pointer-events-none"
-                   th:classappend="${filesPage.last} ? ' opacity-50 pointer-events-none' : ' hover:bg-slate-300 dark:hover:bg-slate-600'"
-                   th:href="@{/admin/dashboard(page=${filesPage.last ? filesPage.number : filesPage.number + 1}, size=${pageSize}, query=${query})}">Next</a>
+          <form
+            action="/admin/dashboard"
+            class="w-full flex flex-col md:flex-row md:items-center md:gap-3 gap-3"
+            method="get"
+          >
+            <input name="page" type="hidden" value="0" />
+            <input name="size" th:value="${pageSize}" type="hidden" />
+            <label class="sr-only" for="adminSearch">Search files</label>
+            <div
+              class="flex-1 h-12 flex items-center space-x-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-gray-800 rounded-full px-4 shadow-sm focus-within:border-sky-500 focus-within:ring-2 focus-within:ring-sky-500"
+            >
+              <svg
+                aria-hidden="true"
+                class="w-5 h-5 text-gray-500 dark:text-gray-400"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
+                <path
+                  clip-rule="evenodd"
+                  d="M12.9 14.32a8 8 0 111.414-1.414l4.387 4.387a1 1 0 01-1.414 1.414l-4.387-4.387zM14 8a6 6 0 11-12 0 6 6 0 0112 0z"
+                  fill-rule="evenodd"
+                />
+              </svg>
+              <input
+                class="flex-grow bg-transparent py-2 focus:outline-none focus-visible:ring-0"
+                id="adminSearch"
+                name="query"
+                placeholder="Search by name, description, or UUID"
+                th:value="${query}"
+                type="text"
+              />
             </div>
-            <form action="/admin/dashboard" class="flex items-center gap-2" method="get">
-                <label class="text-sm text-gray-700 dark:text-gray-300" for="adminPageSize">Per page</label>
-                <select class="rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" id="adminPageSize" name="size" onchange="this.form.submit()">
-                    <option th:selected="${pageSize == 10}" value="10">10</option>
-                    <option th:selected="${pageSize == 20}" value="20">20</option>
-                    <option th:selected="${pageSize == 50}" value="50">50</option>
-                    <option th:selected="${pageSize == 100}" value="100">100</option>
-                </select>
-                <input name="page" type="hidden" value="0"/>
-                <input name="query" th:value="${query}" type="hidden"/>
-            </form>
-            <div class="text-sm text-gray-600 dark:text-gray-300">Page <span th:text="${filesPage.number + 1}"></span> of <span th:text="${filesPage.totalPages}"></span></div>
+            <button
+              class="rounded-full bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium px-4 py-2 h-12 transition-colors active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500"
+              type="submit"
+            >
+              Search
+            </button>
+          </form>
         </div>
-    </div>
-</main>
+        <div
+          class="overflow-x-auto w-full"
+          th:if="${filesPage.totalElements > 0}"
+        >
+          <table
+            class="min-w-full w-full divide-y divide-slate-200 dark:divide-slate-700 light-table-zebra"
+          >
+            <thead
+              class="bg-gray-100 dark:bg-gray-800 divide-x divide-slate-200 dark:divide-slate-600"
+            >
+              <tr>
+                <th class="px-6 py-4 text-left text-sm font-semibold">Name</th>
+                <th class="px-6 py-4 text-left text-sm font-semibold">
+                  Upload Date/Last Renewed
+                </th>
+                <th class="px-6 py-4 text-left text-sm font-semibold">Size</th>
+                <th class="px-6 py-4 text-left text-sm font-semibold">
+                  Downloads
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <th:block th:each="file,iter : ${filesPage.content}">
+                <tr
+                  class="dark:bg-slate-800 divide-x divide-slate-200 dark:divide-slate-600"
+                  th:classappend="${iter.index % 2 == 0} ? ' bg-gray-50' : ' bg-white'"
+                >
+                  <td class="px-6 py-4" th:text="${file.name}">File Name</td>
+                  <td
+                    class="px-6 py-4"
+                    th:text="${#temporals.format(file.uploadDate, 'dd.MM.yyyy')}"
+                  >
+                    Date
+                  </td>
+                  <td class="px-6 py-4" th:text="${file.size}">--</td>
+                  <td class="px-6 py-4" th:text="${file.totalDownloads}">--</td>
+                </tr>
+                <tr
+                  class="dark:bg-slate-900 divide-x divide-slate-200 dark:divide-slate-600 border-b border-gray-400 dark:border-gray-600"
+                  th:classappend="${iter.index % 2 == 0} ? ' bg-gray-100' : ' bg-gray-50'"
+                >
+                  <td class="px-6 py-3" colspan="2">
+                    <div class="flex flex-wrap items-center gap-x-3 gap-y-2">
+                      <a
+                        class="inline-flex rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium px-4 py-1.5 text-sm transition-colors active:scale-95 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                        th:href="@{/file/{uuid}(uuid=${file.uuid})}"
+                        >View</a
+                      >
 
-<script>
-    function updateHiddenState(event, checkbox) {
+                      <a
+                        class="inline-flex rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium px-4 py-1.5 text-sm transition-colors active:scale-95 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                        th:href="@{/file/history/{uuid}(uuid=${file.uuid})}"
+                        >History</a
+                      >
+
+                      <a
+                        class="inline-flex rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium px-4 py-1.5 text-sm transition-colors active:scale-95 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                        th:href="@{/file/download/{uuid}(uuid=${file.uuid})}"
+                        >Download</a
+                      >
+
+                      <form
+                        class="m-0"
+                        method="post"
+                        onsubmit="return confirmDelete();"
+                        th:action="@{/admin/delete/{uuid}(uuid=${file.uuid})}"
+                      >
+                        <input
+                          th:name="${_csrf.parameterName}"
+                          th:value="${_csrf.token}"
+                          type="hidden"
+                        />
+                        <button
+                          class="inline-flex rounded-lg bg-red-600 hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600 text-white font-medium px-4 py-1.5 text-sm transition-colors active:scale-95 focus:outline-none focus:ring-2 focus:ring-red-500"
+                          type="submit"
+                        >
+                          Delete
+                        </button>
+                      </form>
+                    </div>
+                  </td>
+                  <td class="px-6 py-3 text-center align-middle">
+                    <form
+                      class="inline"
+                      method="post"
+                      th:action="@{/admin/keep-indefinitely/{uuid}(uuid=${file.uuid})}"
+                    >
+                      <input
+                        th:name="${_csrf.parameterName}"
+                        th:value="${_csrf.token}"
+                        type="hidden"
+                      />
+                      <input
+                        name="keepIndefinitely"
+                        type="hidden"
+                        value="false"
+                      />
+                      <label class="inline-flex items-center gap-2">
+                        <input
+                          class="h-4 w-4 rounded border-gray-400 dark:border-gray-600 accent-sky-500 dark:accent-sky-400 focus:ring-sky-500"
+                          name="keepIndefinitely"
+                          onchange="updateCheckboxState(event, this)"
+                          th:checked="${file.keepIndefinitely}"
+                          type="checkbox"
+                          value="true"
+                        />
+                        <span class="text-sm">Keep indefinitely</span>
+                      </label>
+                    </form>
+                  </td>
+                  <td class="px-6 py-4 text-center">
+                    <form
+                      class="inline"
+                      method="post"
+                      th:action="@{/admin/toggle-hidden/{uuid}(uuid=${file.uuid})}"
+                    >
+                      <input
+                        th:name="${_csrf.parameterName}"
+                        th:value="${_csrf.token}"
+                        type="hidden"
+                      />
+                      <input name="hidden" type="hidden" value="false" />
+                      <label class="inline-flex items-center gap-2">
+                        <input
+                          class="h-4 w-4 rounded border-gray-400 dark:border-gray-600 accent-sky-500 dark:accent-sky-400 focus:ring-sky-500"
+                          name="hidden"
+                          onchange="updateHiddenState(event, this)"
+                          th:checked="${file.hidden}"
+                          type="checkbox"
+                          value="true"
+                        />
+                        <span class="text-sm">Hidden</span>
+                      </label>
+                    </form>
+                  </td>
+                </tr>
+              </th:block>
+            </tbody>
+          </table>
+        </div>
+        <div
+          class="text-center text-gray-600 dark:text-gray-300"
+          th:if="${filesPage.totalElements == 0}"
+        >
+          <p>No files found.</p>
+        </div>
+        <div
+          class="flex flex-col md:flex-row items-center justify-between gap-4 mt-6"
+          th:if="${filesPage.totalElements > 0}"
+        >
+          <div
+            class="flex items-center gap-2"
+            th:if="${filesPage.totalPages > 1}"
+          >
+            <a
+              class="px-4 py-2 rounded-lg bg-slate-200 dark:bg-slate-700 text-sm font-semibold transition disabled:opacity-50 disabled:pointer-events-none"
+              th:classappend="${filesPage.first} ? ' opacity-50 pointer-events-none' : ' hover:bg-slate-300 dark:hover:bg-slate-600'"
+              th:href="@{/admin/dashboard(page=${filesPage.first ? filesPage.number : filesPage.number - 1}, size=${pageSize}, query=${query})}"
+              >Previous</a
+            >
+            <a
+              class="px-4 py-2 rounded-lg bg-slate-200 dark:bg-slate-700 text-sm font-semibold transition disabled:opacity-50 disabled:pointer-events-none"
+              th:classappend="${filesPage.last} ? ' opacity-50 pointer-events-none' : ' hover:bg-slate-300 dark:hover:bg-slate-600'"
+              th:href="@{/admin/dashboard(page=${filesPage.last ? filesPage.number : filesPage.number + 1}, size=${pageSize}, query=${query})}"
+              >Next</a
+            >
+          </div>
+          <form
+            action="/admin/dashboard"
+            class="flex items-center gap-2"
+            method="get"
+          >
+            <label
+              class="text-sm text-gray-700 dark:text-gray-300"
+              for="adminPageSize"
+              >Per page</label
+            >
+            <select
+              class="rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+              id="adminPageSize"
+              name="size"
+              onchange="this.form.submit()"
+            >
+              <option th:selected="${pageSize == 10}" value="10">10</option>
+              <option th:selected="${pageSize == 20}" value="20">20</option>
+              <option th:selected="${pageSize == 50}" value="50">50</option>
+              <option th:selected="${pageSize == 100}" value="100">100</option>
+            </select>
+            <input name="page" type="hidden" value="0" />
+            <input name="query" th:value="${query}" type="hidden" />
+          </form>
+          <div class="text-sm text-gray-600 dark:text-gray-300">
+            Page <span th:text="${filesPage.number + 1}"></span> of
+            <span th:text="${filesPage.totalPages}"></span>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <script>
+      function updateHiddenState(event, checkbox) {
         event.preventDefault();
-        const hiddenField = checkbox.form.querySelector('input[name="hidden"][type="hidden"]');
+        const hiddenField = checkbox.form.querySelector(
+          'input[name="hidden"][type="hidden"]'
+        );
         if (hiddenField) {
-            hiddenField.value = checkbox.checked;
+          hiddenField.value = checkbox.checked;
         }
         checkbox.form.submit();
-    }
+      }
 
-    function confirmDelete() {
-        return confirm("Are you sure you want to delete this file? This action cannot be undone.");
-    }
+      function confirmDelete() {
+        return confirm(
+          "Are you sure you want to delete this file? This action cannot be undone."
+        );
+      }
 
-    function updateCheckboxState(event, checkbox) {
+      function updateCheckboxState(event, checkbox) {
         event.preventDefault();
-        const hiddenField = checkbox.form.querySelector('input[name="keepIndefinitely"][type="hidden"]');
+        const hiddenField = checkbox.form.querySelector(
+          'input[name="keepIndefinitely"][type="hidden"]'
+        );
         if (hiddenField) {
-            hiddenField.value = checkbox.checked;
+          hiddenField.value = checkbox.checked;
         }
         checkbox.form.submit();
-    }
-</script>
-</body>
+      }
+    </script>
+  </body>
 </html>

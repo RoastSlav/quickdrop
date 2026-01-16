@@ -411,12 +411,23 @@ public class FileService {
         return token;
     }
 
+    private Optional<ShareTokenEntity> findUnlimitedShareToken(FileEntity file) {
+        return shareTokenRepository.findFirstByFileAndTokenExpirationDateIsNullAndNumberOfAllowedDownloadsIsNull(file);
+    }
+
     public ShareTokenEntity generateShareToken(String uuid, LocalDate tokenExpirationDate, Integer numberOfDownloads) {
         Optional<FileEntity> optionalFile = fileRepository.findByUUID(uuid);
         if (optionalFile.isEmpty()) {
             throw new IllegalArgumentException("File not found");
         }
         FileEntity file = optionalFile.get();
+
+        if (tokenExpirationDate == null && numberOfDownloads == null) {
+            Optional<ShareTokenEntity> existing = findUnlimitedShareToken(file);
+            if (existing.isPresent()) {
+                return existing.get();
+            }
+        }
 
         String token = generateUniqueShareToken(file);
         ShareTokenEntity shareToken = new ShareTokenEntity(token, file, tokenExpirationDate, numberOfDownloads);
@@ -432,6 +443,12 @@ public class FileService {
         }
 
         FileEntity file = optionalFile.get();
+        if (tokenExpirationDate == null && numberOfDownloads == null) {
+            Optional<ShareTokenEntity> existing = findUnlimitedShareToken(file);
+            if (existing.isPresent()) {
+                return existing.get();
+            }
+        }
         Path encryptedFilePath = Path.of(applicationSettingsService.getFileStoragePath(), file.uuid);
         Path decryptedFilePath = encryptedFilePath.resolveSibling(file.uuid + "-decrypted");
 

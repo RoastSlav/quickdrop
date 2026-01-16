@@ -1,0 +1,2 @@
+ALTER TABLE application_settings_entity ADD COLUMN simplified_share_links BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE application_settings_entity ADD COLUMN share_links_disabled BOOLEAN NOT NULL DEFAULT FALSE;

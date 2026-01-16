@@ -7,6 +7,10 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.cloud.context.refresh.ContextRefresher;
 import org.springframework.security.crypto.bcrypt.BCrypt;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 import static org.rostislav.quickdrop.util.FileUtils.formatFileSize;
 
@@ -38,6 +42,7 @@ public class ApplicationSettingsService {
             settings.setDisableEncryption(false);
             settings.setDisableUploadPassword(false);
             settings.setDisablePreview(false);
+            settings.setMetadataStrippingEnabled(false);
             settings.setMaxPreviewSizeBytes(5L * 1024L * 1024L);
             settings.setDefaultHomePage("upload");
             settings.setKeepIndefinitelyAdminOnly(false);
@@ -54,17 +59,29 @@ public class ApplicationSettingsService {
             settings.setSmtpUseTls(true);
             settings.setNotificationBatchEnabled(false);
             settings.setNotificationBatchMinutes(5);
+            settings.setSimplifiedShareLinks(false);
+            settings.setShareLinksDisabled(false);
+            settings.setAppName("QuickDrop");
+            settings.setLogoFileName(null);
             settings = applicationSettingsRepository.save(settings);
             scheduleService.updateSchedule(settings.getFileDeletionCron(), settings.getMaxFileLifeTime());
             return settings;
         });
+
+        if (this.applicationSettings.getAppName() == null || this.applicationSettings.getAppName().isBlank()) {
+            this.applicationSettings.setAppName("QuickDrop");
+            applicationSettingsRepository.save(this.applicationSettings);
+        }
+
+        // Ensure cleanup scheduling is initialized even when settings already exist (common on restarts)
+        scheduleService.updateSchedule(applicationSettings.getFileDeletionCron(), applicationSettings.getMaxFileLifeTime());
     }
 
     public ApplicationSettingsEntity getApplicationSettings() {
         return applicationSettings;
     }
 
-    public void updateApplicationSettings(ApplicationSettingsViewModel settings, String appPassword) {
+    public void updateApplicationSettings(ApplicationSettingsViewModel settings, String appPassword, MultipartFile logoFile, boolean clearLogo) {
         ApplicationSettingsEntity applicationSettingsEntity = applicationSettingsRepository.findById(1L).orElseThrow();
         applicationSettingsEntity.setMaxFileSize(settings.getMaxFileSize());
         applicationSettingsEntity.setMaxFileLifeTime(settings.getMaxFileLifeTime());
@@ -82,10 +99,13 @@ public class ApplicationSettingsService {
             applicationSettingsEntity.setDisableEncryption(settings.isEncryptionDisabled());
         }
         applicationSettingsEntity.setDisablePreview(settings.isDisablePreview());
+        applicationSettingsEntity.setMetadataStrippingEnabled(settings.isMetadataStrippingEnabled());
         applicationSettingsEntity.setMaxPreviewSizeBytes(settings.getMaxPreviewSizeBytes());
         applicationSettingsEntity.setDefaultHomePage(settings.getDefaultHomePage());
         applicationSettingsEntity.setKeepIndefinitelyAdminOnly(settings.isKeepIndefinitelyAdminOnly());
         applicationSettingsEntity.setHideFromListAdminOnly(settings.isHideFromListAdminOnly());
+        boolean shareLinksDisabled = settings.isShareLinksDisabled();
+        applicationSettingsEntity.setShareLinksDisabled(shareLinksDisabled);
         applicationSettingsEntity.setDiscordWebhookEnabled(settings.isDiscordWebhookEnabled());
         applicationSettingsEntity.setDiscordWebhookUrl(settings.getDiscordWebhookUrl());
         applicationSettingsEntity.setEmailNotificationsEnabled(settings.isEmailNotificationsEnabled());
@@ -105,6 +125,30 @@ public class ApplicationSettingsService {
             applicationSettingsEntity.setNotificationBatchMinutes(requestedBatchMinutes);
         } else if (existingBatchMinutes != null) {
             applicationSettingsEntity.setNotificationBatchMinutes(existingBatchMinutes);
+        }
+
+        applicationSettingsEntity.setSimplifiedShareLinks(
+            shareLinksDisabled ? false : settings.isSimplifiedShareLinks());
+        String requestedAppName = settings.getAppName();
+        applicationSettingsEntity.setAppName((requestedAppName == null || requestedAppName.isBlank()) ? "QuickDrop" : requestedAppName.trim());
+
+        if (clearLogo) {
+            applicationSettingsEntity.setLogoFileName(null);
+        } else if (logoFile != null && !logoFile.isEmpty()) {
+            try {
+                String sanitizedName = logoFile.getOriginalFilename();
+                if (sanitizedName == null || sanitizedName.isBlank()) {
+                    sanitizedName = "custom-logo";
+                }
+                sanitizedName = sanitizedName.replaceAll("[^a-zA-Z0-9._-]", "_");
+                Path brandingDir = Path.of("branding").toAbsolutePath();
+                Files.createDirectories(brandingDir);
+                Path targetPath = brandingDir.resolve(sanitizedName);
+                logoFile.transferTo(targetPath);
+                applicationSettingsEntity.setLogoFileName(targetPath.getFileName().toString());
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to store logo file", e);
+            }
         }
 
         if (appPassword != null && !appPassword.isEmpty()) {
@@ -192,6 +236,10 @@ public class ApplicationSettingsService {
         return !applicationSettings.isDisablePreview();
     }
 
+    public boolean isMetadataStrippingEnabled() {
+        return applicationSettings.isMetadataStrippingEnabled();
+    }
+
     public long getMaxPreviewSizeBytes() {
         return applicationSettings.getMaxPreviewSizeBytes();
     }
@@ -252,7 +300,34 @@ public class ApplicationSettingsService {
         return applicationSettings.isNotificationBatchEnabled();
     }
 
+    public boolean isSimplifiedShareLinksEnabled() {
+        return applicationSettings.isSimplifiedShareLinks() && !applicationSettings.isShareLinksDisabled();
+    }
+
+    public boolean isShareLinksDisabled() {
+        return applicationSettings.isShareLinksDisabled();
+    }
+
     public Integer getNotificationBatchMinutes() {
         return applicationSettings.getNotificationBatchMinutes();
+    }
+
+    public String getAppName() {
+        String name = applicationSettings.getAppName();
+        return (name == null || name.isBlank()) ? "QuickDrop" : name;
+    }
+
+    public String getLogoPath() {
+        String fileName = applicationSettings.getLogoFileName();
+        if (fileName == null || fileName.isBlank()) {
+            return "/images/favicon.png";
+        }
+
+        Path brandingDir = Path.of("branding").toAbsolutePath();
+        Path candidate = brandingDir.resolve(fileName);
+        if (Files.exists(candidate)) {
+            return "/branding/" + candidate.getFileName();
+        }
+        return "/images/favicon.png";
     }
 }

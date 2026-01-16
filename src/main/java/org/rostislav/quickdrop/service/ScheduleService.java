@@ -40,28 +40,39 @@ public class ScheduleService {
 
     @Transactional
     public void updateSchedule(String cronExpression, long maxFileLifeTime) {
-        if (cronExpression != null && cronExpression.equals(currentCron) && scheduledTask != null && !scheduledTask.isCancelled()) {
+        if (cronExpression == null || cronExpression.isBlank()) {
+            logger.warn("No cron expression provided; cleanup scheduling skipped");
+            return;
+        }
+
+        if (cronExpression.equals(currentCron) && scheduledTask != null && !scheduledTask.isCancelled()) {
             logger.debug("Cron unchanged ({}), skipping reschedule", cronExpression);
             return;
         }
 
-        if (scheduledTask != null && cronExpression != null) {
+        if (scheduledTask != null) {
             scheduledTask.cancel(false);
-            scheduledTask = taskScheduler.schedule(
-                    () -> deleteOldFiles(maxFileLifeTime),
-                    new CronTrigger(cronExpression)
-            );
         }
 
+        scheduledTask = taskScheduler.schedule(
+                () -> deleteOldFiles(maxFileLifeTime),
+                new CronTrigger(cronExpression)
+        );
+
         currentCron = cronExpression;
-        logger.info("Scheduled cleanup with cron: {}", cronExpression);
+        logger.info("Scheduled cleanup with cron: {} and max life: {} days", cronExpression, maxFileLifeTime);
     }
 
     @Transactional
     public void deleteOldFiles(long maxFileLifeTime) {
-        logger.info("Deleting old files");
+        logger.info("Deleting old files (max life: {} days)", maxFileLifeTime);
         LocalDate thresholdDate = LocalDate.now().minusDays(maxFileLifeTime);
         List<FileEntity> filesForDeletion = fileRepository.getFilesForDeletion(thresholdDate);
+
+        if (filesForDeletion.isEmpty()) {
+            logger.info("No files eligible for deletion (threshold date: {})", thresholdDate);
+            return;
+        }
 
         List<Long> deletedIds = new ArrayList<>();
         for (FileEntity file : filesForDeletion) {
@@ -77,6 +88,9 @@ public class ScheduleService {
         if (!deletedIds.isEmpty()) {
             deletedIds.forEach(fileHistoryLogRepository::deleteByFileId);
             fileRepository.deleteAllById(deletedIds);
+            logger.info("Deleted {} files (threshold date: {})", deletedIds.size(), thresholdDate);
+        } else {
+            logger.warn("No database deletions performed; all filesystem deletions failed or nothing matched");
         }
     }
 

@@ -1,5 +1,8 @@
 import { preprocessFileForMetadata } from "./metadata-pipeline.js";
 
+const getRelativePath = (file) =>
+  file?.relativePath || file?.webkitRelativePath || file?.path || file?.name;
+
 export function parseSize(sizeLabel) {
   const units = { B: 1, KB: 1024, MB: 1024 * 1024, GB: 1024 * 1024 * 1024 };
   const unitMatch = sizeLabel.match(/[a-zA-Z]+/);
@@ -16,12 +19,12 @@ export function parseSize(sizeLabel) {
 export function buildFolderManifest(fileList) {
   const manifestSet = new Set();
   let totalOriginalSize = 0;
-  const firstPath = fileList[0].webkitRelativePath || fileList[0].name;
+  const firstPath = getRelativePath(fileList[0]);
   const rootFolder = firstPath.split(/[/\\]/)[0];
 
   for (const file of fileList) {
     totalOriginalSize += file.size;
-    const rel = file.webkitRelativePath || file.name;
+    const rel = getRelativePath(file);
     manifestSet.add(
       JSON.stringify({ path: rel, size: file.size, type: "file" })
     );
@@ -63,7 +66,7 @@ async function zipRawFiles(fileList, manifestArray) {
     }
   });
   for (const file of fileList) {
-    const rel = file.webkitRelativePath || file.name;
+    const rel = getRelativePath(file);
     rawZip.file(rel, file);
   }
   return rawZip.generateAsync({ type: "blob" });
@@ -78,7 +81,7 @@ export async function buildFolderCandidates(fileList, { metadataEnabled }) {
   const results = [];
 
   for (const file of fileList) {
-    const rel = file.webkitRelativePath || file.name;
+    const rel = getRelativePath(file);
     const result = await preprocessFileForMetadata(file, rel, metadataEnabled);
     processedEntries.push({ path: rel, file: result.processedFile });
 

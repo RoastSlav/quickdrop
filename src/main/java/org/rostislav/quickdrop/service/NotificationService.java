@@ -108,7 +108,7 @@ public class NotificationService {
             return NotificationTestResult.success("Discord test notification sent.");
         } catch (Exception e) {
             logger.warn("Discord test notification failed: {}", e.getMessage());
-            return NotificationTestResult.failure("Discord test failed: " + e.getMessage());
+            return NotificationTestResult.failure("Discord test failed: " + summarizeReason(e.getMessage()));
         }
     }
 
@@ -154,8 +154,19 @@ public class NotificationService {
             return NotificationTestResult.success("Email test notification sent.");
         } catch (Exception e) {
             logger.warn("Email test notification failed: {}", e.getMessage());
-            return NotificationTestResult.failure("Email test failed: " + e.getMessage());
+            return NotificationTestResult.failure("Email test failed: " + summarizeReason(e.getMessage()));
         }
+    }
+
+    private String summarizeReason(String message) {
+        if (message == null || message.isBlank()) {
+            return "unexpected error";
+        }
+        String clean = message.replaceAll("[\r\n]+", " ").strip();
+        if (clean.length() > 160) {
+            clean = clean.substring(0, 160) + "…";
+        }
+        return clean;
     }
 
     private void flushBatchIfDue() {

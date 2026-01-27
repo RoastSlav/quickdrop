@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -186,7 +186,7 @@
                     class="h-4 w-4 rounded border-gray-400 dark:border-gray-600 accent-sky-500 dark:accent-sky-400 focus:ring-sky-500"
                     id="keepIndefinitely"
                     name="keepIndefinitely"
-                    onchange="updateCheckboxState(event,this)"
+                    onchange="updateCheckboxState(event, this)"
                     th:checked="${file.keepIndefinitely}"
                     th:disabled="${keepDisabled}"
                     type="checkbox"
@@ -216,7 +216,7 @@
                     class="h-4 w-4 rounded border-gray-400 dark:border-gray-600 accent-sky-500 dark:accent-sky-400 focus:ring-sky-500"
                     id="hidden"
                     name="hidden"
-                    onchange="updateCheckboxState(event,this)"
+                    onchange="updateCheckboxState(event, this)"
                     th:checked="${file.hidden}"
                     th:disabled="${hiddenDisabled}"
                     type="checkbox"

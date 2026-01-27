@@ -7,6 +7,8 @@ import org.rostislav.quickdrop.model.AnalyticsDataView;
 import org.rostislav.quickdrop.model.ApplicationSettingsViewModel;
 import org.rostislav.quickdrop.model.FileEntityView;
 import org.rostislav.quickdrop.service.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
@@ -25,6 +27,7 @@ import static org.rostislav.quickdrop.util.FileUtils.megabytesToBytes;
 @Controller
 @RequestMapping("/admin")
 public class AdminViewController {
+    private static final Logger logger = LoggerFactory.getLogger(AdminViewController.class);
     private final ApplicationSettingsService applicationSettingsService;
     private final AnalyticsService analyticsService;
     private final FileService fileService;
@@ -191,11 +194,19 @@ public class AdminViewController {
         return switch (target.toLowerCase()) {
             case "discord" -> {
                 var result = notificationService.sendTestDiscord();
-                yield result.success() ? ResponseEntity.ok(result.message()) : ResponseEntity.badRequest().body(result.message());
+                if (result.success()) {
+                    yield ResponseEntity.ok(result.message());
+                }
+                logger.warn("Discord test notification failed: {}", result.message());
+                yield ResponseEntity.badRequest().body("Discord test failed: " + result.message());
             }
             case "email" -> {
                 var result = notificationService.sendTestEmail();
-                yield result.success() ? ResponseEntity.ok(result.message()) : ResponseEntity.badRequest().body(result.message());
+                if (result.success()) {
+                    yield ResponseEntity.ok(result.message());
+                }
+                logger.warn("Email test notification failed: {}", result.message());
+                yield ResponseEntity.badRequest().body("Email test failed: " + result.message());
             }
             default -> ResponseEntity.badRequest().body("Unknown notification target.");
         };

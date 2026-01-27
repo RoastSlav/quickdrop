@@ -1,5 +1,4 @@
-// Metadata stripping orchestration helpers that wrap the registry
-export const METADATA_STRIP_MAX_BYTES = 25 * 1024 * 1024; // keep in sync with server-side limit if present
+export const METADATA_STRIP_MAX_BYTES = 25 * 1024 * 1024;
 
 export async function preprocessFileForMetadata(
   file,

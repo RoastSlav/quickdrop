@@ -96,12 +96,11 @@ public class FileUtils {
         return scheme + "://" + request.getServerName() + "/file/" + fileEntity.uuid;
     }
 
-    public static String getShareLink(HttpServletRequest request, String token) {
-        String scheme = request.getHeader("X-Forwarded-Proto");
-        if (scheme == null) {
-            scheme = request.getScheme();
+    public static String getSharePath(String token) {
+        if (token == null) {
+            return "";
         }
-        return scheme + "://" + request.getServerName() + "/share/" + token;
+        return "/share/" + token;
     }
 
     public static long bytesToMegabytes(long bytes) {

@@ -29,8 +29,8 @@ export function setUploadState(state, ui = getUIRefs()) {
       state === UploadState.NEEDS_CONFIRMATION
         ? "Confirm Upload"
         : state === UploadState.UPLOADING
-        ? "Uploading..."
-        : "Upload";
+          ? "Uploading..."
+          : "Upload";
     ui.uploadPrimary.classList.toggle(
       "opacity-60",
       isBusy || state === UploadState.IDLE

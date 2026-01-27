@@ -57,7 +57,6 @@ export function initUploadPage(config = {}) {
       return file;
     }
   };
-
   const maxSizeSpan = document.querySelector(".maxFileSize");
   const maxSizeLabel = maxSizeSpan ? maxSizeSpan.innerText : "the allowed";
   const maxSize = maxSizeSpan ? parseSize(maxSizeSpan.innerText) : Infinity;

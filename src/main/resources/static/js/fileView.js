@@ -153,7 +153,8 @@ function generateShareLink(fileUuid, daysValid, allowedNumberOfDownloads) {
       throw new Error(message);
     }
 
-    const sharePath = data.sharePath || (data.token ? `/share/${data.token}` : "");
+    const sharePath =
+      data.sharePath || (data.token ? `/share/${data.token}` : "");
     if (!sharePath) return "";
 
     const absolute = new URL(sharePath, window.location.origin).toString();
@@ -203,8 +204,8 @@ function setCopyButtonState(state) {
     ...(state === "success"
       ? greenClasses
       : state === "error"
-      ? redClasses
-      : skyClasses),
+        ? redClasses
+        : skyClasses),
   ].join(" ");
 
   // Inline fallback colors to avoid transient invisibility if Tailwind classes are purged in some builds
@@ -624,8 +625,8 @@ function buildJsonNode(value, label) {
     summary.textContent = label
       ? `${label} ${isArray ? "[ ]" : "{ }"}`
       : isArray
-      ? "[ ]"
-      : "{ }";
+        ? "[ ]"
+        : "{ }";
     details.appendChild(summary);
     Object.entries(value).forEach(([key, val]) => {
       details.appendChild(buildJsonNode(val, key));

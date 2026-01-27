@@ -19,6 +19,7 @@ import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBo
 
 import java.io.IOException;
 import java.time.LocalDate;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.rostislav.quickdrop.util.FileUtils.validateShareToken;
@@ -91,12 +92,13 @@ public class FileRestController {
     }
 
     @PostMapping("/share/{uuid}")
-    public ResponseEntity<String> generateShareableLink(@PathVariable String uuid,
-                                                        @RequestParam(value = "expirationDate", required = false) LocalDate expirationDate,
-                                                        @RequestParam(value = "nOfDownloads", required = false) Integer numberOfDownloads,
-                                                        HttpServletRequest request) {
+    public ResponseEntity<Map<String, String>> generateShareableLink(@PathVariable String uuid,
+                                                                     @RequestParam(value = "expirationDate", required = false) LocalDate expirationDate,
+                                                                     @RequestParam(value = "nOfDownloads", required = false) Integer numberOfDownloads,
+                                                                     HttpServletRequest request) {
         if (applicationSettingsService.isShareLinksDisabled()) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Share links are disabled.");
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("message", "Share links are disabled."));
         }
         if (applicationSettingsService.isSimplifiedShareLinksEnabled()) {
             expirationDate = null;
@@ -104,25 +106,30 @@ public class FileRestController {
         }
         FileEntity fileEntity = fileService.getFile(uuid);
         if (fileEntity == null) {
-            return ResponseEntity.badRequest().body("File not found.");
+            return ResponseEntity.badRequest().body(Map.of("message", "File not found."));
         }
 
         if (numberOfDownloads != null && numberOfDownloads < 0) {
-            return ResponseEntity.badRequest().body("Number of downloads cannot be negative.");
+            return ResponseEntity.badRequest()
+                    .body(Map.of("message", "Number of downloads cannot be negative."));
         }
 
         ShareTokenEntity token;
         if (fileEntity.passwordHash != null && !fileEntity.passwordHash.isEmpty()) {
             String sessionToken = (String) request.getSession().getAttribute("file-session-token");
             if (sessionToken == null || !sessionService.validateFileSessionToken(sessionToken, uuid)) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Map.of("message", "Invalid file session."));
             }
             token = fileService.generateShareToken(uuid, expirationDate, sessionToken, numberOfDownloads);
         } else {
             token = fileService.generateShareToken(uuid, expirationDate, numberOfDownloads);
         }
-        String shareLink = FileUtils.getShareLink(request, token.shareToken);
-        return ok(shareLink);
+        String sharePath = FileUtils.getSharePath(token.shareToken);
+        return ok(java.util.Map.of(
+                "token", token.shareToken,
+                "sharePath", sharePath
+        ));
     }
 
     @GetMapping("/download/{token}")

@@ -138,11 +138,26 @@ function generateShareLink(fileUuid, daysValid, allowedNumberOfDownloads) {
     headers: {
       "Content-Type": "application/json",
       "X-XSRF-TOKEN": csrfToken,
+      Accept: "application/json",
     },
   }).then(async (response) => {
-    const text = await response.text();
-    if (!response.ok) throw new Error(text || "Failed to generate share link");
-    return text;
+    let data = {};
+    try {
+      data = await response.json();
+    } catch (_) {
+      // Non-JSON response; leave data empty for error handling below.
+    }
+
+    if (!response.ok) {
+      const message = data?.message || "Failed to generate share link";
+      throw new Error(message);
+    }
+
+    const sharePath = data.sharePath || (data.token ? `/share/${data.token}` : "");
+    if (!sharePath) return "";
+
+    const absolute = new URL(sharePath, window.location.origin).toString();
+    return absolute;
   });
 }
 

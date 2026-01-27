@@ -165,7 +165,11 @@
               <span th:text="${maxFileLifeTime}">30</span> days after this
               date.</small
             >
-            <div class="flex justify-between items-center pt-4">
+            <div
+              class="flex justify-between items-center pt-4"
+              th:with="keepDisabled=${(isKeepIndefinitelyAdminOnly and !hasAdminSession) or (!hasAdminSession and file.passwordHash == null)}"
+              th:if="${keepDisabled == false or file.keepIndefinitely == true}"
+            >
               <span class="font-semibold">Keep indefinitely:</span>
               <form
                 method="post"
@@ -184,14 +188,18 @@
                     name="keepIndefinitely"
                     onchange="updateCheckboxState(event,this)"
                     th:checked="${file.keepIndefinitely}"
-                    th:disabled="${(isKeepIndefinitelyAdminOnly and !hasAdminSession) or (!hasAdminSession and file.passwordHash == null)}"
+                    th:disabled="${keepDisabled}"
                     type="checkbox"
                     value="true"
                   />
                 </label>
               </form>
             </div>
-            <div class="flex justify-between items-center">
+            <div
+              class="flex justify-between items-center"
+              th:with="hiddenDisabled=${(isHideFromListAdminOnly and !hasAdminSession) or (!hasAdminSession and file.passwordHash == null)}"
+              th:if="${hiddenDisabled == false or file.hidden == true}"
+            >
               <span class="font-semibold">Hide file from list:</span>
               <form
                 method="post"
@@ -210,7 +218,7 @@
                     name="hidden"
                     onchange="updateCheckboxState(event,this)"
                     th:checked="${file.hidden}"
-                    th:disabled="${(isHideFromListAdminOnly and !hasAdminSession) or (!hasAdminSession and file.passwordHash == null)}"
+                    th:disabled="${hiddenDisabled}"
                     type="checkbox"
                     value="true"
                   />

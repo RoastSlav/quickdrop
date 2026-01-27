@@ -126,7 +126,9 @@ export function showMessage(type, text) {
   };
   const container = document.getElementById("messageContainer");
   if (!container) return;
-  container.innerHTML = `<div class="rounded-lg p-4 mb-4 ${
-    styles[type] || styles.info
-  }">${text}</div>`;
+  container.textContent = "";
+  const wrapper = document.createElement("div");
+  wrapper.className = `rounded-lg p-4 mb-4 ${styles[type] || styles.info}`;
+  wrapper.textContent = text;
+  container.appendChild(wrapper);
 }

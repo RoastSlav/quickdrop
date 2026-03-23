@@ -17,9 +17,12 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.web.util.UriUtils;
 
+import java.io.IOException;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 
 import static org.rostislav.quickdrop.util.FileUtils.*;
@@ -46,6 +49,118 @@ public class FileViewController {
         model.addAttribute("maxFileLifeTime", applicationSettingsService.getMaxFileLifeTime());
         model.addAttribute("isMetadataStrippingEnabled", applicationSettingsService.isMetadataStrippingEnabled());
         return "upload";
+    }
+
+    @GetMapping("/paste/new")
+    public String showPastePage(Model model) {
+        if (!applicationSettingsService.isPastebinEnabled()) {
+            return "redirect:/file/upload";
+        }
+
+        model.addAttribute("maxFileLifeTime", applicationSettingsService.getMaxFileLifeTime());
+        model.addAttribute("isEditMode", false);
+        model.addAttribute("pasteTitle", "");
+        model.addAttribute("pasteContent", "");
+        model.addAttribute("pasteSyntax", "markdown");
+        model.addAttribute("pasteFormAction", "/file/paste");
+        model.addAttribute("pasteCancelUrl", "/file/upload");
+        return "pastebin";
+    }
+
+    @GetMapping("/paste/edit/{uuid}")
+    public String showPasteEditPage(@PathVariable String uuid, Model model, HttpServletRequest request) {
+        if (!applicationSettingsService.isPastebinEnabled()) {
+            return "redirect:/file/upload";
+        }
+
+        FileEntity fileEntity = fileService.getFile(uuid);
+        if (fileEntity == null) {
+            return "redirect:/file/list";
+        }
+        if (!fileEntity.paste) {
+            return "redirect:/file/" + uuid;
+        }
+
+        String content = fileService.getPasteContent(uuid, request);
+        if (content == null) {
+            return "redirect:/file/" + uuid;
+        }
+
+        model.addAttribute("maxFileLifeTime", applicationSettingsService.getMaxFileLifeTime());
+        model.addAttribute("isEditMode", true);
+        model.addAttribute("pasteUuid", uuid);
+        model.addAttribute("pasteTitle", fileEntity.name == null ? "" : fileEntity.name.replaceFirst("(?i)\\.(txt|md)$", ""));
+        model.addAttribute("pasteContent", content);
+        model.addAttribute("pasteSyntax", fileEntity.name != null && fileEntity.name.toLowerCase(Locale.ROOT).endsWith(".md") ? "markdown" : "text");
+        model.addAttribute("keepIndefinitely", fileEntity.keepIndefinitely);
+        model.addAttribute("pasteFormAction", "/file/paste/edit/" + uuid);
+        model.addAttribute("pasteCancelUrl", "/file/" + uuid);
+        return "pastebin";
+    }
+
+    @PostMapping("/paste")
+    public String createPaste(@RequestParam(name = "title", required = false) String title,
+                              @RequestParam(name = "content", required = false) String content,
+                              @RequestParam(name = "syntax", defaultValue = "markdown") String syntax,
+                              @RequestParam(name = "keepIndefinitely", defaultValue = "false") boolean keepIndefinitely,
+                              @RequestParam(name = "password", required = false) String password,
+                              HttpServletRequest request,
+                              RedirectAttributes redirectAttributes) {
+        if (!applicationSettingsService.isPastebinEnabled()) {
+            return "redirect:/file/upload";
+        }
+        if (!applicationSettingsService.isUploadPasswordEnabled() && password != null && !password.isBlank()) {
+            redirectAttributes.addFlashAttribute("pasteError", "Upload passwords are disabled.");
+            return "redirect:/file/paste/new";
+        }
+
+        try {
+            FileEntity created = fileService.createPaste(title, content, syntax, keepIndefinitely, password, request);
+            if (created == null) {
+                redirectAttributes.addFlashAttribute("pasteError", "Could not create paste.");
+                return "redirect:/file/paste/new";
+            }
+            return "redirect:/file/" + created.uuid;
+        } catch (IllegalArgumentException e) {
+            redirectAttributes.addFlashAttribute("pasteError", e.getMessage());
+            return "redirect:/file/paste/new";
+        } catch (IOException e) {
+            logger.error("Failed to create paste: {}", e.getMessage());
+            redirectAttributes.addFlashAttribute("pasteError", "Could not create paste.");
+            return "redirect:/file/paste/new";
+        }
+    }
+
+    @PostMapping("/paste/edit/{uuid}")
+    public String updatePaste(@PathVariable String uuid,
+                              @RequestParam(name = "title", required = false) String title,
+                              @RequestParam(name = "content", required = false) String content,
+                              @RequestParam(name = "syntax", defaultValue = "markdown") String syntax,
+                              @RequestParam(name = "keepIndefinitely", defaultValue = "false") boolean keepIndefinitely,
+                              HttpServletRequest request,
+                              RedirectAttributes redirectAttributes) {
+        if (!applicationSettingsService.isPastebinEnabled()) {
+            return "redirect:/file/upload";
+        }
+        if (!fileService.isAuthorizedForFile(uuid, request)) {
+            return "redirect:/file/password/" + uuid;
+        }
+
+        try {
+            FileEntity updated = fileService.updatePaste(uuid, title, content, syntax, keepIndefinitely, request);
+            if (updated == null) {
+                redirectAttributes.addFlashAttribute("pasteError", "Could not update paste.");
+                return "redirect:/file/paste/edit/" + uuid;
+            }
+            return "redirect:/file/" + updated.uuid;
+        } catch (IllegalArgumentException e) {
+            redirectAttributes.addFlashAttribute("pasteError", e.getMessage());
+            return "redirect:/file/paste/edit/" + uuid;
+        } catch (IOException e) {
+            logger.error("Failed to update paste {}: {}", uuid, e.getMessage());
+            redirectAttributes.addFlashAttribute("pasteError", "Could not update paste.");
+            return "redirect:/file/paste/edit/" + uuid;
+        }
     }
 
     @GetMapping("/list")
@@ -78,6 +193,21 @@ public class FileViewController {
         }
 
         model.addAttribute("maxFileLifeTime", applicationSettingsService.getMaxFileLifeTime());
+
+        if (fileEntity.paste) {
+            if (!fileService.isAuthorizedForFile(uuid, request)) {
+                return "redirect:/file/password/" + uuid;
+            }
+            String pasteContent = fileService.getPasteContent(uuid, request);
+            if (pasteContent == null) {
+                return "redirect:/file/password/" + uuid;
+            }
+
+            populateModelAttributes(fileEntity, model, request);
+            model.addAttribute("pasteContent", pasteContent);
+            model.addAttribute("isMarkdownPaste", fileEntity.name != null && fileEntity.name.toLowerCase(Locale.ROOT).endsWith(".md"));
+            return "pasteView";
+        }
 
         populateModelAttributes(fileEntity, model, request);
 
@@ -143,7 +273,7 @@ public class FileViewController {
     public String checkPassword(@RequestParam("uuid") String uuid,
                                 @RequestParam("password") String password,
                                 HttpServletRequest request,
-                                org.springframework.web.servlet.mvc.support.RedirectAttributes redirectAttributes) {
+                                RedirectAttributes redirectAttributes) {
         if (fileService.checkFilePassword(uuid, password)) {
             String fileSessionToken = sessionService.addFileSessionToken(UUID.randomUUID().toString(), password, uuid);
             request.getSession().setAttribute("file-session-token", fileSessionToken);

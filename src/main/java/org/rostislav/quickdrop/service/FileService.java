@@ -5,9 +5,7 @@ import jakarta.transaction.Transactional;
 import org.rostislav.quickdrop.entity.FileEntity;
 import org.rostislav.quickdrop.entity.FileHistoryLog;
 import org.rostislav.quickdrop.entity.ShareTokenEntity;
-import org.rostislav.quickdrop.model.FileEntityView;
-import org.rostislav.quickdrop.model.FileHistoryType;
-import org.rostislav.quickdrop.model.FileUploadRequest;
+import org.rostislav.quickdrop.model.*;
 import org.rostislav.quickdrop.repository.FileHistoryLogRepository;
 import org.rostislav.quickdrop.repository.FileRepository;
 import org.rostislav.quickdrop.repository.ShareTokenRepository;
@@ -30,8 +28,10 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 
 import static org.rostislav.quickdrop.util.DataValidator.safeNumber;
@@ -49,9 +49,10 @@ public class FileService {
     private final FileEncryptionService fileEncryptionService;
     private final ShareTokenRepository shareTokenRepository;
     private final NotificationService notificationService;
+    private final AsyncFileMergeService asyncFileMergeService;
 
     @Lazy
-    public FileService(FileRepository fileRepository, PasswordEncoder passwordEncoder, ApplicationSettingsService applicationSettingsService, FileHistoryLogRepository fileHistoryLogRepository, SessionService sessionService, FileEncryptionService fileEncryptionService, ShareTokenRepository shareTokenRepository, NotificationService notificationService) {
+    public FileService(FileRepository fileRepository, PasswordEncoder passwordEncoder, ApplicationSettingsService applicationSettingsService, FileHistoryLogRepository fileHistoryLogRepository, SessionService sessionService, FileEncryptionService fileEncryptionService, ShareTokenRepository shareTokenRepository, NotificationService notificationService, @Lazy AsyncFileMergeService asyncFileMergeService) {
         this.fileRepository = fileRepository;
         this.passwordEncoder = passwordEncoder;
         this.applicationSettingsService = applicationSettingsService;
@@ -60,6 +61,7 @@ public class FileService {
         this.fileEncryptionService = fileEncryptionService;
         this.shareTokenRepository = shareTokenRepository;
         this.notificationService = notificationService;
+        this.asyncFileMergeService = asyncFileMergeService;
     }
 
     @CacheEvict(value = {"publicFiles", "adminFiles", "analytics"}, allEntries = true)
@@ -97,6 +99,7 @@ public class FileService {
         fileEntity.folderUpload = request.folderUpload;
         fileEntity.folderName = request.folderName;
         fileEntity.folderManifest = request.folderManifest;
+        fileEntity.paste = request.paste;
 
         if (request.password != null && !request.password.isBlank()) {
             fileEntity.passwordHash = passwordEncoder.encode(request.password);
@@ -184,12 +187,7 @@ public class FileService {
             }
         }
 
-        try {
-            return createFileDownloadResponse(inputStream, fileEntity, request);
-        } catch (Exception e) {
-            logger.error("Error preparing file download response: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
+        return createFileDownloadResponse(inputStream, fileEntity, request);
     }
 
     public ResponseEntity<StreamingResponseBody> previewFile(String uuid, HttpServletRequest request, boolean manualOverride) {
@@ -267,7 +265,8 @@ public class FileService {
             return null;
         }
 
-        return sessionService.getPasswordForFileSessionToken(sessionToken.toString()).getPassword();
+        FileSession fileSession = sessionService.getPasswordForFileSessionToken(sessionToken.toString());
+        return fileSession == null ? null : fileSession.getPassword();
     }
 
     @Cacheable(value = "publicFiles", key = "'page:' + #pageable.pageNumber + ':size:' + #pageable.pageSize + ':q:' + (#query == null ? '' : #query.toLowerCase())")
@@ -336,7 +335,162 @@ public class FileService {
         }
 
         FileEntity fileEntity = referenceByUUID.get();
+        if (fileEntity.passwordHash == null || fileEntity.passwordHash.isBlank()) {
+            return false;
+        }
         return passwordEncoder.matches(password, fileEntity.passwordHash);
+    }
+
+    @CacheEvict(value = {"publicFiles", "adminFiles", "analytics"}, allEntries = true)
+    public FileEntity createPaste(String title,
+                                  String content,
+                                  String syntax,
+                                  boolean keepIndefinitely,
+                                  String password,
+                                  HttpServletRequest request) throws IOException {
+        PasteUploadOptions options = resolvePasteUploadOptions(keepIndefinitely, password, request);
+
+        String fileName = sanitizePasteFileName(title, syntax);
+        byte[] contentBytes = (content == null ? "" : content).getBytes(StandardCharsets.UTF_8);
+        validatePasteSize(contentBytes);
+        RequesterInfo requesterInfo = getRequesterInfo(request);
+
+        FileUploadRequest fileUploadRequest = new FileUploadRequest(
+                null,
+                options.keepIndefinitely(),
+                options.password(),
+                true,
+                fileName,
+                1,
+                (long) contentBytes.length,
+                requesterInfo.ipAddress(),
+                requesterInfo.userAgent(),
+                false,
+                null,
+                null,
+                true
+        );
+
+        InMemoryMultipartFile multipartFile = new InMemoryMultipartFile(
+                "file",
+                fileName,
+                "text/plain",
+                contentBytes
+        );
+
+        return asyncFileMergeService.submitChunk(fileUploadRequest, multipartFile, 0);
+    }
+
+    @CacheEvict(value = {"publicFiles", "adminFiles", "analytics"}, allEntries = true)
+    public FileEntity updatePaste(String uuid,
+                                  String title,
+                                  String content,
+                                  String syntax,
+                                  boolean keepIndefinitely,
+                                  HttpServletRequest request) throws IOException {
+        Optional<FileEntity> byUuid = fileRepository.findByUUID(uuid);
+        if (byUuid.isEmpty()) {
+            return null;
+        }
+
+        FileEntity fileEntity = byUuid.get();
+        if (!fileEntity.paste) {
+            return null;
+        }
+
+        PasteUploadOptions options = resolvePasteUploadOptions(keepIndefinitely, null, request);
+        byte[] contentBytes = (content == null ? "" : content).getBytes(StandardCharsets.UTF_8);
+        validatePasteSize(contentBytes);
+        String existingPassword = fileEntity.encrypted ? getFilePasswordFromSessionToken(request) : null;
+        if (fileEntity.encrypted && (existingPassword == null || existingPassword.isBlank())) {
+            throw new IllegalArgumentException("Valid paste session is required to edit encrypted pastes.");
+        }
+
+        Path storagePath = Path.of(applicationSettingsService.getFileStoragePath());
+        Path filePath = storagePath.resolve(fileEntity.uuid);
+        Path tempPath = storagePath.resolve(fileEntity.uuid + "-paste-tmp");
+
+        Files.createDirectories(storagePath);
+        writeContentToFile(tempPath, contentBytes, existingPassword);
+        Files.move(tempPath, filePath, StandardCopyOption.REPLACE_EXISTING);
+
+        fileEntity.name = sanitizePasteFileName(title, syntax);
+        fileEntity.description = null;
+        fileEntity.size = contentBytes.length;
+        fileEntity.keepIndefinitely = options.keepIndefinitely();
+        fileEntity.hidden = true;
+        fileEntity.uploadDate = LocalDate.now();
+
+        fileRepository.save(fileEntity);
+        logHistory(fileEntity, request, FileHistoryType.RENEWAL);
+        return fileEntity;
+    }
+
+    public String getPasteContent(String uuid, HttpServletRequest request) {
+        Optional<FileEntity> byUuid = fileRepository.findByUUID(uuid);
+        if (byUuid.isEmpty() || !byUuid.get().paste) {
+            return null;
+        }
+
+        FileEntity fileEntity = byUuid.get();
+        Path filePath = Path.of(applicationSettingsService.getFileStoragePath(), fileEntity.uuid);
+        String password = getFilePasswordFromSessionToken(request);
+
+        try (InputStream inputStream = fileEntity.encrypted
+                ? fileEncryptionService.getDecryptedInputStream(filePath.toFile(), password)
+                : new FileInputStream(filePath.toFile())) {
+            return new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+        } catch (Exception e) {
+            logger.error("Unable to read paste content for {}: {}", uuid, e.getMessage());
+            return null;
+        }
+    }
+
+    private void writeContentToFile(Path outputPath, byte[] contentBytes, String password) throws IOException {
+        Files.deleteIfExists(outputPath);
+
+        boolean encrypt = password != null && !password.isBlank() && applicationSettingsService.isEncryptionEnabled();
+        if (!encrypt) {
+            Files.write(outputPath, contentBytes);
+            return;
+        }
+
+        try (OutputStream encryptedOut = fileEncryptionService.getEncryptedOutputStream(outputPath.toFile(), password)) {
+            encryptedOut.write(contentBytes);
+        } catch (Exception e) {
+            throw new IOException("Failed to write encrypted paste", e);
+        }
+    }
+
+    private PasteUploadOptions resolvePasteUploadOptions(boolean keepIndefinitely,
+                                                         String password,
+                                                         HttpServletRequest request) {
+        boolean adminSession = sessionService.hasValidAdminSession(request);
+        boolean allowKeepIndefinitely = !applicationSettingsService.isKeepIndefinitelyAdminOnly() || adminSession;
+        boolean keepIndefinitelyValue = allowKeepIndefinitely && keepIndefinitely;
+        boolean uploadPasswordEnabled = applicationSettingsService.isUploadPasswordEnabled();
+        String effectivePassword = uploadPasswordEnabled ? password : null;
+        return new PasteUploadOptions(keepIndefinitelyValue, effectivePassword);
+    }
+
+    private void validatePasteSize(byte[] contentBytes) {
+        if (contentBytes.length > applicationSettingsService.getMaxFileSize()) {
+            throw new IllegalArgumentException("Paste exceeds max file size limit.");
+        }
+    }
+
+    private String sanitizePasteFileName(String title, String syntax) {
+        String baseName = title == null || title.isBlank() ? "paste" : title.trim();
+        String sanitized = baseName.replaceAll("[^a-zA-Z0-9._ -]", "_");
+        String lower = sanitized.toLowerCase(Locale.ROOT);
+        if (lower.endsWith(".txt") || lower.endsWith(".md")) {
+            sanitized = sanitized.substring(0, Math.max(0, sanitized.lastIndexOf('.')));
+        }
+        if (sanitized.isBlank()) {
+            sanitized = "paste";
+        }
+        String extension = "markdown".equalsIgnoreCase(syntax) ? ".md" : ".txt";
+        return sanitized + extension;
     }
 
     @CacheEvict(value = {"adminFiles", "analytics"}, allEntries = true)
@@ -472,7 +626,7 @@ public class FileService {
         return shareTokenRepository.findByShareToken(token);
     }
 
-    private ResponseEntity<StreamingResponseBody> createFileDownloadResponse(InputStream inputStream, FileEntity fileEntity, HttpServletRequest request) throws IOException {
+    private ResponseEntity<StreamingResponseBody> createFileDownloadResponse(InputStream inputStream, FileEntity fileEntity, HttpServletRequest request) {
         StreamingResponseBody responseBody = getStreamingResponseBody(inputStream);
         logger.info("Sending file: {}", fileEntity);
         logHistory(fileEntity, request, FileHistoryType.DOWNLOAD);
@@ -495,5 +649,8 @@ public class FileService {
     }
 
     public record RequesterInfo(String ipAddress, String userAgent) {
+    }
+
+    private record PasteUploadOptions(boolean keepIndefinitely, String password) {
     }
 }

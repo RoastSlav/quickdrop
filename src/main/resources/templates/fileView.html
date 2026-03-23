@@ -88,6 +88,12 @@
                 >Upload File</a
               >
               <a
+                      class="nav-menu-item hover:text-white"
+                      href="/file/paste/new"
+                      th:if="${isPastebinEnabled}"
+              >Pastebin</a
+              >
+              <a
                 class="nav-menu-item hover:text-white"
                 href="/admin/dashboard"
                 onclick="requestAdminPassword()"
@@ -275,6 +281,12 @@
                   Renew File Lifetime
                 </button>
               </form>
+              <a
+                      class="rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium px-4 py-2 transition-colors active:scale-95"
+                      th:href="@{/file/paste/edit/{uuid}(uuid=${file.uuid})}"
+                      th:if="${file.paste}"
+              >Edit Paste</a
+              >
               <form
                 class="flex gap-2 items-center"
                 method="post"

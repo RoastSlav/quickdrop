@@ -42,7 +42,7 @@ public class WebConfig implements WebMvcConfigurer {
 
         registry.addInterceptor(filePasswordInterceptor)
                 .addPathPatterns("/file/**", "/api/file/share/**")
-                .excludePathPatterns("/file/upload", "/file/list", "/file/password", "/file/password/**", "/file/history/*", "/file/search");
+                .excludePathPatterns("/file/upload", "/file/list", "/file/password", "/file/password/**", "/file/history/*", "/file/search", "/file/paste", "/file/paste/new");
     }
 
     @Bean
@@ -54,6 +54,6 @@ public class WebConfig implements WebMvcConfigurer {
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         Path brandingDir = Path.of("branding").toAbsolutePath();
         registry.addResourceHandler("/branding/**")
-            .addResourceLocations("file:" + brandingDir.toString() + "/");
+                .addResourceLocations("file:" + brandingDir + "/");
     }
 }

@@ -15,6 +15,9 @@ public class IndexViewController {
     @GetMapping("/")
     public String getIndexPage() {
         String home = applicationSettingsService.getDefaultHomePage();
+        if ("paste".equalsIgnoreCase(home) && applicationSettingsService.isPastebinEnabled()) {
+            return "redirect:/file/paste/new";
+        }
         if ("list".equalsIgnoreCase(home) && applicationSettingsService.isFileListPageEnabled()) {
             return "redirect:/file/list";
         }

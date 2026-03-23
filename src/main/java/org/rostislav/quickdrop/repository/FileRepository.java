@@ -19,14 +19,14 @@ public interface FileRepository extends JpaRepository<FileEntity, Long> {
     @Query("SELECT f FROM FileEntity f WHERE f.keepIndefinitely = false AND f.uploadDate < :thresholdDate")
     List<FileEntity> getFilesForDeletion(@Param("thresholdDate") LocalDate thresholdDate);
 
-    @Query("SELECT f FROM FileEntity f WHERE f.hidden = false ORDER BY f.uploadDate DESC")
+    @Query("SELECT f FROM FileEntity f WHERE f.hidden = false AND f.paste = false ORDER BY f.uploadDate DESC")
     Page<FileEntity> findAllNotHiddenFiles(Pageable pageable);
 
     @Query("SELECT SUM(f.size) FROM FileEntity f")
     Long totalFileSizeForAllFiles();
 
-    @Query(value = "SELECT f FROM FileEntity f WHERE f.hidden = false AND (LOWER(f.name) LIKE LOWER(CONCAT('%', :searchString, '%')) OR LOWER(f.description) LIKE LOWER(CONCAT('%', :searchString, '%')) OR LOWER(f.uuid) LIKE LOWER(CONCAT('%', :searchString, '%'))) ORDER BY f.uploadDate DESC",
-            countQuery = "SELECT COUNT(f) FROM FileEntity f WHERE f.hidden = false AND (LOWER(f.name) LIKE LOWER(CONCAT('%', :searchString, '%')) OR LOWER(f.description) LIKE LOWER(CONCAT('%', :searchString, '%')) OR LOWER(f.uuid) LIKE LOWER(CONCAT('%', :searchString, '%')))")
+    @Query(value = "SELECT f FROM FileEntity f WHERE f.hidden = false AND f.paste = false AND (LOWER(f.name) LIKE LOWER(CONCAT('%', :searchString, '%')) OR LOWER(f.description) LIKE LOWER(CONCAT('%', :searchString, '%')) OR LOWER(f.uuid) LIKE LOWER(CONCAT('%', :searchString, '%'))) ORDER BY f.uploadDate DESC",
+            countQuery = "SELECT COUNT(f) FROM FileEntity f WHERE f.hidden = false AND f.paste = false AND (LOWER(f.name) LIKE LOWER(CONCAT('%', :searchString, '%')) OR LOWER(f.description) LIKE LOWER(CONCAT('%', :searchString, '%')) OR LOWER(f.uuid) LIKE LOWER(CONCAT('%', :searchString, '%')))")
     Page<FileEntity> searchNotHiddenFiles(@Param("searchString") String query, Pageable pageable);
 
     @Query(value = """
@@ -36,10 +36,11 @@ public interface FileRepository extends JpaRepository<FileEntity, Long> {
                 )
                 FROM FileEntity f
                 LEFT JOIN FileHistoryLog dl ON dl.file.id = f.id AND dl.eventType = 'DOWNLOAD'
+                WHERE f.paste = false
                 GROUP BY f
                 ORDER BY f.uploadDate DESC
             """,
-            countQuery = "SELECT COUNT(f) FROM FileEntity f")
+            countQuery = "SELECT COUNT(f) FROM FileEntity f WHERE f.paste = false")
     Page<FileEntityView> findFilesWithDownloadCounts(Pageable pageable);
 
     @Query(value = """
@@ -49,12 +50,13 @@ public interface FileRepository extends JpaRepository<FileEntity, Long> {
                 )
                 FROM FileEntity f
                 LEFT JOIN FileHistoryLog dl ON dl.file.id = f.id AND dl.eventType = 'DOWNLOAD'
-                WHERE (LOWER(f.name) LIKE LOWER(CONCAT('%', :searchString, '%'))
+                WHERE f.paste = false
+                    AND (LOWER(f.name) LIKE LOWER(CONCAT('%', :searchString, '%'))
                     OR LOWER(f.description) LIKE LOWER(CONCAT('%', :searchString, '%'))
                     OR LOWER(f.uuid) LIKE LOWER(CONCAT('%', :searchString, '%')))
                 GROUP BY f
                 ORDER BY f.uploadDate DESC
             """,
-            countQuery = "SELECT COUNT(f) FROM FileEntity f WHERE (LOWER(f.name) LIKE LOWER(CONCAT('%', :searchString, '%')) OR LOWER(f.description) LIKE LOWER(CONCAT('%', :searchString, '%')) OR LOWER(f.uuid) LIKE LOWER(CONCAT('%', :searchString, '%')))")
+            countQuery = "SELECT COUNT(f) FROM FileEntity f WHERE f.paste = false AND (LOWER(f.name) LIKE LOWER(CONCAT('%', :searchString, '%')) OR LOWER(f.description) LIKE LOWER(CONCAT('%', :searchString, '%')) OR LOWER(f.uuid) LIKE LOWER(CONCAT('%', :searchString, '%')))")
     Page<FileEntityView> searchFilesWithDownloadCounts(@Param("searchString") String query, Pageable pageable);
 }

@@ -44,6 +44,7 @@ public class ApplicationSettingsEntity {
     private Integer notificationBatchMinutes;
     private boolean simplifiedShareLinks;
     private boolean shareLinksDisabled;
+    private boolean pastebinEnabled;
     private String appName;
     private String logoFileName;
 
@@ -82,6 +83,7 @@ public class ApplicationSettingsEntity {
         this.notificationBatchMinutes = settings.getNotificationBatchMinutes();
         this.simplifiedShareLinks = settings.isSimplifiedShareLinks();
         this.shareLinksDisabled = settings.isShareLinksDisabled();
+        this.pastebinEnabled = settings.isPastebinEnabled();
         this.appName = settings.getAppName();
         this.logoFileName = settings.getLogoFileName();
     }
@@ -372,5 +374,13 @@ public class ApplicationSettingsEntity {
 
     public void setShareLinksDisabled(boolean shareLinksDisabled) {
         this.shareLinksDisabled = shareLinksDisabled;
+    }
+
+    public boolean isPastebinEnabled() {
+        return pastebinEnabled;
+    }
+
+    public void setPastebinEnabled(boolean pastebinEnabled) {
+        this.pastebinEnabled = pastebinEnabled;
     }
 }

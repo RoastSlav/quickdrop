@@ -61,6 +61,7 @@ public class ApplicationSettingsService {
             settings.setNotificationBatchMinutes(5);
             settings.setSimplifiedShareLinks(false);
             settings.setShareLinksDisabled(false);
+            settings.setPastebinEnabled(true);
             settings.setAppName("QuickDrop");
             settings.setLogoFileName(null);
             settings = applicationSettingsRepository.save(settings);
@@ -129,6 +130,7 @@ public class ApplicationSettingsService {
 
         applicationSettingsEntity.setSimplifiedShareLinks(
             shareLinksDisabled ? false : settings.isSimplifiedShareLinks());
+        applicationSettingsEntity.setPastebinEnabled(settings.isPastebinEnabled());
         String requestedAppName = settings.getAppName();
         applicationSettingsEntity.setAppName((requestedAppName == null || requestedAppName.isBlank()) ? "QuickDrop" : requestedAppName.trim());
 
@@ -306,6 +308,10 @@ public class ApplicationSettingsService {
 
     public boolean isShareLinksDisabled() {
         return applicationSettings.isShareLinksDisabled();
+    }
+
+    public boolean isPastebinEnabled() {
+        return applicationSettings.isPastebinEnabled();
     }
 
     public Integer getNotificationBatchMinutes() {

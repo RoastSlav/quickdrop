@@ -18,6 +18,8 @@ public class FileEntity {
     public String passwordHash;
     public boolean hidden;
     public boolean encrypted;
+    @Column(name = "is_paste")
+    public boolean paste;
     public boolean folderUpload;
     public String folderName;
     @Column(columnDefinition = "TEXT")
@@ -40,6 +42,7 @@ public class FileEntity {
                 ", uploadDate=" + uploadDate +
                 ", hidden=" + hidden +
                 ", encrypted=" + encrypted +
+                ", paste=" + paste +
                 ", folderUpload=" + folderUpload +
                 ", folderName='" + folderName + '\'' +
                 '}';

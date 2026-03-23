@@ -396,6 +396,7 @@
               >
                 <option value="upload">Upload Page</option>
                 <option value="list">File List Page</option>
+                <option value="paste">Pastebin Page</option>
               </select>
             </div>
 
@@ -461,6 +462,27 @@
                   <span class="text-xs text-gray-600 dark:text-gray-400">
                     Still available at /admin/dashboard
                   </span>
+                </span>
+              </label>
+            </div>
+
+            <div
+                    class="rounded-xl border border-slate-200 dark:border-slate-700 p-4 h-full md:col-span-2"
+            >
+              <div class="text-sm font-medium mb-2">Pastebin</div>
+              <label class="flex items-start gap-3 pl-2">
+                <input
+                        class="mt-1 h-4 w-4 rounded border-gray-400 dark:border-gray-600 accent-sky-500 dark:accent-sky-400 focus:ring-sky-500"
+                        id="pastebinEnabled"
+                        th:field="*{pastebinEnabled}"
+                        type="checkbox"
+                />
+                <span>
+                  <span class="text-sm">Enable Pastebin Page</span><br/>
+                  <span class="text-xs text-gray-600 dark:text-gray-400"
+                  >Adds a text editor tab and allows selecting Pastebin as
+                    default home page.</span
+                  >
                 </span>
               </label>
             </div>

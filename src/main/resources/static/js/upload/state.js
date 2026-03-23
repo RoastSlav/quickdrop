@@ -6,11 +6,48 @@ export const UploadState = Object.freeze({
   UPLOADING: "UPLOADING",
 });
 
+const METADATA_PRIVACY_NOTICE =
+    "All known metadata will be removed, but this format may still contain details that give information about your identity.";
+
+function escapeHtml(value) {
+  return String(value)
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#39;");
+}
+
+function renderWarningDetails(entries, ui) {
+  if (!ui.uploadWarningDetails || !ui.uploadWarningList) return;
+  if (!entries || entries.length === 0) {
+    ui.uploadWarningDetails.classList.add("hidden");
+    ui.uploadWarningList.classList.add("hidden");
+    ui.uploadWarningList.innerHTML = "";
+    return;
+  }
+
+  const items = entries
+      .map((entry) => {
+        const name = entry?.name ? `<strong>${escapeHtml(entry.name)}</strong>: ` : "";
+        const reason = entry?.reason ? escapeHtml(entry.reason) : "No technical details.";
+        return `<li>${name}${reason}</li>`;
+      })
+      .join("");
+
+  ui.uploadWarningDetails.classList.remove("hidden");
+  ui.uploadWarningDetails.setAttribute("aria-expanded", "false");
+  ui.uploadWarningDetails.innerHTML = "<span aria-hidden=\"true\">&#9656;</span> Technical info";
+  ui.uploadWarningList.classList.add("hidden");
+  ui.uploadWarningList.innerHTML = `<ul class=\"list-disc pl-5 space-y-1\">${items}</ul>`;
+}
+
 export function getUIRefs() {
   return {
     uploadPrimary: document.getElementById("uploadPrimary"),
     uploadCancel: document.getElementById("uploadCancel"),
     uploadWarning: document.getElementById("uploadWarning"),
+    uploadWarningText: document.getElementById("uploadWarningText"),
     uploadWarningDetails: document.getElementById("uploadWarningDetails"),
     uploadWarningList: document.getElementById("uploadWarningList"),
     fileButton: document.getElementById("fileSelectButton"),
@@ -61,8 +98,7 @@ export function setUploadState(state, ui = getUIRefs()) {
 export function renderStripWarning(
   entries = [],
   source = "single",
-  ui = getUIRefs(),
-  { type = "failure" } = {}
+  ui = getUIRefs()
 ) {
   if (!ui.uploadWarning) return;
   if (!entries || entries.length === 0) {
@@ -70,45 +106,28 @@ export function renderStripWarning(
     return;
   }
 
-  const count = entries.length;
-  const firstReason = entries[0]?.reason;
   ui.uploadWarning.classList.remove("hidden");
-  if (type === "warning") {
-    const baseText =
-      source === "folder"
-        ? `Metadata stripping completed with warnings for ${count} item${
-            count > 1 ? "s" : ""
-          }. Upload will continue.`
-        : "Metadata stripping completed with warnings. Upload will continue.";
-    ui.uploadWarning.textContent = firstReason
-      ? `${baseText} Reason: ${firstReason}`
-      : baseText;
+  if (ui.uploadWarningText) {
+    ui.uploadWarningText.textContent = METADATA_PRIVACY_NOTICE;
   } else {
-    const baseText =
-      source === "folder"
-        ? `Metadata stripping failed for ${count} file${
-            count > 1 ? "s" : ""
-          }. Uploading may include identifying metadata.`
-        : "Metadata stripping failed for this file. Uploading may include identifying metadata.";
-    ui.uploadWarning.textContent = firstReason
-      ? `${baseText} Reason: ${firstReason}`
-      : baseText;
+    ui.uploadWarning.textContent = METADATA_PRIVACY_NOTICE;
   }
-
-  if (ui.uploadWarningDetails && ui.uploadWarningList) {
-    ui.uploadWarningDetails.classList.add("hidden");
-    ui.uploadWarningList.classList.add("hidden");
-    ui.uploadWarningList.innerHTML = "";
-  }
+  renderWarningDetails(entries, ui);
 }
 
 export function clearStripWarning(ui = getUIRefs()) {
   if (ui.uploadWarning) {
     ui.uploadWarning.classList.add("hidden");
-    ui.uploadWarning.textContent = "";
+    if (ui.uploadWarningText) {
+      ui.uploadWarningText.textContent = "";
+    } else {
+      ui.uploadWarning.textContent = "";
+    }
   }
   if (ui.uploadWarningDetails) {
     ui.uploadWarningDetails.classList.add("hidden");
+    ui.uploadWarningDetails.setAttribute("aria-expanded", "false");
+    ui.uploadWarningDetails.innerHTML = "<span aria-hidden=\"true\">&#9656;</span> Technical info";
   }
   if (ui.uploadWarningList) {
     ui.uploadWarningList.classList.add("hidden");

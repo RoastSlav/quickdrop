@@ -258,7 +258,21 @@
             <div
               id="uploadWarning"
               class="hidden rounded-lg border border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-200 px-4 py-3 text-sm"
-            ></div>
+            >
+              <div id="uploadWarningText"></div>
+              <button
+                      aria-expanded="false"
+                      class="hidden mt-2 text-left text-xs text-amber-800 dark:text-amber-200 hover:opacity-90"
+                      id="uploadWarningDetails"
+                      type="button"
+              >
+                <span aria-hidden="true">&#9656;</span> Technical info
+              </button>
+              <div
+                      class="hidden mt-2 max-h-32 overflow-y-auto text-xs text-amber-900 dark:text-amber-100 bg-white/70 dark:bg-black/20 rounded-lg border border-amber-300 dark:border-amber-700 px-3 py-2 w-full"
+                      id="uploadWarningList"
+              ></div>
+            </div>
 
             <div id="uploadActions" class="flex flex-col items-center gap-2">
               <div class="flex gap-3">
@@ -277,17 +291,6 @@
                   Cancel
                 </button>
               </div>
-              <button
-                id="uploadWarningDetails"
-                type="button"
-                class="hidden text-xs text-sky-600 dark:text-sky-400 underline"
-              >
-                Show details
-              </button>
-              <div
-                id="uploadWarningList"
-                class="hidden max-h-32 overflow-y-auto text-xs text-gray-700 dark:text-gray-300 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 px-3 py-2 w-full"
-              ></div>
             </div>
           </form>
         </div>

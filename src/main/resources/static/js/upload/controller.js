@@ -1,14 +1,7 @@
-import {
-  UploadState,
-  setUploadState,
-  renderStripWarning,
-  clearStripWarning,
-  showMessage,
-  getUIRefs,
-} from "./state.js";
-import { buildSingleCandidates } from "./metadata-pipeline.js";
-import { buildFolderCandidates, parseSize } from "./zip-builder.js";
-import { uploadCandidate } from "./network.js";
+import {clearStripWarning, getUIRefs, renderStripWarning, setUploadState, showMessage, UploadState,} from "./state.js";
+import {buildSingleCandidates} from "./metadata-pipeline.js";
+import {buildFolderCandidates, parseSize} from "./zip-builder.js";
+import {uploadCandidate} from "./network.js";
 
 export function initUploadPage(config = {}) {
   const ui = getUIRefs();
@@ -343,9 +336,13 @@ export function initUploadPage(config = {}) {
       if (!ui.uploadWarningList) return;
       ui.uploadWarningList.classList.toggle("hidden");
       const nowHidden = ui.uploadWarningList.classList.contains("hidden");
-      ui.uploadWarningDetails.textContent = nowHidden
-        ? "Show details"
-        : "Hide details";
+      ui.uploadWarningDetails.setAttribute(
+          "aria-expanded",
+          nowHidden ? "false" : "true"
+      );
+      ui.uploadWarningDetails.innerHTML = nowHidden
+          ? '<span aria-hidden="true">&#9656;</span> Technical info'
+          : '<span aria-hidden="true">&#9662;</span> Technical info';
     });
   }
 

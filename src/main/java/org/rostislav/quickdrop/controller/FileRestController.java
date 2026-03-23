@@ -81,7 +81,7 @@ public class FileRestController {
 
             String effectivePassword = uploadPasswordEnabled ? password : null;
 
-            FileUploadRequest fileUploadRequest = new FileUploadRequest(description, keepIndefinitelyValue, effectivePassword, hiddenValue, fileName, totalChunks, fileSize, uploaderIp, uploaderUserAgent, Boolean.TRUE.equals(folderUpload), folderName, folderManifest);
+            FileUploadRequest fileUploadRequest = new FileUploadRequest(description, keepIndefinitelyValue, effectivePassword, hiddenValue, fileName, totalChunks, fileSize, uploaderIp, uploaderUserAgent, Boolean.TRUE.equals(folderUpload), folderName, folderManifest, false);
             FileEntity fileEntity = asyncFileMergeService.submitChunk(fileUploadRequest, file, chunkNumber);
             return ResponseEntity.ok(fileEntity);
         } catch (IOException e) {

@@ -72,6 +72,12 @@
                 >Upload File</a
               >
               <a
+                      class="nav-menu-item hover:text-white"
+                      href="/file/paste/new"
+                      th:if="${isPastebinEnabled}"
+              >Pastebin</a
+              >
+              <a
                 class="nav-menu-item hover:text-white"
                 href="/admin/dashboard"
                 onclick="requestAdminPassword()"

@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="_csrf" th:content="${_csrf != null ? _csrf.token : ''}"/>
+    <title th:text="${appName} + ' - Paste View'">Paste View</title>
+    <meta content="width=device-width, initial-scale=1" name="viewport"/>
+    <link href="/css/tailwind.css" rel="stylesheet"/>
+    <link href="/css/custom.css" rel="stylesheet"/>
+    <link
+            href="/images/favicon.png"
+            rel="icon"
+            th:href="${appLogoPath}"
+            type="image/png"
+    />
+    <script src="/js/tailwindTheme.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        .title-action-bar {
+            background-color: #f1f5f9;
+        }
+
+        .title-action-bar .paste-title {
+            color: #0f172a !important;
+        }
+
+        .dark .title-action-bar {
+            background-color: #0f172a;
+        }
+
+        .dark .title-action-bar .paste-title {
+            color: #e2e8f0 !important;
+        }
+
+        .markdown-content h1,
+        .markdown-content h2,
+        .markdown-content h3,
+        .markdown-content h4,
+        .markdown-content h5,
+        .markdown-content h6 {
+            margin-top: 1.25rem;
+            margin-bottom: 0.75rem;
+            font-weight: 700;
+            line-height: 1.25;
+        }
+
+        .markdown-content h1 {
+            font-size: 1.875rem;
+        }
+
+        .markdown-content h2 {
+            font-size: 1.5rem;
+        }
+
+        .markdown-content h3 {
+            font-size: 1.25rem;
+        }
+
+        .markdown-content p,
+        .markdown-content ul,
+        .markdown-content ol,
+        .markdown-content pre,
+        .markdown-content blockquote,
+        .markdown-content table {
+            margin-top: 0.75rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .markdown-content ul,
+        .markdown-content ol {
+            padding-left: 1.25rem;
+        }
+
+        .markdown-content ul {
+            list-style: disc;
+        }
+
+        .markdown-content ol {
+            list-style: decimal;
+        }
+
+        .markdown-content code {
+            background-color: #e2e8f0;
+            border-radius: 0.25rem;
+            padding: 0.1rem 0.3rem;
+        }
+
+        .dark .markdown-content code {
+            background-color: #334155;
+        }
+
+        .markdown-content pre {
+            background-color: #e2e8f0;
+            border-radius: 0.5rem;
+            overflow: auto;
+            padding: 0.75rem;
+        }
+
+        .dark .markdown-content pre {
+            background-color: #1e293b;
+        }
+
+        .markdown-content pre code {
+            background-color: transparent;
+            padding: 0;
+        }
+
+        .markdown-content hr {
+            border: 0;
+            border-top: 1px solid #94a3b8;
+            margin: 1rem 0;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 dark:bg-slate-900 dark:text-gray-100">
+<nav class="bg-gray-800 dark:bg-gray-900 text-gray-100">
+    <div class="max-w-7xl mx-auto px-4 py-4 relative">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+                <a class="flex items-center space-x-2" href="/">
+                    <img
+                            alt="Website Logo"
+                            class="h-10"
+                            src="/images/favicon.png"
+                            th:src="${appLogoPath}"
+                    />
+                    <span class="font-semibold tracking-tight" th:text="${appName}"
+                    >QuickDrop</span
+                    >
+                </a>
+            </div>
+            <button
+                    aria-controls="navMenu"
+                    aria-expanded="false"
+                    aria-label="Toggle navigation"
+                    class="md:hidden rounded-lg p-2 hover:bg-sky-600 dark:hover:bg-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                    id="navToggle"
+                    type="button"
+            >
+                <svg
+                        aria-hidden="true"
+                        class="h-6 w-6"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        viewBox="0 0 24 24"
+                >
+                    <path d="M4 6h16M4 12h16M4 18h16"></path>
+                </svg>
+            </button>
+            <div
+                    class="nav-menu-panel hidden md:flex flex-col md:flex-row md:items-center md:space-x-4 w-full md:w-auto mt-3 md:mt-0 space-y-2 md:space-y-0 bg-gray-800 dark:bg-gray-900 md:bg-transparent md:dark:bg-transparent rounded-lg md:rounded-none p-4 md:p-0 shadow md:shadow-none absolute left-0 right-0 top-full md:static z-20 md:ml-auto"
+                    id="navMenu"
+            >
+                <div
+                        class="flex flex-col space-y-2 md:flex-row md:items-center md:space-x-4 md:space-y-0"
+                >
+                    <a class="nav-menu-item hover:text-white" href="/file/upload"
+                    >Upload File</a
+                    >
+                    <a
+                            class="nav-menu-item hover:text-white"
+                            href="/file/list"
+                            th:if="${isFileListPageEnabled or hasAdminSession}"
+                    >View Files</a
+                    >
+                    <a
+                            class="nav-menu-item hover:text-white"
+                            href="/file/paste/new"
+                            th:if="${isPastebinEnabled}"
+                    >Pastebin</a
+                    >
+                    <a
+                            class="nav-menu-item hover:text-white"
+                            href="/admin/dashboard"
+                            th:if="${isAdminDashboardButtonEnabled}"
+                    >Admin Dashboard</a
+                    >
+                    <form
+                            action="/admin/logout"
+                            method="post"
+                            th:if="${hasAdminSession or hasAppSession}"
+                    >
+                        <input
+                                th:name="${_csrf.parameterName}"
+                                th:value="${_csrf.token}"
+                                type="hidden"
+                        />
+                        <button class="nav-menu-item hover:text-white" type="submit">
+                            Logout
+                        </button>
+                    </form>
+                </div>
+                <button
+                        class="nav-menu-item theme-toggle rounded-lg p-2 transition-colors hover:bg-sky-600 dark:hover:bg-sky-500 active:scale-95 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                        type="button"
+                >
+                    🌙
+                </button>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<main class="max-w-7xl mx-auto px-4 py-6 md:py-8">
+    <span hidden id="fileUuid" th:text="${file.uuid}"></span>
+    <span hidden id="isMarkdownPaste" th:text="${isMarkdownPaste}"></span>
+    <div class="grid grid-cols-1 xl:grid-cols-5 gap-6 items-start">
+        <section class="xl:col-span-4 bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-6 md:p-8 space-y-5">
+            <div class="title-action-bar sticky top-2 z-10 -mx-2 px-2 py-2 rounded-xl border border-slate-200 dark:border-slate-700">
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                    <h1
+                            class="paste-title text-2xl md:text-3xl font-semibold tracking-tight break-all"
+                            th:text="${#strings.isEmpty(file.name) ? 'Untitled paste' : file.name}"
+                    >Paste</h1
+                    >
+                    <div class="flex flex-wrap gap-2">
+                        <button
+                                class="rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium px-4 py-2 transition-colors"
+                                id="copyTextButton"
+                                type="button"
+                        >
+                            Copy text
+                        </button>
+                        <a
+                                class="rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium px-4 py-2 transition-colors"
+                                th:href="@{/file/paste/edit/{uuid}(uuid=${file.uuid})}"
+                        >Edit</a
+                        >
+                        <a
+                                class="rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium px-4 py-2 transition-colors"
+                                th:href="@{/file/download/{uuid}(uuid=${file.uuid})}"
+                        >Download</a
+                        >
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2 text-sm pt-1">
+                <button class="rounded-lg px-3 py-1 bg-sky-500 text-white" id="showRawBtn" type="button">Raw</button>
+                <button class="hidden rounded-lg px-3 py-1 border border-slate-300 dark:border-slate-600"
+                        id="showMarkdownBtn" type="button">
+                    Markdown
+                </button>
+                <span class="text-gray-600 dark:text-gray-400" th:if="${isMarkdownPaste}">Rendered markdown is enabled for this paste.</span>
+            </div>
+
+            <pre
+                    class="max-h-[72vh] overflow-auto rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 p-4 md:p-5 text-sm font-mono whitespace-pre-wrap break-words"
+                    id="rawPasteContent"
+                    th:text="${pasteContent}"
+            ></pre>
+
+            <div
+                    class="markdown-content hidden max-h-[72vh] overflow-auto rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 p-4 md:p-5"
+                    id="markdownPasteContent"
+            ></div>
+        </section>
+
+        <aside class="xl:col-span-1 bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-6 md:p-8 space-y-4"
+               th:if="${!isShareLinksDisabled}">
+            <h2 class="text-lg font-semibold tracking-tight">Share</h2>
+            <button
+                    class="w-full rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium px-4 py-2 transition-colors"
+                    id="generateShareButton"
+                    type="button"
+            >
+                Generate link
+            </button>
+            <input
+                    class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2 text-sm"
+                    id="shareLink"
+                    readonly
+                    type="text"
+                    value=""
+            />
+            <button
+                    class="w-full rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-sm hover:bg-slate-100 dark:hover:bg-slate-700"
+                    id="copyShareButton"
+                    type="button"
+            >
+                Copy share link
+            </button>
+        </aside>
+    </div>
+</main>
+
+<script>
+    const rawEl = document.getElementById("rawPasteContent");
+    const markdownEl = document.getElementById("markdownPasteContent");
+    const rawButton = document.getElementById("showRawBtn");
+    const markdownButton = document.getElementById("showMarkdownBtn");
+    const copyTextButton = document.getElementById("copyTextButton");
+    const rawText = rawEl.textContent || "";
+    const markedApi = window.marked;
+    const markdownRuntimeAvailable =
+        !!markedApi &&
+        typeof markedApi.setOptions === "function" &&
+        typeof markedApi.parse === "function";
+    const isMarkdownPaste =
+        (document.getElementById("isMarkdownPaste")?.textContent || "")
+            .trim()
+            .toLowerCase() === "true";
+
+    if (markdownRuntimeAvailable) {
+        markedApi.setOptions({
+            gfm: true,
+            breaks: true,
+        });
+    }
+
+    function showRaw() {
+        rawEl.classList.remove("hidden");
+        markdownEl.classList.add("hidden");
+        rawButton.className = "rounded-lg px-3 py-1 bg-sky-500 text-white";
+        if (isMarkdownPaste) {
+            markdownButton.className = "rounded-lg px-3 py-1 border border-slate-300 dark:border-slate-600";
+        }
+    }
+
+    function showMarkdown() {
+        if (!isMarkdownPaste || !markdownRuntimeAvailable) {
+            return;
+        }
+        try {
+            markdownEl.innerHTML = markedApi.parse(rawText);
+        } catch (_) {
+            showRaw();
+            return;
+        }
+        markdownEl.classList.remove("hidden");
+        rawEl.classList.add("hidden");
+        markdownButton.className = "rounded-lg px-3 py-1 bg-sky-500 text-white";
+        rawButton.className = "rounded-lg px-3 py-1 border border-slate-300 dark:border-slate-600";
+    }
+
+    rawButton.addEventListener("click", showRaw);
+    if (isMarkdownPaste && markdownRuntimeAvailable) {
+        markdownButton.classList.remove("hidden");
+        markdownButton.addEventListener("click", showMarkdown);
+    } else if (isMarkdownPaste && !markdownRuntimeAvailable) {
+        markdownButton.classList.add("hidden");
+    }
+    copyTextButton.addEventListener("click", async () => {
+        try {
+            await navigator.clipboard.writeText(rawText);
+            copyTextButton.textContent = "Copied";
+            setTimeout(() => {
+                copyTextButton.textContent = "Copy text";
+            }, 1200);
+        } catch (_) {
+            copyTextButton.textContent = "Failed";
+            setTimeout(() => {
+                copyTextButton.textContent = "Copy text";
+            }, 1200);
+        }
+    });
+
+    const generateShareButton = document.getElementById("generateShareButton");
+    const copyShareButton = document.getElementById("copyShareButton");
+    const shareLinkInput = document.getElementById("shareLink");
+    const fileUuid = document.getElementById("fileUuid")?.textContent?.trim();
+    const csrfToken = document.querySelector('meta[name="_csrf"]')?.content || "";
+
+    if (generateShareButton && fileUuid) {
+        generateShareButton.addEventListener("click", async () => {
+            try {
+                const response = await fetch(`/api/file/share/${fileUuid}`, {
+                    method: "POST",
+                    credentials: "same-origin",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-XSRF-TOKEN": csrfToken,
+                        Accept: "application/json",
+                    },
+                });
+                const data = await response.json();
+                if (response.ok) {
+                    const sharePath = data.sharePath || (data.token ? `/share/${data.token}` : "");
+                    shareLinkInput.value = sharePath
+                        ? new URL(sharePath, window.location.origin).toString()
+                        : "";
+                } else {
+                    shareLinkInput.value = data?.message || "Unable to generate share link";
+                }
+            } catch (_) {
+                shareLinkInput.value = "Unable to generate share link";
+            }
+        });
+    }
+
+    if (copyShareButton) {
+        copyShareButton.addEventListener("click", async () => {
+            if (!shareLinkInput.value) {
+                return;
+            }
+            try {
+                await navigator.clipboard.writeText(shareLinkInput.value);
+                copyShareButton.textContent = "Copied";
+                setTimeout(() => {
+                    copyShareButton.textContent = "Copy share link";
+                }, 1200);
+            } catch (_) {
+                copyShareButton.textContent = "Failed";
+                setTimeout(() => {
+                    copyShareButton.textContent = "Copy share link";
+                }, 1200);
+            }
+        });
+    }
+
+    if (isMarkdownPaste && markdownRuntimeAvailable) {
+        showMarkdown();
+    } else {
+        showRaw();
+    }
+</script>
+</body>
+</html>
+
+

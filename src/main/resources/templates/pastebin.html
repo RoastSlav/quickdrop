@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <title th:text="${appName} + ' - Pastebin'">Pastebin</title>
+    <meta content="width=device-width, initial-scale=1" name="viewport"/>
+    <link href="/css/tailwind.css" rel="stylesheet"/>
+    <link href="/css/custom.css" rel="stylesheet"/>
+    <link
+            href="/images/favicon.png"
+            rel="icon"
+            th:href="${appLogoPath}"
+            type="image/png"
+    />
+    <link
+            href="https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.css"
+            rel="stylesheet"
+    />
+    <script src="/js/tailwindTheme.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        .editor-wrapper .CodeMirror {
+            min-height: 20rem;
+            height: auto;
+            border-radius: 0.75rem;
+            border: 1px solid #cbd5e1;
+        }
+
+        .dark .editor-wrapper .CodeMirror,
+        .dark .editor-wrapper .editor-toolbar,
+        .dark .editor-wrapper .editor-preview,
+        .dark .editor-wrapper .editor-preview-side {
+            background-color: #334155;
+            color: #e2e8f0;
+            border-color: #475569;
+        }
+
+        .editor-wrapper .editor-preview,
+        .editor-wrapper .editor-preview-side {
+            font-size: 1rem;
+            line-height: 1.6;
+        }
+
+        .editor-wrapper .manual-preview-pane {
+            display: none;
+            max-height: 72vh;
+            overflow: auto;
+            border: 1px solid #cbd5e1;
+            border-radius: 0.75rem;
+            background-color: #f8fafc;
+            padding: 1rem;
+        }
+
+        .dark .editor-wrapper .manual-preview-pane {
+            border-color: #475569;
+            background-color: #0f172a;
+            color: #e2e8f0;
+        }
+
+        .editor-wrapper.manual-preview-active .manual-preview-pane {
+            display: block;
+        }
+
+        .editor-wrapper.manual-preview-active .EasyMDEContainer .CodeMirror,
+        .editor-wrapper.manual-preview-active .EasyMDEContainer .editor-statusbar {
+            display: none !important;
+        }
+
+        .editor-wrapper .editor-preview > :last-child,
+        .editor-wrapper .editor-preview-side > :last-child {
+            margin-bottom: 0;
+        }
+
+        .editor-wrapper .editor-preview h1,
+        .editor-wrapper .editor-preview h2,
+        .editor-wrapper .editor-preview h3,
+        .editor-wrapper .editor-preview h4,
+        .editor-wrapper .editor-preview h5,
+        .editor-wrapper .editor-preview h6,
+        .editor-wrapper .editor-preview-side h1,
+        .editor-wrapper .editor-preview-side h2,
+        .editor-wrapper .editor-preview-side h3,
+        .editor-wrapper .editor-preview-side h4,
+        .editor-wrapper .editor-preview-side h5,
+        .editor-wrapper .editor-preview-side h6 {
+            margin-top: 1.25rem;
+            margin-bottom: 0.75rem;
+            font-weight: 700;
+            line-height: 1.25;
+        }
+
+        .editor-wrapper .editor-preview h1,
+        .editor-wrapper .editor-preview-side h1 {
+            font-size: 1.875rem;
+        }
+
+        .editor-wrapper .editor-preview h2,
+        .editor-wrapper .editor-preview-side h2 {
+            font-size: 1.5rem;
+        }
+
+        .editor-wrapper .editor-preview h3,
+        .editor-wrapper .editor-preview-side h3 {
+            font-size: 1.25rem;
+        }
+
+        .editor-wrapper .editor-preview p,
+        .editor-wrapper .editor-preview ul,
+        .editor-wrapper .editor-preview ol,
+        .editor-wrapper .editor-preview pre,
+        .editor-wrapper .editor-preview blockquote,
+        .editor-wrapper .editor-preview table,
+        .editor-wrapper .editor-preview-side p,
+        .editor-wrapper .editor-preview-side ul,
+        .editor-wrapper .editor-preview-side ol,
+        .editor-wrapper .editor-preview-side pre,
+        .editor-wrapper .editor-preview-side blockquote,
+        .editor-wrapper .editor-preview-side table {
+            margin-top: 0.75rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .editor-wrapper .editor-preview ul,
+        .editor-wrapper .editor-preview-side ul {
+            list-style: disc;
+            padding-left: 1.25rem;
+        }
+
+        .editor-wrapper .editor-preview ol,
+        .editor-wrapper .editor-preview-side ol {
+            list-style: decimal;
+            padding-left: 1.25rem;
+        }
+
+        .editor-wrapper .editor-preview code,
+        .editor-wrapper .editor-preview-side code {
+            background-color: #e2e8f0;
+            border-radius: 0.25rem;
+            padding: 0.1rem 0.3rem;
+        }
+
+        .dark .editor-wrapper .editor-preview code,
+        .dark .editor-wrapper .editor-preview-side code {
+            background-color: #334155;
+        }
+
+        .editor-wrapper .editor-preview pre,
+        .editor-wrapper .editor-preview-side pre {
+            background-color: #e2e8f0;
+            border-radius: 0.5rem;
+            overflow: auto;
+            padding: 0.75rem;
+        }
+
+        .dark .editor-wrapper .editor-preview pre,
+        .dark .editor-wrapper .editor-preview-side pre {
+            background-color: #1e293b;
+        }
+
+        .editor-wrapper .editor-preview pre code,
+        .editor-wrapper .editor-preview-side pre code {
+            background-color: transparent;
+            padding: 0;
+        }
+
+        .editor-wrapper .editor-preview hr,
+        .editor-wrapper .editor-preview-side hr {
+            border: 0;
+            border-top: 1px solid #94a3b8;
+            margin: 1rem 0;
+        }
+
+        .editor-wrapper .manual-preview-pane h1,
+        .editor-wrapper .manual-preview-pane h2,
+        .editor-wrapper .manual-preview-pane h3,
+        .editor-wrapper .manual-preview-pane h4,
+        .editor-wrapper .manual-preview-pane h5,
+        .editor-wrapper .manual-preview-pane h6 {
+            margin-top: 1.25rem;
+            margin-bottom: 0.75rem;
+            font-weight: 700;
+            line-height: 1.25;
+        }
+
+        .editor-wrapper .manual-preview-pane h1 {
+            font-size: 1.875rem;
+        }
+
+        .editor-wrapper .manual-preview-pane h2 {
+            font-size: 1.5rem;
+        }
+
+        .editor-wrapper .manual-preview-pane h3 {
+            font-size: 1.25rem;
+        }
+
+        .editor-wrapper .manual-preview-pane p,
+        .editor-wrapper .manual-preview-pane ul,
+        .editor-wrapper .manual-preview-pane ol,
+        .editor-wrapper .manual-preview-pane pre,
+        .editor-wrapper .manual-preview-pane blockquote,
+        .editor-wrapper .manual-preview-pane table {
+            margin-top: 0.75rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .editor-wrapper .manual-preview-pane ul {
+            list-style: disc;
+            padding-left: 1.25rem;
+        }
+
+        .editor-wrapper .manual-preview-pane ol {
+            list-style: decimal;
+            padding-left: 1.25rem;
+        }
+
+        .editor-wrapper .manual-preview-pane code {
+            background-color: #e2e8f0;
+            border-radius: 0.25rem;
+            padding: 0.1rem 0.3rem;
+        }
+
+        .dark .editor-wrapper .manual-preview-pane code {
+            background-color: #334155;
+        }
+
+        .editor-wrapper .manual-preview-pane pre {
+            background-color: #e2e8f0;
+            border-radius: 0.5rem;
+            overflow: auto;
+            padding: 0.75rem;
+        }
+
+        .dark .editor-wrapper .manual-preview-pane pre {
+            background-color: #1e293b;
+        }
+
+        .editor-wrapper .manual-preview-pane pre code {
+            background-color: transparent;
+            padding: 0;
+        }
+
+        .editor-wrapper .manual-preview-pane blockquote {
+            border-left: 3px solid #94a3b8;
+            padding-left: 0.75rem;
+        }
+
+        .editor-wrapper .manual-preview-pane hr {
+            border: 0;
+            border-top: 1px solid #94a3b8;
+            margin: 1rem 0;
+        }
+
+        .editor-wrapper .manual-preview-pane a {
+            color: #0284c7;
+            text-decoration: underline;
+        }
+
+        .dark .editor-wrapper .manual-preview-pane a {
+            color: #38bdf8;
+        }
+
+
+        .custom-editor-toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            border: 1px solid #cbd5e1;
+            border-radius: 0.75rem;
+            padding: 0.5rem;
+            background-color: #f8fafc;
+        }
+
+        .custom-editor-toolbar button {
+            border: 1px solid #cbd5e1;
+            border-radius: 0.5rem;
+            background-color: #ffffff;
+            color: #0f172a;
+            font-size: 0.95rem;
+            font-weight: 600;
+            line-height: 1;
+            padding: 0.45rem 0.6rem;
+            min-width: 2.1rem;
+            min-height: 2rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .custom-editor-toolbar button svg {
+            width: 1rem;
+            height: 1rem;
+            display: block;
+        }
+
+        .custom-editor-toolbar button .toolbar-icon {
+            width: 1rem;
+            height: 1rem;
+            display: block;
+        }
+
+        .preview-tool-button {
+            margin-left: auto;
+            gap: 0.35rem;
+            padding: 0.45rem 0.7rem;
+        }
+
+        .custom-editor-toolbar button:hover {
+            background-color: #e2e8f0;
+        }
+
+        .custom-editor-toolbar button[aria-pressed="true"] {
+            background-color: #0ea5e9;
+            border-color: #0284c7;
+            color: #ffffff;
+        }
+
+        .dark .custom-editor-toolbar {
+            background-color: #1e293b;
+            border-color: #475569;
+        }
+
+        .dark .custom-editor-toolbar button {
+            background-color: #334155;
+            border-color: #64748b;
+            color: #e2e8f0;
+        }
+
+        .dark .custom-editor-toolbar button:hover {
+            background-color: #475569;
+        }
+
+        .dark .custom-editor-toolbar button[aria-pressed="true"] {
+            background-color: #38bdf8;
+            border-color: #0ea5e9;
+            color: #0f172a;
+        }
+
+        .dark .editor-wrapper .CodeMirror-cursor {
+            border-left-color: #e2e8f0;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 dark:bg-slate-900 dark:text-gray-100">
+<nav class="bg-gray-800 dark:bg-gray-900 text-gray-100">
+    <div class="max-w-7xl mx-auto px-4 py-4 relative">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+                <a class="flex items-center space-x-2" href="/">
+                    <img
+                            alt="Website Logo"
+                            class="h-10"
+                            src="/images/favicon.png"
+                            th:src="${appLogoPath}"
+                    />
+                    <span class="font-semibold tracking-tight" th:text="${appName}"
+                    >QuickDrop</span
+                    >
+                </a>
+            </div>
+            <button
+                    aria-controls="navMenu"
+                    aria-expanded="false"
+                    aria-label="Toggle navigation"
+                    class="md:hidden rounded-lg p-2 hover:bg-sky-600 dark:hover:bg-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                    id="navToggle"
+                    type="button"
+            >
+                <svg
+                        aria-hidden="true"
+                        class="h-6 w-6"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        viewBox="0 0 24 24"
+                >
+                    <path d="M4 6h16M4 12h16M4 18h16"></path>
+                </svg>
+            </button>
+            <div
+                    class="nav-menu-panel hidden md:flex flex-col md:flex-row md:items-center md:space-x-4 w-full md:w-auto mt-3 md:mt-0 space-y-2 md:space-y-0 bg-gray-800 dark:bg-gray-900 md:bg-transparent md:dark:bg-transparent rounded-lg md:rounded-none p-4 md:p-0 shadow md:shadow-none absolute left-0 right-0 top-full md:static z-20 md:ml-auto"
+                    id="navMenu"
+            >
+                <div
+                        class="flex flex-col space-y-2 md:flex-row md:items-center md:space-x-4 md:space-y-0"
+                >
+                    <a class="nav-menu-item hover:text-white" href="/file/upload"
+                    >Upload File</a
+                    >
+                    <a
+                            class="nav-menu-item hover:text-white"
+                            href="/file/list"
+                            th:if="${isFileListPageEnabled or hasAdminSession}"
+                    >View Files</a
+                    >
+                    <a
+                            class="nav-menu-item hover:text-white"
+                            href="/file/paste/new"
+                            th:if="${isPastebinEnabled}"
+                    >Pastebin</a
+                    >
+                    <a
+                            class="nav-menu-item hover:text-white"
+                            href="/admin/dashboard"
+                            th:if="${isAdminDashboardButtonEnabled}"
+                    >Admin Dashboard</a
+                    >
+                    <form
+                            action="/admin/logout"
+                            method="post"
+                            th:if="${hasAdminSession or hasAppSession}"
+                    >
+                        <input
+                                th:name="${_csrf.parameterName}"
+                                th:value="${_csrf.token}"
+                                type="hidden"
+                        />
+                        <button class="nav-menu-item hover:text-white" type="submit">
+                            Logout
+                        </button>
+                    </form>
+                </div>
+                <button
+                        class="nav-menu-item theme-toggle rounded-lg p-2 transition-colors hover:bg-sky-600 dark:hover:bg-sky-500 active:scale-95 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                        type="button"
+                >
+                    🌙
+                </button>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<main class="max-w-5xl mx-auto px-4 py-6 md:py-8">
+    <header class="text-center mb-8">
+        <h1
+                class="text-3xl md:text-4xl font-semibold tracking-tight"
+                th:text="${isEditMode} ? 'Edit Paste' : 'New Paste'"
+        >
+            New Paste
+        </h1>
+    </header>
+
+    <form
+            class="bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-6 md:p-8 space-y-5"
+            id="pasteForm"
+            method="post"
+            th:action="${pasteFormAction}"
+    >
+        <input
+                th:name="${_csrf.parameterName}"
+                th:value="${_csrf.token}"
+                type="hidden"
+        />
+
+        <div
+                class="rounded-lg border border-red-200 bg-red-50 text-red-700 dark:border-red-800 dark:bg-red-950 dark:text-red-200 px-4 py-3 text-sm"
+                th:if="${pasteError != null}"
+                th:text="${pasteError}"
+        ></div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <label class="block space-y-1">
+                <span class="text-sm font-medium">Title</span>
+                <input
+                        class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                        maxlength="255"
+                        name="title"
+                        placeholder="example-note"
+                        th:value="${pasteTitle}"
+                        type="text"
+                />
+            </label>
+            <label class="block space-y-1">
+                <span class="text-sm font-medium">Mode</span>
+                <select
+                        class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                        id="syntax"
+                        name="syntax"
+                >
+                    <option th:selected="${pasteSyntax == 'markdown'}" value="markdown">
+                        Markdown (.md)
+                    </option>
+                    <option th:selected="${pasteSyntax != 'markdown'}" value="text">
+                        Plain Text (.txt)
+                    </option>
+                </select>
+            </label>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-4 text-sm">
+            <label class="inline-flex items-center gap-2">
+                <input
+                        class="h-4 w-4 rounded border-gray-400 dark:border-gray-600 accent-sky-500"
+                        id="lineNumbersToggle"
+                        type="checkbox"
+                />
+                <span>Line numbers</span>
+            </label>
+            <label class="inline-flex items-center gap-2">
+                <input
+                        checked
+                        class="h-4 w-4 rounded border-gray-400 dark:border-gray-600 accent-sky-500"
+                        id="wordWrapToggle"
+                        type="checkbox"
+                />
+                <span>Word wrap</span>
+            </label>
+            <label class="inline-flex items-center gap-2">
+                <span>Font size</span>
+                <select
+                        class="rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-2 py-1"
+                        id="fontSizeSelect"
+                >
+                    <option value="12px">12</option>
+                    <option selected value="14px">14</option>
+                    <option value="16px">16</option>
+                    <option value="18px">18</option>
+                </select>
+            </label>
+        </div>
+
+        <div class="editor-wrapper">
+            <div class="custom-editor-toolbar" id="customEditorToolbar">
+                <button aria-label="Bold" data-action="bold" title="Bold" type="button">
+                    <svg aria-hidden="true" class="toolbar-icon" fill="none" stroke="currentColor" stroke-linecap="round"
+                         stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M6 4h7a4 4 0 1 1 0 8H6z"></path>
+                        <path d="M6 12h8a4 4 0 1 1 0 8H6z"></path>
+                    </svg>
+                </button>
+                <button aria-label="Italic" data-action="italic" title="Italic" type="button">
+                    <svg aria-hidden="true" class="toolbar-icon" fill="none" stroke="currentColor" stroke-linecap="round"
+                         stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24">
+                        <line x1="19" x2="10" y1="4" y2="4"></line>
+                        <line x1="14" x2="5" y1="20" y2="20"></line>
+                        <line x1="15" x2="9" y1="4" y2="20"></line>
+                    </svg>
+                </button>
+                <button aria-label="Heading" data-action="heading" title="Heading" type="button">
+                    <svg aria-hidden="true" class="toolbar-icon" fill="none" stroke="currentColor" stroke-linecap="round"
+                         stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M5 4v16"></path>
+                        <path d="M19 4v16"></path>
+                        <path d="M5 12h14"></path>
+                    </svg>
+                </button>
+                <button aria-label="Quote" data-action="quote" title="Quote" type="button">
+                    <svg aria-hidden="true" class="toolbar-icon" fill="none" stroke="currentColor" stroke-linecap="round"
+                         stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M8 17H5a2 2 0 0 1-2-2v-3a6 6 0 0 1 6-6h1"></path>
+                        <path d="M19 17h-3a2 2 0 0 1-2-2v-3a6 6 0 0 1 6-6h1"></path>
+                    </svg>
+                </button>
+                <button aria-label="Bulleted list" data-action="unordered-list" title="Bulleted list" type="button">
+                    <svg aria-hidden="true" class="toolbar-icon" fill="none" stroke="currentColor" stroke-linecap="round"
+                         stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24">
+                        <line x1="9" x2="20" y1="6" y2="6"></line>
+                        <line x1="9" x2="20" y1="12" y2="12"></line>
+                        <line x1="9" x2="20" y1="18" y2="18"></line>
+                        <circle cx="4" cy="6" r="1"></circle>
+                        <circle cx="4" cy="12" r="1"></circle>
+                        <circle cx="4" cy="18" r="1"></circle>
+                    </svg>
+                </button>
+                <button aria-label="Numbered list" data-action="ordered-list" title="Numbered list" type="button">
+                    <svg aria-hidden="true" class="toolbar-icon" fill="none" stroke="currentColor" stroke-linecap="round"
+                         stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24">
+                        <line x1="9" x2="20" y1="6" y2="6"></line>
+                        <line x1="9" x2="20" y1="12" y2="12"></line>
+                        <line x1="9" x2="20" y1="18" y2="18"></line>
+                        <path d="M4 7V5l-1 1"></path>
+                        <path d="M3 11h2l-2 3h2"></path>
+                        <path d="M3 17c0-.7.5-1.2 1.2-1.2H5v2.4"></path>
+                    </svg>
+                </button>
+                <button aria-label="Insert link" data-action="link" title="Insert link" type="button">
+                    <svg aria-hidden="true" class="toolbar-icon" fill="none" stroke="currentColor" stroke-linecap="round"
+                         stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M10 13a5 5 0 0 1 0-7l1.5-1.5a5 5 0 0 1 7 7L17 13"></path>
+                        <path d="M14 11a5 5 0 0 1 0 7L12.5 19.5a5 5 0 0 1-7-7L7 11"></path>
+                    </svg>
+                </button>
+                <button aria-label="Insert image" data-action="image" title="Insert image" type="button">
+                    <svg aria-hidden="true" class="toolbar-icon" fill="none" stroke="currentColor" stroke-linecap="round"
+                         stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24">
+                        <rect height="16" rx="2" width="18" x="3" y="4"></rect>
+                        <circle cx="8.5" cy="9" r="1.5"></circle>
+                        <path d="M21 16l-4.5-4.5L7 21"></path>
+                    </svg>
+                </button>
+                <button aria-label="Insert table" data-action="table" title="Insert table" type="button">
+                    <svg aria-hidden="true" class="toolbar-icon" fill="none" stroke="currentColor" stroke-linecap="round"
+                         stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24">
+                        <rect height="16" rx="2" width="18" x="3" y="4"></rect>
+                        <path d="M3 10h18"></path>
+                        <path d="M9 4v16"></path>
+                        <path d="M15 4v16"></path>
+                    </svg>
+                </button>
+                <button aria-label="Code block" data-action="code" title="Code block" type="button">
+                    <svg aria-hidden="true" class="toolbar-icon" fill="none" stroke="currentColor" stroke-linecap="round"
+                         stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24">
+                        <polyline points="8 6 2 12 8 18"></polyline>
+                        <polyline points="16 6 22 12 16 18"></polyline>
+                    </svg>
+                </button>
+                <button aria-label="Horizontal rule" data-action="hr" title="Horizontal rule" type="button">
+                    <svg aria-hidden="true" class="toolbar-icon" fill="none" stroke="currentColor" stroke-linecap="round"
+                         stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24">
+                        <line x1="3" x2="21" y1="12" y2="12"></line>
+                    </svg>
+                </button>
+                <button
+                        aria-label="Preview"
+                        aria-pressed="false"
+                        class="preview-tool-button"
+                        data-action="preview"
+                        id="previewToolButton"
+                        title="Preview"
+                        type="button"
+                >
+                    <svg aria-hidden="true" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                         stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"></path>
+                        <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                    <span>Preview</span>
+                </button>
+            </div>
+            <textarea
+                    id="content"
+                    name="content"
+                    placeholder="Write your text here..."
+                    th:text="${pasteContent}"
+            ></textarea>
+            <div class="manual-preview-pane markdown-content" id="manualPreviewPane"></div>
+        </div>
+
+        <div class="flex flex-wrap gap-6">
+            <label class="inline-flex items-start gap-2" th:if="${canUseKeepIndefinitely}">
+                <input
+                        class="h-4 w-4 rounded border-gray-400 dark:border-gray-600 accent-sky-500 dark:accent-sky-400"
+                        name="keepIndefinitely"
+                        th:checked="${keepIndefinitely}"
+                        type="checkbox"
+                        value="true"
+                />
+                <span class="text-sm">Keep indefinitely</span>
+            </label>
+        </div>
+
+        <div class="space-y-1" th:if="${uploadPasswordEnabled and !isEditMode}">
+            <label class="text-sm font-medium" for="password">Password (optional)</label>
+            <input
+                    class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                    id="password"
+                    name="password"
+                    placeholder="Set password to protect this paste"
+                    type="password"
+            />
+            <div class="text-xs text-gray-600 dark:text-gray-400">
+                Leaving this empty removes password protection for the saved paste.
+            </div>
+        </div>
+
+        <div class="pt-2 flex gap-3">
+            <button
+                    class="rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium px-4 py-2 transition-colors active:scale-95"
+                    id="savePasteButton"
+                    th:text="${isEditMode} ? 'Save Changes' : 'Save Paste'"
+                    type="submit"
+            >
+                Save Paste
+            </button>
+        </div>
+    </form>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.js"></script>
+<script>
+    const markedApi = window.marked;
+    const markdownRuntimeAvailable =
+        !!markedApi &&
+        typeof markedApi.setOptions === "function" &&
+        typeof markedApi.parse === "function";
+
+    if (markdownRuntimeAvailable) {
+        markedApi.setOptions({
+            gfm: true,
+            breaks: true,
+        });
+    }
+
+    function renderMarkdownLikePasteView(plainText) {
+        if (markdownRuntimeAvailable) {
+            try {
+                return markedApi.parse(plainText);
+            } catch (_) {
+                // Fall through to EasyMDE default parser.
+            }
+        }
+        return this.parent.markdown(plainText);
+    }
+
+    const editor = new EasyMDE({
+        element: document.getElementById("content"),
+        spellChecker: false,
+        autoDownloadFontAwesome: false,
+        status: ["lines", "words", "cursor"],
+        toolbar: false,
+        previewRender: renderMarkdownLikePasteView,
+    });
+
+    const lineNumbersToggle = document.getElementById("lineNumbersToggle");
+    const wordWrapToggle = document.getElementById("wordWrapToggle");
+    const fontSizeSelect = document.getElementById("fontSizeSelect");
+    const form = document.getElementById("pasteForm");
+    const savePasteButton = document.getElementById("savePasteButton");
+    const textarea = document.getElementById("content");
+    const customEditorToolbar = document.getElementById("customEditorToolbar");
+    const syntaxSelect = document.getElementById("syntax");
+    const previewToolButton = document.getElementById("previewToolButton");
+    const editorWrapper = document.querySelector(".editor-wrapper");
+    const manualPreviewPane = document.getElementById("manualPreviewPane");
+
+    function isPreviewActive() {
+        return !!(editorWrapper && editorWrapper.classList.contains("manual-preview-active"));
+    }
+
+    function escapeHtml(value) {
+        return value
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/\"/g, "&quot;")
+            .replace(/'/g, "&#39;");
+    }
+
+    function renderPreviewContent() {
+        if (!manualPreviewPane) {
+            return;
+        }
+        const markdownText = editor.value();
+        if (markdownRuntimeAvailable) {
+            try {
+                manualPreviewPane.innerHTML = markedApi.parse(markdownText);
+                return;
+            } catch (_) {
+                // Fall back to escaped pre block.
+            }
+        }
+        manualPreviewPane.innerHTML = `<pre class="whitespace-pre-wrap break-words">${escapeHtml(markdownText)}</pre>`;
+    }
+
+    function syncPreviewButtonState() {
+        const active = isPreviewActive();
+        previewToolButton.setAttribute("aria-pressed", active ? "true" : "false");
+        if (editorWrapper) {
+            editorWrapper.classList.toggle("manual-preview-active", active);
+        }
+    }
+
+    const editorActions = {
+        bold: EasyMDE.toggleBold,
+        italic: EasyMDE.toggleItalic,
+        heading: EasyMDE.toggleHeadingSmaller,
+        quote: EasyMDE.toggleBlockquote,
+        "unordered-list": EasyMDE.toggleUnorderedList,
+        "ordered-list": EasyMDE.toggleOrderedList,
+        link: EasyMDE.drawLink,
+        image: EasyMDE.drawImage,
+        table: EasyMDE.drawTable,
+        code: EasyMDE.toggleCodeBlock,
+        hr: EasyMDE.drawHorizontalRule,
+        preview: () => {
+            const nextActive = !isPreviewActive();
+            if (nextActive) {
+                renderPreviewContent();
+            }
+            if (editorWrapper) {
+                editorWrapper.classList.toggle("manual-preview-active", nextActive);
+            }
+            syncPreviewButtonState();
+        },
+    };
+
+    customEditorToolbar.addEventListener("click", (event) => {
+        const button = event.target.closest("button[data-action]");
+        if (!button) {
+            return;
+        }
+        const action = editorActions[button.dataset.action];
+        if (typeof action === "function") {
+            action(editor);
+            if (!isPreviewActive()) {
+                editor.codemirror.focus();
+            }
+        }
+    });
+
+    function applyEditorSettings() {
+        editor.codemirror.setOption("lineNumbers", lineNumbersToggle.checked);
+        editor.codemirror.setOption("lineWrapping", wordWrapToggle.checked);
+        editor.codemirror.getWrapperElement().style.fontSize = fontSizeSelect.value;
+    }
+
+    lineNumbersToggle.addEventListener("change", applyEditorSettings);
+    wordWrapToggle.addEventListener("change", applyEditorSettings);
+    fontSizeSelect.addEventListener("change", applyEditorSettings);
+    applyEditorSettings();
+
+    function applyModeControls() {
+        const markdownMode = syntaxSelect.value === "markdown";
+        previewToolButton.classList.toggle("hidden", !markdownMode);
+        if (!markdownMode && isPreviewActive()) {
+            if (editorWrapper) {
+                editorWrapper.classList.remove("manual-preview-active");
+            }
+        }
+        syncPreviewButtonState();
+    }
+
+    editor.codemirror.on("change", () => {
+        if (isPreviewActive()) {
+            renderPreviewContent();
+        }
+    });
+
+    syntaxSelect.addEventListener("change", applyModeControls);
+    applyModeControls();
+
+    form.addEventListener("submit", (event) => {
+        const contentValue = editor.value().trim();
+        textarea.value = editor.value();
+
+        if (!contentValue) {
+            event.preventDefault();
+            alert("Paste content cannot be empty.");
+            editor.codemirror.focus();
+            return;
+        }
+
+        savePasteButton.disabled = true;
+        savePasteButton.classList.add("opacity-70", "cursor-not-allowed");
+    });
+</script>
+</body>
+</html>
+
+

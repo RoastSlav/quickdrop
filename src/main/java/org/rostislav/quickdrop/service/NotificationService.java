@@ -11,10 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 import static org.rostislav.quickdrop.util.DataValidator.safeString;
 
@@ -26,6 +23,12 @@ public class NotificationService {
     private final ApplicationSettingsService applicationSettingsService;
     private final Queue<String> pendingMessages = new ConcurrentLinkedQueue<>();
     private final Object schedulerLock = new Object();
+    private final ExecutorService notificationExecutor = Executors.newSingleThreadExecutor(r -> {
+        Thread t = new Thread(r);
+        t.setDaemon(true);
+        t.setName("notification-dispatch");
+        return t;
+    });
     private volatile JavaMailSenderImpl cachedMailSender;
     private volatile String mailSenderKey;
     private volatile long lastFlushEpochMillis = System.currentTimeMillis();
@@ -70,13 +73,16 @@ public class NotificationService {
             return;
         }
 
-        if (shouldSendDiscord) {
-            sendDiscord(formattedMessage);
-        }
+        // Keep file actions responsive even when external notification endpoints are slow.
+        notificationExecutor.submit(() -> {
+            if (shouldSendDiscord) {
+                sendDiscord(formattedMessage);
+            }
 
-        if (shouldSendEmail) {
-            sendEmail(event, summary, details);
-        }
+            if (shouldSendEmail) {
+                sendEmail(event, summary, details);
+            }
+        });
     }
 
     private boolean hasEmailRecipients() {
@@ -233,12 +239,13 @@ public class NotificationService {
         String username = safeString(applicationSettingsService.getSmtpUsername());
         String password = safeString(applicationSettingsService.getSmtpPassword());
         boolean useTls = applicationSettingsService.isSmtpUseTls();
+        boolean useSsl = applicationSettingsService.isSmtpUseSsl();
 
         if (host.isBlank()) {
             return null;
         }
 
-        String key = host + ":" + Objects.requireNonNullElse(port, 587) + "|" + username + "|" + password + "|" + useTls;
+        String key = host + ":" + Objects.requireNonNullElse(port, 587) + "|" + username + "|" + password + "|" + useTls + "|" + useSsl;
 
         if (key.equals(mailSenderKey) && cachedMailSender != null) {
             return cachedMailSender;
@@ -258,7 +265,15 @@ public class NotificationService {
             var props = mailSender.getJavaMailProperties();
             boolean hasAuth = !username.isBlank();
             props.put("mail.smtp.auth", String.valueOf(hasAuth));
-            props.put("mail.smtp.starttls.enable", String.valueOf(useTls));
+            props.put("mail.smtp.starttls.enable", String.valueOf(!useSsl && useTls));
+            props.put("mail.smtp.ssl.enable", String.valueOf(useSsl));
+            props.put("mail.smtp.connectiontimeout", "10000");
+            props.put("mail.smtp.timeout", "10000");
+            props.put("mail.smtp.writetimeout", "10000");
+            if (useSsl) {
+                props.put("mail.smtp.socketFactory.port", String.valueOf(Objects.requireNonNullElse(port, 465)));
+                props.put("mail.smtp.socketFactory.class", "javax.net.ssl.SSLSocketFactory");
+            }
 
             cachedMailSender = mailSender;
             mailSenderKey = key;

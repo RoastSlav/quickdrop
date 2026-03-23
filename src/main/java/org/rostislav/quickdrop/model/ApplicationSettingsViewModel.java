@@ -33,6 +33,7 @@ public class ApplicationSettingsViewModel {
     private String smtpUsername;
     private String smtpPassword;
     private boolean smtpUseTls;
+    private boolean smtpUseSsl;
     private boolean notificationBatchEnabled;
     private Integer notificationBatchMinutes;
     private boolean simplifiedShareLinks;
@@ -73,6 +74,7 @@ public class ApplicationSettingsViewModel {
         this.smtpUsername = settings.getSmtpUsername();
         this.smtpPassword = settings.getSmtpPassword();
         this.smtpUseTls = settings.isSmtpUseTls();
+        this.smtpUseSsl = settings.isSmtpUseSsl();
         this.notificationBatchEnabled = settings.isNotificationBatchEnabled();
         this.notificationBatchMinutes = settings.getNotificationBatchMinutes();
         this.simplifiedShareLinks = settings.isSimplifiedShareLinks();
@@ -312,6 +314,14 @@ public class ApplicationSettingsViewModel {
 
     public void setSmtpUseTls(boolean smtpUseTls) {
         this.smtpUseTls = smtpUseTls;
+    }
+
+    public boolean isSmtpUseSsl() {
+        return smtpUseSsl;
+    }
+
+    public void setSmtpUseSsl(boolean smtpUseSsl) {
+        this.smtpUseSsl = smtpUseSsl;
     }
 
     public boolean isNotificationBatchEnabled() {

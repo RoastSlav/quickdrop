@@ -57,6 +57,7 @@ public class ApplicationSettingsService {
             settings.setSmtpUsername("");
             settings.setSmtpPassword("");
             settings.setSmtpUseTls(true);
+            settings.setSmtpUseSsl(false);
             settings.setNotificationBatchEnabled(false);
             settings.setNotificationBatchMinutes(5);
             settings.setSimplifiedShareLinks(false);
@@ -119,6 +120,7 @@ public class ApplicationSettingsService {
             applicationSettingsEntity.setSmtpPassword(settings.getSmtpPassword());
         }
         applicationSettingsEntity.setSmtpUseTls(settings.isSmtpUseTls());
+        applicationSettingsEntity.setSmtpUseSsl(settings.isSmtpUseSsl());
         applicationSettingsEntity.setNotificationBatchEnabled(settings.isNotificationBatchEnabled());
         Integer existingBatchMinutes = applicationSettingsEntity.getNotificationBatchMinutes();
         Integer requestedBatchMinutes = settings.getNotificationBatchMinutes();
@@ -296,6 +298,10 @@ public class ApplicationSettingsService {
 
     public boolean isSmtpUseTls() {
         return applicationSettings.isSmtpUseTls();
+    }
+
+    public boolean isSmtpUseSsl() {
+        return applicationSettings.isSmtpUseSsl();
     }
 
     public boolean isNotificationBatchEnabled() {

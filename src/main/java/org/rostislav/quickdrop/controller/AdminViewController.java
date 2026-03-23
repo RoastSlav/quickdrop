@@ -198,7 +198,7 @@ public class AdminViewController {
                     yield ResponseEntity.ok(result.message());
                 }
                 logger.warn("Discord test notification failed: {}", result.message());
-                yield ResponseEntity.badRequest().body("Discord test failed: " + result.message());
+                yield ResponseEntity.badRequest().body(result.message());
             }
             case "email" -> {
                 var result = notificationService.sendTestEmail();
@@ -206,7 +206,7 @@ public class AdminViewController {
                     yield ResponseEntity.ok(result.message());
                 }
                 logger.warn("Email test notification failed: {}", result.message());
-                yield ResponseEntity.badRequest().body("Email test failed: " + result.message());
+                yield ResponseEntity.badRequest().body(result.message());
             }
             default -> ResponseEntity.badRequest().body("Unknown notification target.");
         };

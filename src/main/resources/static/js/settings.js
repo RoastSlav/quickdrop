@@ -23,7 +23,23 @@ function toggleDiscordField() {
 function toggleEmailFields() {
   const enabled = document.getElementById("emailNotificationsEnabled")?.checked;
   document.getElementById("emailConfig")?.classList.toggle("hidden", !enabled);
+  syncSmtpSecurityModes();
   updateBatchAvailability();
+}
+
+function syncSmtpSecurityModes(changedMode = null) {
+  const startTls = document.getElementById("smtpUseTls");
+  const implicitSsl = document.getElementById("smtpUseSsl");
+  if (!startTls || !implicitSsl) return;
+
+  if (changedMode === "ssl" && implicitSsl.checked) {
+    startTls.checked = false;
+  } else if (changedMode === "tls" && startTls.checked) {
+    implicitSsl.checked = false;
+  } else if (startTls.checked && implicitSsl.checked) {
+    // Prefer explicit STARTTLS unless the user explicitly toggled SSL.
+    implicitSsl.checked = false;
+  }
 }
 
 function toggleBatchFields() {
@@ -426,6 +442,7 @@ document.addEventListener("DOMContentLoaded", function () {
   togglePasswordField();
   toggleDiscordField();
   toggleEmailFields();
+  syncSmtpSecurityModes();
   updateBatchAvailability();
   syncUploadPasswordSetting();
   syncShareLinkSettings();
@@ -449,6 +466,12 @@ document.addEventListener("DOMContentLoaded", function () {
   document
     .getElementById("emailNotificationsEnabled")
     ?.addEventListener("change", toggleEmailFields);
+  document
+      .getElementById("smtpUseTls")
+      ?.addEventListener("change", () => syncSmtpSecurityModes("tls"));
+  document
+      .getElementById("smtpUseSsl")
+      ?.addEventListener("change", () => syncSmtpSecurityModes("ssl"));
   document
     .getElementById("notificationBatchEnabled")
     ?.addEventListener("change", toggleBatchFields);

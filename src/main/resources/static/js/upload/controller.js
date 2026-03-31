@@ -33,6 +33,30 @@ export function initUploadPage(config = {}) {
   let isUploading = false;
   let uploadState = UploadState.IDLE;
 
+  const getRelativePath = (file) =>
+    file?.relativePath || file?.webkitRelativePath || file?.path || file?.name;
+
+  const withRelativePath = (file, rel) => {
+    try {
+      const cloned = new File([file], file.name, {
+        type: file.type,
+        lastModified: file.lastModified,
+      });
+      Object.defineProperty(cloned, "relativePath", { value: rel });
+      try {
+        Object.defineProperty(cloned, "webkitRelativePath", {
+          value: rel,
+          configurable: true,
+        });
+      } catch (_) {}
+      return cloned;
+    } catch (_) {
+      try {
+        file.relativePath = rel;
+      } catch (_) {}
+      return file;
+    }
+  };
   const maxSizeSpan = document.querySelector(".maxFileSize");
   const maxSizeLabel = maxSizeSpan ? maxSizeSpan.innerText : "the allowed";
   const maxSize = maxSizeSpan ? parseSize(maxSizeSpan.innerText) : Infinity;
@@ -273,9 +297,10 @@ export function initUploadPage(config = {}) {
           resetFileSelection();
           return;
         }
-        const hasRelative = collected.some(
-          (f) => f.webkitRelativePath && f.webkitRelativePath.includes("/")
-        );
+        const hasRelative = collected.some((f) => {
+          const rel = getRelativePath(f);
+          return rel && rel.includes("/");
+        });
         if (hasRelative || collected.length > 1) {
           await handleFolderSelection(collected);
         } else {
@@ -343,8 +368,8 @@ export function initUploadPage(config = {}) {
         return new Promise((resolve, reject) => {
           entry.file((file) => {
             const rel = pathPrefix ? `${pathPrefix}/${file.name}` : file.name;
-            file.webkitRelativePath = rel;
-            resolve([file]);
+            const fileWithPath = withRelativePath(file, rel);
+            resolve([fileWithPath]);
           }, reject);
         });
       }
@@ -376,7 +401,8 @@ export function initUploadPage(config = {}) {
           const walked = await walkEntry(entry);
           files.push(...walked);
         } else if (entry instanceof File) {
-          files.push(entry);
+          const rel = entry.webkitRelativePath || entry.name;
+          files.push(withRelativePath(entry, rel));
         }
       }
       return files;

@@ -1,4 +1,3 @@
-// UI state machine and warning helpers for the upload page
 export const UploadState = Object.freeze({
   IDLE: "IDLE",
   PROCESSING: "PROCESSING",
@@ -30,8 +29,8 @@ export function setUploadState(state, ui = getUIRefs()) {
       state === UploadState.NEEDS_CONFIRMATION
         ? "Confirm Upload"
         : state === UploadState.UPLOADING
-        ? "Uploading..."
-        : "Upload";
+          ? "Uploading..."
+          : "Upload";
     ui.uploadPrimary.classList.toggle(
       "opacity-60",
       isBusy || state === UploadState.IDLE
@@ -97,7 +96,6 @@ export function renderStripWarning(
   }
 
   if (ui.uploadWarningDetails && ui.uploadWarningList) {
-    // We now show reasons inline; keep the details toggle hidden to avoid duplicate panels.
     ui.uploadWarningDetails.classList.add("hidden");
     ui.uploadWarningList.classList.add("hidden");
     ui.uploadWarningList.innerHTML = "";

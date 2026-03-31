@@ -32,6 +32,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 
 import static org.rostislav.quickdrop.util.DataValidator.safeNumber;
@@ -47,17 +48,19 @@ public class FileService {
     private final FileHistoryLogRepository fileHistoryLogRepository;
     private final SessionService sessionService;
     private final FileEncryptionService fileEncryptionService;
+    private final SvgRasterizationService svgRasterizationService;
     private final ShareTokenRepository shareTokenRepository;
     private final NotificationService notificationService;
 
     @Lazy
-    public FileService(FileRepository fileRepository, PasswordEncoder passwordEncoder, ApplicationSettingsService applicationSettingsService, FileHistoryLogRepository fileHistoryLogRepository, SessionService sessionService, FileEncryptionService fileEncryptionService, ShareTokenRepository shareTokenRepository, NotificationService notificationService) {
+    public FileService(FileRepository fileRepository, PasswordEncoder passwordEncoder, ApplicationSettingsService applicationSettingsService, FileHistoryLogRepository fileHistoryLogRepository, SessionService sessionService, FileEncryptionService fileEncryptionService, SvgRasterizationService svgRasterizationService, ShareTokenRepository shareTokenRepository, NotificationService notificationService) {
         this.fileRepository = fileRepository;
         this.passwordEncoder = passwordEncoder;
         this.applicationSettingsService = applicationSettingsService;
         this.fileHistoryLogRepository = fileHistoryLogRepository;
         this.sessionService = sessionService;
         this.fileEncryptionService = fileEncryptionService;
+        this.svgRasterizationService = svgRasterizationService;
         this.shareTokenRepository = shareTokenRepository;
         this.notificationService = notificationService;
     }
@@ -230,14 +233,33 @@ public class FileService {
 
         String contentType = guessContentType(fileEntity.name, isImage, isText, isPdf);
 
+        if (isSvgFile(fileEntity.name)) {
+            try {
+                byte[] pngPreview = svgRasterizationService.rasterizeToPng(inputStream);
+                inputStream = new ByteArrayInputStream(pngPreview);
+                contentType = "image/png";
+            } catch (IOException e) {
+                logger.warn("Failed to rasterize SVG preview for file {}: {}", uuid, e.getMessage());
+                return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE).build();
+            }
+        }
+
         StreamingResponseBody body = getStreamingResponseBody(inputStream);
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + fileEntity.name + "\"")
                 .header(HttpHeaders.CONTENT_TYPE, contentType)
                 .header(HttpHeaders.CACHE_CONTROL, "no-cache, no-store, must-revalidate")
+                .header("X-Content-Type-Options", "nosniff")
+                .header("X-Frame-Options", "DENY")
+                .header("Referrer-Policy", "no-referrer")
+                .header("Content-Security-Policy", "default-src 'none'; script-src 'none'; object-src 'none'; frame-ancestors 'none'; sandbox")
                 .header("Pragma", "no-cache")
                 .header("Expires", "0")
                 .body(body);
+    }
+
+    private boolean isSvgFile(String fileName) {
+        return fileName != null && fileName.toLowerCase(Locale.ROOT).endsWith(".svg");
     }
 
     public boolean isAuthorizedForFile(String uuid, HttpServletRequest request) {

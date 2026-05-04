@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title th:text="${appName} + ' - Upload'">Upload File</title>
+    <title th:text="#{page.upload.title.browser(${appName})}">Upload File</title>
     <meta content="width=device-width, initial-scale=1" name="viewport" />
     <link href="/css/tailwind.css" rel="stylesheet" />
     <link href="/css/custom.css" rel="stylesheet" />
@@ -40,13 +40,13 @@
               target="_blank"
               th:if="${!#strings.equalsIgnoreCase(#strings.trim(appName), 'QuickDrop')}"
             >
-              Powered by QuickDrop
+              <span th:text="#{nav.poweredBy}">Powered by QuickDrop</span>
             </a>
           </div>
           <button
             aria-controls="navMenu"
             aria-expanded="false"
-            aria-label="Toggle navigation"
+            th:aria-label="#{nav.toggleNavigation}"
             class="md:hidden rounded-lg p-2 hover:bg-sky-600 dark:hover:bg-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500"
             id="navToggle"
             type="button"
@@ -75,18 +75,21 @@
                 class="nav-menu-item hover:text-white"
                 href="/file/list"
                 th:if="${isFileListPageEnabled or hasAdminSession}"
+                th:text="#{nav.viewFiles}"
                 >View Files</a
               >
               <a
                       class="nav-menu-item hover:text-white"
                       href="/file/paste/new"
                       th:if="${isPastebinEnabled}"
+                      th:text="#{nav.pastebin}"
               >Pastebin</a
               >
               <a
                 class="nav-menu-item hover:text-white"
                 href="/admin/dashboard"
                 th:if="${isAdminDashboardButtonEnabled}"
+                th:text="#{nav.adminDashboard}"
                 >Admin Dashboard</a
               >
               <form
@@ -99,10 +102,22 @@
                   th:name="${_csrf.parameterName}"
                   th:value="${_csrf.token}"
                 />
-                <button class="nav-menu-item hover:text-white" type="submit">
+                <button class="nav-menu-item hover:text-white" th:text="#{nav.logout}" type="submit">
                   Logout
                 </button>
               </form>
+            </div>
+            <div class="flex items-center text-xs">
+              <label class="sr-only" for="localeSwitchUpload" th:text="#{nav.language}">Language</label>
+              <select
+                      class="locale-switch-select rounded-md border border-slate-600 bg-slate-800 text-slate-100 px-2 py-1"
+                      data-locale-select="true"
+                      id="localeSwitchUpload"
+              >
+                <option th:selected="${currentLang == 'en'}" value="en">EN</option>
+                <option th:selected="${currentLang == 'bg'}" value="bg">BG</option>
+                <option th:selected="${currentLang == 'de'}" value="de">DE</option>
+              </select>
             </div>
             <button
               aria-label="Toggle theme"
@@ -118,27 +133,29 @@
     <main class="max-w-7xl mx-auto px-4 p-6 md:p-8">
       <header class="text-center mb-8 space-y-1">
         <h1 class="text-3xl md:text-4xl font-semibold tracking-tight">
-          Upload a File or Folder
+          <span th:text="#{page.upload.title}">Upload a File or Folder</span>
         </h1>
         <p class="text-gray-600 dark:text-gray-300">
-          Accepted file types: any • Max size
+          <span th:text="#{page.upload.acceptedTypes}">Accepted file types: any</span>
+          •
+          <span th:text="#{page.upload.maxSizeLabel}">Max size</span>
           <span class="maxFileSize" th:text="${maxFileSize}">1GB</span>
         </p>
         <p
           class="text-gray-600 dark:text-gray-300"
           th:if="${!isKeepIndefinitelyAdminOnly}"
         >
-          Files are deleted after
-          <span class="maxFileLifeTime" th:text="${maxFileLifeTime}">30</span>
-          days unless “Keep indefinitely” is selected.
+          <span
+                  th:text="#{page.upload.retention.standard(${maxFileLifeTime})}"
+          >Files are deleted after 30 days unless “Keep indefinitely” is selected.</span>
         </p>
         <p
           class="text-gray-600 dark:text-gray-300"
           th:if="${isKeepIndefinitelyAdminOnly}"
         >
-          Files are deleted after
-          <span class="maxFileLifeTime" th:text="${maxFileLifeTime}">30</span>
-          days.
+          <span th:text="#{page.upload.retention.adminOnly(${maxFileLifeTime})}">
+            Files are deleted after 30 days.
+          </span>
         </p>
       </header>
       <div class="grid grid-cols-12 gap-6">
@@ -165,6 +182,8 @@
                   class="block text-gray-700 dark:text-gray-100 text-xl font-semibold"
                   data-default-text="Drop file or folder"
                   id="dropZoneInstructions"
+                  th:attr="data-default-text=#{page.upload.dropzone.title}"
+                  th:text="#{page.upload.dropzone.title}"
                   >Drop file or folder</span
                 >
                 <p
@@ -178,14 +197,14 @@
                   type="button"
                   id="fileSelectButton"
                 >
-                  Select file
+                  <span th:text="#{button.selectFile}">Select file</span>
                 </button>
                 <button
                   class="upload-shell-button"
                   type="button"
                   id="folderSelectButton"
                 >
-                  Select folder
+                  <span th:text="#{button.selectFolder}">Select folder</span>
                 </button>
               </div>
             </div>
@@ -199,11 +218,12 @@
               multiple
             />
             <label class="block">
-              <span class="sr-only">Description</span>
+              <span class="sr-only" th:text="#{form.description.placeholder}">Description</span>
               <input
                 class="mt-1 w-full rounded-lg border border-gray-400 dark:border-gray-600 bg-white dark:bg-slate-700 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500"
                 id="description"
                 name="description"
+                th:placeholder="#{form.description.placeholder}"
                 placeholder="Description"
                 type="text"
               />
@@ -217,16 +237,15 @@
                     name="keepIndefinitely"
                     type="checkbox"
                   />
-                  <span class="text-sm">Keep indefinitely</span>
+                  <span class="text-sm" th:text="#{form.keepIndefinitely}">Keep indefinitely</span>
                 </label>
                 <small
                   class="block ml-6 mt-1 text-sm text-gray-600 dark:text-gray-300"
-                  >If checked, this file will not be auto-deleted after
-                  <span class="maxFileLifeTime" th:text="${maxFileLifeTime}"
-                    >30</span
-                  >
-                  days.</small
                 >
+                  <span th:text="#{form.keepIndefinitely.help.beforeDays}">If checked, this file will not be auto-deleted after</span>
+                  <span class="maxFileLifeTime" th:text="${maxFileLifeTime}">30</span>
+                  <span th:text="#{form.keepIndefinitely.help.afterDays}">days.</span>
+                </small>
               </div>
               <div th:if="${isFileListPageEnabled and canHideFromList}">
                 <label class="inline-flex items-start gap-2">
@@ -236,21 +255,21 @@
                     name="hidden"
                     type="checkbox"
                   />
-                  <span class="text-sm">Hide from file list</span>
+                  <span class="text-sm" th:text="#{form.hideFromList}">Hide from file list</span>
                 </label>
                 <small
                   class="block ml-6 mt-1 text-sm text-gray-600 dark:text-gray-300"
-                  >If checked, this file won’t appear on the “View Files”
-                  page.</small
-                >
+                  th:text="#{form.hideFromList.help}"
+                >If checked, this file won’t appear on the “View Files” page.</small>
               </div>
             </div>
             <label class="block" th:if="${uploadPasswordEnabled}">
-              <span class="sr-only">Password (Optional)</span>
+              <span class="sr-only" th:text="#{form.password.optional}">Password (Optional)</span>
               <input
                 class="mt-1 w-full rounded-lg border border-gray-400 dark:border-gray-600 bg-white dark:bg-slate-700 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500"
                 id="password"
                 name="password"
+                th:placeholder="#{form.password.optional}"
                 placeholder="Password (Optional)"
                 type="password"
               />
@@ -281,14 +300,14 @@
                   class="rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium px-6 py-2 transition-colors active:scale-95 focus:outline-none focus:ring-2 focus:ring-sky-500"
                   type="button"
                 >
-                  Upload
+                  <span th:text="#{button.upload}">Upload</span>
                 </button>
                 <button
                   id="uploadCancel"
                   class="hidden rounded-lg border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-100 font-medium px-4 py-2 transition-colors active:scale-95 focus:outline-none focus:ring-2 focus:ring-slate-400"
                   type="button"
                 >
-                  Cancel
+                  <span th:text="#{button.cancel}">Cancel</span>
                 </button>
               </div>
             </div>
@@ -301,7 +320,7 @@
           class="text-gray-600 dark:text-gray-300 mb-2"
           id="uploadStatus"
         >
-          Upload started...
+          <span th:text="#{page.upload.status.started}">Upload started...</span>
         </p>
         <div
           class="w-full max-w-md mx-auto bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden"
@@ -321,23 +340,24 @@
         class="mt-4 text-center text-gray-600 dark:text-gray-300"
         th:if="${isEncryptionEnabled and uploadPasswordEnabled}"
       >
-        All password-protected files are also encrypted for additional security.
+        <span th:text="#{page.upload.encryptionNotice}">All password-protected files are also encrypted for additional security.</span>
       </div>
 
       <div
         class="mt-2 text-center text-gray-600 dark:text-gray-300"
         th:if="${isMetadataStrippingEnabled}"
       >
-        Metadata stripping is enabled. Supported:
+        <span th:text="#{page.upload.metadataNotice}">Metadata stripping is enabled. Supported:</span>
         <span data-supported-metadata></span>.
       </div>
     </main>
     <script th:inline="javascript">
       /*<![CDATA[*/
-      window.uploadPasswordEnabled = [[${uploadPasswordEnabled}]];
-      window.isMetadataStrippingEnabled = [[${isMetadataStrippingEnabled}]];
+      window.uploadPasswordEnabled = /*[[${uploadPasswordEnabled}]]*/ false;
+      window.isMetadataStrippingEnabled = /*[[${isMetadataStrippingEnabled}]]*/ false;
       /*]]>*/
     </script>
     <script type="module" src="/js/upload.js"></script>
+    <script src="/js/locale-switcher.js"></script>
   </body>
 </html>

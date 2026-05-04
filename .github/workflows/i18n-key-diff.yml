@@ -1,0 +1,24 @@
+name: i18n Key Diff
+
+on:
+  pull_request:
+    branches: [ "dev", "master" ]
+  push:
+    branches: [ "dev", "master" ]
+
+jobs:
+  i18n-key-diff:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Check i18n key consistency (warn-only)
+        run: |
+          python .github/scripts/check_i18n_keys.py
+

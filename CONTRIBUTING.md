@@ -182,6 +182,19 @@ PR requirements:
 - Add screenshots for UI changes.
 - Add migration notes if you touched DB.
 
+If your PR includes UI copy or localization updates:
+
+- Follow `docs/i18n.md` key conventions and workflow.
+- Update `messages.properties` first (English source of truth).
+- Add locale translations where available, or rely on English fallback by omitting missing locale keys.
+- Keep i18n changes scoped by page/feature where possible.
+
+Run i18n key check locally before opening/updating PR:
+
+```powershell
+python .github/scripts/check_i18n_keys.py
+```
+
 Code style & dependencies:
 
 - Follow existing patterns in the codebase.

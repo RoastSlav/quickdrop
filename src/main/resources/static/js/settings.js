@@ -410,7 +410,10 @@ async function sendNotificationTest(target, buttonId, statusId) {
   const status = document.getElementById(statusId);
   if (!button || !status) return;
 
-  status.textContent = "Testing…";
+  const testingText = button.dataset.testingText || "Testing…";
+  const errorText = button.dataset.errorText || "Request failed. See logs.";
+
+  status.textContent = testingText;
   status.className = "text-slate-600 dark:text-slate-300";
   button.disabled = true;
 
@@ -431,7 +434,7 @@ async function sendNotificationTest(target, buttonId, statusId) {
       ? "text-green-600 dark:text-green-400"
       : "text-red-600 dark:text-red-400";
   } catch (e) {
-    status.textContent = "Request failed. See logs.";
+    status.textContent = errorText;
     status.className = "text-red-600 dark:text-red-400";
   } finally {
     button.disabled = false;

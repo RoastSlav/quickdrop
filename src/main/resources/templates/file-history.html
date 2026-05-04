@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
-    <title th:text="${appName} + ' Admin - History'">Download History</title>
+    <title th:text="#{page.history.title.browser(${appName})}">Download History</title>
     <link href="/css/tailwind.css" rel="stylesheet" />
     <link href="/css/custom.css" rel="stylesheet" />
     <link
@@ -40,13 +40,13 @@
               target="_blank"
               th:if="${!#strings.equalsIgnoreCase(#strings.trim(appName), 'QuickDrop')}"
             >
-              Powered by QuickDrop
+              <span th:text="#{nav.poweredBy}">Powered by QuickDrop</span>
             </a>
           </div>
           <button
             aria-controls="navMenu"
             aria-expanded="false"
-            aria-label="Toggle navigation"
+            th:aria-label="#{nav.toggleNavigation}"
             class="md:hidden rounded-lg p-2 hover:bg-sky-600 dark:hover:bg-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500"
             id="navToggle"
             type="button"
@@ -71,9 +71,21 @@
             <div
               class="flex flex-col space-y-2 md:flex-row md:items-center md:space-x-4 md:space-y-0"
             >
-              <a class="nav-menu-item hover:text-white" href="/admin/dashboard"
+              <a class="nav-menu-item hover:text-white" href="/admin/dashboard" th:text="#{nav.dashboard}"
                 >Dashboard</a
               >
+            </div>
+            <div class="flex items-center text-xs">
+              <label class="sr-only" for="localeSwitchHistory" th:text="#{nav.language}">Language</label>
+              <select
+                      class="locale-switch-select rounded-md border border-slate-600 bg-slate-800 text-slate-100 px-2 py-1"
+                      data-locale-select="true"
+                      id="localeSwitchHistory"
+              >
+                <option th:selected="${currentLang == 'en'}" value="en">EN</option>
+                <option th:selected="${currentLang == 'bg'}" value="bg">BG</option>
+                <option th:selected="${currentLang == 'de'}" value="de">DE</option>
+              </select>
             </div>
             <button
               aria-label="Toggle theme"
@@ -90,7 +102,7 @@
 
     <!-- Main Content -->
     <div class="container mx-auto mt-5 px-4">
-      <h1 class="text-center text-3xl font-semibold mb-4">History</h1>
+      <h1 class="text-center text-3xl font-semibold mb-4" th:text="#{page.history.title}">History</h1>
 
       <!-- File Name and Description -->
       <div class="text-center mb-8">
@@ -99,7 +111,7 @@
         </p>
         <p
           class="text-lg text-gray-600 dark:text-gray-300"
-          th:text="${file.description ?: 'No description provided'}"
+          th:text="${file.description ?: #messages.msg('page.history.noDescription')}"
         >
           File Description
         </p>
@@ -107,11 +119,11 @@
 
       <!-- File Details Grid -->
       <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-lg mb-8 p-6">
-        <div class="text-center text-xl font-semibold mb-4">File Details</div>
+        <div class="text-center text-xl font-semibold mb-4" th:text="#{page.history.fileDetails}">File Details</div>
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
           <div class="bg-sky-500 text-white p-4 rounded-lg">
             <p class="text-2xl font-semibold" th:text="${file.size}">--</p>
-            <p class="text-sm">Size</p>
+            <p class="text-sm" th:text="#{page.history.size}">Size</p>
           </div>
           <div class="bg-sky-500 text-white p-4 rounded-lg">
             <p
@@ -120,13 +132,13 @@
             >
               --
             </p>
-            <p class="text-sm">Upload Date</p>
+            <p class="text-sm" th:text="#{page.history.uploadDate}">Upload Date</p>
           </div>
           <div class="bg-sky-500 text-white p-4 rounded-lg">
             <p class="text-2xl font-semibold" th:text="${file.totalDownloads}">
               --
             </p>
-            <p class="text-sm">Total Downloads</p>
+            <p class="text-sm" th:text="#{page.history.totalDownloads}">Total Downloads</p>
           </div>
         </div>
       </div>
@@ -134,7 +146,7 @@
       <!-- History Table -->
       <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-6">
         <h2 class="text-xl font-semibold tracking-tight mb-4">
-          Download History
+          <span th:text="#{page.history.downloadHistory}">Download History</span>
         </h2>
 
         <!-- scroll container -->
@@ -148,22 +160,22 @@
                   <th
                     class="px-6 py-4 text-left text-sm font-semibold whitespace-nowrap"
                   >
-                    Date
+                    <span th:text="#{page.history.date}">Date</span>
                   </th>
                   <th
                     class="px-6 py-4 text-left text-sm font-semibold whitespace-nowrap"
                   >
-                    Action
+                    <span th:text="#{page.history.action}">Action</span>
                   </th>
                   <th
                     class="px-6 py-4 text-left text-sm font-semibold whitespace-nowrap"
                   >
-                    IP Address
+                    <span th:text="#{page.history.ipAddress}">IP Address</span>
                   </th>
                   <th
                     class="px-6 py-4 text-left text-sm font-semibold whitespace-nowrap"
                   >
-                    User Agent
+                    <span th:text="#{page.history.userAgent}">User Agent</span>
                   </th>
                 </tr>
               </thead>
@@ -209,5 +221,6 @@
         </div>
       </div>
     </div>
+    <script src="/js/locale-switcher.js"></script>
   </body>
 </html>

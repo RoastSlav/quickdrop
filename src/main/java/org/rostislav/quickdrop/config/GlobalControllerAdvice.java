@@ -3,9 +3,12 @@ package org.rostislav.quickdrop.config;
 import jakarta.servlet.http.HttpServletRequest;
 import org.rostislav.quickdrop.service.ApplicationSettingsService;
 import org.rostislav.quickdrop.service.SessionService;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ModelAttribute;
+
+import java.util.Locale;
 
 @ControllerAdvice
 public class GlobalControllerAdvice {
@@ -43,5 +46,10 @@ public class GlobalControllerAdvice {
         model.addAttribute("canUseKeepIndefinitely", !keepIndefinitelyAdminOnly || hasAdminSession);
         model.addAttribute("isHideFromListAdminOnly", hideFromListAdminOnly);
         model.addAttribute("canHideFromList", !hideFromListAdminOnly || hasAdminSession);
+        Locale activeLocale = LocaleContextHolder.getLocale();
+        String currentLang = activeLocale == null || activeLocale.getLanguage() == null || activeLocale.getLanguage().isBlank()
+                ? "en"
+                : activeLocale.getLanguage();
+        model.addAttribute("currentLang", currentLang);
     }
 }

@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta content="width=device-width, initial-scale=1" name="viewport" />
-    <title th:text="${appName} + ' Admin Settings'">Admin Settings</title>
+    <title th:text="#{page.settings.title.browser(${appName})}">Admin Settings</title>
 
     <link href="/css/tailwind.css" rel="stylesheet" />
     <link href="/css/custom.css" rel="stylesheet" />
@@ -43,13 +43,13 @@
               target="_blank"
               th:if="${!#strings.equalsIgnoreCase(#strings.trim(appName), 'QuickDrop')}"
             >
-              Powered by QuickDrop
+              <span th:text="#{nav.poweredBy}">Powered by QuickDrop</span>
             </a>
           </div>
           <button
             aria-controls="navMenu"
             aria-expanded="false"
-            aria-label="Toggle navigation"
+            th:aria-label="#{nav.toggleNavigation}"
             class="md:hidden rounded-lg p-2 hover:bg-sky-600 dark:hover:bg-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500"
             id="navToggle"
             type="button"
@@ -74,13 +74,13 @@
             <div
               class="flex flex-col space-y-2 md:flex-row md:items-center md:space-x-4 md:space-y-0"
             >
-              <a class="nav-menu-item hover:text-white" href="/file/list"
+              <a class="nav-menu-item hover:text-white" href="/file/list" th:text="#{nav.viewFiles}"
                 >View Files</a
               >
-              <a class="nav-menu-item hover:text-white" href="/file/upload"
+              <a class="nav-menu-item hover:text-white" href="/file/upload" th:text="#{nav.uploadFile}"
                 >Upload File</a
               >
-              <a class="nav-menu-item hover:text-white" href="/admin/dashboard"
+              <a class="nav-menu-item hover:text-white" href="/admin/dashboard" th:text="#{nav.dashboard}"
                 >Dashboard</a
               >
               <form
@@ -93,17 +93,29 @@
                   th:name="${_csrf.parameterName}"
                   th:value="${_csrf.token}"
                 />
-                <button class="nav-menu-item hover:text-white" type="submit">
+                <button class="nav-menu-item hover:text-white" th:text="#{nav.logout}" type="submit">
                   Logout
                 </button>
               </form>
+            </div>
+            <div class="flex items-center text-xs">
+              <label class="sr-only" for="localeSwitchSettings" th:text="#{nav.language}">Language</label>
+              <select
+                      class="locale-switch-select rounded-md border border-slate-600 bg-slate-800 text-slate-100 px-2 py-1"
+                      data-locale-select="true"
+                      id="localeSwitchSettings"
+              >
+                <option th:selected="${currentLang == 'en'}" value="en">EN</option>
+                <option th:selected="${currentLang == 'bg'}" value="bg">BG</option>
+                <option th:selected="${currentLang == 'de'}" value="de">DE</option>
+              </select>
             </div>
             <button
               class="nav-menu-item theme-toggle rounded-lg p-2 transition-colors hover:bg-sky-600 dark:hover:bg-sky-500 active:scale-95 focus:outline-none focus:ring-2 focus:ring-sky-500"
               id="themeToggle"
               type="button"
             >
-              🌙
+
             </button>
           </div>
         </div>
@@ -113,7 +125,7 @@
     <main class="max-w-7xl mx-auto px-4 py-6 md:py-8">
       <header class="text-center mb-8 space-y-1">
         <h1 class="text-3xl md:text-4xl font-semibold tracking-tight">
-          Admin Settings
+          <span th:text="#{page.settings.adminTitle}">Admin Settings</span>
         </h1>
       </header>
 
@@ -131,29 +143,30 @@
           class="bg-white dark:bg-slate-800 p-6 md:p-8 rounded-2xl shadow-lg"
         >
           <div class="flex items-center justify-between mb-4">
-            <h2 class="text-xl font-semibold tracking-tight">Branding</h2>
+            <h2 class="text-xl font-semibold tracking-tight" th:text="#{page.settings.branding.title}">Branding</h2>
           </div>
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div class="space-y-2">
-              <label class="block text-sm font-medium mb-1" for="appName"
-                >Application name</label
+              <label class="block text-sm font-medium mb-1" for="appName" th:text="#{page.settings.branding.appName}">
+                Application name</label
               >
               <input
                 class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500"
                 id="appName"
                 th:field="*{appName}"
+                th:placeholder="#{page.settings.branding.appName.placeholder}"
                 placeholder="My Brand"
                 type="text"
               />
-              <p class="text-xs text-gray-600 dark:text-gray-400">
+              <p class="text-xs text-gray-600 dark:text-gray-400" th:text="#{page.settings.branding.appName.help}">
                 Shown in the navbar, page titles, and share views. Leave empty
                 to reset to QuickDrop.
               </p>
             </div>
             <div class="space-y-3">
-              <label class="block text-sm font-medium mb-1" for="appLogo"
-                >Logo / favicon</label
+              <label class="block text-sm font-medium mb-1" for="appLogo" th:text="#{page.settings.branding.logo}">
+                Logo / favicon</label
               >
               <div class="flex flex-col gap-2">
                 <input
@@ -171,7 +184,7 @@
                     class="inline-flex items-center justify-center rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-4 py-2 text-sm font-medium text-gray-800 dark:text-gray-200 hover:bg-slate-50 dark:hover:bg-slate-600 transition cursor-pointer"
                     id="appLogoButton"
                   >
-                    <span id="appLogoLabelText">Browse</span>
+                    <span id="appLogoLabelText" th:text="#{page.settings.branding.logo.browse}">Browse</span>
                   </label>
                   <input
                     id="clearLogo"
@@ -184,17 +197,18 @@
                     type="button"
                     id="clearLogoButton"
                   >
-                    Reset to default logo
+                    <span th:text="#{page.settings.branding.logo.reset}">Reset to default logo</span>
                   </button>
                 </div>
                 <p
                   id="logoStatus"
                   class="text-xs text-sky-600 dark:text-sky-400 hidden"
+                  th:text="#{page.settings.branding.logo.resetPending}"
                 >
                   Default logo will be restored on save.
                 </p>
               </div>
-              <p class="text-xs text-gray-600 dark:text-gray-400">
+              <p class="text-xs text-gray-600 dark:text-gray-400" th:text="#{page.settings.branding.logo.help}">
                 Upload a square image for best results. Leave empty to keep the
                 current logo or reset to restore the QuickDrop icon.
               </p>
@@ -206,15 +220,15 @@
           class="bg-white dark:bg-slate-800 p-6 md:p-8 rounded-2xl shadow-lg"
         >
           <div class="flex items-center justify-between mb-4">
-            <h2 class="text-xl font-semibold tracking-tight">File Settings</h2>
+            <h2 class="text-xl font-semibold tracking-tight" th:text="#{page.settings.file.title}">File Settings</h2>
           </div>
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div
               class="rounded-xl border border-slate-200 dark:border-slate-700 p-4"
             >
-              <label class="block text-sm font-medium mb-1"
-                >Max File Size (MB)</label
+              <label class="block text-sm font-medium mb-1" th:text="#{page.settings.file.maxSizeMb}">
+                Max File Size (MB)</label
               >
               <input
                 class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500"
@@ -227,8 +241,8 @@
             <div
               class="rounded-xl border border-slate-200 dark:border-slate-700 p-4"
             >
-              <label class="block text-sm font-medium mb-1"
-                >Max File Lifetime (days)</label
+              <label class="block text-sm font-medium mb-1" th:text="#{page.settings.file.maxLifetimeDays}">
+                Max File Lifetime (days)</label
               >
               <input
                 class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500"
@@ -241,8 +255,8 @@
             <div
               class="md:col-span-2 rounded-xl border border-slate-200 dark:border-slate-700 p-4"
             >
-              <label class="block text-sm font-medium mb-1"
-                >File Storage Path</label
+              <label class="block text-sm font-medium mb-1" th:text="#{page.settings.file.storagePath}">
+                File Storage Path</label
               >
               <input
                 class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500"
@@ -263,10 +277,12 @@
                   type="checkbox"
                 />
                 <span>
-                  <span class="text-sm font-medium">Disable file previews</span
+                  <span class="text-sm font-medium"
+                        th:text="#{page.settings.file.disablePreview}">Disable file previews</span
                   ><br />
                   <span class="text-xs text-gray-600 dark:text-gray-400"
-                    >Hide inline previews for images/text on the file
+                        th:text="#{page.settings.file.disablePreview.help}">
+                    Hide inline previews for images/text on the file
                     page.</span
                   >
                 </span>
@@ -279,6 +295,7 @@
               <label
                 class="block text-sm font-medium mb-1"
                 for="maxPreviewSizeBytes"
+                th:text="#{page.settings.file.maxPreviewMb}"
                 >Max preview size (MB)</label
               >
               <input
@@ -291,7 +308,8 @@
                 name="maxPreviewSizeBytes"
                 th:disabled="${settings.disablePreview}"
               />
-              <p class="text-xs text-gray-600 dark:text-gray-400 mt-1">
+              <p class="text-xs text-gray-600 dark:text-gray-400 mt-1"
+                 th:text="#{page.settings.file.maxPreviewMb.help}">
                 Above this size users must click "Load preview".
               </p>
             </div>
@@ -299,7 +317,9 @@
             <div
               class="rounded-xl border border-slate-200 dark:border-slate-700 p-4"
             >
-              <div class="text-sm font-medium mb-2">Keep Indefinitely</div>
+              <div class="text-sm font-medium mb-2" th:text="#{page.settings.file.keepIndefinitely.title}">Keep
+                Indefinitely
+              </div>
               <label class="flex items-start gap-3 pl-2">
                 <input
                   class="mt-1 h-4 w-4 rounded border-gray-400 dark:border-gray-600 accent-sky-500 dark:accent-sky-400 focus:ring-sky-500"
@@ -308,11 +328,12 @@
                   type="checkbox"
                 />
                 <span>
-                  <span class="text-sm"
-                    >Require admin session for “Keep indefinitely”</span
+                  <span class="text-sm" th:text="#{page.settings.file.keepIndefinitely.adminOnly}">
+                    Require admin session for “Keep indefinitely”</span
                   ><br />
                   <span class="text-xs text-gray-600 dark:text-gray-400"
-                    >When enabled, only admins with an active session can mark
+                        th:text="#{page.settings.file.keepIndefinitely.adminOnly.help}">
+                    When enabled, only admins with an active session can mark
                     uploads to keep indefinitely.</span
                   >
                 </span>
@@ -322,7 +343,8 @@
             <div
               class="rounded-xl border border-slate-200 dark:border-slate-700 p-4"
             >
-              <div class="text-sm font-medium mb-2">Hide from list</div>
+              <div class="text-sm font-medium mb-2" th:text="#{page.settings.file.hideFromList.title}">Hide from list
+              </div>
               <label class="flex items-start gap-3 pl-2">
                 <input
                   class="mt-1 h-4 w-4 rounded border-gray-400 dark:border-gray-600 accent-sky-500 dark:accent-sky-400 focus:ring-sky-500"
@@ -331,11 +353,12 @@
                   type="checkbox"
                 />
                 <span>
-                  <span class="text-sm"
-                    >Require admin session to hide files</span
+                  <span class="text-sm" th:text="#{page.settings.file.hideFromList.adminOnly}">
+                    Require admin session to hide files</span
                   ><br />
                   <span class="text-xs text-gray-600 dark:text-gray-400"
-                    >When enabled, only admins can set or change “Hide from file
+                        th:text="#{page.settings.file.hideFromList.adminOnly.help}">
+                    When enabled, only admins can set or change “Hide from file
                     list”.</span
                   >
                 </span>
@@ -348,27 +371,27 @@
         <section
           class="bg-white dark:bg-slate-800 p-6 md:p-8 rounded-2xl shadow-lg"
         >
-          <h2 class="text-xl font-semibold tracking-tight mb-4">
+          <h2 class="text-xl font-semibold tracking-tight mb-4" th:text="#{page.settings.system.title}">
             System Settings
           </h2>
 
           <div
             th:if="${param.error != null && param.error.contains('invalidCron')}"
             class="mb-4 rounded-lg border border-red-200 bg-red-50 text-red-700 dark:border-red-800 dark:bg-red-950 dark:text-red-200 px-4 py-3 text-sm"
+            th:text="#{validation.cron.invalid.example}"
           >
-            Invalid cron expression. Please enter a valid cron pattern (e.g.,
-            <span class="font-mono">0 0 2 * * *</span> for 2:00 AM daily).
+            Invalid cron expression. Please enter a valid cron pattern (e.g., 0 0 2 * * * for 2:00 AM daily).
           </div>
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <!-- MIDDLE: Lifetime (left) -->
             <div
               class="rounded-xl border border-slate-200 dark:border-slate-700 p-4"
             >
-              <label class="block text-sm font-medium mb-1"
-                >Session Lifetime (minutes)</label
+              <label class="block text-sm font-medium mb-1" th:text="#{page.settings.system.sessionLifetimeMinutes}">
+                Session Lifetime (minutes)</label
               >
-              <p class="text-xs text-gray-600 dark:text-gray-400 mb-1">
+              <p class="text-xs text-gray-600 dark:text-gray-400 mb-1"
+                 th:text="#{page.settings.system.sessionLifetimeMinutes.help}">
                 This impacts how long file and admin sessions are kept.
               </p>
               <input
@@ -380,13 +403,13 @@
               />
             </div>
 
-            <!-- MIDDLE: Default Home Page (right) -->
             <div
               class="rounded-xl border border-slate-200 dark:border-slate-700 p-4 h-full"
             >
               <label
                 class="block text-sm font-medium mb-2"
                 for="defaultHomePage"
+                th:text="#{page.settings.system.defaultHomePage}"
                 >Default Home Page</label
               >
               <select
@@ -394,13 +417,12 @@
                 id="defaultHomePage"
                 th:field="*{defaultHomePage}"
               >
-                <option value="upload">Upload Page</option>
-                <option value="list">File List Page</option>
-                <option value="paste">Pastebin Page</option>
+                <option th:text="#{page.settings.system.defaultHomePage.upload}" value="upload">Upload Page</option>
+                <option th:text="#{page.settings.system.defaultHomePage.list}" value="list">File List Page</option>
+                <option th:text="#{page.settings.system.defaultHomePage.paste}" value="paste">Pastebin Page</option>
               </select>
             </div>
 
-            <!-- Cron + Next Run side by side -->
             <div
               class="rounded-xl border border-slate-200 dark:border-slate-700 p-4 md:col-span-2"
             >
@@ -409,6 +431,7 @@
                   <label
                     class="block text-sm font-medium mb-1"
                     for="fileDeletionCron"
+                    th:text="#{page.settings.system.fileDeletionCron}"
                     >File Deletion Cron Expression</label
                   >
                   <input
@@ -420,20 +443,19 @@
                   />
                 </div>
                 <div>
-                  <div class="text-sm font-medium mb-1">Next run</div>
+                  <div class="text-sm font-medium mb-1" th:text="#{page.settings.system.nextRun}">Next run</div>
                   <div
                     class="text-sm text-gray-700 dark:text-gray-300"
-                    th:text="${cronNextRunText != null ? cronNextRunText : 'Unable to parse cron'}"
+                    th:text="${cronNextRunText != null ? cronNextRunText : #messages.msg('validation.cron.unableToParse')}"
                   ></div>
                 </div>
               </div>
             </div>
 
-            <!-- BOTTOM: File List Enabled (left) -->
             <div
               class="rounded-xl border border-slate-200 dark:border-slate-700 p-4 h-full"
             >
-              <div class="text-sm font-medium mb-2">File List</div>
+              <div class="text-sm font-medium mb-2" th:text="#{page.settings.system.fileList}">File List</div>
               <label class="flex items-center gap-3 pl-2">
                 <input
                   class="h-4 w-4 rounded border-gray-400 dark:border-gray-600 accent-sky-500 dark:accent-sky-400 focus:ring-sky-500"
@@ -441,15 +463,15 @@
                   th:field="*{fileListPageEnabled}"
                   type="checkbox"
                 />
-                <span class="text-sm">Enable File List Page</span>
+                <span class="text-sm" th:text="#{page.settings.system.fileList.enabled}">Enable File List Page</span>
               </label>
             </div>
 
-            <!-- BOTTOM: Admin Dashboard Button Enabled (right) -->
             <div
               class="rounded-xl border border-slate-200 dark:border-slate-700 p-4 h-full"
             >
-              <div class="text-sm font-medium mb-2">Admin Dashboard</div>
+              <div class="text-sm font-medium mb-2" th:text="#{page.settings.system.adminDashboard}">Admin Dashboard
+              </div>
               <label class="flex items-start gap-3 pl-2">
                 <input
                   class="mt-1 h-4 w-4 rounded border-gray-400 dark:border-gray-600 accent-sky-500 dark:accent-sky-400 focus:ring-sky-500"
@@ -458,8 +480,9 @@
                   type="checkbox"
                 />
                 <span>
-                  <span class="text-sm">Show Admin Dashboard Button</span><br />
-                  <span class="text-xs text-gray-600 dark:text-gray-400">
+                  <span class="text-sm" th:text="#{page.settings.system.adminDashboard.showButton}">Show Admin Dashboard Button</span><br/>
+                  <span class="text-xs text-gray-600 dark:text-gray-400"
+                        th:text="#{page.settings.system.adminDashboard.directUrl}">
                     Still available at /admin/dashboard
                   </span>
                 </span>
@@ -469,7 +492,7 @@
             <div
                     class="rounded-xl border border-slate-200 dark:border-slate-700 p-4 h-full md:col-span-2"
             >
-              <div class="text-sm font-medium mb-2">Pastebin</div>
+              <div class="text-sm font-medium mb-2" th:text="#{page.settings.system.pastebin}">Pastebin</div>
               <label class="flex items-start gap-3 pl-2">
                 <input
                         class="mt-1 h-4 w-4 rounded border-gray-400 dark:border-gray-600 accent-sky-500 dark:accent-sky-400 focus:ring-sky-500"
@@ -478,9 +501,11 @@
                         type="checkbox"
                 />
                 <span>
-                  <span class="text-sm">Enable Pastebin Page</span><br/>
+                  <span class="text-sm"
+                        th:text="#{page.settings.system.pastebin.enabled}">Enable Pastebin Page</span><br/>
                   <span class="text-xs text-gray-600 dark:text-gray-400"
-                  >Adds a text editor tab and allows selecting Pastebin as
+                        th:text="#{page.settings.system.pastebin.help}">
+                  Adds a text editor tab and allows selecting Pastebin as
                     default home page.</span
                   >
                 </span>
@@ -493,7 +518,7 @@
         <section
           class="bg-white dark:bg-slate-800 p-6 md:p-8 rounded-2xl shadow-lg"
         >
-          <h2 class="text-xl font-semibold tracking-tight mb-4">
+          <h2 class="text-xl font-semibold tracking-tight mb-4" th:text="#{page.settings.notifications.title}">
             Notification Settings
           </h2>
 
@@ -509,8 +534,11 @@
                   type="checkbox"
                 />
                 <div>
-                  <div class="text-sm font-medium">Discord Webhook</div>
-                  <p class="text-xs text-gray-600 dark:text-gray-400">
+                  <div class="text-sm font-medium" th:text="#{page.settings.notifications.discord.title}">Discord
+                    Webhook
+                  </div>
+                  <p class="text-xs text-gray-600 dark:text-gray-400"
+                     th:text="#{page.settings.notifications.discord.help}">
                     Post file activity to a Discord channel.
                   </p>
                 </div>
@@ -520,11 +548,13 @@
                 <label
                   class="block text-sm font-medium mb-1"
                   for="discordWebhookUrl"
+                  th:text="#{page.settings.notifications.discord.webhookUrl}"
                   >Webhook URL</label
                 >
                 <input
                   class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500"
                   id="discordWebhookUrl"
+                  th:placeholder="#{page.settings.notifications.discord.webhookUrl.placeholder}"
                   placeholder="https://discord.com/api/webhooks/..."
                   th:field="*{discordWebhookUrl}"
                   type="url"
@@ -536,8 +566,10 @@
                   class="rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white text-sm font-medium px-4 py-2 transition-colors active:scale-95 focus:outline-none focus:ring-2 focus:ring-sky-500"
                   id="testDiscord"
                   type="button"
+                  th:data-error-text="#{page.settings.notifications.testFailed}"
+                  th:data-testing-text="#{page.settings.notifications.testInProgress}"
                 >
-                  Send Test to Discord
+                  <span th:text="#{page.settings.notifications.discord.testButton}">Send Test to Discord</span>
                 </button>
                 <span class="text-xs" id="discordTestStatus"></span>
               </div>
@@ -554,8 +586,11 @@
                   type="checkbox"
                 />
                 <div>
-                  <div class="text-sm font-medium">Email Notifications</div>
-                  <p class="text-xs text-gray-600 dark:text-gray-400">
+                  <div class="text-sm font-medium" th:text="#{page.settings.notifications.email.title}">Email
+                    Notifications
+                  </div>
+                  <p class="text-xs text-gray-600 dark:text-gray-400"
+                     th:text="#{page.settings.notifications.email.help}">
                     Send emails on upload, download, and renewal events.
                   </p>
                 </div>
@@ -567,11 +602,13 @@
                     <label
                       class="block text-sm font-medium mb-1"
                       for="emailFrom"
+                      th:text="#{page.settings.notifications.email.fromAddress}"
                       >From Address</label
                     >
                     <input
                       class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500"
                       id="emailFrom"
+                      th:placeholder="#{page.settings.notifications.email.fromAddress.placeholder}"
                       placeholder="noreply@example.com"
                       th:field="*{emailFrom}"
                       type="email"
@@ -579,11 +616,13 @@
                   </div>
                   <div>
                     <label class="block text-sm font-medium mb-1" for="emailTo"
-                      >Recipients (comma separated)</label
+                           th:text="#{page.settings.notifications.email.recipients}">
+                      Recipients (comma separated)</label
                     >
                     <input
                       class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500"
                       id="emailTo"
+                      th:placeholder="#{page.settings.notifications.email.recipients.placeholder}"
                       placeholder="admin@example.com, alerts@example.com"
                       th:field="*{emailTo}"
                       type="text"
@@ -594,11 +633,13 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label class="block text-sm font-medium mb-1" for="smtpHost"
-                      >SMTP Host</label
+                           th:text="#{page.settings.notifications.email.smtpHost}">
+                      SMTP Host</label
                     >
                     <input
                       class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500"
                       id="smtpHost"
+                      th:placeholder="#{page.settings.notifications.email.smtpHost.placeholder}"
                       placeholder="smtp.example.com"
                       th:field="*{smtpHost}"
                       type="text"
@@ -606,7 +647,8 @@
                   </div>
                   <div>
                     <label class="block text-sm font-medium mb-1" for="smtpPort"
-                      >SMTP Port</label
+                           th:text="#{page.settings.notifications.email.smtpPort}">
+                      SMTP Port</label
                     >
                     <input
                       class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500"
@@ -620,10 +662,9 @@
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label
-                      class="block text-sm font-medium mb-1"
-                      for="smtpUsername"
-                      >SMTP Username</label
+                    <label class="block text-sm font-medium mb-1" for="smtpUsername"
+                           th:text="#{page.settings.notifications.email.smtpUsername}">
+                      SMTP Username</label
                     >
                     <input
                       class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500"
@@ -634,10 +675,9 @@
                     />
                   </div>
                   <div>
-                    <label
-                      class="block text-sm font-medium mb-1"
-                      for="smtpPassword"
-                      >SMTP Password</label
+                    <label class="block text-sm font-medium mb-1" for="smtpPassword"
+                           th:text="#{page.settings.notifications.email.smtpPassword}">
+                      SMTP Password</label
                     >
                     <input
                       class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500"
@@ -656,7 +696,7 @@
                     th:field="*{smtpUseTls}"
                     type="checkbox"
                   />
-                  <span class="text-sm">Use STARTTLS</span>
+                  <span class="text-sm" th:text="#{page.settings.notifications.email.useStartTls}">Use STARTTLS</span>
                 </label>
 
                 <label class="flex items-center gap-3">
@@ -666,9 +706,10 @@
                           th:field="*{smtpUseSsl}"
                           type="checkbox"
                   />
-                  <span class="text-sm">Use Implicit SSL (SMTPS)</span>
+                  <span class="text-sm" th:text="#{page.settings.notifications.email.useImplicitSsl}">Use Implicit SSL (SMTPS)</span>
                 </label>
-                <p class="text-xs text-gray-600 dark:text-gray-400">
+                <p class="text-xs text-gray-600 dark:text-gray-400"
+                   th:text="#{page.settings.notifications.email.tlsHelp}">
                   Use STARTTLS with port 587. Use Implicit SSL with port 465.
                 </p>
 
@@ -677,8 +718,10 @@
                     class="rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white text-sm font-medium px-4 py-2 transition-colors active:scale-95 focus:outline-none focus:ring-2 focus:ring-sky-500"
                     id="testEmail"
                     type="button"
+                    th:data-error-text="#{page.settings.notifications.testFailed}"
+                    th:data-testing-text="#{page.settings.notifications.testInProgress}"
                   >
-                    Send Test Email
+                    <span th:text="#{page.settings.notifications.email.testButton}">Send Test Email</span>
                   </button>
                   <span class="text-xs" id="emailTestStatus"></span>
                 </div>
@@ -697,8 +740,11 @@
                   type="checkbox"
                 />
                 <div>
-                  <div class="text-sm font-medium">Batch notifications</div>
-                  <p class="text-xs text-gray-600 dark:text-gray-400">
+                  <div class="text-sm font-medium" th:text="#{page.settings.notifications.batch.title}">Batch
+                    notifications
+                  </div>
+                  <p class="text-xs text-gray-600 dark:text-gray-400"
+                     th:text="#{page.settings.notifications.batch.help}">
                     Pool events and send every N minutes. Requires at least one
                     channel enabled.
                   </p>
@@ -712,6 +758,7 @@
                   <label
                     class="block text-sm font-medium mb-1"
                     for="notificationBatchMinutes"
+                    th:text="#{page.settings.notifications.batch.interval}"
                     >Batch interval (minutes)</label
                   >
                   <input
@@ -731,7 +778,7 @@
         <section
           class="bg-white dark:bg-slate-800 p-6 md:p-8 rounded-2xl shadow-lg"
         >
-          <h2 class="text-xl font-semibold tracking-tight mb-4">
+          <h2 class="text-xl font-semibold tracking-tight mb-4" th:text="#{page.settings.security.title}">
             Security Settings
           </h2>
 
@@ -748,19 +795,19 @@
                   type="checkbox"
                 />
                 <span>
-                  <span class="text-sm font-medium"
-                    >Enable Password Protection</span
+                  <span class="text-sm font-medium" th:text="#{page.settings.security.appPasswordEnabled}">
+                    Enable Password Protection</span
                   ><br />
                   <span class="text-xs text-gray-600 dark:text-gray-400"
-                    >Protect the whole app with a password</span
+                        th:text="#{page.settings.security.appPasswordEnabled.help}">
+                    Protect the whole app with a password</span
                   >
                 </span>
               </label>
 
-              <!-- App Password -->
               <div class="mt-4 hidden" id="passwordInputGroup">
-                <label class="block text-sm font-medium mb-1"
-                  >App Password</label
+                <label class="block text-sm font-medium mb-1" th:text="#{page.settings.security.appPassword}">
+                  App Password</label
                 >
                 <input
                   id="appPassword"
@@ -782,10 +829,11 @@
                   type="checkbox"
                 />
                 <span>
-                  <span class="text-sm font-medium"
-                    >Disable upload passwords</span
+                  <span class="text-sm font-medium" th:text="#{page.settings.security.disableUploadPasswords}">
+                    Disable upload passwords</span
                   ><br />
-                  <span class="text-xs text-gray-600 dark:text-gray-400">
+                  <span class="text-xs text-gray-600 dark:text-gray-400"
+                        th:text="#{page.settings.security.disableUploadPasswords.help}">
                     Prevents users from setting passwords on uploads (and
                     disables per-file encryption).
                   </span>
@@ -806,9 +854,10 @@
                   type="checkbox"
                 />
                 <span>
-                  <span class="text-sm font-medium">Disable share links</span
+                  <span class="text-sm font-medium" th:text="#{page.settings.security.disableShareLinks}">Disable share links</span
                   ><br />
-                  <span class="text-xs text-gray-600 dark:text-gray-400">
+                  <span class="text-xs text-gray-600 dark:text-gray-400"
+                        th:text="#{page.settings.security.disableShareLinks.help}">
                     Hide share options on file pages and block new share links
                     from being generated.
                   </span>
@@ -829,9 +878,10 @@
                   type="checkbox"
                 />
                 <span>
-                  <span class="text-sm font-medium">Simplify share links</span
+                  <span class="text-sm font-medium" th:text="#{page.settings.security.simplifyShareLinks}">Simplify share links</span
                   ><br />
-                  <span class="text-xs text-gray-600 dark:text-gray-400">
+                  <span class="text-xs text-gray-600 dark:text-gray-400"
+                        th:text="#{page.settings.security.simplifyShareLinks.help}">
                     Auto-generate an unlimited, non-expiring share link and hide
                     manual share options on file pages.
                   </span>
@@ -850,10 +900,11 @@
                   type="checkbox"
                 />
                 <span>
-                  <span class="text-sm font-medium"
-                    >Disable File Encryption</span
+                  <span class="text-sm font-medium" th:text="#{page.settings.security.disableFileEncryption}">
+                    Disable File Encryption</span
                   ><br />
-                  <span class="text-xs text-gray-600 dark:text-gray-400">
+                  <span class="text-xs text-gray-600 dark:text-gray-400"
+                        th:text="#{page.settings.security.disableFileEncryption.help}">
                     If checked, files will not be encrypted even if file
                     password protection is enabled.
                   </span>
@@ -872,7 +923,8 @@
                   type="checkbox"
                 />
                 <span>
-                  <span class="flex items-center gap-2 text-sm font-medium">
+                  <span class="flex items-center gap-2 text-sm font-medium"
+                        th:text="#{page.settings.security.metadataStripping}">
                     Metadata stripping
                     <span
                       class="text-xs text-sky-700 dark:text-sky-400"
@@ -881,7 +933,8 @@
                   </span>
                   <br />
                   <span class="text-xs text-gray-600 dark:text-gray-400"
-                    >Strip optional file metadata where possible.</span
+                        th:text="#{page.settings.security.metadataStripping.help}">
+                    Strip optional file metadata where possible.</span
                   >
                 </span>
               </label>
@@ -895,7 +948,7 @@
             class="rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium px-6 py-2 transition-colors active:scale-95 focus:outline-none focus:ring-2 focus:ring-sky-500"
             type="submit"
           >
-            Save Settings
+            <span th:text="#{page.settings.save}">Save Settings</span>
           </button>
         </div>
       </form>
@@ -904,7 +957,7 @@
       <section
         class="bg-white dark:bg-slate-800 p-6 md:p-8 rounded-2xl shadow-lg mt-12"
       >
-        <h2 class="text-2xl font-semibold tracking-tight mb-6">
+        <h2 class="text-2xl font-semibold tracking-tight mb-6" th:text="#{page.settings.about.title(${appName})}">
           About QuickDrop
         </h2>
 
@@ -912,7 +965,7 @@
           <div
             class="rounded-xl border border-slate-200 dark:border-slate-700 p-5"
           >
-            <div class="text-sm text-gray-600 dark:text-gray-400">Version</div>
+            <div class="text-sm text-gray-600 dark:text-gray-400" th:text="#{page.settings.about.version}">Version</div>
             <div
               class="text-lg font-semibold mt-1"
               th:text="${aboutInfo.appVersion}"
@@ -924,11 +977,13 @@
           <div
             class="rounded-xl border border-slate-200 dark:border-slate-700 p-5"
           >
-            <div class="text-sm text-gray-600 dark:text-gray-400">Database</div>
+            <div class="text-sm text-gray-600 dark:text-gray-400" th:text="#{page.settings.about.database}">Database
+            </div>
             <div class="text-lg font-semibold mt-1">
-              SQLite
-              <span class="font-normal" th:text="${aboutInfo.sqliteVersion}"
-                >Unknown</span
+              <span th:text="#{page.settings.about.database.sqlite}">SQLite</span>
+              <span class="font-normal"
+                    th:text="${aboutInfo.sqliteVersion != null ? aboutInfo.sqliteVersion : #messages.msg('page.settings.about.unknown')}">
+                Unknown</span
               >
             </div>
           </div>
@@ -936,7 +991,7 @@
           <div
             class="rounded-xl border border-slate-200 dark:border-slate-700 p-5"
           >
-            <div class="text-sm text-gray-600 dark:text-gray-400">
+            <div class="text-sm text-gray-600 dark:text-gray-400" th:text="#{page.settings.about.javaVersion}">
               Java Version
             </div>
             <div
@@ -950,7 +1005,7 @@
           <div
             class="rounded-xl border border-slate-200 dark:border-slate-700 p-5"
           >
-            <div class="text-sm text-gray-600 dark:text-gray-400">OS Info</div>
+            <div class="text-sm text-gray-600 dark:text-gray-400" th:text="#{page.settings.about.osInfo}">OS Info</div>
             <div
               class="text-lg font-semibold mt-1"
               th:text="${aboutInfo.osInfo}"
@@ -963,5 +1018,6 @@
     </main>
 
     <script src="/js/settings.js"></script>
+    <script src="/js/locale-switcher.js"></script>
   </body>
 </html>

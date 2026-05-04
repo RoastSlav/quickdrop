@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title th:text="'Welcome to ' + ${appName}">Welcome to QuickDrop</title>
+    <title th:text="#{page.welcome.title.browser(${appName})}">Welcome to QuickDrop</title>
     <meta content="width=device-width, initial-scale=1" name="viewport" />
     <link href="/css/tailwind.css" rel="stylesheet" />
     <link href="/css/custom.css" rel="stylesheet" />
@@ -16,15 +16,29 @@
   </head>
   <body class="bg-gray-50 text-gray-800 dark:bg-slate-900 dark:text-gray-100">
     <main class="max-w-7xl mx-auto px-4 py-6 md:py-8">
+      <div class="flex justify-end mb-4">
+        <div class="flex items-center text-xs">
+          <label class="sr-only" for="localeSwitchWelcome" th:text="#{nav.language}">Language</label>
+          <select
+                  class="locale-switch-select rounded-md border border-slate-300 bg-white text-slate-700 px-2 py-1 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+                  data-locale-select="true"
+                  id="localeSwitchWelcome"
+          >
+            <option th:selected="${currentLang == 'en'}" value="en">EN</option>
+            <option th:selected="${currentLang == 'bg'}" value="bg">BG</option>
+            <option th:selected="${currentLang == 'de'}" value="de">DE</option>
+          </select>
+        </div>
+      </div>
       <header class="text-center mb-8 space-y-1">
         <h1 class="text-3xl md:text-4xl font-semibold tracking-tight">
-          <span th:text="'Welcome to ' + ${appName}">Welcome to QuickDrop</span>
+          <span th:text="#{page.welcome.title(${appName})}">Welcome to QuickDrop</span>
         </h1>
         <p class="text-gray-600 dark:text-gray-300">
-          <span th:text="'Thank you for setting up ' + ${appName} + '!'">
+          <span th:text="#{page.welcome.setupThanks(${appName})}">
             Thank you for setting up QuickDrop!
           </span>
-          Please set an admin password for the dashboard.
+          <span th:text="#{page.welcome.setupPrompt}">Please set an admin password for the dashboard.</span>
         </p>
       </header>
       <div class="grid grid-cols-12 gap-4">
@@ -43,12 +57,13 @@
               type="hidden"
             />
             <label class="block w-full">
-              <span class="sr-only">Admin Password</span>
+              <span class="sr-only" th:text="#{form.adminPassword.label}">Admin Password</span>
               <input
                 class="block w-full rounded-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-gray-700 px-4 py-3 text-lg text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:border-sky-500 focus:ring-2 focus:ring-sky-500 focus:outline-none"
                 id="adminPassword"
                 minlength="8"
                 name="adminPassword"
+                th:placeholder="#{form.adminPassword.placeholder}"
                 placeholder="Admin Password"
                 required
                 style="line-height: 2.7rem"
@@ -56,12 +71,13 @@
               />
             </label>
             <label class="block w-full">
-              <span class="sr-only">Confirm Password</span>
+              <span class="sr-only" th:text="#{form.password.confirm}">Confirm Password</span>
               <input
                 class="block w-full rounded-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-gray-700 px-4 py-3 text-lg text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:border-sky-500 focus:ring-2 focus:ring-sky-500 focus:outline-none"
                 id="confirmPassword"
                 minlength="8"
                 name="confirmPassword"
+                th:placeholder="#{form.password.confirm.placeholder}"
                 placeholder="Confirm Password"
                 required
                 style="line-height: 2.7rem"
@@ -73,14 +89,14 @@
               id="error-message"
               style="display: none"
             >
-              Passwords do not match.
+              <span th:text="#{page.welcome.passwordMismatch}">Passwords do not match.</span>
             </div>
             <div class="pt-2 text-center">
               <button
                 class="rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium px-4 py-2 transition-colors active:scale-95 focus:outline-none focus:ring-2 focus:ring-sky-500"
                 type="submit"
               >
-                Set Admin Password
+                <span th:text="#{page.welcome.setAdminPassword}">Set Admin Password</span>
               </button>
             </div>
           </form>
@@ -100,5 +116,6 @@
           }
         });
     </script>
+    <script src="/js/locale-switcher.js"></script>
   </body>
 </html>

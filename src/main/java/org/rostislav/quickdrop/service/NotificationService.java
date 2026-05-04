@@ -15,12 +15,16 @@ import java.util.concurrent.*;
 
 import static org.rostislav.quickdrop.util.DataValidator.safeString;
 
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
+
 @Service
 public class NotificationService {
     private static final Logger logger = LoggerFactory.getLogger(NotificationService.class);
     private static final long DEFAULT_FLUSH_POLL_SECONDS = 60;
     private static final RestTemplate REST_TEMPLATE = new RestTemplate();
     private final ApplicationSettingsService applicationSettingsService;
+    private final MessageSource messageSource;
     private final Queue<String> pendingMessages = new ConcurrentLinkedQueue<>();
     private final Object schedulerLock = new Object();
     private final ExecutorService notificationExecutor = Executors.newSingleThreadExecutor(r -> {
@@ -34,14 +38,13 @@ public class NotificationService {
     private volatile long lastFlushEpochMillis = System.currentTimeMillis();
     private ScheduledExecutorService scheduler;
 
-
-    public NotificationService(ApplicationSettingsService applicationSettingsService) {
+    public NotificationService(ApplicationSettingsService applicationSettingsService, MessageSource messageSource) {
         this.applicationSettingsService = applicationSettingsService;
-        startSchedulerIfNeeded(shouldSendDiscord(), shouldSendEmail());
+        this.messageSource = messageSource;
     }
 
-    public void notifyFileAction(FileEntity fileEntity, FileHistoryType type) {
-        if (fileEntity == null) {
+    public void notifyFileAction(FileEntity file, FileHistoryType type) {
+        if (file == null) {
             return;
         }
 
@@ -59,10 +62,10 @@ public class NotificationService {
             case DELETION -> "deleted";
         };
 
-        String summary = "File '" + fileEntity.name + "' (" + fileEntity.uuid + ") was " + event + ".";
+        String summary = "File '" + file.name + "' (" + file.uuid + ") was " + event + ".";
         StringBuilder detailsBuilder = new StringBuilder();
         if (type == FileHistoryType.UPLOAD) {
-            detailsBuilder.append("Size: ").append(fileEntity.size).append(" bytes");
+            detailsBuilder.append("Size: ").append(file.size).append(" bytes");
         }
         String details = detailsBuilder.toString();
         String formattedMessage = details.isBlank() ? summary : summary + "\n---\n" + details;
@@ -106,15 +109,16 @@ public class NotificationService {
     public NotificationTestResult sendTestDiscord() {
         String url = safeString(applicationSettingsService.getDiscordWebhookUrl());
         if (url.isBlank()) {
-            return NotificationTestResult.failure("Discord webhook URL is not configured.");
+            return NotificationTestResult.failure(messageSource.getMessage("page.settings.notifications.discord.missingUrl", null, "Discord webhook URL is not configured.", LocaleContextHolder.getLocale()));
         }
 
         try {
             REST_TEMPLATE.postForEntity(url, Map.of("content", "QuickDrop notification test (Discord)"), Void.class);
-            return NotificationTestResult.success("Discord test notification sent.");
+            return NotificationTestResult.success(messageSource.getMessage("page.settings.notifications.discord.success", null, "Discord test notification sent.", LocaleContextHolder.getLocale()));
         } catch (Exception e) {
             logger.warn("Discord test notification failed: {}", e.getMessage());
-            return NotificationTestResult.failure("Discord test failed: " + summarizeReason(e.getMessage()));
+            String errorMsg = messageSource.getMessage("page.settings.notifications.discord.failed", new Object[]{summarizeReason(e.getMessage())}, "Discord test failed: " + summarizeReason(e.getMessage()), LocaleContextHolder.getLocale());
+            return NotificationTestResult.failure(errorMsg);
         }
     }
 
@@ -146,7 +150,7 @@ public class NotificationService {
             String from = safeString(applicationSettingsService.getEmailFrom());
             String[] recipients = parseRecipients();
             if (mailSender == null || from.isBlank() || recipients.length == 0) {
-                return NotificationTestResult.failure("Email settings incomplete (host/from/recipients).");
+                return NotificationTestResult.failure(messageSource.getMessage("page.settings.notifications.email.incomplete", null, "Email settings incomplete (host/from/recipients).", LocaleContextHolder.getLocale()));
             }
 
             MimeMessage message = mailSender.createMimeMessage();
@@ -157,10 +161,11 @@ public class NotificationService {
             helper.setText("This is a QuickDrop notification test email. If you see this, SMTP settings are working.");
 
             mailSender.send(message);
-            return NotificationTestResult.success("Email test notification sent.");
+            return NotificationTestResult.success(messageSource.getMessage("page.settings.notifications.email.success", null, "Email test notification sent.", LocaleContextHolder.getLocale()));
         } catch (Exception e) {
             logger.warn("Email test notification failed: {}", e.getMessage());
-            return NotificationTestResult.failure("Email test failed: " + summarizeReason(e.getMessage()));
+            String errorMsg = messageSource.getMessage("page.settings.notifications.email.failed", new Object[]{summarizeReason(e.getMessage())}, "Email test failed: " + summarizeReason(e.getMessage()), LocaleContextHolder.getLocale());
+            return NotificationTestResult.failure(errorMsg);
         }
     }
 

@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title th:text="${appName} + ' - Shared File'">Shared File View</title>
+    <title th:text="#{page.share.title.browser(${appName})}">Shared File View</title>
     <meta content="width=device-width, initial-scale=1" name="viewport" />
     <link href="/css/tailwind.css" rel="stylesheet" />
     <link href="/css/custom.css" rel="stylesheet" />
@@ -37,13 +37,13 @@
               target="_blank"
               th:if="${!#strings.equalsIgnoreCase(#strings.trim(appName), 'QuickDrop')}"
             >
-              Powered by QuickDrop
+              <span th:text="#{nav.poweredBy}">Powered by QuickDrop</span>
             </a>
           </div>
           <button
             aria-controls="navMenu"
             aria-expanded="false"
-            aria-label="Toggle navigation"
+            th:aria-label="#{nav.toggleNavigation}"
             class="md:hidden rounded-lg p-2 hover:bg-sky-600 dark:hover:bg-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500"
             id="navToggle"
             type="button"
@@ -65,6 +65,18 @@
             class="nav-menu-panel hidden md:flex flex-col md:flex-row md:items-center md:space-x-4 w-full md:w-auto mt-3 md:mt-0 space-y-2 md:space-y-0 bg-gray-800 dark:bg-gray-900 md:bg-transparent md:dark:bg-transparent rounded-lg md:rounded-none p-4 md:p-0 shadow md:shadow-none absolute left-0 right-0 top-full md:static z-20 md:ml-auto"
             id="navMenu"
           >
+            <div class="flex items-center text-xs">
+              <label class="sr-only" for="localeSwitchShareView" th:text="#{nav.language}">Language</label>
+              <select
+                      class="locale-switch-select rounded-md border border-slate-600 bg-slate-800 text-slate-100 px-2 py-1"
+                      data-locale-select="true"
+                      id="localeSwitchShareView"
+              >
+                <option th:selected="${currentLang == 'en'}" value="en">EN</option>
+                <option th:selected="${currentLang == 'bg'}" value="bg">BG</option>
+                <option th:selected="${currentLang == 'de'}" value="de">DE</option>
+              </select>
+            </div>
             <button
               aria-label="Toggle theme"
               class="nav-menu-item theme-toggle rounded-lg p-2 transition-colors hover:bg-sky-600 dark:hover:bg-sky-500 active:scale-95 focus:outline-none focus:ring-2 focus:ring-sky-500"
@@ -86,7 +98,7 @@
           <p
             class="text-sm uppercase tracking-wide text-slate-500 dark:text-slate-400"
           >
-            Shared File
+            <span th:text="#{page.share.title}">Shared File</span>
           </p>
           <h1
             class="text-3xl font-semibold tracking-tight"
@@ -109,6 +121,7 @@
           >
             <span
               class="text-sm font-semibold text-slate-600 dark:text-slate-300"
+              th:text="#{page.share.uploaded}"
               >Uploaded</span
             >
             <span
@@ -121,6 +134,7 @@
           >
             <span
               class="text-sm font-semibold text-slate-600 dark:text-slate-300"
+              th:text="#{page.share.fileSize}"
               >File Size</span
             >
             <span class="text-base font-medium" th:text="${file.size}"></span>
@@ -133,10 +147,11 @@
             id="downloadButton"
             th:href="${downloadLink}"
           >
-            Download
+            <span th:text="#{button.download}">Download</span>
           </a>
         </div>
       </div>
     </main>
+    <script src="/js/locale-switcher.js"></script>
   </body>
 </html>

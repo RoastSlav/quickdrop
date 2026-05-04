@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title th:text="${appName} + ' - Invalid Link'">Share Link Invalid</title>
+    <title th:text="#{page.invalidShare.title.browser(${appName})}">Share Link Invalid</title>
     <meta content="width=device-width, initial-scale=1" name="viewport" />
     <link href="/css/tailwind.css" rel="stylesheet" />
     <link href="/css/custom.css" rel="stylesheet" />
@@ -37,13 +37,13 @@
               target="_blank"
               th:if="${!#strings.equalsIgnoreCase(#strings.trim(appName), 'QuickDrop')}"
             >
-              Powered by QuickDrop
+              <span th:text="#{nav.poweredBy}">Powered by QuickDrop</span>
             </a>
           </div>
           <button
             aria-controls="navMenu"
             aria-expanded="false"
-            aria-label="Toggle navigation"
+            th:aria-label="#{nav.toggleNavigation}"
             class="md:hidden rounded-lg p-2 hover:bg-sky-600 dark:hover:bg-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500"
             id="navToggle"
             type="button"
@@ -72,9 +72,11 @@
                 class="nav-menu-item hover:text-white"
                 href="/file/list"
                 th:if="${isFileListPageEnabled or hasAdminSession}"
+                th:text="#{nav.viewFiles}"
                 >View Files</a
               >
               <a class="nav-menu-item hover:text-white" href="/file/upload"
+                 th:text="#{nav.uploadFile}"
                 >Upload File</a
               >
               <a
@@ -82,6 +84,7 @@
                 href="/admin/dashboard"
                 onclick="requestAdminPassword()"
                 th:if="${isAdminDashboardButtonEnabled}"
+                th:text="#{nav.adminDashboard}"
                 >Admin Dashboard</a
               >
               <form
@@ -94,10 +97,22 @@
                   th:name="${_csrf.parameterName}"
                   th:value="${_csrf.token}"
                 />
-                <button class="nav-menu-item hover:text-white" type="submit">
+                <button class="nav-menu-item hover:text-white" th:text="#{nav.logout}" type="submit">
                   Logout
                 </button>
               </form>
+            </div>
+            <div class="flex items-center text-xs">
+              <label class="sr-only" for="localeSwitchInvalidShare" th:text="#{nav.language}">Language</label>
+              <select
+                      class="locale-switch-select rounded-md border border-slate-600 bg-slate-800 text-slate-100 px-2 py-1"
+                      data-locale-select="true"
+                      id="localeSwitchInvalidShare"
+              >
+                <option th:selected="${currentLang == 'en'}" value="en">EN</option>
+                <option th:selected="${currentLang == 'bg'}" value="bg">BG</option>
+                <option th:selected="${currentLang == 'de'}" value="de">DE</option>
+              </select>
             </div>
             <button
               class="nav-menu-item theme-toggle rounded-lg p-2 transition-colors hover:bg-sky-600 dark:hover:bg-sky-500 active:scale-95 focus:outline-none focus:ring-2 focus:ring-sky-500"
@@ -118,19 +133,20 @@
           <div
             class="bg-white dark:bg-slate-800 p-6 md:p-8 rounded-2xl shadow-lg text-center space-y-4"
           >
-            <h1 class="text-3xl font-semibold tracking-tight">Link Expired</h1>
+            <h1 class="text-3xl font-semibold tracking-tight" th:text="#{page.invalidShare.title}">Link Expired</h1>
             <p class="text-gray-700 dark:text-gray-300">
-              This share link is no longer valid. The file you are trying to
-              access has expired or the link has been used.
+              <span th:text="#{page.invalidShare.message}">This share link is no longer valid. The file you are trying to access has expired or the link has been used.</span>
             </p>
             <a
               class="inline-block rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium px-4 py-2 transition-colors active:scale-95 focus:outline-none focus:ring-2 focus:ring-sky-500"
               href="/"
+              th:text="#{page.invalidShare.backHome}"
               >Return to Homepage</a
             >
           </div>
         </div>
       </div>
     </main>
+    <script src="/js/locale-switcher.js"></script>
   </body>
 </html>

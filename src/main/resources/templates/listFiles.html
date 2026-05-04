@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title th:text="${appName} + ' - Files'">All files</title>
+    <title th:text="#{page.files.title.browser(${appName})}">All files</title>
     <meta content="width=device-width, initial-scale=1" name="viewport" />
     <link href="/css/tailwind.css" rel="stylesheet" />
     <link href="/css/custom.css" rel="stylesheet" />
@@ -37,13 +37,13 @@
               target="_blank"
               th:if="${!#strings.equalsIgnoreCase(#strings.trim(appName), 'QuickDrop')}"
             >
-              Powered by QuickDrop
+              <span th:text="#{nav.poweredBy}">Powered by QuickDrop</span>
             </a>
           </div>
           <button
             aria-controls="navMenu"
             aria-expanded="false"
-            aria-label="Toggle navigation"
+            th:aria-label="#{nav.toggleNavigation}"
             class="md:hidden rounded-lg p-2 hover:bg-sky-600 dark:hover:bg-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500"
             id="navToggle"
             type="button"
@@ -69,12 +69,14 @@
               class="flex flex-col space-y-2 md:flex-row md:items-center md:space-x-4 md:space-y-0"
             >
               <a class="nav-menu-item hover:text-white" href="/file/upload"
+                 th:text="#{nav.uploadFile}"
                 >Upload File</a
               >
               <a
                       class="nav-menu-item hover:text-white"
                       href="/file/paste/new"
                       th:if="${isPastebinEnabled}"
+                      th:text="#{nav.pastebin}"
               >Pastebin</a
               >
               <a
@@ -82,6 +84,7 @@
                 href="/admin/dashboard"
                 onclick="requestAdminPassword()"
                 th:if="${isAdminDashboardButtonEnabled}"
+                th:text="#{nav.adminDashboard}"
                 >Admin Dashboard</a
               >
               <form
@@ -94,10 +97,22 @@
                   th:name="${_csrf.parameterName}"
                   th:value="${_csrf.token}"
                 />
-                <button class="nav-menu-item hover:text-white" type="submit">
+                <button class="nav-menu-item hover:text-white" th:text="#{nav.logout}" type="submit">
                   Logout
                 </button>
               </form>
+            </div>
+            <div class="flex items-center text-xs">
+              <label class="sr-only" for="localeSwitchList" th:text="#{nav.language}">Language</label>
+              <select
+                      class="locale-switch-select rounded-md border border-slate-600 bg-slate-800 text-slate-100 px-2 py-1"
+                      data-locale-select="true"
+                      id="localeSwitchList"
+              >
+                <option th:selected="${currentLang == 'en'}" value="en">EN</option>
+                <option th:selected="${currentLang == 'bg'}" value="bg">BG</option>
+                <option th:selected="${currentLang == 'de'}" value="de">DE</option>
+              </select>
             </div>
             <button
               class="nav-menu-item theme-toggle rounded-lg p-2 transition-colors hover:bg-sky-600 dark:hover:bg-sky-500 active:scale-95 focus:outline-none focus:ring-2 focus:ring-sky-500"
@@ -113,12 +128,12 @@
     <main class="max-w-7xl mx-auto px-4 py-6 md:py-8">
       <header class="text-center mb-8 space-y-1">
         <h1 class="text-3xl md:text-4xl font-semibold tracking-tight">
-          All files
+          <span th:text="#{page.files.title}">All files</span>
         </h1>
       </header>
       <div class="mx-auto w-full max-w-xl mb-8">
         <form action="/file/list" class="w-full" method="GET">
-          <label class="sr-only" for="searchInput">Search files</label>
+          <label class="sr-only" for="searchInput" th:text="#{page.files.search.label}">Search files</label>
           <div
             class="h-14 flex items-center space-x-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-gray-800 rounded-full px-4 shadow-sm focus-within:border-sky-500 focus-within:ring-2 focus-within:ring-sky-500"
           >
@@ -138,6 +153,7 @@
               class="flex-grow bg-transparent py-2 focus:outline-none focus-visible:ring-0"
               id="searchInput"
               name="query"
+              th:placeholder="#{page.files.search.placeholder}"
               placeholder="Search files by name or date…"
               th:value="${query}"
               type="text"
@@ -149,7 +165,7 @@
               id="search-button"
               type="submit"
             >
-              Search
+              <span th:text="#{button.search}">Search</span>
             </button>
           </div>
         </form>
@@ -158,59 +174,60 @@
         class="text-center text-gray-600 dark:text-gray-300 my-5"
         th:if="${filesPage.totalElements == 0}"
       >
-        <h3 class="mb-2">No files have been uploaded yet.</h3>
+        <h3 class="mb-2" th:text="#{page.files.empty.title}">No files have been uploaded yet.</h3>
         <p>
-          Start by
+          <span th:text="#{page.files.empty.startBy}">Start by</span>
           <a
             class="text-sky-600 dark:text-sky-400 hover:underline"
             href="/file/upload"
+            th:text="#{page.files.empty.uploadLink}"
             >uploading a file</a
           >.
         </p>
       </div>
       <div
-        class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 p-6"
+              class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
         th:if="${filesPage.totalElements > 0}"
       >
-        <div class="h-full" th:each="file : ${filesPage.content}">
-          <div
-            class="bg-white dark:bg-slate-800 rounded-2xl shadow-lg flex flex-col h-full p-6 md:p-8"
-          >
-            <div class="flex-grow space-y-3 overflow-hidden">
-              <h2
-                class="text-xl font-semibold tracking-tight truncate"
-                th:text="${file.name}"
-              >
-                File Name
-              </h2>
-              <hr class="border-t border-slate-200 dark:border-slate-700" />
-              <p
-                class="text-sm text-gray-700 dark:text-gray-300 line-clamp-2 overflow-hidden"
-                th:if="${!#strings.isEmpty(file.description)}"
-                th:text="${file.description}"
-              ></p>
-              <div
-                class="flex justify-between text-sm text-gray-600 dark:text-gray-400"
-              >
-                <span
-                  th:text="'Keep indefinitely: ' + (${file.keepIndefinitely} ? 'Yes' : 'No')"
-                ></span>
-                <span
-                  th:text="'Password protected: ' + (${file.passwordHash != null} ? 'Yes' : 'No')"
-                ></span>
-              </div>
-              <p
-                class="text-sm text-gray-600 dark:text-gray-400"
-                th:text="${file.keepIndefinitely} ? 'Uploaded: ' + ${#temporals.format(file.uploadDate, 'dd.MM.yyyy')} : 'Uploaded/Renewed: ' + ${#temporals.format(file.uploadDate, 'dd.MM.yyyy')}"
-              ></p>
+        <div
+                class="bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-6 flex flex-col"
+                th:each="file : ${filesPage.content}"
+        >
+          <div class="flex-grow space-y-3 overflow-hidden">
+            <h2
+                    class="text-xl font-semibold tracking-tight truncate"
+                    th:text="${file.name}"
+            >
+              File Name
+            </h2>
+            <hr class="border-t border-slate-200 dark:border-slate-700"/>
+            <p
+                    class="text-sm text-gray-700 dark:text-gray-300 line-clamp-2 overflow-hidden"
+                    th:if="${!#strings.isEmpty(file.description)}"
+                    th:text="${file.description}"
+            ></p>
+            <div
+                    class="flex justify-between text-sm text-gray-600 dark:text-gray-400"
+            >
+              <span
+                      th:text="${#messages.msg('page.dashboard.keepIndefinitely')} + ': ' + (${file.keepIndefinitely} ? 'Yes' : 'No')"
+              ></span>
+              <span
+                      th:text="${#messages.msg('page.password.protectedLabel')} + ': ' + (${file.passwordHash != null} ? 'Yes' : 'No')"
+              ></span>
             </div>
-            <div class="mt-4 text-center">
-              <a
-                class="inline-block rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium px-4 py-2 transition-colors active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500"
-                th:href="@{/file/{UUID}(UUID=${file.uuid})}"
-                >Go to file page</a
-              >
-            </div>
+            <p
+                    class="text-sm text-gray-600 dark:text-gray-400"
+                    th:text="(${file.keepIndefinitely} ? #{page.fileView.uploadedAt} : #{page.fileView.uploadedRenewedAt}) + ' ' + ${#temporals.format(file.uploadDate, 'dd.MM.yyyy')}"
+            ></p>
+          </div>
+          <div class="mt-4 text-center">
+            <a
+                    class="inline-block rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium px-4 py-2 transition-colors active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500"
+                    th:href="@{/file/{UUID}(UUID=${file.uuid})}"
+                    th:text="#{page.files.goToFilePage}"
+            >Go to file page</a
+            >
           </div>
         </div>
       </div>
@@ -224,19 +241,21 @@
             class="px-4 py-2 rounded-lg bg-slate-200 dark:bg-slate-700 text-sm font-semibold transition disabled:opacity-50 disabled:pointer-events-none"
             th:classappend="${filesPage.first} ? ' opacity-50 pointer-events-none' : ' hover:bg-slate-300 dark:hover:bg-slate-600'"
             th:href="@{/file/list(page=${filesPage.first ? filesPage.number : filesPage.number - 1}, size=${pageSize}, query=${query})}"
+            th:text="#{pagination.previous}"
             >Previous</a
           >
           <a
             class="px-4 py-2 rounded-lg bg-slate-200 dark:bg-slate-700 text-sm font-semibold transition disabled:opacity-50 disabled:pointer-events-none"
             th:classappend="${filesPage.last} ? ' opacity-50 pointer-events-none' : ' hover:bg-slate-300 dark:hover:bg-slate-600'"
             th:href="@{/file/list(page=${filesPage.last ? filesPage.number : filesPage.number + 1}, size=${pageSize}, query=${query})}"
+            th:text="#{pagination.next}"
             >Next</a
           >
         </div>
         <form action="/file/list" class="flex items-center gap-2" method="get">
           <input name="query" th:value="${query}" type="hidden" />
           <input name="page" type="hidden" value="0" />
-          <label class="text-sm text-gray-700 dark:text-gray-300" for="pageSize"
+          <label class="text-sm text-gray-700 dark:text-gray-300" for="pageSize" th:text="#{pagination.perPage}"
             >Per page</label
           >
           <select
@@ -252,10 +271,12 @@
           </select>
         </form>
         <div class="text-sm text-gray-600 dark:text-gray-300">
-          Page <span th:text="${filesPage.number + 1}"></span> of
+          <span th:text="#{pagination.page}">Page</span> <span th:text="${filesPage.number + 1}"></span> <span
+                th:text="#{pagination.of}">of</span>
           <span th:text="${filesPage.totalPages}"></span>
         </div>
       </div>
     </main>
+    <script src="/js/locale-switcher.js"></script>
   </body>
 </html>

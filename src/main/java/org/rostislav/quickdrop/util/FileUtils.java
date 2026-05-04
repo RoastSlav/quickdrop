@@ -157,7 +157,6 @@ public class FileUtils {
 
     public static String guessContentType(String fileName, boolean isImage, boolean isText, boolean isPdf) {
         if (isImage) {
-            if (fileName.toLowerCase().endsWith(".svg")) return "image/svg+xml";
             if (fileName.toLowerCase().endsWith(".webp")) return "image/webp";
             if (fileName.toLowerCase().endsWith(".gif")) return "image/gif";
             if (fileName.toLowerCase().endsWith(".png")) return "image/png";
@@ -167,11 +166,6 @@ public class FileUtils {
             return "application/pdf";
         }
         if (isText) {
-            if (fileName.toLowerCase().endsWith(".json")) return "application/json";
-            if (fileName.toLowerCase().endsWith(".xml")) return "application/xml";
-            if (fileName.toLowerCase().endsWith(".csv")) return "text/csv";
-            if (fileName.toLowerCase().endsWith(".tsv")) return "text/tab-separated-values";
-            if (fileName.toLowerCase().endsWith(".md")) return "text/markdown";
             return "text/plain; charset=UTF-8";
         }
         return "application/octet-stream";

@@ -1,15 +1,82 @@
-# QuickDrop AI Working Guide (concise)
+# QuickDrop — Agent Guide
 
-- **Build/run**: Java 21. Use `./mvnw clean package` then `java -jar target/quickdrop.jar`. SQLite DB at `db/quickdrop.db`; Flyway auto-runs baseline-on-migrate. Docker image `roastslav/quickdrop:latest` exposes 8080.
-- **App shape**: Spring Boot MVC + Thymeleaf. Controllers in [src/main/java/org/rostislav/quickdrop/controller](src/main/java/org/rostislav/quickdrop/controller); services in [service](src/main/java/org/rostislav/quickdrop/service); interceptors in [interceptor](src/main/java/org/rostislav/quickdrop/interceptor); entities/repos in [entity](src/main/java/org/rostislav/quickdrop/entity) and [repository](src/main/java/org/rostislav/quickdrop/repository); static assets + templates under `src/main/resources/static` and `.../templates`.
-- **Settings source of truth**: Single-row settings (id=1) via [ApplicationSettingsService](src/main/java/org/rostislav/quickdrop/service/ApplicationSettingsService.java). Startup seeds defaults (max size 1GB, life 30d, storage `files`/`logs`, cron `0 0 2 * * *`, app password off, admin password empty, file list & admin button enabled, encryption on, default home upload) and schedules cleanup. Never create extra rows.
-- **Security**: [SecurityConfig](src/main/java/org/rostislav/quickdrop/config/SecurityConfig.java) enables whole-app password mode (`/password/login`), BCrypt auth, CSRF cookie, permissive CORS. Session timeout set in [WebConfig](src/main/java/org/rostislav/quickdrop/config/WebConfig.java). Admin and file tokens stored in-memory in [SessionService](src/main/java/org/rostislav/quickdrop/service/SessionService.java).
-- **Interceptors**: [AdminPasswordSetupInterceptor](src/main/java/org/rostislav/quickdrop/interceptor/AdminPasswordSetupInterceptor.java) enforces `/admin/setup` until admin password exists. [AdminPasswordInterceptor](src/main/java/org/rostislav/quickdrop/interceptor/AdminPasswordInterceptor.java) gates `/admin/**` and file history. [FilePasswordInterceptor](src/main/java/org/rostislav/quickdrop/interceptor/FilePasswordInterceptor.java) redirects to `/file/password/{uuid}` when missing a valid file session token.
-- **Upload pipeline**: `/api/file/upload-chunk` accepts chunked uploads with metadata (`description`, `keepIndefinitely`, `password`, `hidden`, `fileSize`, folder fields). [AsyncFileMergeService](src/main/java/org/rostislav/quickdrop/service/AsyncFileMergeService.java) buffers/merges chunks; [FileEncryptionService](src/main/java/org/rostislav/quickdrop/service/FileEncryptionService.java) encrypts when password + encryption enabled; final persist via [FileService](src/main/java/org/rostislav/quickdrop/service/FileService.java). Intermediate chunk calls return null—frontends must handle.
-- **Storage/model**: Files stored on disk under `fileStoragePath` (from settings) with UUID filenames; metadata in `file_entity` (description, keepIndefinitely, hidden, optional password hash, encrypted flag, folder fields). [QuickdropApplication](src/main/java/org/rostislav/quickdrop/QuickdropApplication.java) ensures `./db` and storage path exist.
-- **Downloads & history**: `/file/download/{uuid}` decrypts on the fly; logs uploads/renewals/downloads with IP/UA into `file_history_log` (types `UPLOAD`, `RENEWAL`, `DOWNLOAD`). Share links via `/api/file/share/{uuid}` and `/api/file/download/{uuid}/{token}` decrement/delete tokens.
-- **Admin UX**: Dashboard lists files with download counts and actions (view, history, download, delete, keep indefinitely toggle, hidden toggle) plus analytics (total downloads, space, avg size). Public list and admin dashboard now paginated/searchable (page/size/query params) with in-memory caching of page results; cache evicted on uploads, deletions, renewals, hidden/keep toggles, downloads.
-- **Cleanup/scheduling**: [ScheduleService](src/main/java/org/rostislav/quickdrop/service/ScheduleService.java) schedules deletions per cron/max life, missing-file cleanup, share token cleanup. App uses @EnableScheduling.
-- **Thymeleaf flags**: [GlobalControllerAdvice](src/main/java/org/rostislav/quickdrop/config/GlobalControllerAdvice.java) injects template booleans (file list enabled, app password set, admin button enabled, encryption enabled).
-- **Conventions**: Route all file mutations through `FileService` to ensure logging/notifications/encryption. Update interceptors when adding protected routes. Keep single settings row intact. For pagination/search, reuse Page-based service methods and propagate `page/size/query` to templates. Cache keys live in `publicFiles`, `adminFiles`, `analytics` (see [CacheConfig](src/main/java/org/rostislav/quickdrop/config/CacheConfig.java)).
-- **Dev tips**: SQLite dialect configured; migrations live under `src/main/resources/db/migration`. Few/no automated tests—manual `./mvnw clean package` is typical. Logs at `log/quickdrop.log` (see properties). Default port 8080.
+Self-hosted file sharing: Spring Boot 3.5 + Thymeleaf + SQLite (Flyway) + Tailwind. Java 21.
+
+## Build & run
+
+- Build: `./mvnw clean package` (Windows: `mvnw.cmd clean package`). Output: `target/quickdrop.jar`.
+- Run: `java -jar target/quickdrop.jar` → http://localhost:8080.
+- Tailwind CSS: `npm run tw:build` rebuilds `src/main/resources/static/css/tailwind.css` from `tailwind-input.css`.
+- No test suite — verify via manual package + smoke test. Logs at `log/quickdrop.log`, DB at `db/quickdrop.db`, uploads
+  under `files/` (all auto-created by [
+  `QuickdropApplication`](src/main/java/org/rostislav/quickdrop/QuickdropApplication.java)).
+- Docker: `roastslav/quickdrop:latest`, exposes 8080; mount `/app/db`, `/app/files`, `/app/log`.
+
+## Architecture (follow the layers)
+
+- Controllers (`controller/`): `FileViewController`, `AdminViewController`, `FileRestController` (chunked upload + share
+  APIs), `ShareViewController`, `PasswordViewController`, `IndexViewController`. Thymeleaf views in
+  `src/main/resources/templates/`.
+- Services (`service/`) own all business logic. **Route every file mutation
+  through [`FileService`](src/main/java/org/rostislav/quickdrop/service/FileService.java)** so history logging, cache
+  eviction, encryption and notifications fire.
+- Upload pipeline: `POST /api/file/upload-chunk` → [
+  `AsyncFileMergeService`](src/main/java/org/rostislav/quickdrop/service/AsyncFileMergeService.java) buffers chunks → [
+  `FileEncryptionService`](src/main/java/org/rostislav/quickdrop/service/FileEncryptionService.java) encrypts when
+  password + encryption flag set → `FileService` persists. Intermediate chunk calls return `null`; frontend must handle.
+  Metadata fields: `description`, `keepIndefinitely`, `password`, `hidden`, `fileSize`, folder fields, `isPaste`.
+- Download: `/file/download/{uuid}` streams with on-the-fly decryption and logs `DOWNLOAD` into `file_history_log` (
+  types: `UPLOAD`, `RENEWAL`, `DOWNLOAD`). Share links via `/api/file/share/{uuid}` issue tokens redeemed at
+  `/api/file/download/{uuid}/{token}` (decrement/delete).
+- Storage/model: UUID filenames on disk at `fileStoragePath` (from settings); `file_entity` row holds metadata +
+  optional BCrypt password hash + `encrypted` flag + folder + `isPaste`.
+
+## Settings (single-row, id=1)
+
+- [`ApplicationSettingsService`](src/main/java/org/rostislav/quickdrop/service/ApplicationSettingsService.java) seeds
+  defaults on startup (max 1 GB, 30-day life, `files`/`logs` paths, cron `0 0 2 * * *`, encryption on, default home =
+  upload, SMTP/Discord off, etc.) and re-schedules cleanup when cron changes. **Never insert a second settings row.**
+- Template-level feature flags (file list enabled, app password set, admin button, encryption on, previews, pastebin)
+  are injected by [`GlobalControllerAdvice`](src/main/java/org/rostislav/quickdrop/config/GlobalControllerAdvice.java) —
+  read from there; don't duplicate.
+
+## Security & interceptors
+
+- [`SecurityConfig`](src/main/java/org/rostislav/quickdrop/config/SecurityConfig.java): optional whole-app password at
+  `/password/login`, BCrypt, CSRF cookie, permissive CORS. Session timeout configured in [
+  `WebConfig`](src/main/java/org/rostislav/quickdrop/config/WebConfig.java).
+- In-memory admin + file session tokens live in [
+  `SessionService`](src/main/java/org/rostislav/quickdrop/service/SessionService.java) (not persisted — restarts
+  invalidate).
+- Add new protected routes via the right interceptor: `AdminPasswordSetupInterceptor` (forces `/admin/setup` until admin
+  pwd exists), `AdminPasswordInterceptor` (`/admin/**` + file history), `FilePasswordInterceptor` (redirects to
+  `/file/password/{uuid}` when the file has a password and no valid session token).
+
+## Migrations & persistence
+
+- Flyway migrations in `src/main/resources/db/migration/V*__*.sql` (currently V1–V20). Baseline-on-migrate is enabled —
+  **append a new `V{n+1}__...sql`, never edit existing files.** SQLite dialect is
+  `org.hibernate.community.dialect.SQLiteDialect`.
+- Entities in `entity/`, Spring Data repos in `repository/`. Use `@Transactional` on service methods that mutate.
+
+## Pagination, search & cache
+
+- Public list (`/files`) and admin dashboard use `page`/`size`/`query` params backed by `Page<FileEntity>` service
+  methods — reuse them and pass all three params through to templates.
+- Spring Cache keys are `publicFiles`, `adminFiles`, `analytics` (see [
+  `CacheConfig`](src/main/java/org/rostislav/quickdrop/config/CacheConfig.java)). Any upload, deletion, renewal,
+  visibility/keep toggle, or download **must evict** these — copy the `@CacheEvict` pattern from `FileService`.
+
+## Scheduling & notifications
+
+- `@EnableScheduling` + [`ScheduleService`](src/main/java/org/rostislav/quickdrop/service/ScheduleService.java) handles
+  expiry deletion (cron from settings), missing-file row cleanup, share token expiry. Reschedule by calling its
+  `rescheduleCleanup(...)` when cron changes.
+- [`NotificationService`](src/main/java/org/rostislav/quickdrop/service/NotificationService.java) batches email +
+  Discord webhook events per configured interval; call it from `FileService`, not controllers.
+
+## i18n
+
+- Bundles: `messages.properties`, `messages_bg.properties`, `messages_de.properties`. Add every new user-facing string
+  to all three (see `docs/i18n.md`). Resolver wired in [
+  `I18nConfig`](src/main/java/org/rostislav/quickdrop/config/I18nConfig.java).

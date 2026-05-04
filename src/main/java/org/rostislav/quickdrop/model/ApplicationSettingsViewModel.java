@@ -1,17 +1,24 @@
 package org.rostislav.quickdrop.model;
 
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
 import org.rostislav.quickdrop.entity.ApplicationSettingsEntity;
 
 public class ApplicationSettingsViewModel {
     private Long id;
 
+    @Min(value = 1, message = "{validation.number.positive}")
     private long maxFileSize;
+    @Min(value = 1, message = "{validation.number.positive}")
     private long maxFileLifeTime;
+    @NotBlank(message = "{validation.required}")
     private String fileStoragePath;
     private String logStoragePath;
+    @NotBlank(message = "{validation.required}")
     private String fileDeletionCron;
     private boolean appPasswordEnabled;
     private String appPassword;
+    @Min(value = 0, message = "{validation.number.nonNegative}")
     private long sessionLifeTime;
     private boolean isFileListPageEnabled;
     private boolean isAdminDashboardButtonEnabled;
@@ -19,6 +26,7 @@ public class ApplicationSettingsViewModel {
     private boolean disableUploadPassword;
     private boolean disablePreview;
     private boolean metadataStrippingEnabled;
+    @Min(value = 1, message = "{validation.number.positive}")
     private long maxPreviewSizeBytes;
     private String defaultHomePage;
     private boolean keepIndefinitelyAdminOnly;

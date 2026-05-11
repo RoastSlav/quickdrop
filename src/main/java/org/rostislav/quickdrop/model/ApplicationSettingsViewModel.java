@@ -49,6 +49,7 @@ public class ApplicationSettingsViewModel {
     private boolean pastebinEnabled;
     private String appName;
     private String logoFileName;
+    private String defaultLanguage;
 
     public ApplicationSettingsViewModel() {
     }
@@ -90,6 +91,7 @@ public class ApplicationSettingsViewModel {
         this.pastebinEnabled = settings.isPastebinEnabled();
         this.appName = settings.getAppName();
         this.logoFileName = settings.getLogoFileName();
+        this.defaultLanguage = settings.getDefaultLanguage();
     }
 
     public Long getId() {
@@ -386,5 +388,13 @@ public class ApplicationSettingsViewModel {
 
     public void setLogoFileName(String logoFileName) {
         this.logoFileName = logoFileName;
+    }
+
+    public String getDefaultLanguage() {
+        return defaultLanguage;
+    }
+
+    public void setDefaultLanguage(String defaultLanguage) {
+        this.defaultLanguage = defaultLanguage;
     }
 }

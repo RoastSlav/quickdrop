@@ -1,5 +1,6 @@
 package org.rostislav.quickdrop.config;
 
+import org.rostislav.quickdrop.service.ApplicationSettingsService;
 import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -9,14 +10,20 @@ import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 import org.springframework.web.servlet.LocaleResolver;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import org.springframework.web.servlet.i18n.CookieLocaleResolver;
 import org.springframework.web.servlet.i18n.LocaleChangeInterceptor;
-import org.springframework.web.servlet.i18n.SessionLocaleResolver;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 
 @Configuration
 public class I18nConfig implements WebMvcConfigurer {
+
+    private final ApplicationSettingsService applicationSettingsService;
+
+    public I18nConfig(ApplicationSettingsService applicationSettingsService) {
+        this.applicationSettingsService = applicationSettingsService;
+    }
 
     @Bean
     public MessageSource messageSource() {
@@ -30,9 +37,17 @@ public class I18nConfig implements WebMvcConfigurer {
 
     @Bean
     public LocaleResolver localeResolver() {
-        SessionLocaleResolver localeResolver = new SessionLocaleResolver();
-        localeResolver.setDefaultLocale(Locale.ENGLISH);
-        return localeResolver;
+        CookieLocaleResolver resolver = new CookieLocaleResolver();
+        resolver.setDefaultLocaleFunction(request -> {
+            String lang = applicationSettingsService.getDefaultLanguage();
+            if (lang != null && !lang.isBlank()) {
+                return Locale.forLanguageTag(lang);
+            }
+            return Locale.ENGLISH;
+        });
+        resolver.setCookieName("lang");
+        resolver.setCookieMaxAge(24 * 60 * 60); // 24 hours
+        return resolver;
     }
 
     @Bean

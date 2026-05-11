@@ -65,6 +65,7 @@ public class ApplicationSettingsService {
             settings.setPastebinEnabled(true);
             settings.setAppName("QuickDrop");
             settings.setLogoFileName(null);
+            settings.setDefaultLanguage("en");
             settings = applicationSettingsRepository.save(settings);
             scheduleService.updateSchedule(settings.getFileDeletionCron(), settings.getMaxFileLifeTime());
             return settings;
@@ -135,6 +136,7 @@ public class ApplicationSettingsService {
         applicationSettingsEntity.setPastebinEnabled(settings.isPastebinEnabled());
         String requestedAppName = settings.getAppName();
         applicationSettingsEntity.setAppName((requestedAppName == null || requestedAppName.isBlank()) ? "QuickDrop" : requestedAppName.trim());
+        applicationSettingsEntity.setDefaultLanguage(settings.getDefaultLanguage() != null && !settings.getDefaultLanguage().isBlank() ? settings.getDefaultLanguage() : "en");
 
         if (clearLogo) {
             applicationSettingsEntity.setLogoFileName(null);
@@ -327,6 +329,11 @@ public class ApplicationSettingsService {
     public String getAppName() {
         String name = applicationSettings.getAppName();
         return (name == null || name.isBlank()) ? "QuickDrop" : name;
+    }
+
+    public String getDefaultLanguage() {
+        String lang = applicationSettings.getDefaultLanguage();
+        return (lang == null || lang.isBlank()) ? "en" : lang;
     }
 
     public String getLogoPath() {

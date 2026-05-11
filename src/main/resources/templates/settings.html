@@ -424,7 +424,27 @@
             </div>
 
             <div
-              class="rounded-xl border border-slate-200 dark:border-slate-700 p-4 md:col-span-2"
+                    class="rounded-xl border border-slate-200 dark:border-slate-700 p-4 md:col-span-2"
+            >
+              <label
+                      class="block text-sm font-medium mb-2"
+                      for="defaultLanguage"
+                      th:text="#{page.settings.system.defaultLanguage}"
+              >Default Language</label
+              >
+              <select
+                      class="w-full md:w-1/2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                      id="defaultLanguage"
+                      th:field="*{defaultLanguage}"
+              >
+                <option value="en">English</option>
+                <option value="bg">Български</option>
+                <option value="de">Deutsch</option>
+              </select>
+            </div>
+
+            <div
+                    class="rounded-xl border border-slate-200 dark:border-slate-700 p-4 md:col-span-2"
             >
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
                 <div>

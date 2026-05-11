@@ -1,6 +1,17 @@
+function getI18nStr(path, defaultStr) {
+  if (!window.i18n || !window.i18n.fileView) return defaultStr;
+  const parts = path.split('.');
+  let obj = window.i18n.fileView;
+  for (const part of parts) {
+    if (obj[part] === undefined) return defaultStr;
+    obj = obj[part];
+  }
+  return obj;
+}
+
 function confirmDelete() {
   return confirm(
-    "Are you sure you want to delete this file? This action cannot be undone."
+      getI18nStr('deleteConfirm', "Are you sure you want to delete this file? This action cannot be undone.")
   );
 }
 

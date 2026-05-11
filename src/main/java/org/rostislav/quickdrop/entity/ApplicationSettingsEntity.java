@@ -48,6 +48,7 @@ public class ApplicationSettingsEntity {
     private boolean pastebinEnabled;
     private String appName;
     private String logoFileName;
+    private String defaultLanguage = "en";
 
     public ApplicationSettingsEntity() {
     }
@@ -88,6 +89,7 @@ public class ApplicationSettingsEntity {
         this.pastebinEnabled = settings.isPastebinEnabled();
         this.appName = settings.getAppName();
         this.logoFileName = settings.getLogoFileName();
+        this.defaultLanguage = settings.getDefaultLanguage() != null ? settings.getDefaultLanguage() : "en";
     }
 
     public String getAppName() {
@@ -104,6 +106,14 @@ public class ApplicationSettingsEntity {
 
     public void setLogoFileName(String logoFileName) {
         this.logoFileName = logoFileName;
+    }
+
+    public String getDefaultLanguage() {
+        return defaultLanguage;
+    }
+
+    public void setDefaultLanguage(String defaultLanguage) {
+        this.defaultLanguage = defaultLanguage;
     }
 
     public long getMaxFileSize() {

@@ -349,4 +349,10 @@ public class FileViewController {
         }
         return "redirect:/file/list";
     }
+
+    private void populateModelAttributes(FileEntity fileEntity, Model model, HttpServletRequest request) {
+        model.addAttribute("file", fileEntity);
+        model.addAttribute("fileSize", formatFileSize(fileEntity.size));
+        model.addAttribute("downloadLink", getDownloadLink(request, fileEntity));
+    }
 }

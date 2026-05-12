@@ -11,20 +11,35 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.*;
 import java.nio.file.Paths;
+import java.time.Instant;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.*;
 
 @Service
 public class AsyncFileMergeService {
     private static final Logger logger = LoggerFactory.getLogger(AsyncFileMergeService.class);
+    private static final int MAX_CONCURRENT_MERGES = 20;
+    private static final long TASK_TTL_MINUTES = 60;
+
     private final ConcurrentMap<String, MergeTask> mergeTasks = new ConcurrentHashMap<>();
-    private final ExecutorService executorService = Executors.newCachedThreadPool();
+    private final ExecutorService executorService = new ThreadPoolExecutor(
+            2, MAX_CONCURRENT_MERGES,
+            60L, TimeUnit.SECONDS,
+            new LinkedBlockingQueue<>(MAX_CONCURRENT_MERGES),
+            new ThreadPoolExecutor.CallerRunsPolicy()
+    );
+    private final ScheduledExecutorService ttlSweeper = Executors.newSingleThreadScheduledExecutor(r -> {
+        Thread t = new Thread(r, "merge-task-ttl-sweeper");
+        t.setDaemon(true);
+        return t;
+    });
     private final ApplicationSettingsService applicationSettingsService;
     private final FileEncryptionService fileEncryptionService;
     private final FileService fileService;
-
-    private final File tempDir = new File(System.getProperty("java.io.tmpdir"));
     private final FileRepository fileRepository;
+    private final File tempDir = new File(System.getProperty("java.io.tmpdir"));
 
     public AsyncFileMergeService(ApplicationSettingsService applicationSettingsService,
                                  FileEncryptionService fileEncryptionService,
@@ -33,6 +48,7 @@ public class AsyncFileMergeService {
         this.fileEncryptionService = fileEncryptionService;
         this.fileService = fileService;
         this.fileRepository = fileRepository;
+        ttlSweeper.scheduleAtFixedRate(this::evictStaleTasks, TASK_TTL_MINUTES, TASK_TTL_MINUTES, TimeUnit.MINUTES);
     }
 
     public FileEntity submitChunk(FileUploadRequest request, MultipartFile multipartChunk, int chunkNumber) throws IOException {
@@ -60,6 +76,18 @@ public class AsyncFileMergeService {
         return null;
     }
 
+    private void evictStaleTasks() {
+        Instant threshold = Instant.now().minusSeconds(TASK_TTL_MINUTES * 60);
+        Iterator<Map.Entry<String, MergeTask>> it = mergeTasks.entrySet().iterator();
+        while (it.hasNext()) {
+            Map.Entry<String, MergeTask> entry = it.next();
+            if (entry.getValue().createdAt.isBefore(threshold)) {
+                logger.warn("Evicting stale merge task for file: {}", entry.getKey());
+                it.remove();
+            }
+        }
+    }
+
     private void cleanUpChunks(FileUploadRequest request) {
         for (int i = 0; i < request.totalChunks; i++) {
             File chunkFile = new File(tempDir, request.fileName + "_chunk_" + i);
@@ -71,7 +99,7 @@ public class AsyncFileMergeService {
     }
 
     private class MergeTask implements Runnable {
-
+        final Instant createdAt = Instant.now();
         private final BlockingQueue<ChunkInfo> queue = new LinkedBlockingQueue<>();
         private final CompletableFuture<FileEntity> mergeCompletionFuture = new CompletableFuture<>();
         private final FileUploadRequest request;

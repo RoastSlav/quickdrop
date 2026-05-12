@@ -12,6 +12,6 @@ public class CacheConfig {
 
     @Bean
     public CacheManager cacheManager() {
-        return new ConcurrentMapCacheManager("publicFiles", "adminFiles", "analytics");
+        return new ConcurrentMapCacheManager("publicFiles", "adminFiles", "analytics", "applicationSettings");
     }
 }

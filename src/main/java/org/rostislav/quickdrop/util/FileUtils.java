@@ -5,7 +5,6 @@ import org.rostislav.quickdrop.entity.FileEntity;
 import org.rostislav.quickdrop.entity.ShareTokenEntity;
 import org.rostislav.quickdrop.service.FileService;
 import org.springframework.http.HttpHeaders;
-import org.springframework.ui.Model;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 import java.io.IOException;
@@ -109,12 +108,6 @@ public class FileUtils {
 
     public static long megabytesToBytes(long megabytes) {
         return megabytes * 1024 * 1024;
-    }
-
-    public static void populateModelAttributes(FileEntity fileEntity, Model model, HttpServletRequest request) {
-        model.addAttribute("file", fileEntity);
-        model.addAttribute("fileSize", formatFileSize(fileEntity.size));
-        model.addAttribute("downloadLink", getDownloadLink(request, fileEntity));
     }
 
     private static String lowerName(FileEntity fileEntity) {

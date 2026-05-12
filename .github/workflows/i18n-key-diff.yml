@@ -18,7 +18,7 @@ jobs:
         with:
           python-version: "3.x"
 
-      - name: Check i18n key consistency (warn-only)
+      - name: Check i18n key consistency
         run: |
-          python .github/scripts/check_i18n_keys.py
+          python .github/scripts/check_i18n_keys.py --strict
 

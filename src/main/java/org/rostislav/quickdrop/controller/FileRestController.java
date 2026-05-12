@@ -1,5 +1,6 @@
 package org.rostislav.quickdrop.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import org.rostislav.quickdrop.entity.FileEntity;
 import org.rostislav.quickdrop.entity.ShareTokenEntity;
@@ -29,6 +30,7 @@ import static org.springframework.http.ResponseEntity.ok;
 @RequestMapping("/api/file")
 public class FileRestController {
     private static final Logger logger = LoggerFactory.getLogger(FileRestController.class);
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private final FileService fileService;
     private final SessionService sessionService;
     private final AsyncFileMergeService asyncFileMergeService;
@@ -39,6 +41,18 @@ public class FileRestController {
         this.sessionService = sessionService;
         this.asyncFileMergeService = asyncFileMergeService;
         this.applicationSettingsService = applicationSettingsService;
+    }
+
+    private static String sanitizeFolderManifest(String manifest, boolean isFolderUpload) {
+        if (!isFolderUpload || manifest == null || manifest.isBlank()) {
+            return null;
+        }
+        try {
+            OBJECT_MAPPER.readTree(manifest);
+        } catch (Exception e) {
+            return null;
+        }
+        return manifest.replace("<", "\\u003c").replace(">", "\\u003e").replace("&", "\\u0026");
     }
 
     @PostMapping("/upload-chunk")
@@ -81,7 +95,12 @@ public class FileRestController {
 
             String effectivePassword = uploadPasswordEnabled ? password : null;
 
-            FileUploadRequest fileUploadRequest = new FileUploadRequest(description, keepIndefinitelyValue, effectivePassword, hiddenValue, fileName, totalChunks, fileSize, uploaderIp, uploaderUserAgent, Boolean.TRUE.equals(folderUpload), folderName, folderManifest, false);
+            String safeManifest = sanitizeFolderManifest(folderManifest, Boolean.TRUE.equals(folderUpload));
+            if (safeManifest == null && folderManifest != null) {
+                return ResponseEntity.badRequest().body("{\"error\": \"Invalid folder manifest: must be a JSON array\"}");
+            }
+
+            FileUploadRequest fileUploadRequest = new FileUploadRequest(description, keepIndefinitelyValue, effectivePassword, hiddenValue, fileName, totalChunks, fileSize, uploaderIp, uploaderUserAgent, Boolean.TRUE.equals(folderUpload), folderName, safeManifest, false);
             FileEntity fileEntity = asyncFileMergeService.submitChunk(fileUploadRequest, file, chunkNumber);
             return ResponseEntity.ok(fileEntity);
         } catch (IOException e) {

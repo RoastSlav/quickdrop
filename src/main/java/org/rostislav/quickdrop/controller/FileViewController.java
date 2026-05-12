@@ -308,12 +308,27 @@ public class FileViewController {
     }
 
     @PostMapping("/delete/{uuid}")
-    public String deleteFile(@PathVariable String uuid) {
+    public String deleteFile(@PathVariable String uuid, HttpServletRequest request) {
+        if (!isAuthorizedToDelete(uuid, request)) {
+            return "redirect:/file/" + uuid;
+        }
         if (fileService.deleteFileFromDatabaseAndFileSystem(uuid)) {
             return "redirect:/file/list";
         } else {
             return "redirect:/file/" + uuid;
         }
+    }
+
+    private boolean isAuthorizedToDelete(String uuid, HttpServletRequest request) {
+        if (sessionService.hasValidAdminSession(request)) {
+            return true;
+        }
+        FileEntity fileEntity = fileService.getFile(uuid);
+        if (fileEntity == null || fileEntity.passwordHash == null) {
+            return false;
+        }
+        Object sessionToken = request.getSession().getAttribute("file-session-token");
+        return sessionToken != null && sessionService.validateFileSessionToken(sessionToken.toString(), uuid);
     }
 
     @GetMapping("/search")

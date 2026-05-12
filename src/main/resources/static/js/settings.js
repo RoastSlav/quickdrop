@@ -397,7 +397,7 @@ async function saveSettings(csrf) {
   }
 
   const formData = new FormData(form);
-  await fetch("/admin/save", {
+  await fetch("/admin/api/save", {
     method: "POST",
     credentials: "same-origin",
     headers: buildCsrfHeaders(csrf),

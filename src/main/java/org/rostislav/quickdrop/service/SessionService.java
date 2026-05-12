@@ -16,8 +16,8 @@ import java.util.concurrent.ConcurrentHashMap;
 @Component
 public class SessionService implements HttpSessionListener {
     private static final Logger logger = LoggerFactory.getLogger(SessionService.class);
-    private static final Set<String> adminSessionTokens = ConcurrentHashMap.newKeySet();
-    private static final Map<String, FileSession> fileSessions = new ConcurrentHashMap<>();
+    private final Set<String> adminSessionTokens = ConcurrentHashMap.newKeySet();
+    private final Map<String, FileSession> fileSessions = new ConcurrentHashMap<>();
 
     @Override
     public void sessionDestroyed(HttpSessionEvent se) {

@@ -33,8 +33,6 @@ public class NotificationService {
         t.setName("notification-dispatch");
         return t;
     });
-    private volatile JavaMailSenderImpl cachedMailSender;
-    private volatile String mailSenderKey;
     private volatile long lastFlushEpochMillis = System.currentTimeMillis();
     private ScheduledExecutorService scheduler;
 
@@ -250,40 +248,26 @@ public class NotificationService {
             return null;
         }
 
-        String key = host + ":" + Objects.requireNonNullElse(port, 587) + "|" + username + "|" + password + "|" + useTls + "|" + useSsl;
+        JavaMailSenderImpl mailSender = new JavaMailSenderImpl();
+        mailSender.setHost(host);
+        mailSender.setPort(Objects.requireNonNullElse(port, 587));
+        mailSender.setUsername(username);
+        mailSender.setPassword(password);
 
-        if (key.equals(mailSenderKey) && cachedMailSender != null) {
-            return cachedMailSender;
+        var props = mailSender.getJavaMailProperties();
+        boolean hasAuth = !username.isBlank();
+        props.put("mail.smtp.auth", String.valueOf(hasAuth));
+        props.put("mail.smtp.starttls.enable", String.valueOf(!useSsl && useTls));
+        props.put("mail.smtp.ssl.enable", String.valueOf(useSsl));
+        props.put("mail.smtp.connectiontimeout", "10000");
+        props.put("mail.smtp.timeout", "10000");
+        props.put("mail.smtp.writetimeout", "10000");
+        if (useSsl) {
+            props.put("mail.smtp.socketFactory.port", String.valueOf(Objects.requireNonNullElse(port, 465)));
+            props.put("mail.smtp.socketFactory.class", "javax.net.ssl.SSLSocketFactory");
         }
 
-        synchronized (this) {
-            if (key.equals(mailSenderKey) && cachedMailSender != null) {
-                return cachedMailSender;
-            }
-
-            JavaMailSenderImpl mailSender = new JavaMailSenderImpl();
-            mailSender.setHost(host);
-            mailSender.setPort(Objects.requireNonNullElse(port, 587));
-            mailSender.setUsername(username);
-            mailSender.setPassword(password);
-
-            var props = mailSender.getJavaMailProperties();
-            boolean hasAuth = !username.isBlank();
-            props.put("mail.smtp.auth", String.valueOf(hasAuth));
-            props.put("mail.smtp.starttls.enable", String.valueOf(!useSsl && useTls));
-            props.put("mail.smtp.ssl.enable", String.valueOf(useSsl));
-            props.put("mail.smtp.connectiontimeout", "10000");
-            props.put("mail.smtp.timeout", "10000");
-            props.put("mail.smtp.writetimeout", "10000");
-            if (useSsl) {
-                props.put("mail.smtp.socketFactory.port", String.valueOf(Objects.requireNonNullElse(port, 465)));
-                props.put("mail.smtp.socketFactory.class", "javax.net.ssl.SSLSocketFactory");
-            }
-
-            cachedMailSender = mailSender;
-            mailSenderKey = key;
-            return mailSender;
-        }
+        return mailSender;
     }
 
     private String[] parseRecipients() {

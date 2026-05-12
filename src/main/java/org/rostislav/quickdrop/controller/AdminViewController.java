@@ -104,7 +104,7 @@ public class AdminViewController {
     }
 
     @PostMapping("/save")
-    public Object saveSettings(ApplicationSettingsViewModel settings,
+    public String saveSettings(ApplicationSettingsViewModel settings,
                                @RequestParam(value = "appLogo", required = false) MultipartFile appLogo,
                                @RequestParam(value = "clearLogo", required = false, defaultValue = "false") boolean clearLogo,
                                HttpServletRequest request) {
@@ -114,24 +114,38 @@ public class AdminViewController {
                 long previewMb = Long.parseLong(request.getParameter("maxPreviewSizeBytes"));
                 settings.setMaxPreviewSizeBytes(previewMb * 1024 * 1024);
             } catch (NumberFormatException ignored) {
-                // leave as-is if invalid
             }
         }
-
         try {
             CronExpression.parse(settings.getFileDeletionCron());
         } catch (IllegalArgumentException ex) {
-            if ("XMLHttpRequest".equalsIgnoreCase(request.getHeader("X-Requested-With"))) {
-                return ResponseEntity.badRequest().body("Invalid cron expression");
-            }
             return "redirect:settings?error=invalidCron";
         }
-
         applicationSettingsService.updateApplicationSettings(settings, settings.getAppPassword(), appLogo, clearLogo);
-        if ("XMLHttpRequest".equalsIgnoreCase(request.getHeader("X-Requested-With"))) {
-            return ResponseEntity.ok("Settings saved");
-        }
         return "redirect:settings";
+    }
+
+    @PostMapping("/api/save")
+    @ResponseBody
+    public ResponseEntity<String> saveSettingsApi(ApplicationSettingsViewModel settings,
+                                                  @RequestParam(value = "appLogo", required = false) MultipartFile appLogo,
+                                                  @RequestParam(value = "clearLogo", required = false, defaultValue = "false") boolean clearLogo,
+                                                  HttpServletRequest request) {
+        settings.setMaxFileSize(megabytesToBytes(settings.getMaxFileSize()));
+        if (request.getParameter("maxPreviewSizeBytes") != null) {
+            try {
+                long previewMb = Long.parseLong(request.getParameter("maxPreviewSizeBytes"));
+                settings.setMaxPreviewSizeBytes(previewMb * 1024 * 1024);
+            } catch (NumberFormatException ignored) {
+            }
+        }
+        try {
+            CronExpression.parse(settings.getFileDeletionCron());
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().body("Invalid cron expression");
+        }
+        applicationSettingsService.updateApplicationSettings(settings, settings.getAppPassword(), appLogo, clearLogo);
+        return ResponseEntity.ok("Settings saved");
     }
 
     @PostMapping("/password")

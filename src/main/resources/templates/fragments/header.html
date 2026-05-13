@@ -9,6 +9,7 @@
 
 <!-- ─── Shared CDN scripts (Alpine + htmx) ──────────────────────────────── -->
 <th:block th:fragment="scripts">
+    <link as="image" rel="preload" th:href="${appLogoPath}"/>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.3/dist/htmx.min.js"></script>
 </th:block>
@@ -19,7 +20,7 @@
 
         <!-- Brand -->
         <a class="nav-brand" href="/">
-            <img alt="Logo" src="/images/favicon.png" th:src="${appLogoPath}"/>
+            <img alt="Logo" fetchpriority="high" src="/images/favicon.png" th:src="${appLogoPath}"/>
             <span th:text="${appName}">QuickDrop</span>
         </a>
 
@@ -170,34 +171,34 @@
             </form>
         </th:block>
 
-        <div class="nav-drawer-actions">
-            <div class="flex flex-wrap gap-1.5">
-                <a class="lang-option locale-switch-link" data-lang="en"
-                   href="#" style="flex:0 0 auto" th:classappend="${currentLang == 'en'} ? ' is-active'">EN</a>
-                <a class="lang-option locale-switch-link" data-lang="bg"
-                   href="#" style="flex:0 0 auto" th:classappend="${currentLang == 'bg'} ? ' is-active'">BG</a>
-                <a class="lang-option locale-switch-link" data-lang="de"
-                   href="#" style="flex:0 0 auto" th:classappend="${currentLang == 'de'} ? ' is-active'">DE</a>
-                <a class="lang-option locale-switch-link" data-lang="es"
-                   href="#" style="flex:0 0 auto" th:classappend="${currentLang == 'es'} ? ' is-active'">ES</a>
-                <a class="lang-option locale-switch-link" data-lang="fr"
-                   href="#" style="flex:0 0 auto" th:classappend="${currentLang == 'fr'} ? ' is-active'">FR</a>
-                <a class="lang-option locale-switch-link" data-lang="it"
-                   href="#" style="flex:0 0 auto" th:classappend="${currentLang == 'it'} ? ' is-active'">IT</a>
-                <a class="lang-option locale-switch-link" data-lang="ja"
-                   href="#" style="flex:0 0 auto" th:classappend="${currentLang == 'ja'} ? ' is-active'">JA</a>
-                <a class="lang-option locale-switch-link" data-lang="zh"
-                   href="#" style="flex:0 0 auto" th:classappend="${currentLang == 'zh'} ? ' is-active'">ZH</a>
+        <div class="nav-drawer-actions" style="flex-direction:column; align-items:stretch; gap:0.75rem">
+            <div style="display:flex; flex-wrap:wrap; gap:0.375rem">
+                <a class="mobile-lang-chip locale-switch-link" data-lang="en" href="#"
+                   th:classappend="${currentLang == 'en'} ? ' is-active'">English</a>
+                <a class="mobile-lang-chip locale-switch-link" data-lang="bg" href="#"
+                   th:classappend="${currentLang == 'bg'} ? ' is-active'">Български</a>
+                <a class="mobile-lang-chip locale-switch-link" data-lang="de" href="#"
+                   th:classappend="${currentLang == 'de'} ? ' is-active'">Deutsch</a>
+                <a class="mobile-lang-chip locale-switch-link" data-lang="es" href="#"
+                   th:classappend="${currentLang == 'es'} ? ' is-active'">Español</a>
+                <a class="mobile-lang-chip locale-switch-link" data-lang="fr" href="#"
+                   th:classappend="${currentLang == 'fr'} ? ' is-active'">Français</a>
+                <a class="mobile-lang-chip locale-switch-link" data-lang="it" href="#"
+                   th:classappend="${currentLang == 'it'} ? ' is-active'">Italiano</a>
+                <a class="mobile-lang-chip locale-switch-link" data-lang="ja" href="#"
+                   th:classappend="${currentLang == 'ja'} ? ' is-active'">日本語</a>
+                <a class="mobile-lang-chip locale-switch-link" data-lang="zh" href="#"
+                   th:classappend="${currentLang == 'zh'} ? ' is-active'">中文</a>
             </div>
-            <span class="text-xs ml-auto"
+            <span class="text-xs"
                   style="color: var(--c-nav-text-muted)"
                   th:if="${!#strings.equalsIgnoreCase(#strings.trim(appName), 'QuickDrop')}">
-        <a href="https://github.com/roastslav/quickdrop"
-           rel="noopener noreferrer"
-           style="color: inherit"
-           target="_blank"
-           th:text="#{nav.poweredBy}">Powered by QuickDrop</a>
-      </span>
+                <a href="https://github.com/roastslav/quickdrop"
+                   rel="noopener noreferrer"
+                   style="color: inherit"
+                   target="_blank"
+                   th:text="#{nav.poweredBy}">Powered by QuickDrop</a>
+            </span>
         </div>
     </div>
 
@@ -226,6 +227,17 @@
                     el.classList.add('nav-link-active');
                 }
             });
+
+            // Fade in nav logo once loaded (prevents pop-in)
+            const navLogo = document.querySelector('.nav-brand img');
+            if (navLogo) {
+                if (navLogo.complete) {
+                    navLogo.classList.add('nav-logo-loaded');
+                } else {
+                    navLogo.addEventListener('load', () => navLogo.classList.add('nav-logo-loaded'), {once: true});
+                    navLogo.addEventListener('error', () => navLogo.classList.add('nav-logo-loaded'), {once: true});
+                }
+            }
         })();
     </script>
 </header>

@@ -28,6 +28,10 @@ public class ApplicationSettingsService {
 
     @Lazy
     @Autowired
+    private ApplicationSettingsService self;
+
+    @Lazy
+    @Autowired
     private ScheduleService scheduleService;
 
     public ApplicationSettingsService(ApplicationSettingsRepository applicationSettingsRepository,
@@ -189,7 +193,7 @@ public class ApplicationSettingsService {
     }
 
     public long getMaxFileSize() {
-        return applicationSettingsRepository.findById(1L).orElseThrow().getMaxFileSize();
+        return self.getApplicationSettings().getMaxFileSize();
     }
 
     public String getFormattedMaxFileSize() {
@@ -197,158 +201,158 @@ public class ApplicationSettingsService {
     }
 
     public long getMaxFileLifeTime() {
-        return applicationSettingsRepository.findById(1L).orElseThrow().getMaxFileLifeTime();
+        return self.getApplicationSettings().getMaxFileLifeTime();
     }
 
     public String getFileStoragePath() {
-        return applicationSettingsRepository.findById(1L).orElseThrow().getFileStoragePath();
+        return self.getApplicationSettings().getFileStoragePath();
     }
 
     public String getLogStoragePath() {
-        return applicationSettingsRepository.findById(1L).orElseThrow().getLogStoragePath();
+        return self.getApplicationSettings().getLogStoragePath();
     }
 
     public String getFileDeletionCron() {
-        return applicationSettingsRepository.findById(1L).orElseThrow().getFileDeletionCron();
+        return self.getApplicationSettings().getFileDeletionCron();
     }
 
     public boolean isAppPasswordEnabled() {
-        return applicationSettingsRepository.findById(1L).orElseThrow().isAppPasswordEnabled();
+        return self.getApplicationSettings().isAppPasswordEnabled();
     }
 
     public String getAppPasswordHash() {
-        return applicationSettingsRepository.findById(1L).orElseThrow().getAppPasswordHash();
+        return self.getApplicationSettings().getAppPasswordHash();
     }
 
     public String getAdminPasswordHash() {
-        return applicationSettingsRepository.findById(1L).orElseThrow().getAdminPasswordHash();
+        return self.getApplicationSettings().getAdminPasswordHash();
     }
 
     public boolean isFileListPageEnabled() {
-        return applicationSettingsRepository.findById(1L).orElseThrow().isFileListPageEnabled();
+        return self.getApplicationSettings().isFileListPageEnabled();
     }
 
     public boolean isAdminPasswordSet() {
-        return !applicationSettingsRepository.findById(1L).orElseThrow().getAdminPasswordHash().isEmpty();
+        return !self.getApplicationSettings().getAdminPasswordHash().isEmpty();
     }
 
     public long getSessionLifetime() {
-        return applicationSettingsRepository.findById(1L).orElseThrow().getSessionLifetime();
+        return self.getApplicationSettings().getSessionLifetime();
     }
 
     public boolean isAdminDashboardButtonEnabled() {
-        return applicationSettingsRepository.findById(1L).orElseThrow().isAdminDashboardButtonEnabled();
+        return self.getApplicationSettings().isAdminDashboardButtonEnabled();
     }
 
     public boolean isEncryptionEnabled() {
-        return !applicationSettingsRepository.findById(1L).orElseThrow().isDisableEncryption();
+        return !self.getApplicationSettings().isDisableEncryption();
     }
 
     public boolean isUploadPasswordEnabled() {
-        return !applicationSettingsRepository.findById(1L).orElseThrow().isDisableUploadPassword();
+        return !self.getApplicationSettings().isDisableUploadPassword();
     }
 
     public boolean isPreviewEnabled() {
-        return !applicationSettingsRepository.findById(1L).orElseThrow().isDisablePreview();
+        return !self.getApplicationSettings().isDisablePreview();
     }
 
     public boolean isMetadataStrippingEnabled() {
-        return applicationSettingsRepository.findById(1L).orElseThrow().isMetadataStrippingEnabled();
+        return self.getApplicationSettings().isMetadataStrippingEnabled();
     }
 
     public long getMaxPreviewSizeBytes() {
-        return applicationSettingsRepository.findById(1L).orElseThrow().getMaxPreviewSizeBytes();
+        return self.getApplicationSettings().getMaxPreviewSizeBytes();
     }
 
     public String getDefaultHomePage() {
-        return applicationSettingsRepository.findById(1L).orElseThrow().getDefaultHomePage();
+        return self.getApplicationSettings().getDefaultHomePage();
     }
 
     public boolean isKeepIndefinitelyAdminOnly() {
-        return applicationSettingsRepository.findById(1L).orElseThrow().isKeepIndefinitelyAdminOnly();
+        return self.getApplicationSettings().isKeepIndefinitelyAdminOnly();
     }
 
     public boolean isHideFromListAdminOnly() {
-        return applicationSettingsRepository.findById(1L).orElseThrow().isHideFromListAdminOnly();
+        return self.getApplicationSettings().isHideFromListAdminOnly();
     }
 
     public boolean isDiscordWebhookEnabled() {
-        return applicationSettingsRepository.findById(1L).orElseThrow().isDiscordWebhookEnabled();
+        return self.getApplicationSettings().isDiscordWebhookEnabled();
     }
 
     public String getDiscordWebhookUrl() {
-        return applicationSettingsRepository.findById(1L).orElseThrow().getDiscordWebhookUrl();
+        return self.getApplicationSettings().getDiscordWebhookUrl();
     }
 
     public boolean isEmailNotificationsEnabled() {
-        return applicationSettingsRepository.findById(1L).orElseThrow().isEmailNotificationsEnabled();
+        return self.getApplicationSettings().isEmailNotificationsEnabled();
     }
 
     public String getEmailFrom() {
-        return applicationSettingsRepository.findById(1L).orElseThrow().getEmailFrom();
+        return self.getApplicationSettings().getEmailFrom();
     }
 
     public String getEmailTo() {
-        return applicationSettingsRepository.findById(1L).orElseThrow().getEmailTo();
+        return self.getApplicationSettings().getEmailTo();
     }
 
     public String getSmtpHost() {
-        return applicationSettingsRepository.findById(1L).orElseThrow().getSmtpHost();
+        return self.getApplicationSettings().getSmtpHost();
     }
 
     public Integer getSmtpPort() {
-        return applicationSettingsRepository.findById(1L).orElseThrow().getSmtpPort();
+        return self.getApplicationSettings().getSmtpPort();
     }
 
     public String getSmtpUsername() {
-        return applicationSettingsRepository.findById(1L).orElseThrow().getSmtpUsername();
+        return self.getApplicationSettings().getSmtpUsername();
     }
 
     public String getSmtpPassword() {
-        return applicationSettingsRepository.findById(1L).orElseThrow().getSmtpPassword();
+        return self.getApplicationSettings().getSmtpPassword();
     }
 
     public boolean isSmtpUseTls() {
-        return applicationSettingsRepository.findById(1L).orElseThrow().isSmtpUseTls();
+        return self.getApplicationSettings().isSmtpUseTls();
     }
 
     public boolean isSmtpUseSsl() {
-        return applicationSettingsRepository.findById(1L).orElseThrow().isSmtpUseSsl();
+        return self.getApplicationSettings().isSmtpUseSsl();
     }
 
     public boolean isNotificationBatchEnabled() {
-        return applicationSettingsRepository.findById(1L).orElseThrow().isNotificationBatchEnabled();
+        return self.getApplicationSettings().isNotificationBatchEnabled();
     }
 
     public boolean isSimplifiedShareLinksEnabled() {
-        ApplicationSettingsEntity s = applicationSettingsRepository.findById(1L).orElseThrow();
+        ApplicationSettingsEntity s = self.getApplicationSettings();
         return s.isSimplifiedShareLinks() && !s.isShareLinksDisabled();
     }
 
     public boolean isShareLinksDisabled() {
-        return applicationSettingsRepository.findById(1L).orElseThrow().isShareLinksDisabled();
+        return self.getApplicationSettings().isShareLinksDisabled();
     }
 
     public boolean isPastebinEnabled() {
-        return applicationSettingsRepository.findById(1L).orElseThrow().isPastebinEnabled();
+        return self.getApplicationSettings().isPastebinEnabled();
     }
 
     public Integer getNotificationBatchMinutes() {
-        return applicationSettingsRepository.findById(1L).orElseThrow().getNotificationBatchMinutes();
+        return self.getApplicationSettings().getNotificationBatchMinutes();
     }
 
     public String getAppName() {
-        String name = applicationSettingsRepository.findById(1L).orElseThrow().getAppName();
+        String name = self.getApplicationSettings().getAppName();
         return (name == null || name.isBlank()) ? "QuickDrop" : name;
     }
 
     public String getDefaultLanguage() {
-        String lang = applicationSettingsRepository.findById(1L).orElseThrow().getDefaultLanguage();
+        String lang = self.getApplicationSettings().getDefaultLanguage();
         return (lang == null || lang.isBlank()) ? "en" : lang;
     }
 
     public String getLogoPath() {
-        String fileName = applicationSettingsRepository.findById(1L).orElseThrow().getLogoFileName();
+        String fileName = self.getApplicationSettings().getLogoFileName();
         if (fileName == null || fileName.isBlank()) {
             return "/images/favicon.png";
         }

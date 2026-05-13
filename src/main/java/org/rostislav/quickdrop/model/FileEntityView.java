@@ -16,6 +16,7 @@ public class FileEntityView {
     public LocalDate uploadDate;
     public long totalDownloads;
     public boolean hidden;
+    public boolean passwordProtected;
 
     public FileEntityView() {
     }
@@ -30,5 +31,6 @@ public class FileEntityView {
         this.uploadDate = fileEntity.uploadDate;
         this.totalDownloads = totalDownloads;
         this.hidden = fileEntity.hidden;
+        this.passwordProtected = fileEntity.passwordHash != null;
     }
 }

@@ -1,144 +1,132 @@
 <!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
-    <title th:text="#{page.history.title.browser(${appName})}">Download History</title>
-    <link href="/css/tailwind.css" rel="stylesheet" />
-    <link href="/css/custom.css" rel="stylesheet" />
-    <link
-      th:href="${appLogoPath}"
-      href="/images/favicon.png"
-      rel="icon"
-      type="image/png"
-    />
-    <script src="/js/tailwindTheme.js"></script>
-  </head>
-  <body class="bg-gray-50 text-gray-800 dark:bg-slate-900 dark:text-gray-100">
-    <!-- Navbar -->
-  <div th:replace="~{fragments/header :: header(true)}"></div>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <meta content="width=device-width, initial-scale=1" name="viewport"/>
+  <title th:text="#{page.history.title.browser(${appName})}">History — QuickDrop</title>
+  <link href="https://fonts.googleapis.com" rel="preconnect"/>
+  <link crossorigin href="https://fonts.gstatic.com" rel="preconnect"/>
+  <link href="/css/tailwind.css" rel="stylesheet"/>
+  <link href="/css/custom.css" rel="stylesheet"/>
+  <link href="/images/favicon.png" rel="icon" th:href="${appLogoPath}" type="image/png"/>
+  <script src="/js/tailwindTheme.js"></script>
+  <script src="/js/counter.js"></script>
+  <th:block th:replace="~{fragments/header :: scripts}"></th:block>
+</head>
+<body>
 
-    <!-- Main Content -->
-    <div class="container mx-auto mt-5 px-4">
-      <h1 class="text-center text-3xl font-semibold mb-4" th:text="#{page.history.title}">History</h1>
+<div th:replace="~{fragments/header :: header(true)}"></div>
 
-      <!-- File Name and Description -->
-      <div class="text-center mb-8">
-        <p class="text-xl font-semibold text-blue-600" th:text="${file.name}">
-          File Name
-        </p>
-        <p
-          class="text-lg text-gray-600 dark:text-gray-300"
-          th:text="${file.description ?: #messages.msg('page.history.noDescription')}"
-        >
-          File Description
-        </p>
+<!-- Floating orbs -->
+<div aria-hidden="true" class="orb-field">
+  <div class="orb orb--primary"></div>
+  <div class="orb orb--secondary"></div>
+</div>
+
+<main class="flex-1 hero-scene">
+  <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
+
+    <!-- Back button -->
+    <div class="mb-6 animate-in">
+      <a class="btn btn-ghost btn-sm inline-flex items-center gap-1.5" href="/admin/dashboard">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span th:text="#{nav.admin}">Admin</span>
+      </a>
+    </div>
+
+    <!-- Hero header -->
+    <div class="text-center mb-10 animate-in">
+      <span class="section-eyebrow inline-flex items-center gap-2 mb-3">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--c-primary)"
+             viewBox="0 0 24 24"><path d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" stroke-linecap="round"
+                                                  stroke-linejoin="round"/></svg>
+        <span th:text="#{page.history.title}">History</span>
+      </span>
+      <h1 class="page-title-xl mb-2">
+        <span class="gradient-text break-all" th:text="${file.name}">File Name</span>
+      </h1>
+      <p class="text-sm" style="color:var(--c-text-muted)"
+         th:text="${file.description ?: #messages.msg('page.history.noDescription')}">Description</p>
+    </div>
+
+    <!-- Stats row -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-8 animate-in animate-in-delay-1">
+
+      <div class="stat-hero stat-hero--primary">
+        <span class="stat-hero-label" th:text="#{page.history.size}">Size</span>
+        <span class="stat-hero-value stat-hero-value--sm" th:text="${file.size}">—</span>
       </div>
 
-      <!-- File Details Grid -->
-      <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-lg mb-8 p-6">
-        <div class="text-center text-xl font-semibold mb-4" th:text="#{page.history.fileDetails}">File Details</div>
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
-          <div class="bg-sky-500 text-white p-4 rounded-lg">
-            <p class="text-2xl font-semibold" th:text="${file.size}">--</p>
-            <p class="text-sm" th:text="#{page.history.size}">Size</p>
-          </div>
-          <div class="bg-sky-500 text-white p-4 rounded-lg">
-            <p
-              class="text-2xl font-semibold"
-              th:text="${#temporals.format(file.uploadDate, 'dd.MM.yyyy')}"
-            >
-              --
-            </p>
-            <p class="text-sm" th:text="#{page.history.uploadDate}">Upload Date</p>
-          </div>
-          <div class="bg-sky-500 text-white p-4 rounded-lg">
-            <p class="text-2xl font-semibold" th:text="${file.totalDownloads}">
-              --
-            </p>
-            <p class="text-sm" th:text="#{page.history.totalDownloads}">Total Downloads</p>
-          </div>
-        </div>
+      <div class="stat-hero stat-hero--secondary">
+        <span class="stat-hero-label" th:text="#{page.history.uploadDate}">Upload Date</span>
+        <span class="stat-hero-value stat-hero-value--sm" th:text="${#temporals.format(file.uploadDate, 'dd.MM.yyyy')}">—</span>
       </div>
 
-      <!-- History Table -->
-      <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-6">
-        <h2 class="text-xl font-semibold tracking-tight mb-4">
-          <span th:text="#{page.history.downloadHistory}">Download History</span>
-        </h2>
+      <div class="stat-hero stat-hero--teal">
+        <span class="stat-hero-label" th:text="#{page.history.totalDownloads}">Total Downloads</span>
+        <span class="stat-hero-value stat-hero-value--sm" th:attr="data-counter-target=${file.totalDownloads}"
+              th:text="${file.totalDownloads}">—</span>
+      </div>
 
-        <!-- scroll container -->
-        <div class="-mx-6 overflow-x-auto">
-          <div class="inline-block min-w-full align-middle px-6">
-            <table
-              class="min-w-max w-full divide-y divide-slate-200 dark:divide-slate-700 light-table-zebra"
-            >
-              <thead class="bg-gray-100 dark:bg-gray-800">
-                <tr>
-                  <th
-                    class="px-6 py-4 text-left text-sm font-semibold whitespace-nowrap"
-                  >
-                    <span th:text="#{page.history.date}">Date</span>
-                  </th>
-                  <th
-                    class="px-6 py-4 text-left text-sm font-semibold whitespace-nowrap"
-                  >
-                    <span th:text="#{page.history.action}">Action</span>
-                  </th>
-                  <th
-                    class="px-6 py-4 text-left text-sm font-semibold whitespace-nowrap"
-                  >
-                    <span th:text="#{page.history.ipAddress}">IP Address</span>
-                  </th>
-                  <th
-                    class="px-6 py-4 text-left text-sm font-semibold whitespace-nowrap"
-                  >
-                    <span th:text="#{page.history.userAgent}">User Agent</span>
-                  </th>
-                </tr>
-              </thead>
+    </div>
 
-              <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
-                <tr
-                  class="dark:bg-slate-800"
-                  th:each="log,iter : ${actionLogs}"
-                  th:classappend="${iter.index % 2 == 0} ? ' bg-gray-50' : ' bg-white'"
-                >
-                  <td
-                    class="px-6 py-4 whitespace-nowrap"
-                    th:text="${#temporals.format(log.actionDate, 'dd.MM.yyyy HH:mm:ss')}"
-                  >
-                    01.12.2024 20:12:22
-                  </td>
+    <!-- History table -->
+    <div class="card card-lg animate-in animate-in-delay-2">
+      <h2 class="section-title flex items-center gap-2 mb-5">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" style="color:var(--c-primary)"
+             viewBox="0 0 24 24">
+          <path d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0ZM3.75 12h.007v.008H3.75V12Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm-.375 5.25h.007v.008H3.75v-.008Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" stroke-linecap="round"
+                stroke-linejoin="round"/>
+        </svg>
+        <span th:text="#{page.history.downloadHistory}">Download History</span>
+      </h2>
 
-                  <td
-                    class="px-6 py-4 whitespace-nowrap"
-                    th:text="${log.actionType}"
-                  >
-                    Download
-                  </td>
-
-                  <td
-                    class="px-6 py-4 whitespace-nowrap"
-                    th:text="${log.ipAddress}"
-                  >
-                    127.0.0.1
-                  </td>
-
-                  <!-- key: allow breaking long UA strings -->
-                  <td
-                    class="px-6 py-4 max-w-[28rem] break-words"
-                    th:text="${log.userAgent}"
-                  >
-                    Mozilla/5.0 ...
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
+      <div class="overflow-x-auto rounded-xl border" style="border-color:var(--c-border)">
+        <table class="data-table">
+          <thead>
+          <tr>
+            <th th:text="#{page.history.date}">Date</th>
+            <th th:text="#{page.history.action}">Action</th>
+            <th th:text="#{page.history.ipAddress}">IP Address</th>
+            <th th:text="#{page.history.userAgent}">User Agent</th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr th:each="log : ${actionLogs}">
+            <td class="whitespace-nowrap font-mono text-xs"
+                th:text="${#temporals.format(log.actionDate, 'dd.MM.yyyy HH:mm:ss')}">01.01.2025 00:00:00
+            </td>
+            <td class="whitespace-nowrap">
+              <span class="badge badge-neutral" th:text="#{|page.history.actionType.${log.actionType}|}">Download</span>
+            </td>
+            <td class="whitespace-nowrap font-mono text-xs" th:text="${log.ipAddress}">127.0.0.1</td>
+            <td class="max-w-xs break-words text-xs" style="color:var(--c-text-muted)" th:text="${log.userAgent}">
+              Mozilla/5.0…
+            </td>
+          </tr>
+          <tr th:if="${#lists.isEmpty(actionLogs)}">
+            <td class="text-center py-12" colspan="4" style="color:var(--c-text-muted)">
+              <div class="flex flex-col items-center gap-3">
+                <div class="gate-icon gate-icon--primary" style="width:3rem;height:3rem">
+                  <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                    <path d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" stroke-linecap="round"
+                          stroke-linejoin="round"/>
+                  </svg>
+                </div>
+                <span th:text="#{page.history.noHistory}">No history available.</span>
+              </div>
+            </td>
+          </tr>
+          </tbody>
+        </table>
       </div>
     </div>
-    <script src="/js/locale-switcher.js"></script>
-  </body>
+
+  </div>
+</main>
+
+<script src="/js/locale-switcher.js"></script>
+</body>
 </html>

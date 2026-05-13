@@ -1,43 +1,56 @@
 <!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <title th:text="#{page.invalidShare.title.browser(${appName})}">Share Link Invalid</title>
-    <meta content="width=device-width, initial-scale=1" name="viewport" />
-    <link href="/css/tailwind.css" rel="stylesheet" />
-    <link href="/css/custom.css" rel="stylesheet" />
-    <link
-      th:href="${appLogoPath}"
-      href="/images/favicon.png"
-      rel="icon"
-      type="image/png"
-    />
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title th:text="#{page.invalidShare.title.browser(${appName})}">Share Link Invalid — QuickDrop</title>
+    <meta content="width=device-width, initial-scale=1" name="viewport"/>
+    <link href="https://fonts.googleapis.com" rel="preconnect"/>
+    <link crossorigin href="https://fonts.gstatic.com" rel="preconnect"/>
+    <link href="/css/tailwind.css" rel="stylesheet"/>
+    <link href="/css/custom.css" rel="stylesheet"/>
+    <link href="/images/favicon.png" rel="icon" th:href="${appLogoPath}" type="image/png"/>
     <script src="/js/tailwindTheme.js"></script>
-  </head>
-  <body class="bg-gray-50 text-gray-800 dark:bg-slate-900 dark:text-gray-100">
-  <div th:replace="~{fragments/header :: header(false)}"></div>
-    <main class="max-w-7xl mx-auto px-4 py-6 md:py-8">
-      <div class="grid grid-cols-12 gap-4">
-        <div
-          class="col-span-12 md:col-span-8 md:col-start-3 lg:col-span-6 lg:col-start-4"
-        >
-          <div
-            class="bg-white dark:bg-slate-800 p-6 md:p-8 rounded-2xl shadow-lg text-center space-y-4"
-          >
-            <h1 class="text-3xl font-semibold tracking-tight" th:text="#{page.invalidShare.title}">Link Expired</h1>
-            <p class="text-gray-700 dark:text-gray-300">
-              <span th:text="#{page.invalidShare.message}">This share link is no longer valid. The file you are trying to access has expired or the link has been used.</span>
-            </p>
-            <a
-              class="inline-block rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium px-4 py-2 transition-colors active:scale-95 focus:outline-none focus:ring-2 focus:ring-sky-500"
-              href="/"
-              th:text="#{page.invalidShare.backHome}"
-              >Return to Homepage</a
-            >
-          </div>
+    <th:block th:replace="~{fragments/header :: scripts}"></th:block>
+</head>
+<body>
+
+<div th:replace="~{fragments/header :: header(false)}"></div>
+
+<!-- Floating orbs (amber-tinted for warning) -->
+<div aria-hidden="true" class="orb-field">
+    <div class="orb" style="background:var(--c-amber-muted);width:28rem;height:28rem;top:-6rem;right:-6rem"></div>
+    <div class="orb orb--primary" style="width:18rem;height:18rem;bottom:-4rem;left:-4rem"></div>
+</div>
+
+<main class="gate-page hero-scene" style="min-height: calc(100vh - var(--nav-h, 4rem))">
+
+    <div class="w-full max-w-sm text-center animate-in">
+
+        <!-- Warning icon -->
+        <div class="gate-icon mx-auto mb-6"
+             style="background:color-mix(in srgb,var(--c-warning) 15%,transparent);color:var(--c-warning);width:5rem;height:5rem">
+            <svg class="w-10 h-10" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                <path d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244" stroke-linecap="round"
+                      stroke-linejoin="round"/>
+            </svg>
         </div>
-      </div>
-    </main>
-    <script src="/js/locale-switcher.js"></script>
-  </body>
+
+        <h1 class="text-4xl font-extrabold tracking-tight mb-3" th:text="#{page.invalidShare.title}">Link Expired</h1>
+        <p class="page-subtitle mb-8" th:text="#{page.invalidShare.message}">
+            This share link is no longer valid. The file you are trying to access has expired or the link has been used.
+        </p>
+
+        <a class="btn btn-gradient btn-lg" href="/">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" stroke-linecap="round"
+                      stroke-linejoin="round"/>
+            </svg>
+            <span th:text="#{page.invalidShare.backHome}">Return to Homepage</span>
+        </a>
+    </div>
+
+</main>
+
+<script src="/js/locale-switcher.js"></script>
+</body>
 </html>

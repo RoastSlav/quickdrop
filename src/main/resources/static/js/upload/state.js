@@ -6,7 +6,8 @@ export const UploadState = Object.freeze({
   UPLOADING: "UPLOADING",
 });
 
-const METADATA_PRIVACY_NOTICE =
+const METADATA_PRIVACY_NOTICE = () =>
+    window.i18n?.upload?.metadataPrivacyNotice ||
     "All known metadata will be removed, but this format may still contain details that give information about your identity.";
 
 function escapeHtml(value) {
@@ -62,12 +63,13 @@ export function setUploadState(state, ui = getUIRefs()) {
 
   if (ui.uploadPrimary) {
     ui.uploadPrimary.disabled = isBusy || state === UploadState.IDLE;
+      const i18n = window.i18n?.upload || {};
     ui.uploadPrimary.textContent =
       state === UploadState.NEEDS_CONFIRMATION
-        ? "Confirm Upload"
+          ? (i18n.buttonConfirm || "Confirm Upload")
         : state === UploadState.UPLOADING
-          ? "Uploading..."
-          : "Upload";
+              ? (i18n.buttonUploading || "Uploading...")
+              : (i18n.buttonIdle || "Upload");
     ui.uploadPrimary.classList.toggle(
       "opacity-60",
       isBusy || state === UploadState.IDLE
@@ -95,11 +97,7 @@ export function setUploadState(state, ui = getUIRefs()) {
   }
 }
 
-export function renderStripWarning(
-  entries = [],
-  source = "single",
-  ui = getUIRefs()
-) {
+export function renderStripWarning(entries = [], ui = getUIRefs()) {
   if (!ui.uploadWarning) return;
   if (!entries || entries.length === 0) {
     clearStripWarning(ui);
@@ -108,9 +106,9 @@ export function renderStripWarning(
 
   ui.uploadWarning.classList.remove("hidden");
   if (ui.uploadWarningText) {
-    ui.uploadWarningText.textContent = METADATA_PRIVACY_NOTICE;
+      ui.uploadWarningText.textContent = METADATA_PRIVACY_NOTICE();
   } else {
-    ui.uploadWarning.textContent = METADATA_PRIVACY_NOTICE;
+      ui.uploadWarning.textContent = METADATA_PRIVACY_NOTICE();
   }
   renderWarningDetails(entries, ui);
 }
@@ -136,18 +134,23 @@ export function clearStripWarning(ui = getUIRefs()) {
 }
 
 export function showMessage(type, text) {
-  const styles = {
-    success: "bg-sky-100 text-sky-700 dark:bg-sky-900 dark:text-sky-100",
-    info: "bg-sky-100 text-sky-700 dark:bg-sky-900 dark:text-sky-100",
-    danger: "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-100",
-    warning:
-      "bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-100",
-  };
+    // Prefer the global toast helper if available
+    if (typeof window !== "undefined" && typeof window.toast === "function") {
+        const kindMap = {danger: "error", success: "success", warning: "warning", info: "info"};
+        window.toast(text, kindMap[type] || "info");
+        return;
+    }
   const container = document.getElementById("messageContainer");
   if (!container) return;
   container.textContent = "";
   const wrapper = document.createElement("div");
-  wrapper.className = `rounded-lg p-4 mb-4 ${styles[type] || styles.info}`;
+    const cls = {
+        danger: "alert alert-danger",
+        warning: "alert alert-warning",
+        success: "alert alert-success",
+        info: "alert alert-info"
+    };
+    wrapper.className = cls[type] || cls.info;
   wrapper.textContent = text;
   container.appendChild(wrapper);
 }

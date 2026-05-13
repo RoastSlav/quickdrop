@@ -1,121 +1,141 @@
 <!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <title th:text="#{page.welcome.title.browser(${appName})}">Welcome to QuickDrop</title>
-    <meta content="width=device-width, initial-scale=1" name="viewport" />
-    <link href="/css/tailwind.css" rel="stylesheet" />
-    <link href="/css/custom.css" rel="stylesheet" />
-    <link
-      th:href="${appLogoPath}"
-      href="/images/favicon.png"
-      rel="icon"
-      type="image/png"
-    />
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title th:text="#{page.welcome.title.browser(${appName})}">Welcome — QuickDrop</title>
+    <meta content="width=device-width, initial-scale=1" name="viewport"/>
+    <link href="https://fonts.googleapis.com" rel="preconnect"/>
+    <link crossorigin href="https://fonts.gstatic.com" rel="preconnect"/>
+    <link href="/css/tailwind.css" rel="stylesheet"/>
+    <link href="/css/custom.css" rel="stylesheet"/>
+    <link href="/images/favicon.png" rel="icon" th:href="${appLogoPath}" type="image/png"/>
     <script src="/js/tailwindTheme.js"></script>
-  </head>
-  <body class="bg-gray-50 text-gray-800 dark:bg-slate-900 dark:text-gray-100">
-    <main class="max-w-7xl mx-auto px-4 py-6 md:py-8">
-      <div class="flex justify-end mb-4">
-        <div class="flex items-center text-xs">
-          <label class="sr-only" for="localeSwitchWelcome" th:text="#{nav.language}">Language</label>
-          <select
-                  class="locale-switch-select rounded-md border border-slate-300 bg-white text-slate-700 px-2 py-1 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
-                  data-locale-select="true"
-                  id="localeSwitchWelcome"
-          >
-            <option th:selected="${currentLang == 'en'}" value="en">EN</option>
-            <option th:selected="${currentLang == 'bg'}" value="bg">BG</option>
-            <option th:selected="${currentLang == 'de'}" value="de">DE</option>
-          </select>
+</head>
+<body>
+
+<!-- Floating orbs -->
+<div aria-hidden="true" class="orb-field">
+    <div class="orb orb--primary"></div>
+    <div class="orb orb--secondary"></div>
+</div>
+
+<!-- top-right controls (no nav on setup page) -->
+<div class="fixed top-4 right-4 flex items-center gap-2 z-20">
+    <label class="sr-only" for="localeSwitchWelcome" th:text="#{nav.language}">Language</label>
+    <select class="locale-select-standalone" data-locale-select="true" id="localeSwitchWelcome">
+        <option th:selected="${currentLang == 'en'}" value="en">EN</option>
+        <option th:selected="${currentLang == 'bg'}" value="bg">BG</option>
+        <option th:selected="${currentLang == 'de'}" value="de">DE</option>
+    </select>
+    <button aria-label="Toggle theme" class="nav-icon-btn" id="themeToggle" style="color: var(--c-text-muted)"
+            type="button">
+        <svg class="hidden w-5 h-5" fill="none" id="themeIconSun" stroke="currentColor" stroke-width="1.5"
+             viewBox="0 0 24 24">
+            <path d="M12 3v2.25m6.364.386-1.591 1.591M21 12h-2.25m-.386 6.364-1.591-1.591M12 18.75V21m-4.773-4.227-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z" stroke-linecap="round"
+                  stroke-linejoin="round"/>
+        </svg>
+        <svg class="w-5 h-5" fill="none" id="themeIconMoon" stroke="currentColor" stroke-width="1.5"
+             viewBox="0 0 24 24">
+            <path d="M21.752 15.002A9.72 9.72 0 0 1 18 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 0 0 3 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 0 0 9.002-5.998Z" stroke-linecap="round"
+                  stroke-linejoin="round"/>
+        </svg>
+    </button>
+</div>
+
+<main class="gate-page hero-scene">
+
+    <div class="w-full max-w-md animate-in">
+
+        <!-- Icon + branding -->
+        <div class="gate-icon gate-icon--primary mx-auto mb-6" style="width:5rem;height:5rem">
+            <img alt="Logo" class="h-12 w-12" src="/images/favicon.png" th:src="${appLogoPath}"/>
         </div>
-      </div>
-      <header class="text-center mb-8 space-y-1">
-        <h1 class="text-3xl md:text-4xl font-semibold tracking-tight">
-          <span th:text="#{page.welcome.title(${appName})}">Welcome to QuickDrop</span>
-        </h1>
-        <p class="text-gray-600 dark:text-gray-300">
-          <span th:text="#{page.welcome.setupThanks(${appName})}">
-            Thank you for setting up QuickDrop!
-          </span>
-          <span th:text="#{page.welcome.setupPrompt}">Please set an admin password for the dashboard.</span>
-        </p>
-      </header>
-      <div class="grid grid-cols-12 gap-4">
-        <div
-          class="col-span-12 md:col-span-8 md:col-start-3 lg:col-span-6 lg:col-start-4"
-        >
-          <form
-            class="bg-white dark:bg-slate-800 p-6 md:p-8 rounded-2xl shadow-lg flex flex-col gap-6"
-            id="setupForm"
-            method="post"
-            th:action="@{/admin/setup}"
-          >
-            <input
-              th:name="${_csrf.parameterName}"
-              th:value="${_csrf.token}"
-              type="hidden"
-            />
-            <label class="block w-full">
-              <span class="sr-only" th:text="#{form.adminPassword.label}">Admin Password</span>
-              <input
-                class="block w-full rounded-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-gray-700 px-4 py-3 text-lg text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:border-sky-500 focus:ring-2 focus:ring-sky-500 focus:outline-none"
-                id="adminPassword"
-                minlength="8"
-                name="adminPassword"
-                th:placeholder="#{form.adminPassword.placeholder}"
-                placeholder="Admin Password"
-                required
-                style="line-height: 2.7rem"
-                type="password"
-              />
-            </label>
-            <label class="block w-full">
-              <span class="sr-only" th:text="#{form.password.confirm}">Confirm Password</span>
-              <input
-                class="block w-full rounded-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-gray-700 px-4 py-3 text-lg text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:border-sky-500 focus:ring-2 focus:ring-sky-500 focus:outline-none"
-                id="confirmPassword"
-                minlength="8"
-                name="confirmPassword"
-                th:placeholder="#{form.password.confirm.placeholder}"
-                placeholder="Confirm Password"
-                required
-                style="line-height: 2.7rem"
-                type="password"
-              />
-            </label>
-            <div
-              class="text-red-700 dark:text-red-300"
-              id="error-message"
-              style="display: none"
-            >
-              <span th:text="#{page.welcome.passwordMismatch}">Passwords do not match.</span>
-            </div>
-            <div class="pt-2 text-center">
-              <button
-                class="rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium px-4 py-2 transition-colors active:scale-95 focus:outline-none focus:ring-2 focus:ring-sky-500"
-                type="submit"
-              >
-                <span th:text="#{page.welcome.setAdminPassword}">Set Admin Password</span>
-              </button>
-            </div>
-          </form>
+
+        <div class="text-center mb-8">
+            <h1 class="page-title-xl mb-3">
+                <span class="gradient-text" th:text="#{page.welcome.title(${appName})}">Welcome to QuickDrop</span>
+            </h1>
+            <p class="page-subtitle">
+                <span th:text="#{page.welcome.setupThanks(${appName})}">Thank you for setting up QuickDrop!</span>
+            </p>
+            <p class="text-sm mt-1" style="color:var(--c-text-muted)" th:text="#{page.welcome.setupPrompt}">Please set
+                an admin password for the dashboard.</p>
         </div>
-      </div>
-    </main>
+
+        <!-- Setup form -->
+        <div class="gate-card animate-in animate-in-delay-1">
+            <form class="flex flex-col gap-5" id="setupForm" method="post" th:action="@{/admin/setup}">
+                <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden"/>
+
+                <div class="form-row">
+                    <label class="form-label" for="adminPassword" th:text="#{form.adminPassword.label}">Admin
+                        Password</label>
+                    <input
+                            autocomplete="new-password"
+                            class="form-input"
+                            id="adminPassword"
+                            minlength="8"
+                            name="adminPassword"
+                            placeholder="Min. 8 characters"
+                            required
+                            th:placeholder="#{form.adminPassword.placeholder}"
+                            type="password"
+                    />
+                </div>
+
+                <div class="form-row">
+                    <label class="form-label" for="confirmPassword" th:text="#{form.password.confirm}">Confirm
+                        Password</label>
+                    <input
+                            autocomplete="new-password"
+                            class="form-input"
+                            id="confirmPassword"
+                            minlength="8"
+                            name="confirmPassword"
+                            placeholder="Repeat password"
+                            required
+                            th:placeholder="#{form.password.confirm.placeholder}"
+                            type="password"
+                    />
+                </div>
+
+                <p class="alert alert-danger hidden" id="error-message" th:text="#{page.welcome.passwordMismatch}">
+                    Passwords do not match.
+                </p>
+
+                <button class="btn btn-gradient btn-lg w-full justify-center" type="submit">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" stroke-linecap="round"
+                              stroke-linejoin="round"/>
+                    </svg>
+                    <span th:text="#{page.welcome.setAdminPassword}">Set Admin Password</span>
+                </button>
+            </form>
+        </div>
+    </div>
+
     <script>
-      document
-        .getElementById("setupForm")
-        .addEventListener("submit", function (e) {
-          const password = document.getElementById("adminPassword").value;
-          const confirmPassword =
-            document.getElementById("confirmPassword").value;
-          if (password !== confirmPassword) {
-            e.preventDefault();
-            document.getElementById("error-message").style.display = "block";
-          }
+        document.getElementById('setupForm').addEventListener('submit', function (e) {
+            const pw = document.getElementById('adminPassword').value;
+            const cpw = document.getElementById('confirmPassword').value;
+            if (pw !== cpw) {
+                e.preventDefault();
+                document.getElementById('error-message').classList.remove('hidden');
+            }
         });
+
+        (function () {
+            function sync() {
+                const dark = document.documentElement.classList.contains('dark');
+                document.getElementById('themeIconSun').classList.toggle('hidden', !dark);
+                document.getElementById('themeIconMoon').classList.toggle('hidden', dark);
+            }
+
+            sync();
+            document.getElementById('themeToggle')?.addEventListener('click', () => setTimeout(sync, 0));
+        })();
     </script>
     <script src="/js/locale-switcher.js"></script>
-  </body>
+</main>
+</body>
 </html>

@@ -26,10 +26,10 @@ public class FileActionLogDTO {
 
     private String mapType(FileHistoryType type) {
         return switch (type) {
-            case DOWNLOAD -> "Download";
-            case RENEWAL -> "Lifetime Renewed";
-            case UPLOAD -> "Uploaded";
-            case DELETION -> "Deletion";
+            case DOWNLOAD -> "download";
+            case RENEWAL -> "renewal";
+            case UPLOAD -> "upload";
+            case DELETION -> "deletion";
         };
     }
 

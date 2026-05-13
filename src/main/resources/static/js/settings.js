@@ -218,6 +218,10 @@ function markValidity(input, message) {
   }
 }
 
+function sv(key, fallback) {
+  return window.i18n?.settings?.validation?.[key] || fallback;
+}
+
 function validateSettingsForm() {
   let firstInvalid = null;
 
@@ -249,82 +253,54 @@ function validateSettingsForm() {
 
   // reset
   [
-    maxFileSize,
-    maxFileLife,
-    fileStoragePath,
-    fileDeletionCron,
-    sessionLifeTime,
-    maxPreviewSizeBytes,
-    defaultHomePage,
-    appPassword,
-    discordUrl,
-    emailFrom,
-    emailTo,
-    smtpHost,
-    smtpPort,
-    batchMinutes,
+    maxFileSize, maxFileLife, fileStoragePath, fileDeletionCron,
+    sessionLifeTime, maxPreviewSizeBytes, defaultHomePage,
+    appPassword, discordUrl, emailFrom, emailTo, smtpHost, smtpPort, batchMinutes,
   ].forEach((el) => markValidity(el, ""));
 
   const maxSizeVal = parsePositiveNumber(maxFileSize?.value);
   if (!maxSizeVal) {
-    markValidity(maxFileSize, "Enter a max file size (MB) greater than 0.");
+    markValidity(maxFileSize, sv('maxFileSize', 'Enter a max file size (MB) greater than 0.'));
     firstInvalid = firstInvalid || maxFileSize;
   }
 
   const maxLifeVal = parsePositiveNumber(maxFileLife?.value);
   if (!maxLifeVal) {
-    markValidity(
-      maxFileLife,
-      "Enter a max file lifetime (days) greater than 0."
-    );
+    markValidity(maxFileLife, sv('maxFileLifetime', 'Enter a max file lifetime (days) greater than 0.'));
     firstInvalid = firstInvalid || maxFileLife;
   }
 
   if (!fileStoragePath?.value.trim()) {
-    markValidity(fileStoragePath, "File storage path is required.");
+    markValidity(fileStoragePath, sv('fileStoragePath', 'File storage path is required.'));
     firstInvalid = firstInvalid || fileStoragePath;
   }
 
   if (!fileDeletionCron?.value.trim()) {
-    markValidity(fileDeletionCron, "Cron expression is required.");
+    markValidity(fileDeletionCron, sv('cron', 'Cron expression is required.'));
     firstInvalid = firstInvalid || fileDeletionCron;
   }
 
   const sessionVal = parsePositiveNumber(sessionLifeTime?.value);
   if (!sessionVal && sessionVal !== 0) {
-    markValidity(
-      sessionLifeTime,
-      "Enter a session lifetime in minutes (positive number)."
-    );
+    markValidity(sessionLifeTime, sv('sessionLifetime', 'Enter a session lifetime in minutes (positive number).'));
     firstInvalid = firstInvalid || sessionLifeTime;
   }
 
   if (!disablePreview?.checked) {
     const previewVal = parsePositiveNumber(maxPreviewSizeBytes?.value);
     if (!previewVal) {
-      markValidity(
-        maxPreviewSizeBytes,
-        "Enter preview size (MB) greater than 0."
-      );
+      markValidity(maxPreviewSizeBytes, sv('previewSize', 'Enter preview size (MB) greater than 0.'));
       firstInvalid = firstInvalid || maxPreviewSizeBytes;
     }
   }
 
-  if (defaultHomePage && !["upload", "list"].includes(defaultHomePage.value)) {
-    markValidity(defaultHomePage, "Choose upload or list.");
+  if (defaultHomePage && !["upload", "list", "paste"].includes(defaultHomePage.value)) {
+    markValidity(defaultHomePage, sv('defaultHomePage', 'Choose upload, list, or paste.'));
     firstInvalid = firstInvalid || defaultHomePage;
   }
 
-  if (
-    appPasswordEnabled?.checked &&
-    appPassword &&
-    !appPassword.value.trim() &&
-    !storedAppPassword
-  ) {
-    markValidity(
-      appPassword,
-      "App password is required when protection is enabled."
-    );
+  if (appPasswordEnabled?.checked && appPassword && !appPassword.value.trim() && !storedAppPassword) {
+    markValidity(appPassword, sv('appPasswordRequired', 'App password is required when protection is enabled.'));
     firstInvalid = firstInvalid || appPassword;
   } else if (appPassword) {
     markValidity(appPassword, "");
@@ -332,11 +308,8 @@ function validateSettingsForm() {
 
   if (discordEnabled?.checked) {
     const urlVal = discordUrl?.value.trim();
-    if (
-      !urlVal ||
-      !(urlVal.startsWith("http://") || urlVal.startsWith("https://"))
-    ) {
-      markValidity(discordUrl, "Enter a valid Discord webhook URL.");
+    if (!urlVal || !(urlVal.startsWith("http://") || urlVal.startsWith("https://"))) {
+      markValidity(discordUrl, sv('discordWebhook', 'Enter a valid Discord webhook URL.'));
       firstInvalid = firstInvalid || discordUrl;
     }
   }
@@ -349,40 +322,36 @@ function validateSettingsForm() {
 
     const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailFromVal || !emailPattern.test(emailFromVal)) {
-      markValidity(emailFrom, "Enter a valid From email.");
+      markValidity(emailFrom, sv('emailFrom', 'Enter a valid From email.'));
       firstInvalid = firstInvalid || emailFrom;
     }
     if (!emailToVal) {
-      markValidity(emailTo, "Enter at least one recipient.");
+      markValidity(emailTo, sv('emailRecipients', 'Enter at least one recipient.'));
       firstInvalid = firstInvalid || emailTo;
     }
     if (!hostVal) {
-      markValidity(smtpHost, "SMTP host is required.");
+      markValidity(smtpHost, sv('smtpHost', 'SMTP host is required.'));
       firstInvalid = firstInvalid || smtpHost;
     }
     if (!portVal) {
-      markValidity(smtpPort, "Enter a valid SMTP port.");
+      markValidity(smtpPort, sv('smtpPort', 'Enter a valid SMTP port.'));
       firstInvalid = firstInvalid || smtpPort;
     }
   }
 
-  const anyChannel =
-    Boolean(discordEnabled?.checked) || Boolean(emailEnabled?.checked);
+  const anyChannel = Boolean(discordEnabled?.checked) || Boolean(emailEnabled?.checked);
   if (batchEnabled?.checked) {
     const minutesVal = parsePositiveNumber(batchMinutes?.value);
     if (!anyChannel) {
-      markValidity(batchMinutes, "Enable Discord or Email before batching.");
+      markValidity(batchMinutes, sv('enableChannelBeforeBatch', 'Enable Discord or Email before batching.'));
       firstInvalid = firstInvalid || batchMinutes;
     } else if (!minutesVal) {
-      markValidity(batchMinutes, "Enter a batch interval in minutes.");
+      markValidity(batchMinutes, sv('batchInterval', 'Enter a batch interval in minutes.'));
       firstInvalid = firstInvalid || batchMinutes;
     }
   }
 
-  if (firstInvalid) {
-    firstInvalid.focus();
-  }
-
+  if (firstInvalid) firstInvalid.focus();
   return !firstInvalid;
 }
 
@@ -519,50 +488,3 @@ document.addEventListener("DOMContentLoaded", function () {
     );
 });
 
-function attachTooltip(wrapperId, tooltipId) {
-  const wrapper = document.getElementById(wrapperId);
-  const tooltip = document.getElementById(tooltipId);
-  if (!wrapper || !tooltip) return;
-
-  const centerTooltip = () => {
-    tooltip.style.left = "50%";
-    tooltip.style.right = "auto";
-    tooltip.style.transform = "translateX(-50%)";
-  };
-
-  const adjustPosition = () => {
-    centerTooltip();
-
-    const rect = tooltip.getBoundingClientRect();
-    const padding = 8;
-
-    if (rect.left < padding) {
-      tooltip.style.left = "0";
-      tooltip.style.right = "auto";
-      tooltip.style.transform = "translateX(0)";
-      return;
-    }
-
-    if (rect.right > window.innerWidth - padding) {
-      tooltip.style.left = "auto";
-      tooltip.style.right = "0";
-      tooltip.style.transform = "translateX(0)";
-    }
-  };
-
-  const show = () => {
-    tooltip.style.display = "block";
-    adjustPosition();
-  };
-  const hide = () => {
-    tooltip.style.display = "none";
-    centerTooltip();
-  };
-
-  wrapper.addEventListener("mouseenter", show);
-  wrapper.addEventListener("mouseleave", hide);
-  wrapper.addEventListener("focusin", show);
-  wrapper.addEventListener("focusout", hide);
-
-  hide();
-}

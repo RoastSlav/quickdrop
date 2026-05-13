@@ -2,114 +2,232 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <body>
 <!--
-  Fragment parameters:
-    isAdminNav (boolean) – when true shows admin title suffix and admin-specific links
-                           (Dashboard + Settings); when false shows the regular public nav.
+  Fragments:
+    header(isAdminNav)  — main glass nav with brand, links, locale, theme, drawer
+    scripts             — shared CDN scripts (Alpine, htmx). Include in <head>.
 -->
-<nav class="bg-gray-800 dark:bg-gray-900 text-gray-100" th:fragment="header(isAdminNav)">
-    <div class="max-w-7xl mx-auto px-4 py-4 relative">
-        <div class="flex items-center justify-between">
-            <div class="flex items-center space-x-2">
-                <a class="flex items-center space-x-2" href="/">
-                    <img
-                            alt="Website Logo"
-                            class="h-10"
-                            src="/images/favicon.png"
-                            th:src="${appLogoPath}"
-                    />
-                    <span class="font-semibold tracking-tight"
-                          th:text="${isAdminNav} ? (${appName} + ' Admin') : ${appName}">QuickDrop</span>
-                </a>
-                <a
-                        class="text-xs text-gray-400 dark:text-gray-500 hover:text-white"
-                        href="https://github.com/roastslav/quickdrop"
-                        rel="noopener noreferrer"
-                        target="_blank"
-                        th:if="${!#strings.equalsIgnoreCase(#strings.trim(appName), 'QuickDrop')}"
-                >
-                    <span th:text="#{nav.poweredBy}">Powered by QuickDrop</span>
-                </a>
+
+<!-- ─── Shared CDN scripts (Alpine + htmx) ──────────────────────────────── -->
+<th:block th:fragment="scripts">
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.3/dist/htmx.min.js"></script>
+</th:block>
+
+<!-- ─── Header ──────────────────────────────────────────────────────────── -->
+<header class="nav-root" th:fragment="header(isAdminNav)" x-data="{ open: false }">
+    <div class="nav-inner">
+
+        <!-- Brand -->
+        <a class="nav-brand" href="/">
+            <img alt="Logo" src="/images/favicon.png" th:src="${appLogoPath}"/>
+            <span th:text="${appName}">QuickDrop</span>
+        </a>
+
+        <!-- Desktop links -->
+        <nav aria-label="Main navigation" class="nav-links hidden md:flex">
+
+            <th:block th:if="${isAdminNav}">
+                <a class="nav-link" data-nav-match="/file/upload" href="/file/upload"
+                   th:text="#{nav.uploadFile}">Upload</a>
+                <a class="nav-link" data-nav-match="/file/list" href="/file/list" th:text="#{nav.viewFiles}">View
+                    Files</a>
+                <a class="nav-link" data-nav-match="/file/paste" href="/file/paste/new"
+                   th:if="${isPastebinEnabled}"
+                   th:text="#{nav.pastebin}">Pastebin</a>
+                <a class="nav-link" data-nav-match="/admin/dashboard" href="/admin/dashboard" th:text="#{nav.admin}">Admin</a>
+                <form action="/admin/logout" class="contents" method="post" th:if="${hasAdminSession or hasAppSession}">
+                    <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden"/>
+                    <button class="nav-link" th:text="#{nav.logout}" type="submit">Logout</button>
+                </form>
+            </th:block>
+
+            <th:block th:unless="${isAdminNav}">
+                <a class="nav-link" data-nav-match="/file/upload"
+                   href="/file/upload"
+                   th:text="#{nav.uploadFile}">Upload</a>
+                <a class="nav-link" data-nav-match="/file/list"
+                   href="/file/list"
+                   th:if="${isFileListPageEnabled or hasAdminSession}"
+                   th:text="#{nav.viewFiles}">View Files</a>
+                <a class="nav-link" data-nav-match="/file/paste"
+                   href="/file/paste/new"
+                   th:if="${isPastebinEnabled}"
+                   th:text="#{nav.pastebin}">Pastebin</a>
+                <a class="nav-link" data-nav-match="/admin"
+                   href="/admin/dashboard"
+                   th:if="${isAdminDashboardButtonEnabled}"
+                   th:text="#{nav.admin}">Admin</a>
+                <form action="/admin/logout" class="contents" method="post" th:if="${hasAdminSession or hasAppSession}">
+                    <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden"/>
+                    <button class="nav-link" th:text="#{nav.logout}" type="submit">Logout</button>
+                </form>
+            </th:block>
+        </nav>
+
+        <!-- Actions -->
+        <div class="nav-actions">
+            <!-- Language picker (desktop) -->
+            <div @click.outside="langOpen = false" class="relative hidden md:block" x-data="{ langOpen: false }">
+                <button @click="langOpen = !langOpen" aria-label="Select language" class="lang-btn" type="button">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                        <path d="M12 21a9.004 9.004 0 0 0 8.716-6.747M12 21a9.004 9.004 0 0 1-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 0 1 7.843 4.582M12 3a8.997 8.997 0 0 0-7.843 4.582m15.686 0A11.953 11.953 0 0 1 12 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0 1 21 12c0 .778-.099 1.533-.284 2.253M3 12c0 .778.099 1.533.284 2.253" stroke-linecap="round"
+                              stroke-linejoin="round"/>
+                    </svg>
+                    <span th:text="${#strings.toUpperCase(currentLang)}">EN</span>
+                    <svg :class="{ 'rotate-180': langOpen }" class="w-3 h-3 transition-transform duration-200"
+                         fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                        <path d="m19.5 8.25-7.5 7.5-7.5-7.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </button>
+                <div class="lang-dropdown" x-cloak x-show="langOpen"
+                     x-transition:enter="transition ease-out duration-150" x-transition:enter-end="opacity-100 scale-100"
+                     x-transition:enter-start="opacity-0 scale-95" x-transition:leave="transition ease-in duration-100"
+                     x-transition:leave-end="opacity-0 scale-95" x-transition:leave-start="opacity-100 scale-100">
+                    <a class="lang-option locale-switch-link" data-lang="en"
+                       href="#" th:classappend="${currentLang == 'en'} ? ' is-active'">English <span class="lang-code">EN</span></a>
+                    <a class="lang-option locale-switch-link" data-lang="bg"
+                       href="#" th:classappend="${currentLang == 'bg'} ? ' is-active'">Български <span class="lang-code">BG</span></a>
+                    <a class="lang-option locale-switch-link" data-lang="de"
+                       href="#" th:classappend="${currentLang == 'de'} ? ' is-active'">Deutsch <span class="lang-code">DE</span></a>
+                    <a class="lang-option locale-switch-link" data-lang="es"
+                       href="#" th:classappend="${currentLang == 'es'} ? ' is-active'">Español <span class="lang-code">ES</span></a>
+                    <a class="lang-option locale-switch-link" data-lang="fr"
+                       href="#" th:classappend="${currentLang == 'fr'} ? ' is-active'">Français <span class="lang-code">FR</span></a>
+                    <a class="lang-option locale-switch-link" data-lang="it"
+                       href="#" th:classappend="${currentLang == 'it'} ? ' is-active'">Italiano <span class="lang-code">IT</span></a>
+                    <a class="lang-option locale-switch-link" data-lang="ja"
+                       href="#" th:classappend="${currentLang == 'ja'} ? ' is-active'">日本語 <span class="lang-code">JA</span></a>
+                    <a class="lang-option locale-switch-link" data-lang="zh"
+                       href="#" th:classappend="${currentLang == 'zh'} ? ' is-active'">中文 <span class="lang-code">ZH</span></a>
+                </div>
             </div>
-            <button
-                    aria-controls="navMenu"
-                    aria-expanded="false"
-                    class="md:hidden rounded-lg p-2 hover:bg-sky-600 dark:hover:bg-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500"
-                    id="navToggle"
-                    th:aria-label="#{nav.toggleNavigation}"
-                    type="button"
-            >
-                <svg
-                        aria-hidden="true"
-                        class="h-6 w-6"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        viewBox="0 0 24 24"
-                >
-                    <path d="M4 6h16M4 12h16M4 18h16"></path>
+
+            <button aria-label="Toggle theme" class="nav-icon-btn" id="themeToggle" title="Toggle theme" type="button">
+                <svg class="hidden w-5 h-5" fill="none" id="themeIconSun" stroke="currentColor" stroke-width="1.6"
+                     viewBox="0 0 24 24">
+                    <path d="M12 3v2.25m6.364.386-1.591 1.591M21 12h-2.25m-.386 6.364-1.591-1.591M12 18.75V21m-4.773-4.227-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z" stroke-linecap="round"
+                          stroke-linejoin="round"/>
+                </svg>
+                <svg class="w-5 h-5" fill="none" id="themeIconMoon" stroke="currentColor" stroke-width="1.6"
+                     viewBox="0 0 24 24">
+                    <path d="M21.752 15.002A9.72 9.72 0 0 1 18 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 0 0 3 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 0 0 9.002-5.998Z" stroke-linecap="round"
+                          stroke-linejoin="round"/>
                 </svg>
             </button>
-            <div
-                    class="nav-menu-panel hidden md:flex flex-col md:flex-row md:items-center md:space-x-4 w-full md:w-auto mt-3 md:mt-0 space-y-2 md:space-y-0 bg-gray-800 dark:bg-gray-900 md:bg-transparent md:dark:bg-transparent rounded-lg md:rounded-none p-4 md:p-0 shadow md:shadow-none absolute left-0 right-0 top-full md:static z-20 md:ml-auto"
-                    id="navMenu"
+
+            <button
+                    :aria-expanded="open ? 'true' : 'false'"
+                    type="button"
+                    @click="open = !open"
+                    class="nav-icon-btn md:hidden"
+                    th:aria-label="#{nav.toggleNavigation}"
             >
-                <!-- Admin nav links -->
-                <div th:if="${isAdminNav}"
-                     class="flex flex-col space-y-2 md:flex-row md:items-center md:space-x-4 md:space-y-0">
-                    <a class="nav-menu-item hover:text-white" href="/file/list" th:text="#{nav.viewFiles}">View Files</a>
-                    <a class="nav-menu-item hover:text-white" href="/file/upload" th:text="#{nav.uploadFile}">Upload File</a>
-                    <a class="nav-menu-item hover:text-white" href="/admin/dashboard" th:text="#{nav.dashboard}">Dashboard</a>
-                    <a class="nav-menu-item hover:text-white" href="/admin/settings" th:text="#{nav.settings}">Settings</a>
-                    <form th:if="${hasAdminSession or hasAppSession}" action="/admin/logout" method="post">
-                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
-                        <button class="nav-menu-item hover:text-white" th:text="#{nav.logout}" type="submit">Logout</button>
-                    </form>
-                </div>
-                <!-- Regular nav links -->
-                <div th:unless="${isAdminNav}"
-                     class="flex flex-col space-y-2 md:flex-row md:items-center md:space-x-4 md:space-y-0">
-                    <a class="nav-menu-item hover:text-white" href="/file/list"
-                       th:if="${isFileListPageEnabled or hasAdminSession}" th:text="#{nav.viewFiles}">View Files</a>
-                    <a class="nav-menu-item hover:text-white" href="/file/upload" th:text="#{nav.uploadFile}">Upload File</a>
-                    <a class="nav-menu-item hover:text-white" href="/file/paste/new"
-                       th:if="${isPastebinEnabled}" th:text="#{nav.pastebin}">Pastebin</a>
-                    <a class="nav-menu-item hover:text-white" href="/admin/dashboard"
-                       th:if="${isAdminDashboardButtonEnabled}" th:text="#{nav.adminDashboard}">Admin Dashboard</a>
-                    <form th:if="${hasAdminSession or hasAppSession}" action="/admin/logout" method="post">
-                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
-                        <button class="nav-menu-item hover:text-white" th:text="#{nav.logout}" type="submit">Logout</button>
-                    </form>
-                </div>
-                <div class="flex items-center text-xs">
-                    <label class="sr-only" for="localeSwitchNav" th:text="#{nav.language}">Language</label>
-                    <select
-                            class="locale-switch-select rounded-md border border-slate-600 bg-slate-800 text-slate-100 px-2 py-1"
-                            data-locale-select="true"
-                            id="localeSwitchNav"
-                    >
-                        <option th:selected="${currentLang == 'en'}" value="en">EN</option>
-                        <option th:selected="${currentLang == 'bg'}" value="bg">BG</option>
-                        <option th:selected="${currentLang == 'de'}" value="de">DE</option>
-                        <option th:selected="${currentLang == 'es'}" value="es">ES</option>
-                        <option th:selected="${currentLang == 'fr'}" value="fr">FR</option>
-                        <option th:selected="${currentLang == 'it'}" value="it">IT</option>
-                        <option th:selected="${currentLang == 'ja'}" value="ja">JA</option>
-                        <option th:selected="${currentLang == 'zh'}" value="zh">ZH</option>
-                    </select>
-                </div>
-                <button
-                        aria-label="Toggle theme"
-                        class="nav-menu-item theme-toggle rounded-lg p-2 transition-colors hover:bg-sky-600 dark:hover:bg-sky-500 active:scale-95 focus:outline-none focus:ring-2 focus:ring-sky-500"
-                        id="themeToggle"
-                        type="button"
-                >
-                    🌙
-                </button>
-            </div>
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24"
+                     x-show="!open">
+                    <path d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" stroke-linecap="round"
+                          stroke-linejoin="round"/>
+                </svg>
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24" x-cloak
+                     x-show="open">
+                    <path d="M6 18 18 6M6 6l12 12" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </button>
         </div>
     </div>
-</nav>
+
+    <!-- Mobile drawer -->
+    <div :class="{ 'is-open': open }" class="nav-drawer md:hidden" x-cloak>
+
+        <th:block th:if="${isAdminNav}">
+            <a class="nav-link" data-nav-match="/file/upload" href="/file/upload" th:text="#{nav.uploadFile}">Upload</a>
+            <a class="nav-link" data-nav-match="/file/list" href="/file/list" th:text="#{nav.viewFiles}">View Files</a>
+            <a class="nav-link" data-nav-match="/file/paste" href="/file/paste/new"
+               th:if="${isPastebinEnabled}"
+               th:text="#{nav.pastebin}">Pastebin</a>
+            <a class="nav-link" data-nav-match="/admin/dashboard" href="/admin/dashboard"
+               th:text="#{nav.admin}">Admin</a>
+            <form action="/admin/logout" method="post" th:if="${hasAdminSession or hasAppSession}">
+                <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden"/>
+                <button class="nav-link w-full text-left" th:text="#{nav.logout}" type="submit">Logout</button>
+            </form>
+        </th:block>
+
+        <th:block th:unless="${isAdminNav}">
+            <a class="nav-link" data-nav-match="/file/upload" href="/file/upload" th:text="#{nav.uploadFile}">Upload</a>
+            <a class="nav-link" data-nav-match="/file/list"
+               href="/file/list"
+               th:if="${isFileListPageEnabled or hasAdminSession}"
+               th:text="#{nav.viewFiles}">View Files</a>
+            <a class="nav-link" data-nav-match="/file/paste" href="/file/paste/new"
+               th:if="${isPastebinEnabled}"
+               th:text="#{nav.pastebin}">Pastebin</a>
+            <a class="nav-link" data-nav-match="/admin" href="/admin/dashboard"
+               th:if="${isAdminDashboardButtonEnabled}"
+               th:text="#{nav.admin}">Admin</a>
+            <form action="/admin/logout" method="post" th:if="${hasAdminSession or hasAppSession}">
+                <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden"/>
+                <button class="nav-link w-full text-left" th:text="#{nav.logout}" type="submit">Logout</button>
+            </form>
+        </th:block>
+
+        <div class="nav-drawer-actions">
+            <div class="flex flex-wrap gap-1.5">
+                <a class="lang-option locale-switch-link" data-lang="en"
+                   href="#" style="flex:0 0 auto" th:classappend="${currentLang == 'en'} ? ' is-active'">EN</a>
+                <a class="lang-option locale-switch-link" data-lang="bg"
+                   href="#" style="flex:0 0 auto" th:classappend="${currentLang == 'bg'} ? ' is-active'">BG</a>
+                <a class="lang-option locale-switch-link" data-lang="de"
+                   href="#" style="flex:0 0 auto" th:classappend="${currentLang == 'de'} ? ' is-active'">DE</a>
+                <a class="lang-option locale-switch-link" data-lang="es"
+                   href="#" style="flex:0 0 auto" th:classappend="${currentLang == 'es'} ? ' is-active'">ES</a>
+                <a class="lang-option locale-switch-link" data-lang="fr"
+                   href="#" style="flex:0 0 auto" th:classappend="${currentLang == 'fr'} ? ' is-active'">FR</a>
+                <a class="lang-option locale-switch-link" data-lang="it"
+                   href="#" style="flex:0 0 auto" th:classappend="${currentLang == 'it'} ? ' is-active'">IT</a>
+                <a class="lang-option locale-switch-link" data-lang="ja"
+                   href="#" style="flex:0 0 auto" th:classappend="${currentLang == 'ja'} ? ' is-active'">JA</a>
+                <a class="lang-option locale-switch-link" data-lang="zh"
+                   href="#" style="flex:0 0 auto" th:classappend="${currentLang == 'zh'} ? ' is-active'">ZH</a>
+            </div>
+            <span class="text-xs ml-auto"
+                  style="color: var(--c-nav-text-muted)"
+                  th:if="${!#strings.equalsIgnoreCase(#strings.trim(appName), 'QuickDrop')}">
+        <a href="https://github.com/roastslav/quickdrop"
+           rel="noopener noreferrer"
+           style="color: inherit"
+           target="_blank"
+           th:text="#{nav.poweredBy}">Powered by QuickDrop</a>
+      </span>
+        </div>
+    </div>
+
+    <script>
+        (function () {
+            // Theme icon sync
+            function syncThemeIcons() {
+                const isDark = document.documentElement.classList.contains('dark');
+                const sun = document.getElementById('themeIconSun');
+                const moon = document.getElementById('themeIconMoon');
+                if (sun) sun.classList.toggle('hidden', !isDark);
+                if (moon) moon.classList.toggle('hidden', isDark);
+            }
+
+            syncThemeIcons();
+            const themeBtn = document.getElementById('themeToggle');
+            if (themeBtn) {
+                themeBtn.addEventListener('click', () => setTimeout(syncThemeIcons, 0));
+            }
+
+            // Active link highlighting based on URL
+            const path = window.location.pathname;
+            document.querySelectorAll('[data-nav-match]').forEach(el => {
+                const match = el.getAttribute('data-nav-match');
+                if (match && path.indexOf(match) === 0) {
+                    el.classList.add('nav-link-active');
+                }
+            });
+        })();
+    </script>
+</header>
 </body>
 </html>

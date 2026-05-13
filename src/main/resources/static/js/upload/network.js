@@ -24,7 +24,7 @@ export async function uploadCandidate(
     indicatorEl || document.getElementById("uploadIndicator");
 
   indicatorElement?.classList.remove("hidden");
-  if (statusElement) statusElement.innerText = "Upload started...";
+    if (statusElement) statusElement.innerText = window.i18n?.upload?.statusStarted || "Upload started...";
   if (progressElement) {
     progressElement.style.width = "0%";
     progressElement.setAttribute("aria-valuenow", "0");
@@ -85,11 +85,11 @@ export async function uploadCandidate(
               passwordValue &&
               statusElement
             ) {
-              statusElement.innerText = "Upload complete. Encrypting...";
+                statusElement.innerText = window.i18n?.upload?.statusEncrypting || "Upload complete. Encrypting...";
             }
             uploadNextChunk();
           } else {
-            if (statusElement) statusElement.innerText = "Upload complete.";
+              if (statusElement) statusElement.innerText = window.i18n?.upload?.statusComplete || "Upload complete.";
             if (response && response.uuid) {
               onSuccess?.(response.uuid);
               resolve(response);

@@ -3,9 +3,7 @@ package org.rostislav.quickdrop.controller;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import org.rostislav.quickdrop.entity.ApplicationSettingsEntity;
-import org.rostislav.quickdrop.model.AnalyticsDataView;
-import org.rostislav.quickdrop.model.ApplicationSettingsViewModel;
-import org.rostislav.quickdrop.model.FileEntityView;
+import org.rostislav.quickdrop.model.*;
 import org.rostislav.quickdrop.service.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,6 +17,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
 import java.util.UUID;
 
 import static org.rostislav.quickdrop.util.FileUtils.bytesToMegabytes;
@@ -45,10 +44,18 @@ public class AdminViewController {
     }
 
     @GetMapping("/dashboard")
-    public String getDashboardPage(@RequestParam(name = "page", defaultValue = "0") int page,
-                                   @RequestParam(name = "size", defaultValue = "20") int size,
-                                   @RequestParam(name = "query", required = false) String query,
-                                   Model model) {
+    public String getDashboardPage(Model model) {
+        AnalyticsDataView analytics = analyticsService.getAnalytics();
+        model.addAttribute("analytics", analytics);
+        model.addAttribute("isAdminDashboardPage", true);
+        return "dashboard";
+    }
+
+    @GetMapping("/files")
+    public String getFilesPage(@RequestParam(name = "page", defaultValue = "0") int page,
+                               @RequestParam(name = "size", defaultValue = "20") int size,
+                               @RequestParam(name = "query", required = false) String query,
+                               Model model) {
         int pageNumber = Math.max(page, 0);
         int pageSize = Math.min(Math.max(size, 1), 100);
 
@@ -56,12 +63,49 @@ public class AdminViewController {
         model.addAttribute("filesPage", filesPage);
         model.addAttribute("pageSize", pageSize);
         model.addAttribute("query", query == null ? "" : query);
-        model.addAttribute("isAdminDashboardPage", true);
 
         AnalyticsDataView analytics = analyticsService.getAnalytics();
         model.addAttribute("analytics", analytics);
 
-        return "dashboard";
+        return "admin-files";
+    }
+
+    @GetMapping("/pastes")
+    public String getPastesPage(@RequestParam(name = "page", defaultValue = "0") int page,
+                                @RequestParam(name = "size", defaultValue = "20") int size,
+                                @RequestParam(name = "query", required = false) String query,
+                                Model model) {
+        int pageNumber = Math.max(page, 0);
+        int pageSize = Math.min(Math.max(size, 1), 100);
+
+        Page<PasteEntityView> pastesPage = fileService.getPaginatedPastes(PageRequest.of(pageNumber, pageSize), query);
+        model.addAttribute("pastesPage", pastesPage);
+        model.addAttribute("pageSize", pageSize);
+        model.addAttribute("query", query == null ? "" : query);
+
+        AnalyticsDataView analytics = analyticsService.getAnalytics();
+        model.addAttribute("analytics", analytics);
+
+        return "admin-pastes";
+    }
+
+    @GetMapping("/pastes/{uuid}/history")
+    public String getPasteHistoryPage(@PathVariable String uuid, Model model) {
+        var fileEntity = fileService.getFile(uuid);
+        if (fileEntity == null || !fileEntity.paste) {
+            return "redirect:/admin/pastes";
+        }
+        long totalViews = analyticsService.getTotalViewsByPaste(uuid);
+        PasteEntityView pasteView = new PasteEntityView(fileEntity, totalViews);
+
+        List<FileActionLogDTO> actionLogs = analyticsService.getHistoryByFile(uuid)
+                .stream()
+                .map(FileActionLogDTO::new)
+                .toList();
+
+        model.addAttribute("paste", pasteView);
+        model.addAttribute("actionLogs", actionLogs);
+        return "admin-paste-history";
     }
 
     @GetMapping("/setup")
@@ -168,7 +212,6 @@ public class AdminViewController {
         try {
             request.logout();
         } catch (Exception ignored) {
-            // Best-effort logout of Spring Security session
         }
         var session = request.getSession(false);
         if (session != null) {
@@ -183,23 +226,27 @@ public class AdminViewController {
     }
 
     @PostMapping("/keep-indefinitely/{uuid}")
-    public String updateKeepIndefinitely(@PathVariable String uuid, @RequestParam(required = false, defaultValue = "false") boolean keepIndefinitely, HttpServletRequest request) {
+    public String updateKeepIndefinitely(@PathVariable String uuid,
+                                         @RequestParam(required = false, defaultValue = "false") boolean keepIndefinitely,
+                                         @RequestParam(defaultValue = "files") String source,
+                                         HttpServletRequest request) {
         fileService.updateKeepIndefinitely(uuid, keepIndefinitely, request);
-        return "redirect:/admin/dashboard";
+        return "redirect:/admin/" + source;
     }
 
-
     @PostMapping("/toggle-hidden/{uuid}")
-    public String toggleHidden(@PathVariable String uuid, HttpServletRequest request) {
+    public String toggleHidden(@PathVariable String uuid,
+                               @RequestParam(defaultValue = "files") String source,
+                               HttpServletRequest request) {
         fileService.toggleHidden(uuid, request);
-        return "redirect:/admin/dashboard";
+        return "redirect:/admin/" + source;
     }
 
     @PostMapping("/delete/{uuid}")
-    public String deleteFile(@PathVariable String uuid) {
+    public String deleteFile(@PathVariable String uuid,
+                             @RequestParam(defaultValue = "files") String source) {
         fileService.deleteFileFromDatabaseAndFileSystem(uuid);
-
-        return "redirect:/admin/dashboard";
+        return "redirect:/admin/" + source;
     }
 
     @PostMapping("/notification-test")

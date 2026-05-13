@@ -30,6 +30,9 @@ public class FileActionLogDTO {
             case RENEWAL -> "renewal";
             case UPLOAD -> "upload";
             case DELETION -> "deletion";
+            case PASTE_CREATE -> "paste_create";
+            case PASTE_VIEW -> "paste_view";
+            case PASTE_EDIT -> "paste_edit";
         };
     }
 

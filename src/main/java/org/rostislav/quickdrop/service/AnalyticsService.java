@@ -32,15 +32,32 @@ public class AnalyticsService {
             averageFileSize = formatFileSize(totalSpaceUsed / fileCount);
         }
 
+        long totalPastes = fileService.getPasteCount();
+        long totalPasteViews = fileHistoryLogRepository.countByEventType(FileHistoryType.PASTE_VIEW);
+        double avgPasteLengthBytes = fileService.getAveragePasteLength();
+        String averagePasteLength = avgPasteLengthBytes > 0 ? Math.round(avgPasteLengthBytes) + " B" : "0 B";
+        long markdownPasteCount = fileService.getMarkdownPasteCount();
+        long plainTextPasteCount = Math.max(0, totalPastes - markdownPasteCount);
+
         AnalyticsDataView analytics = new AnalyticsDataView();
         analytics.setTotalDownloads(totalDownloads);
         analytics.setTotalSpaceUsed(formatFileSize(totalSpaceUsed));
         analytics.setAverageFileSize(averageFileSize);
+        analytics.setTotalFileCount(fileCount);
+        analytics.setTotalPastes(totalPastes);
+        analytics.setTotalPasteViews(totalPasteViews);
+        analytics.setAveragePasteLength(averagePasteLength);
+        analytics.setMarkdownPasteCount(markdownPasteCount);
+        analytics.setPlainTextPasteCount(plainTextPasteCount);
         return analytics;
     }
 
     public long getTotalDownloadsByFile(String uuid) {
         return fileHistoryLogRepository.countByFileAndType(uuid, FileHistoryType.DOWNLOAD);
+    }
+
+    public long getTotalViewsByPaste(String uuid) {
+        return fileHistoryLogRepository.countByFileAndType(uuid, FileHistoryType.PASTE_VIEW);
     }
 
     public List<FileHistoryLog> getHistoryByFile(String fileUUID) {

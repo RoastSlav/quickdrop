@@ -204,6 +204,7 @@ public class FileViewController {
                 return "redirect:/file/password/" + uuid;
             }
 
+            fileService.logPasteView(uuid, request);
             populateModelAttributes(fileEntity, model, request);
             model.addAttribute("pasteContent", pasteContent);
             model.addAttribute("isMarkdownPaste", fileEntity.name != null && fileEntity.name.toLowerCase(Locale.ROOT).endsWith(".md"));

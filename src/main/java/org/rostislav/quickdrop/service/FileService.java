@@ -64,7 +64,7 @@ public class FileService {
         this.asyncFileMergeService = asyncFileMergeService;
     }
 
-    @CacheEvict(value = {"publicFiles", "adminFiles", "analytics"}, allEntries = true)
+    @CacheEvict(value = {"publicFiles", "adminFiles", "adminPastes", "analytics"}, allEntries = true)
     public FileEntity saveFile(File file, FileUploadRequest fileUploadRequest, String uuid) {
         if (!validateObjects(file, fileUploadRequest)) {
             return null;
@@ -125,7 +125,7 @@ public class FileService {
     }
 
     @Transactional
-    @CacheEvict(value = {"publicFiles", "adminFiles", "analytics"}, allEntries = true)
+    @CacheEvict(value = {"publicFiles", "adminFiles", "adminPastes", "analytics"}, allEntries = true)
     public boolean deleteFileFromDatabaseAndFileSystem(String uuid) {
         boolean fsRemoved = deleteFileFromFileSystem(uuid);
         if (!fsRemoved) {
@@ -143,7 +143,7 @@ public class FileService {
     }
 
     @Transactional
-    @CacheEvict(value = {"publicFiles", "adminFiles", "analytics"}, allEntries = true)
+    @CacheEvict(value = {"publicFiles", "adminFiles", "adminPastes", "analytics"}, allEntries = true)
     public boolean removeFileFromDatabase(String uuid) {
         Optional<FileEntity> referenceById = fileRepository.findByUUID(uuid);
         if (referenceById.isEmpty()) {
@@ -278,11 +278,40 @@ public class FileService {
     }
 
     public long calculateTotalSpaceUsed() {
-        return safeNumber(fileRepository.totalFileSizeForAllFiles());
+        return safeNumber(fileRepository.totalFileSizeForFilesOnly());
     }
 
     public long getFileCount() {
-        return fileRepository.count();
+        return fileRepository.countByPasteFalse();
+    }
+
+    public long getPasteCount() {
+        return fileRepository.countByPasteTrue();
+    }
+
+    public double getAveragePasteLength() {
+        Double avg = fileRepository.averagePasteLength();
+        return avg != null ? avg : 0.0;
+    }
+
+    public long getMarkdownPasteCount() {
+        return fileRepository.countMarkdownPastes();
+    }
+
+    @Cacheable(value = "adminPastes", key = "'page:' + #pageable.pageNumber + ':size:' + #pageable.pageSize + ':q:' + (#query == null ? '' : #query.toLowerCase())")
+    public Page<PasteEntityView> getPaginatedPastes(Pageable pageable, String query) {
+        if (query == null || query.isBlank()) {
+            return fileRepository.findPastesWithViewCounts(pageable);
+        }
+        return fileRepository.searchPastesWithViewCounts(query, pageable);
+    }
+
+    @CacheEvict(value = {"adminPastes", "analytics"}, allEntries = true)
+    public void logPasteView(String uuid, HttpServletRequest request) {
+        FileEntity fileEntity = fileRepository.findByUUID(uuid).orElse(null);
+        if (fileEntity == null || !fileEntity.paste) return;
+        RequesterInfo info = getRequesterInfo(request);
+        fileHistoryLogRepository.save(new FileHistoryLog(fileEntity, FileHistoryType.PASTE_VIEW, info.ipAddress(), info.userAgent()));
     }
 
     @CacheEvict(value = {"publicFiles", "adminFiles", "analytics"}, allEntries = true)
@@ -341,7 +370,7 @@ public class FileService {
         return passwordEncoder.matches(password, fileEntity.passwordHash);
     }
 
-    @CacheEvict(value = {"publicFiles", "adminFiles", "analytics"}, allEntries = true)
+    @CacheEvict(value = {"publicFiles", "adminFiles", "adminPastes", "analytics"}, allEntries = true)
     public FileEntity createPaste(String title,
                                   String content,
                                   String syntax,
@@ -378,10 +407,14 @@ public class FileService {
                 contentBytes
         );
 
-        return asyncFileMergeService.submitChunk(fileUploadRequest, multipartFile, 0);
+        FileEntity saved = asyncFileMergeService.submitChunk(fileUploadRequest, multipartFile, 0);
+        if (saved != null) {
+            fileHistoryLogRepository.save(new FileHistoryLog(saved, FileHistoryType.PASTE_CREATE, requesterInfo.ipAddress(), requesterInfo.userAgent()));
+        }
+        return saved;
     }
 
-    @CacheEvict(value = {"publicFiles", "adminFiles", "analytics"}, allEntries = true)
+    @CacheEvict(value = {"publicFiles", "adminFiles", "adminPastes", "analytics"}, allEntries = true)
     public FileEntity updatePaste(String uuid,
                                   String title,
                                   String content,
@@ -422,7 +455,7 @@ public class FileService {
         fileEntity.uploadDate = LocalDate.now();
 
         fileRepository.save(fileEntity);
-        logHistory(fileEntity, request, FileHistoryType.RENEWAL);
+        logHistory(fileEntity, request, FileHistoryType.PASTE_EDIT);
         return fileEntity;
     }
 

@@ -19,6 +19,8 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.util.Map;
 import java.util.Optional;
@@ -150,20 +152,27 @@ public class FileRestController {
                     .body(Map.of("message", "Number of downloads cannot be negative."));
         }
 
-        ShareTokenEntity token;
+        String sharePath;
+        String tokenString;
         if (fileEntity.passwordHash != null && !fileEntity.passwordHash.isEmpty()) {
             String sessionToken = (String) request.getSession().getAttribute("file-session-token");
             if (sessionToken == null || !sessionService.validateFileSessionToken(sessionToken, uuid)) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
                         .body(Map.of("message", "Invalid file session."));
             }
-            token = fileService.generateShareToken(uuid, expirationDate, sessionToken, numberOfDownloads);
+            FileService.ShareTokenResult result = fileService.generateShareToken(uuid, expirationDate, sessionToken, numberOfDownloads);
+            tokenString = result.token().shareToken;
+            sharePath = FileUtils.getSharePath(tokenString);
+            if (result.shareKey() != null) {
+                sharePath += "?key=" + URLEncoder.encode(result.shareKey(), StandardCharsets.UTF_8);
+            }
         } else {
-            token = fileService.generateShareToken(uuid, expirationDate, numberOfDownloads);
+            ShareTokenEntity token = fileService.generateShareToken(uuid, expirationDate, numberOfDownloads);
+            tokenString = token.shareToken;
+            sharePath = FileUtils.getSharePath(tokenString);
         }
-        String sharePath = FileUtils.getSharePath(token.shareToken);
-        return ok(java.util.Map.of(
-                "token", token.shareToken,
+        return ok(Map.of(
+                "token", tokenString,
                 "sharePath", sharePath
         ));
     }

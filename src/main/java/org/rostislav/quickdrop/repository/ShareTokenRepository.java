@@ -4,6 +4,7 @@ import org.rostislav.quickdrop.entity.FileEntity;
 import org.rostislav.quickdrop.entity.ShareTokenEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
@@ -60,4 +61,24 @@ public interface ShareTokenRepository extends JpaRepository<ShareTokenEntity, Lo
      * @return the existing unlimited token, or empty if none exists
      */
     Optional<ShareTokenEntity> findFirstByFileAndTokenExpirationDateIsNullAndNumberOfAllowedDownloadsIsNull(FileEntity file);
+
+    /**
+     * Returns all share tokens for the given file. Used when deleting a file to clean
+     * up all associated sidecars before removing token rows.
+     *
+     * @param file the file whose tokens should be returned
+     * @return all tokens associated with the file
+     */
+    List<ShareTokenEntity> findAllByFile(FileEntity file);
+
+    /**
+     * Returns {@code true} if the file has at least one share token that has neither
+     * expired nor exhausted its download allowance. Used by the maintenance job to
+     * decide whether a legacy {@code {uuid}-decrypted} sidecar should be preserved.
+     *
+     * @param file the file to check
+     * @return {@code true} if an active share token exists
+     */
+    @Query("SELECT CASE WHEN COUNT(s) > 0 THEN true ELSE false END FROM ShareTokenEntity s WHERE s.file = :file AND (s.tokenExpirationDate IS NULL OR s.tokenExpirationDate >= CURRENT_DATE) AND (s.numberOfAllowedDownloads IS NULL OR s.numberOfAllowedDownloads > 0)")
+    boolean existsValidTokenForFile(@Param("file") FileEntity file);
 }

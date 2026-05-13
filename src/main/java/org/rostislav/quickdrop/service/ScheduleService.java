@@ -13,6 +13,9 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.scheduling.support.CronTrigger;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -45,6 +48,7 @@ public class ScheduleService {
     private final ThreadPoolTaskScheduler taskScheduler = new ThreadPoolTaskScheduler();
     private final FileHistoryLogRepository fileHistoryLogRepository;
     private final ShareTokenRepository shareTokenRepository;
+    private final ApplicationSettingsService applicationSettingsService;
     private ScheduledFuture<?> scheduledTask;
 
     /**
@@ -52,13 +56,14 @@ public class ScheduleService {
      */
     private volatile String currentCron;
 
-    public ScheduleService(FileRepository fileRepository, FileService fileService, FileHistoryLogRepository fileHistoryLogRepository, ShareTokenRepository shareTokenRepository) {
+    public ScheduleService(FileRepository fileRepository, FileService fileService, FileHistoryLogRepository fileHistoryLogRepository, ShareTokenRepository shareTokenRepository, ApplicationSettingsService applicationSettingsService) {
         this.fileRepository = fileRepository;
         this.fileService = fileService;
         taskScheduler.setPoolSize(1);
         taskScheduler.initialize();
         this.fileHistoryLogRepository = fileHistoryLogRepository;
         this.shareTokenRepository = shareTokenRepository;
+        this.applicationSettingsService = applicationSettingsService;
     }
 
     /**
@@ -138,8 +143,11 @@ public class ScheduleService {
     }
 
     /**
-     * Removes database rows for files whose physical file no longer exists on disk.
-     * Runs daily at 03:00 to catch files deleted outside the application.
+     * Removes database rows for files whose physical file no longer exists on disk,
+     * then cleans up any orphaned legacy {@code {uuid}-decrypted} sidecar files whose
+     * share tokens have all expired or been exhausted.
+     *
+     * <p>Runs daily at 03:00.
      */
     @Transactional
     @Scheduled(cron = "0 0 3 * * *")
@@ -151,11 +159,40 @@ public class ScheduleService {
                 fileService.removeFileFromDatabase(file.uuid);
             }
         });
+
+        // Remove legacy plaintext {uuid}-decrypted sidecars that have no active share tokens
+        Path storageDir = Path.of(applicationSettingsService.getFileStoragePath());
+        try (var paths = Files.list(storageDir)) {
+            paths.filter(p -> p.getFileName().toString().endsWith("-decrypted"))
+                    .forEach(p -> {
+                        String uuid = p.getFileName().toString().replace("-decrypted", "");
+                        fileRepository.findByUUID(uuid).ifPresentOrElse(
+                                file -> {
+                                    if (!shareTokenRepository.existsValidTokenForFile(file)) {
+                                        tryDelete(p);
+                                    }
+                                },
+                                () -> tryDelete(p)
+                        );
+                    });
+        } catch (IOException e) {
+            logger.error("Error scanning storage directory for legacy sidecars: {}", e.getMessage());
+        }
+    }
+
+    private void tryDelete(Path path) {
+        try {
+            Files.deleteIfExists(path);
+            logger.info("Deleted legacy decrypted sidecar: {}", path);
+        } catch (IOException e) {
+            logger.warn("Failed to delete legacy sidecar: {}", path);
+        }
     }
 
     /**
      * Deletes share tokens that have either passed their expiry date or exhausted
-     * their download allowance. Runs daily at 03:30.
+     * their download allowance, and removes their associated re-encrypted sidecars.
+     * Runs daily at 03:30.
      */
     @Transactional
     @Scheduled(cron = "0 30 3 * * *")
@@ -163,6 +200,7 @@ public class ScheduleService {
         logger.info("Cleaning invalid share tokens");
         List<ShareTokenEntity> toDelete = shareTokenRepository.getShareTokenEntitiesForDeletion();
         if (!toDelete.isEmpty()) {
+            toDelete.forEach(fileService::deleteShareSidecar);
             shareTokenRepository.deleteAll(toDelete);
             logger.info("Deleted {} invalid share tokens", toDelete.size());
         } else {

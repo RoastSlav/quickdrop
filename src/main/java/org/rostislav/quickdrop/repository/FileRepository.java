@@ -2,6 +2,7 @@ package org.rostislav.quickdrop.repository;
 
 import org.rostislav.quickdrop.entity.FileEntity;
 import org.rostislav.quickdrop.model.FileEntityView;
+import org.rostislav.quickdrop.model.PasteEntityView;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -24,6 +25,19 @@ public interface FileRepository extends JpaRepository<FileEntity, Long> {
 
     @Query("SELECT SUM(f.size) FROM FileEntity f")
     Long totalFileSizeForAllFiles();
+
+    @Query("SELECT SUM(f.size) FROM FileEntity f WHERE f.paste = false")
+    Long totalFileSizeForFilesOnly();
+
+    long countByPasteFalse();
+
+    long countByPasteTrue();
+
+    @Query("SELECT AVG(f.size) FROM FileEntity f WHERE f.paste = true")
+    Double averagePasteLength();
+
+    @Query("SELECT COUNT(f) FROM FileEntity f WHERE f.paste = true AND f.name LIKE '%.md'")
+    long countMarkdownPastes();
 
     @Query(value = "SELECT f FROM FileEntity f WHERE f.hidden = false AND f.paste = false AND (LOWER(f.name) LIKE LOWER(CONCAT('%', :searchString, '%')) OR LOWER(f.description) LIKE LOWER(CONCAT('%', :searchString, '%')) OR LOWER(f.uuid) LIKE LOWER(CONCAT('%', :searchString, '%'))) ORDER BY f.uploadDate DESC",
             countQuery = "SELECT COUNT(f) FROM FileEntity f WHERE f.hidden = false AND f.paste = false AND (LOWER(f.name) LIKE LOWER(CONCAT('%', :searchString, '%')) OR LOWER(f.description) LIKE LOWER(CONCAT('%', :searchString, '%')) OR LOWER(f.uuid) LIKE LOWER(CONCAT('%', :searchString, '%')))")
@@ -59,4 +73,34 @@ public interface FileRepository extends JpaRepository<FileEntity, Long> {
             """,
             countQuery = "SELECT COUNT(f) FROM FileEntity f WHERE f.paste = false AND (LOWER(f.name) LIKE LOWER(CONCAT('%', :searchString, '%')) OR LOWER(f.description) LIKE LOWER(CONCAT('%', :searchString, '%')) OR LOWER(f.uuid) LIKE LOWER(CONCAT('%', :searchString, '%')))")
     Page<FileEntityView> searchFilesWithDownloadCounts(@Param("searchString") String query, Pageable pageable);
+
+    @Query(value = """
+                SELECT new org.rostislav.quickdrop.model.PasteEntityView(
+                    f,
+                    CAST(SUM(CASE WHEN vl.id IS NOT NULL THEN 1 ELSE 0 END) AS long)
+                )
+                FROM FileEntity f
+                LEFT JOIN FileHistoryLog vl ON vl.file.id = f.id AND vl.eventType = 'PASTE_VIEW'
+                WHERE f.paste = true
+                GROUP BY f
+                ORDER BY f.uploadDate DESC
+            """,
+            countQuery = "SELECT COUNT(f) FROM FileEntity f WHERE f.paste = true")
+    Page<PasteEntityView> findPastesWithViewCounts(Pageable pageable);
+
+    @Query(value = """
+                SELECT new org.rostislav.quickdrop.model.PasteEntityView(
+                    f,
+                    CAST(SUM(CASE WHEN vl.id IS NOT NULL THEN 1 ELSE 0 END) AS long)
+                )
+                FROM FileEntity f
+                LEFT JOIN FileHistoryLog vl ON vl.file.id = f.id AND vl.eventType = 'PASTE_VIEW'
+                WHERE f.paste = true
+                    AND (LOWER(f.name) LIKE LOWER(CONCAT('%', :searchString, '%'))
+                    OR LOWER(f.uuid) LIKE LOWER(CONCAT('%', :searchString, '%')))
+                GROUP BY f
+                ORDER BY f.uploadDate DESC
+            """,
+            countQuery = "SELECT COUNT(f) FROM FileEntity f WHERE f.paste = true AND (LOWER(f.name) LIKE LOWER(CONCAT('%', :searchString, '%')) OR LOWER(f.uuid) LIKE LOWER(CONCAT('%', :searchString, '%')))")
+    Page<PasteEntityView> searchPastesWithViewCounts(@Param("searchString") String query, Pageable pageable);
 }

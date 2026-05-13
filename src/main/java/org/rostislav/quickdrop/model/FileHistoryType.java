@@ -4,5 +4,8 @@ public enum FileHistoryType {
     UPLOAD,
     DOWNLOAD,
     RENEWAL,
-    DELETION
+    DELETION,
+    PASTE_CREATE,
+    PASTE_VIEW,
+    PASTE_EDIT
 }

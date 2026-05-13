@@ -5,6 +5,8 @@ import org.rostislav.quickdrop.entity.FileEntity;
 import org.rostislav.quickdrop.model.FileHistoryType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
@@ -14,9 +16,6 @@ import java.util.*;
 import java.util.concurrent.*;
 
 import static org.rostislav.quickdrop.util.DataValidator.safeString;
-
-import org.springframework.context.MessageSource;
-import org.springframework.context.i18n.LocaleContextHolder;
 
 @Service
 public class NotificationService {
@@ -58,6 +57,9 @@ public class NotificationService {
             case DOWNLOAD -> "downloaded";
             case RENEWAL -> "renewed";
             case DELETION -> "deleted";
+            case PASTE_CREATE -> "created (paste)";
+            case PASTE_VIEW -> "viewed (paste)";
+            case PASTE_EDIT -> "edited (paste)";
         };
 
         String summary = "File '" + file.name + "' (" + file.uuid + ") was " + event + ".";

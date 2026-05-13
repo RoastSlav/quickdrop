@@ -38,6 +38,14 @@ public class ShareTokenEntity {
      */
     @Column(name = "number_of_allowed_downloads")
     public Integer numberOfAllowedDownloads;
+    /**
+     * BCrypt hash of the randomly generated share key embedded in the share URL.
+     * {@code null} for tokens created before this feature or for non-encrypted files.
+     * When non-null, the sidecar at {@code {uuid}-share-{shareToken}} is AES-encrypted
+     * under the share key and the key must be verified before streaming.
+     */
+    @Column(name = "share_key_hash")
+    public String shareKeyHash;
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

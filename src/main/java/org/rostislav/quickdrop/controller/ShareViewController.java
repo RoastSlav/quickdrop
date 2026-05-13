@@ -1,5 +1,6 @@
 package org.rostislav.quickdrop.controller;
 
+import jakarta.servlet.http.HttpServletRequest;
 import org.rostislav.quickdrop.entity.FileEntity;
 import org.rostislav.quickdrop.entity.ShareTokenEntity;
 import org.rostislav.quickdrop.model.FileEntityView;
@@ -7,11 +8,13 @@ import org.rostislav.quickdrop.service.AnalyticsService;
 import org.rostislav.quickdrop.service.FileService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.Optional;
 
@@ -30,21 +33,35 @@ public class ShareViewController {
     private static final Logger logger = LoggerFactory.getLogger(ShareViewController.class);
     private final FileService fileService;
     private final AnalyticsService analyticsService;
+    private final PasswordEncoder passwordEncoder;
 
-    public ShareViewController(FileService fileService, AnalyticsService analyticsService) {
+    public ShareViewController(FileService fileService, AnalyticsService analyticsService, PasswordEncoder passwordEncoder) {
         this.fileService = fileService;
         this.analyticsService = analyticsService;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @GetMapping("/{token}")
-    public String viewSharedFile(@PathVariable String token, Model model) {
+    public String viewSharedFile(@PathVariable String token,
+                                 @RequestParam(required = false) String key,
+                                 HttpServletRequest request,
+                                 Model model) {
         Optional<ShareTokenEntity> tokenEntity = fileService.getShareTokenEntityByToken(token);
 
         if (tokenEntity.isEmpty() || !validateShareToken(tokenEntity.get())) {
             return "invalid-share-link";
         }
 
-        FileEntity file = tokenEntity.get().file;
+        ShareTokenEntity shareToken = tokenEntity.get();
+
+        if (shareToken.shareKeyHash != null) {
+            if (key == null || !passwordEncoder.matches(key, shareToken.shareKeyHash)) {
+                return "invalid-share-link";
+            }
+            request.getSession().setAttribute("share-key-" + token, key);
+        }
+
+        FileEntity file = shareToken.file;
         if (file == null) {
             return "redirect:/file/list";
         }

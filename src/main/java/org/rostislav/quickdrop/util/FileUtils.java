@@ -316,16 +316,13 @@ public class FileUtils {
     }
 
     /**
-     * Streams a file to the output stream, then deletes any temporary decrypted copy.
+     * Streams a file to the output stream.
      *
-     * <p>If {@code filePathToStream} equals {@code decryptedFilePath}, the file is
-     * assumed to be a temporary decrypted copy and is deleted after streaming.
-     *
-     * @param filePathToStream  path of the file to read (may be the decrypted copy)
-     * @param decryptedFilePath expected path of any temporary decrypted file
+     * @param filePathToStream  path of the file to read
+     * @param decryptedFilePath unused — retained for call-site compatibility
      * @param uuid              file UUID (used in log messages only)
      * @param outputStream      destination output stream
-     * @throws IOException if streaming or cleanup fails
+     * @throws IOException if streaming fails
      */
     public static void streamFile(Path filePathToStream, Path decryptedFilePath, String uuid, OutputStream outputStream) throws IOException {
         try (InputStream in = Files.newInputStream(filePathToStream)) {
@@ -338,15 +335,6 @@ public class FileUtils {
         } catch (IOException e) {
             logger.error("Error streaming file for UUID: {}", uuid, e);
             throw e;
-        } finally {
-            if (filePathToStream != null && filePathToStream.equals(decryptedFilePath)) {
-                try {
-                    Files.deleteIfExists(decryptedFilePath);
-                    logger.info("Deleted decrypted file after download: {}", decryptedFilePath);
-                } catch (IOException e) {
-                    logger.error("Failed to delete decrypted file: {}", decryptedFilePath, e);
-                }
-            }
         }
     }
 }

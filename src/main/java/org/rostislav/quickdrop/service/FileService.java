@@ -215,6 +215,9 @@ public class FileService {
      * Removes a file record from the database along with its share tokens and history logs,
      * and sends a deletion notification. Does not touch the filesystem.
      *
+     * <p>All share sidecars ({@code {uuid}-share-{token}}) are deleted before the token
+     * rows are removed so no orphaned encrypted sidecars remain on disk.
+     *
      * @param uuid the file UUID
      * @return {@code true} if the record was found and removed, {@code false} if not found
      */
@@ -229,6 +232,7 @@ public class FileService {
         FileEntity fileEntity = referenceById.get();
         notificationService.notifyFileAction(fileEntity, FileHistoryType.DELETION);
 
+        shareTokenRepository.findAllByFile(fileEntity).forEach(this::deleteShareSidecar);
         shareTokenRepository.deleteAllByFile(fileEntity);
         fileHistoryLogRepository.deleteByFileId(fileEntity.id);
         fileRepository.delete(fileEntity);
@@ -809,12 +813,16 @@ public class FileService {
      * a share token, decrementing the remaining download count and deleting the token
      * when exhausted.
      *
-     * <p>If a pre-decrypted sidecar file exists alongside the encrypted original it is
-     * streamed directly; otherwise the encrypted file is streamed as-is (the share token
-     * flow creates a sidecar for encrypted files at token generation time).
+     * <p>New-style tokens (where {@link ShareTokenEntity#shareKeyHash} is non-null) have an
+     * AES-encrypted sidecar at {@code {uuid}-share-{token}}. The share key is read from the
+     * HTTP session (stored there by {@link org.rostislav.quickdrop.controller.ShareViewController}
+     * after BCrypt verification) and used to decrypt the sidecar on-the-fly.
+     *
+     * <p>Legacy tokens ({@code shareKeyHash == null}) fall back to streaming a plaintext
+     * {@code {uuid}-decrypted} sidecar if one exists, or the raw file otherwise.
      *
      * @param shareTokenEntity the validated share token
-     * @param request          the HTTP request (for history logging)
+     * @param request          the HTTP request (for history logging and session key lookup)
      * @return a streaming body, or {@code null} if the token is invalid
      */
     @CacheEvict(value = {"adminFiles", "analytics"}, allEntries = true)
@@ -824,23 +832,52 @@ public class FileService {
         }
 
         FileEntity fileEntity = shareTokenEntity.file;
-        Path decryptedFilePath = Path.of(applicationSettingsService.getFileStoragePath(), fileEntity.uuid + "-decrypted");
-        Path filePathToStream = Files.exists(decryptedFilePath) ? decryptedFilePath : Path.of(applicationSettingsService.getFileStoragePath(), fileEntity.uuid);
+        String storagePath = applicationSettingsService.getFileStoragePath();
 
         logHistory(fileEntity, request, FileHistoryType.DOWNLOAD);
 
-        return outputStream -> {
-            try {
-                streamFile(filePathToStream, decryptedFilePath, fileEntity.uuid, outputStream);
-            } finally {
-                updateShareTokenAfterDownload(shareTokenEntity, fileEntity);
-            }
-        };
+        if (shareTokenEntity.shareKeyHash != null) {
+            Path sidecarPath = Path.of(storagePath, fileEntity.uuid + "-share-" + shareTokenEntity.shareToken);
+            String shareKey = (String) request.getSession().getAttribute("share-key-" + shareTokenEntity.shareToken);
+            return outputStream -> {
+                try {
+                    InputStream decIn;
+                    try {
+                        decIn = fileEncryptionService.getDecryptedInputStream(sidecarPath.toFile(), shareKey);
+                    } catch (Exception e) {
+                        throw new IOException("Failed to decrypt share sidecar", e);
+                    }
+                    try (decIn) {
+                        byte[] buffer = new byte[8192];
+                        int bytesRead;
+                        while ((bytesRead = decIn.read(buffer)) != -1) {
+                            outputStream.write(buffer, 0, bytesRead);
+                        }
+                        outputStream.flush();
+                    }
+                } finally {
+                    updateShareTokenAfterDownload(shareTokenEntity, fileEntity);
+                }
+            };
+        } else {
+            // Legacy path: stream plaintext sidecar if it exists, otherwise raw file
+            Path decryptedFilePath = Path.of(storagePath, fileEntity.uuid + "-decrypted");
+            Path filePathToStream = Files.exists(decryptedFilePath)
+                    ? decryptedFilePath
+                    : Path.of(storagePath, fileEntity.uuid);
+            return outputStream -> {
+                try {
+                    streamFile(filePathToStream, decryptedFilePath, fileEntity.uuid, outputStream);
+                } finally {
+                    updateShareTokenAfterDownload(shareTokenEntity, fileEntity);
+                }
+            };
+        }
     }
 
     /**
      * Decrements the remaining download count on a share token after a successful
-     * download and deletes the token if it is now exhausted or expired.
+     * download and deletes the token (and its sidecar) if it is now exhausted or expired.
      *
      * @param shareTokenEntity the share token to update
      * @param fileEntity       the file that was streamed (used only for logging)
@@ -851,11 +888,31 @@ public class FileService {
         }
 
         if (!validateShareToken(shareTokenEntity)) {
+            deleteShareSidecar(shareTokenEntity);
             shareTokenRepository.delete(shareTokenEntity);
         } else {
             shareTokenRepository.save(shareTokenEntity);
         }
         logger.info("Share token updated/invalidated. File streamed successfully: {}", fileEntity.name);
+    }
+
+    /**
+     * Deletes the re-encrypted sidecar file for a share token, if one exists.
+     * Only acts on new-style tokens ({@link ShareTokenEntity#shareKeyHash} non-null).
+     * Silently ignores missing files.
+     *
+     * @param token the share token whose sidecar should be removed
+     */
+    void deleteShareSidecar(ShareTokenEntity token) {
+        if (token.shareKeyHash == null || token.file == null) return;
+        Path sidecar = Path.of(applicationSettingsService.getFileStoragePath(),
+                token.file.uuid + "-share-" + token.shareToken);
+        try {
+            Files.deleteIfExists(sidecar);
+            logger.info("Deleted share sidecar: {}", sidecar);
+        } catch (IOException e) {
+            logger.warn("Failed to delete share sidecar: {}", sidecar);
+        }
     }
 
     /**
@@ -967,50 +1024,63 @@ public class FileService {
     }
 
     /**
-     * Generates (or returns an existing) share token for a file, decrypting it first
-     * if the file is encrypted so that share-link recipients do not need the password.
+     * Generates a share token for a password-protected file.
      *
-     * <p>The decrypted sidecar is stored alongside the encrypted file with a
-     * {@code -decrypted} suffix. If the sidecar already exists it is not recreated.
+     * <p>For encrypted files a randomly generated share key is used to re-encrypt the
+     * file content into a sidecar at {@code {uuid}-share-{token}}. No plaintext copy
+     * ever touches disk. The share key is returned so the caller can embed it in the
+     * share URL; only its BCrypt hash is persisted in the database.
+     *
+     * <p>For files with a password but encryption disabled, the non-encrypted 3-param
+     * overload handles token creation (reusing unlimited tokens when applicable) and this
+     * method wraps the result with a {@code null} share key.
      *
      * @param uuid                the file UUID
      * @param tokenExpirationDate optional expiry date
-     * @param sessionToken        file session token (provides the decryption password)
+     * @param sessionToken        file session token (provides the decryption password for encrypted files)
      * @param numberOfDownloads   optional download limit
-     * @return the new or existing {@link ShareTokenEntity}
+     * @return a result holding the new {@link ShareTokenEntity} and the plaintext share key
+     *         (the key is {@code null} when the file is not encrypted)
      * @throws IllegalArgumentException if the UUID is not found
-     * @throws RuntimeException         if decryption of the encrypted file fails
+     * @throws RuntimeException         if sidecar re-encryption fails
      */
-    public ShareTokenEntity generateShareToken(String uuid, LocalDate tokenExpirationDate, String sessionToken, Integer numberOfDownloads) {
+    public ShareTokenResult generateShareToken(String uuid, LocalDate tokenExpirationDate, String sessionToken, Integer numberOfDownloads) {
         Optional<FileEntity> optionalFile = fileRepository.findByUUID(uuid);
         if (optionalFile.isEmpty()) {
             throw new IllegalArgumentException("File not found");
         }
 
         FileEntity file = optionalFile.get();
-        if (tokenExpirationDate == null && numberOfDownloads == null) {
-            Optional<ShareTokenEntity> existing = findUnlimitedShareToken(file);
-            if (existing.isPresent()) {
-                return existing.get();
-            }
+
+        if (!file.encrypted) {
+            // Non-encrypted but password-protected: delegate to the plain overload
+            ShareTokenEntity shareToken = generateShareToken(uuid, tokenExpirationDate, numberOfDownloads);
+            return new ShareTokenResult(shareToken, null);
         }
+
+        // Encrypted: generate a fresh token with a re-encrypted sidecar every time
+        String shareKey = java.util.UUID.randomUUID().toString();
+        String token = generateUniqueShareToken(file);
         Path encryptedFilePath = Path.of(applicationSettingsService.getFileStoragePath(), file.uuid);
-        Path decryptedFilePath = encryptedFilePath.resolveSibling(file.uuid + "-decrypted");
+        Path sidecarPath = Path.of(applicationSettingsService.getFileStoragePath(), file.uuid + "-share-" + token);
 
-        if (file.encrypted && !Files.exists(decryptedFilePath)) {
-            try {
-                String password = sessionService.getPasswordForFileSessionToken(sessionToken).getPassword();
-                fileEncryptionService.decryptFile(encryptedFilePath.toFile(), decryptedFilePath.toFile(), password);
-                logger.info("Decrypted file created alongside encrypted file: {}", decryptedFilePath);
-            } catch (Exception e) {
-                logger.error("Error decrypting file for sharing: {}", e.getMessage());
-                throw new RuntimeException("Failed to decrypt file", e);
+        try {
+            String password = sessionService.getPasswordForFileSessionToken(sessionToken).getPassword();
+            try (InputStream decIn = fileEncryptionService.getDecryptedInputStream(encryptedFilePath.toFile(), password);
+                 OutputStream encOut = fileEncryptionService.getEncryptedOutputStream(sidecarPath.toFile(), shareKey)) {
+                decIn.transferTo(encOut);
             }
+            logger.info("Re-encrypted sidecar created for share token: {}", sidecarPath);
+        } catch (Exception e) {
+            logger.error("Error creating re-encrypted sidecar for sharing: {}", e.getMessage());
+            throw new RuntimeException("Failed to create share sidecar", e);
         }
 
-        ShareTokenEntity shareToken = generateShareToken(uuid, tokenExpirationDate, numberOfDownloads);
-        logger.info("Share token generated for file: {}", file.name);
-        return shareToken;
+        ShareTokenEntity shareToken = new ShareTokenEntity(token, file, tokenExpirationDate, numberOfDownloads);
+        shareToken.shareKeyHash = passwordEncoder.encode(shareKey);
+        shareTokenRepository.save(shareToken);
+        logger.info("Share token generated for encrypted file: {}", file.name);
+        return new ShareTokenResult(shareToken, shareKey);
     }
 
     /**
@@ -1082,5 +1152,14 @@ public class FileService {
      * @param password         effective access password (may be {@code null} if disabled)
      */
     private record PasteUploadOptions(boolean keepIndefinitely, String password) {
+    }
+
+    /**
+     * Holds the result of generating a share token for a password-protected file.
+     *
+     * @param token    the persisted share token entity
+     * @param shareKey the plaintext share key to embed in the URL, or {@code null} for non-encrypted files
+     */
+    public record ShareTokenResult(ShareTokenEntity token, String shareKey) {
     }
 }

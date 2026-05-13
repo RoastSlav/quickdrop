@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta content="width=device-width, initial-scale=1" name="viewport"/>
+    <title th:text="#{page.adminPasteHistory.title.browser(${appName})}">Paste History — Admin</title>
+    <link href="https://fonts.googleapis.com" rel="preconnect"/>
+    <link crossorigin href="https://fonts.gstatic.com" rel="preconnect"/>
+    <link href="/css/tailwind.css" rel="stylesheet"/>
+    <link href="/css/custom.css" rel="stylesheet"/>
+    <link href="/images/favicon.png" rel="icon" th:href="${appLogoPath}" type="image/png"/>
+    <script src="/js/tailwindTheme.js"></script>
+    <script src="/js/counter.js"></script>
+    <th:block th:replace="~{fragments/header :: scripts}"></th:block>
+</head>
+<body>
+
+<div th:replace="~{fragments/header :: header(true)}"></div>
+
+<div aria-hidden="true" class="orb-field">
+    <div class="orb orb--primary"></div>
+    <div class="orb orb--secondary"></div>
+</div>
+
+<main class="flex-1 hero-scene">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
+
+        <!-- Back -->
+        <div class="mb-6 animate-in">
+            <a class="btn btn-ghost btn-sm inline-flex items-center gap-1.5" href="/admin/pastes">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span th:text="#{page.adminPastes.title}">Pastes</span>
+            </a>
+        </div>
+
+        <!-- Hero header -->
+        <div class="text-center mb-10 animate-in">
+      <span class="section-eyebrow inline-flex items-center gap-2 mb-3">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--c-primary)"
+             viewBox="0 0 24 24">
+          <path d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span th:text="#{page.adminPasteHistory.title}">Paste History</span>
+      </span>
+            <h1 class="page-title-xl mb-2">
+        <span class="gradient-text break-all"
+              th:text="${#strings.isEmpty(paste.name) ? #messages.msg('page.pasteView.untitled') : paste.name}">Paste</span>
+            </h1>
+            <div class="flex items-center justify-center gap-2 mt-2">
+                <span class="badge font-mono text-xs" style="background:var(--c-indigo-muted);color:var(--c-indigo)"
+                      th:if="${paste.isMarkdown}" th:text="#{page.adminPastes.markdown}">Markdown</span>
+                <span class="badge badge-neutral font-mono text-xs" th:if="${!paste.isMarkdown}"
+                      th:text="#{page.adminPastes.plainText}">Plain Text</span>
+                <span class="badge badge-neutral font-mono text-xs" th:if="${paste.passwordProtected}">🔒</span>
+            </div>
+        </div>
+
+        <!-- Stats row -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-8 animate-in animate-in-delay-1">
+            <div class="stat-hero stat-hero--primary">
+                <span class="stat-hero-label" th:text="#{page.history.size}">Size</span>
+                <span class="stat-hero-value stat-hero-value--sm" th:text="${paste.size}">—</span>
+            </div>
+            <div class="stat-hero stat-hero--secondary">
+                <span class="stat-hero-label" th:text="#{page.history.uploadDate}">Created</span>
+                <span class="stat-hero-value stat-hero-value--sm"
+                      th:text="${#temporals.format(paste.uploadDate, 'dd.MM.yyyy')}">—</span>
+            </div>
+            <div class="stat-hero stat-hero--teal">
+                <span class="stat-hero-label" th:text="#{page.adminPasteHistory.totalViews}">Total Views</span>
+                <span class="stat-hero-value stat-hero-value--sm"
+                      th:attr="data-counter-target=${paste.totalViews}"
+                      th:text="${paste.totalViews}">—</span>
+            </div>
+        </div>
+
+        <!-- History table -->
+        <div class="card card-lg animate-in animate-in-delay-2">
+            <h2 class="section-title flex items-center gap-2 mb-5">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" style="color:var(--c-primary)"
+                     viewBox="0 0 24 24">
+                    <path d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0ZM3.75 12h.007v.008H3.75V12Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm-.375 5.25h.007v.008H3.75v-.008Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"/>
+                </svg>
+                <span th:text="#{page.history.downloadHistory}">Activity Log</span>
+            </h2>
+
+            <div class="overflow-x-auto rounded-xl border" style="border-color:var(--c-border)">
+                <table class="data-table">
+                    <thead>
+                    <tr>
+                        <th th:text="#{page.history.date}">Date</th>
+                        <th th:text="#{page.history.action}">Action</th>
+                        <th th:text="#{page.history.ipAddress}">IP Address</th>
+                        <th th:text="#{page.history.userAgent}">User Agent</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="log : ${actionLogs}">
+                        <td class="whitespace-nowrap font-mono text-xs"
+                            th:text="${#temporals.format(log.actionDate, 'dd.MM.yyyy HH:mm:ss')}">01.01.2025 00:00:00
+                        </td>
+                        <td class="whitespace-nowrap">
+                            <span class="badge badge-neutral" th:text="#{|page.history.actionType.${log.actionType}|}">Action</span>
+                        </td>
+                        <td class="whitespace-nowrap font-mono text-xs" th:text="${log.ipAddress}">127.0.0.1</td>
+                        <td class="max-w-xs break-words text-xs" style="color:var(--c-text-muted)"
+                            th:text="${log.userAgent}">
+                            Mozilla/5.0…
+                        </td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(actionLogs)}">
+                        <td class="text-center py-12" colspan="4" style="color:var(--c-text-muted)">
+                            <div class="flex flex-col items-center gap-3">
+                                <div class="gate-icon gate-icon--primary" style="width:3rem;height:3rem">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.5"
+                                         viewBox="0 0 24 24">
+                                        <path d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+                                              stroke-linecap="round"
+                                              stroke-linejoin="round"/>
+                                    </svg>
+                                </div>
+                                <span th:text="#{page.history.noHistory}">No history available.</span>
+                            </div>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+</main>
+
+<script src="/js/locale-switcher.js"></script>
+</body>
+</html>

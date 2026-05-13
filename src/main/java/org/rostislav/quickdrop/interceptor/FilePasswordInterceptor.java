@@ -11,6 +11,17 @@ import org.springframework.web.servlet.HandlerMapping;
 
 import java.util.Map;
 
+/**
+ * Enforces per-file password requirements on {@code /file/**} routes.
+ *
+ * <p>When a password-protected file is accessed without a valid file session token
+ * in the HTTP session, the request is redirected to the password entry page
+ * ({@code /file/password/{uuid}}). Shared file downloads ({@code GET /file/share/**})
+ * bypass this check because they are validated separately by share token.
+ *
+ * <p>Routes excluded from this interceptor (e.g. upload, list, paste) are declared
+ * in {@link org.rostislav.quickdrop.config.WebConfig}.
+ */
 @Component
 public class FilePasswordInterceptor implements HandlerInterceptor {
 
@@ -22,12 +33,22 @@ public class FilePasswordInterceptor implements HandlerInterceptor {
         this.sessionService = sessionService;
     }
 
+    /**
+     * Extracts the {@code uuid} path variable and checks whether the file requires
+     * a password. If so, verifies a valid file session token in the HTTP session.
+     *
+     * @param request  the incoming HTTP request
+     * @param response the HTTP response
+     * @param handler  the matched handler (unused)
+     * @return {@code true} to continue the handler chain; {@code false} after redirecting or sending an error
+     * @throws Exception if the redirect or error response fails
+     */
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
         @SuppressWarnings("unchecked")
         Map<String, String> pathVariables = (Map<String, String>) request.getAttribute(HandlerMapping.URI_TEMPLATE_VARIABLES_ATTRIBUTE);
 
-        //For shared files, no password is required
+        // Shared file downloads use a token rather than a password session
         if ("GET".equalsIgnoreCase(request.getMethod()) && request.getRequestURI().startsWith("/file/share/")) {
             return true;
         }

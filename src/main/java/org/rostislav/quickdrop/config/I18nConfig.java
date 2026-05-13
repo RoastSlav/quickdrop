@@ -16,6 +16,19 @@ import org.springframework.web.servlet.i18n.LocaleChangeInterceptor;
 import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 
+/**
+ * Spring MVC internationalisation (i18n) configuration.
+ *
+ * <p>Locale is persisted in a cookie named {@code lang} (24-hour TTL). When no
+ * cookie is present the default locale is read from
+ * {@link ApplicationSettingsService#getDefaultLanguage()} so that the admin can
+ * change the site-wide default without restarting. Users can switch locale by
+ * appending {@code ?lang=<tag>} to any request URL.
+ *
+ * <p>Message bundles are loaded from {@code classpath:messages*.properties} with
+ * UTF-8 encoding. Validation messages resolve through the same {@link MessageSource}
+ * so that constraint violation texts are also translated.
+ */
 @Configuration
 public class I18nConfig implements WebMvcConfigurer {
 
@@ -25,6 +38,11 @@ public class I18nConfig implements WebMvcConfigurer {
         this.applicationSettingsService = applicationSettingsService;
     }
 
+    /**
+     * Registers the reloadable message source backed by {@code messages*.properties} files.
+     *
+     * @return configured message source
+     */
     @Bean
     public MessageSource messageSource() {
         ReloadableResourceBundleMessageSource messageSource = new ReloadableResourceBundleMessageSource();
@@ -35,6 +53,11 @@ public class I18nConfig implements WebMvcConfigurer {
         return messageSource;
     }
 
+    /**
+     * Cookie-based locale resolver whose default locale is driven by the application settings.
+     *
+     * @return configured locale resolver
+     */
     @Bean
     public LocaleResolver localeResolver() {
         CookieLocaleResolver resolver = new CookieLocaleResolver();
@@ -50,6 +73,11 @@ public class I18nConfig implements WebMvcConfigurer {
         return resolver;
     }
 
+    /**
+     * Interceptor that switches the active locale when a {@code lang} query parameter is present.
+     *
+     * @return configured interceptor
+     */
     @Bean
     public LocaleChangeInterceptor localeChangeInterceptor() {
         LocaleChangeInterceptor interceptor = new LocaleChangeInterceptor();
@@ -57,6 +85,12 @@ public class I18nConfig implements WebMvcConfigurer {
         return interceptor;
     }
 
+    /**
+     * Validator factory that uses the application's {@link MessageSource} for constraint messages.
+     *
+     * @param messageSource the message source to resolve validation messages from
+     * @return configured validator factory
+     */
     @Bean
     public LocalValidatorFactoryBean validator(MessageSource messageSource) {
         LocalValidatorFactoryBean factoryBean = new LocalValidatorFactoryBean();
@@ -74,5 +108,3 @@ public class I18nConfig implements WebMvcConfigurer {
         return validator(messageSource());
     }
 }
-
-

@@ -4,6 +4,19 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import org.rostislav.quickdrop.entity.ApplicationSettingsEntity;
 
+/**
+ * Form-backing model for the admin settings page.
+ *
+ * <p>Mirrors {@link org.rostislav.quickdrop.entity.ApplicationSettingsEntity} with
+ * Jakarta Bean Validation annotations for server-side constraint checking. The
+ * {@link #ApplicationSettingsViewModel(org.rostislav.quickdrop.entity.ApplicationSettingsEntity)}
+ * constructor maps from the entity, and
+ * {@link org.rostislav.quickdrop.service.ApplicationSettingsService#updateApplicationSettings}
+ * maps back to the entity on save.
+ *
+ * <p>Note: {@link #maxFileSize} is converted between bytes (entity) and megabytes
+ * (form field) in the controller layer.
+ */
 public class ApplicationSettingsViewModel {
     private Long id;
 

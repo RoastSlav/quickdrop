@@ -13,6 +13,18 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.spec.InvalidKeySpecException;
 
+/**
+ * AES/CBC encryption and decryption service for uploaded files.
+ *
+ * <p>When a file is uploaded with a password and encryption is enabled, the
+ * file is stored on disk in an encrypted format. The on-disk layout is:
+ * <pre>
+ *   [16 bytes salt][16 bytes IV][AES-CBC ciphertext…]
+ * </pre>
+ * The AES key is derived from the user-supplied password and the stored salt
+ * using PBKDF2/HMAC-SHA256 with {@value #ITERATION_COUNT} iterations and a
+ * {@value #KEY_LENGTH}-bit output.
+ */
 @Service
 public class FileEncryptionService {
 
@@ -21,6 +33,15 @@ public class FileEncryptionService {
     private static final int ITERATION_COUNT = 65536;
     private static final int KEY_LENGTH = 128;
 
+    /**
+     * Derives a 128-bit AES key from a password and salt using PBKDF2/HMAC-SHA256.
+     *
+     * @param password the cleartext password
+     * @param salt     16-byte random salt
+     * @return the derived AES secret key
+     * @throws NoSuchAlgorithmException if PBKDF2WithHmacSHA256 is unavailable
+     * @throws InvalidKeySpecException  if the key specification is invalid
+     */
     public SecretKey generateKeyFromPassword(String password, byte[] salt)
             throws NoSuchAlgorithmException, InvalidKeySpecException {
         PBEKeySpec spec = new PBEKeySpec(password.toCharArray(), salt, ITERATION_COUNT, KEY_LENGTH);
@@ -35,14 +56,26 @@ public class FileEncryptionService {
         return bytes;
     }
 
-    @SuppressWarnings("ResultOfMethodCallIgnored")
+    /**
+     * Decrypts an AES/CBC-encrypted file to a plaintext output file.
+     *
+     * <p>Reads the 16-byte salt and 16-byte IV from the beginning of the input file,
+     * derives the key from the password, then decrypts the remaining ciphertext.
+     *
+     * @param inputFile  the encrypted source file
+     * @param outputFile the destination for the plaintext output
+     * @param password   the cleartext password used at encryption time
+     * @throws IOException                        if reading or writing fails
+     * @throws NoSuchAlgorithmException           if the cipher or KDF algorithm is unavailable
+     * @throws InvalidKeySpecException            if the key specification is invalid
+     * @throws NoSuchPaddingException             if the padding scheme is unavailable
+     * @throws InvalidAlgorithmParameterException if the IV is invalid
+     * @throws InvalidKeyException                if the derived key is invalid
+     */
     public void decryptFile(File inputFile, File outputFile, String password) throws IOException, NoSuchAlgorithmException, InvalidKeySpecException, NoSuchPaddingException, InvalidAlgorithmParameterException, InvalidKeyException {
         try (FileInputStream fis = new FileInputStream(inputFile)) {
-            byte[] salt = new byte[16];
-            byte[] iv = new byte[16];
-
-            fis.read(salt);
-            fis.read(iv);
+            byte[] salt = fis.readNBytes(16);
+            byte[] iv = fis.readNBytes(16);
             IvParameterSpec ivSpec = new IvParameterSpec(iv);
             SecretKey secretKey = generateKeyFromPassword(password, salt);
 
@@ -61,22 +94,42 @@ public class FileEncryptionService {
         }
     }
 
+    /**
+     * Returns an {@link InputStream} that transparently decrypts an AES/CBC-encrypted file.
+     *
+     * <p>The stream reads the salt and IV header bytes, derives the key, and wraps the
+     * remaining file bytes in a {@link CipherInputStream}. The caller is responsible for
+     * closing the returned stream.
+     *
+     * @param inputFile the encrypted file to read
+     * @param password  the cleartext password used at encryption time
+     * @return a decrypting input stream positioned after the header
+     * @throws Exception if the file cannot be opened or the cipher cannot be initialised
+     */
     public InputStream getDecryptedInputStream(File inputFile, String password) throws Exception {
         FileInputStream fis = new FileInputStream(inputFile);
-        byte[] salt = new byte[16];
-        byte[] iv = new byte[16];
-
-        fis.read(salt);
-        fis.read(iv);
+        byte[] salt = fis.readNBytes(16);
+        byte[] iv = fis.readNBytes(16);
         IvParameterSpec ivSpec = new IvParameterSpec(iv);
         SecretKey secretKey = generateKeyFromPassword(password, salt);
 
         Cipher cipher = Cipher.getInstance(ALGORITHM);
         cipher.init(Cipher.DECRYPT_MODE, secretKey, ivSpec);
-        CipherInputStream cipherInputStream = new CipherInputStream(fis, cipher);
-        return cipherInputStream;
+        return new CipherInputStream(fis, cipher);
     }
 
+    /**
+     * Returns an {@link OutputStream} that transparently encrypts data written to it
+     * and appends the result to the given file, preceded by the salt and IV header.
+     *
+     * <p>The caller is responsible for closing the returned stream, which will
+     * finalise the cipher and flush the last block.
+     *
+     * @param finalFile the destination file (opened in append mode)
+     * @param password  the cleartext password to encrypt with
+     * @return an encrypting output stream
+     * @throws Exception if the file cannot be opened or the cipher cannot be initialised
+     */
     public OutputStream getEncryptedOutputStream(File finalFile, String password) throws Exception {
         FileOutputStream fos = new FileOutputStream(finalFile, true);
         byte[] salt = generateRandomBytes();

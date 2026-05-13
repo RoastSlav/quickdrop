@@ -11,6 +11,18 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+/**
+ * Spring Boot entry point for QuickDrop.
+ *
+ * <p>Enables Spring's task scheduling (used by {@link org.rostislav.quickdrop.service.ScheduleService})
+ * and ensures the required directories exist before the application starts accepting traffic:
+ * <ul>
+ *   <li>{@code ./db/} — SQLite database directory, created in {@link #main} before the
+ *       Spring context starts so the datasource URL is valid.</li>
+ *   <li>The configured file storage path — created via {@link #createFileSavePath()} after
+ *       the context is ready so the settings bean is available.</li>
+ * </ul>
+ */
 @SpringBootApplication
 @EnableScheduling
 public class QuickdropApplication {

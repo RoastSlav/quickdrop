@@ -27,6 +27,28 @@ import java.util.UUID;
 
 import static org.rostislav.quickdrop.util.FileUtils.*;
 
+/**
+ * Serves all user-facing file and paste views under {@code /file}.
+ *
+ * <p>Handles the full lifecycle of files and pastes from the browser:
+ * <ul>
+ *   <li>Upload page ({@code GET /file/upload})</li>
+ *   <li>New/edit paste pages and form submissions ({@code /file/paste/**})</li>
+ *   <li>Public file list with search and pagination ({@code GET /file/list})</li>
+ *   <li>File detail page with preview type detection ({@code GET /file/{uuid}})</li>
+ *   <li>In-browser file preview streaming ({@code GET /file/preview/{uuid}})</li>
+ *   <li>Download event logging ({@code POST /file/download/log/{uuid}})</li>
+ *   <li>File history ({@code GET /file/history/{uuid}})</li>
+ *   <li>Password check and password entry page ({@code /file/password/**})</li>
+ *   <li>File download ({@code GET /file/download/{uuid}})</li>
+ *   <li>Extend, delete, hide, and keep-indefinitely mutations</li>
+ *   <li>Search redirect ({@code GET /file/search})</li>
+ * </ul>
+ *
+ * <p>Delete is permitted only for admin sessions or for sessions that hold a
+ * valid file-level session token (password-protected files). Hide and
+ * keep-indefinitely mutations respect the corresponding admin-only settings.
+ */
 @Controller
 @RequestMapping("/file")
 public class FileViewController {

@@ -1,5 +1,11 @@
 package org.rostislav.quickdrop.model;
 
+/**
+ * View-model for the "About" section of the admin settings page.
+ *
+ * <p>Populated by {@link org.rostislav.quickdrop.service.SystemInfoService#getAboutInfo()}
+ * and exposed to the Thymeleaf template as read-only diagnostic information.
+ */
 public class AboutInfoView {
     private String appVersion;
     private String sqliteVersion;
@@ -9,6 +15,12 @@ public class AboutInfoView {
     public AboutInfoView() {
     }
 
+    /**
+     * @param appVersion    the application version string from {@code app.version} in {@code application.properties}
+     * @param sqliteVersion SQLite version string returned by {@code SELECT sqlite_version()}
+     * @param javaVersion   value of the {@code java.version} system property
+     * @param osInfo        combined OS name and version from system properties
+     */
     public AboutInfoView(String appVersion, String sqliteVersion, String javaVersion, String osInfo) {
         this.appVersion = appVersion;
         this.sqliteVersion = sqliteVersion;

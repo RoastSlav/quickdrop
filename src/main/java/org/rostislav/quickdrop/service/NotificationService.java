@@ -17,6 +17,24 @@ import java.util.concurrent.*;
 
 import static org.rostislav.quickdrop.util.DataValidator.safeString;
 
+/**
+ * Sends Discord webhook and SMTP email notifications for file events.
+ *
+ * <p>Two delivery modes are supported, selected at runtime from application settings:
+ * <ul>
+ *   <li><strong>Immediate</strong> — each event dispatches a notification on a dedicated
+ *       single-thread executor ({@code notification-dispatch}) so that slow HTTP or SMTP
+ *       calls never block the file-operation request thread.</li>
+ *   <li><strong>Batched</strong> — events are queued in memory and flushed together once
+ *       per configured interval. A second single-thread executor ({@code notification-batch-flush})
+ *       runs a periodic check and is started lazily on the first batched event, then shut
+ *       down when batching is turned off.</li>
+ * </ul>
+ *
+ * <p>The mail sender is built on-the-fly from the current settings rather than being
+ * declared as a Spring bean, allowing SMTP configuration to change at runtime without
+ * a restart.
+ */
 @Service
 public class NotificationService {
     private static final Logger logger = LoggerFactory.getLogger(NotificationService.class);
@@ -40,6 +58,16 @@ public class NotificationService {
         this.messageSource = messageSource;
     }
 
+    /**
+     * Sends (or enqueues, if batching is enabled) a notification for a file event.
+     *
+     * <p>Does nothing if both Discord and email notifications are disabled or
+     * not configured. The message format includes the file name and UUID; upload
+     * events additionally include the file size in bytes.
+     *
+     * @param file the file that triggered the event; ignored if {@code null}
+     * @param type the event type (upload, download, deletion, paste create/view/edit, renewal)
+     */
     public void notifyFileAction(FileEntity file, FileHistoryType type) {
         if (file == null) {
             return;
@@ -88,6 +116,9 @@ public class NotificationService {
         });
     }
 
+    /**
+     * Returns {@code true} if the email-to list contains at least one non-blank address.
+     */
     private boolean hasEmailRecipients() {
         String emailTo = safeString(applicationSettingsService.getEmailTo());
         if (emailTo.isBlank()) {
@@ -98,6 +129,12 @@ public class NotificationService {
                 .anyMatch(s -> !s.isEmpty());
     }
 
+    /**
+     * Posts {@code content} to the configured Discord webhook URL.
+     * Failures are logged as warnings and do not propagate.
+     *
+     * @param content the message text to send
+     */
     private void sendDiscord(String content) {
         try {
             REST_TEMPLATE.postForEntity(safeString(applicationSettingsService.getDiscordWebhookUrl()), Map.of("content", content), Void.class);
@@ -106,6 +143,11 @@ public class NotificationService {
         }
     }
 
+    /**
+     * Sends a test message to the configured Discord webhook and returns the result.
+     *
+     * @return a {@link NotificationTestResult} indicating success or failure with a localised message
+     */
     public NotificationTestResult sendTestDiscord() {
         String url = safeString(applicationSettingsService.getDiscordWebhookUrl());
         if (url.isBlank()) {
@@ -122,6 +164,14 @@ public class NotificationService {
         }
     }
 
+    /**
+     * Sends an email notification via the configured SMTP settings.
+     * Failures are logged as warnings and do not propagate.
+     *
+     * @param event   human-readable event label (e.g. "uploaded")
+     * @param summary one-line event summary for the email body
+     * @param details additional details appended after the summary (may be empty)
+     */
     private void sendEmail(String event, String summary, String details) {
         try {
             JavaMailSenderImpl mailSender = resolveMailSender();
@@ -144,6 +194,11 @@ public class NotificationService {
         }
     }
 
+    /**
+     * Sends a test email via the current SMTP settings and returns the result.
+     *
+     * @return a {@link NotificationTestResult} indicating success or failure with a localised message
+     */
     public NotificationTestResult sendTestEmail() {
         try {
             JavaMailSenderImpl mailSender = resolveMailSender();
@@ -169,6 +224,12 @@ public class NotificationService {
         }
     }
 
+    /**
+     * Truncates and sanitises an exception message for display in user-facing error strings.
+     *
+     * @param message the raw exception message
+     * @return a single-line string no longer than 160 characters
+     */
     private String summarizeReason(String message) {
         if (message == null || message.isBlank()) {
             return "unexpected error";
@@ -180,6 +241,10 @@ public class NotificationService {
         return clean;
     }
 
+    /**
+     * Called by the batch scheduler to decide whether queued messages should be flushed.
+     * Re-reads settings each tick so that configuration changes take effect without a restart.
+     */
     private void flushBatchIfDue() {
         try {
             boolean sendDiscord = shouldSendDiscord();
@@ -206,6 +271,11 @@ public class NotificationService {
         }
     }
 
+    /**
+     * Atomically drains all queued messages into a list.
+     *
+     * @return drained messages in arrival order
+     */
     private List<String> drainPendingMessages() {
         List<String> drained = new ArrayList<>();
         String msg;
@@ -215,6 +285,13 @@ public class NotificationService {
         return drained;
     }
 
+    /**
+     * Flushes all pending messages as a single batched notification.
+     * Updates {@link #lastFlushEpochMillis} so the interval resets after each flush.
+     *
+     * @param sendDiscord whether to send to Discord
+     * @param sendEmail   whether to send via email
+     */
     private void flushPending(boolean sendDiscord, boolean sendEmail) {
         List<String> drained = drainPendingMessages();
         if (drained.isEmpty()) {
@@ -238,6 +315,12 @@ public class NotificationService {
         }
     }
 
+    /**
+     * Constructs a {@link JavaMailSenderImpl} from the current application settings.
+     * Returns {@code null} if no SMTP host is configured.
+     *
+     * @return a configured mail sender, or {@code null} if the host is blank
+     */
     private JavaMailSenderImpl resolveMailSender() {
         String host = safeString(applicationSettingsService.getSmtpHost());
         Integer port = applicationSettingsService.getSmtpPort();
@@ -272,6 +355,11 @@ public class NotificationService {
         return mailSender;
     }
 
+    /**
+     * Parses the comma-separated email recipient list from settings into an array.
+     *
+     * @return non-blank recipient addresses, or an empty array if none are configured
+     */
     private String[] parseRecipients() {
         return Optional.ofNullable(applicationSettingsService.getEmailTo())
                 .map(value -> Arrays.stream(value.split(","))
@@ -281,19 +369,31 @@ public class NotificationService {
                 .orElseGet(() -> new String[0]);
     }
 
+    /**
+     * Returns {@code true} if Discord notifications are enabled and a webhook URL is set.
+     */
     private boolean shouldSendDiscord() {
         String discordUrl = safeString(applicationSettingsService.getDiscordWebhookUrl());
         return applicationSettingsService.isDiscordWebhookEnabled() && !discordUrl.isBlank();
     }
 
+    /** Returns {@code true} if email notifications are enabled and recipients are configured. */
     private boolean shouldSendEmail() {
         return applicationSettingsService.isEmailNotificationsEnabled() && hasEmailRecipients();
     }
 
+    /** Returns {@code true} if batch mode is enabled and at least one channel is active. */
     private boolean shouldUseBatching(boolean sendDiscord, boolean sendEmail) {
         return applicationSettingsService.isNotificationBatchEnabled() && (sendDiscord || sendEmail);
     }
 
+    /**
+     * Starts the batch-flush scheduler if it is not already running.
+     * The scheduler polls every {@value #DEFAULT_FLUSH_POLL_SECONDS} seconds.
+     *
+     * @param sendDiscord whether Discord is currently active (used to decide if scheduler is needed)
+     * @param sendEmail   whether email is currently active
+     */
     private void startSchedulerIfNeeded(boolean sendDiscord, boolean sendEmail) {
         if (!shouldUseBatching(sendDiscord, sendEmail)) {
             stopSchedulerIfIdle();
@@ -315,6 +415,10 @@ public class NotificationService {
         }
     }
 
+    /**
+     * Shuts down the batch-flush scheduler immediately if one is running.
+     * Safe to call when batching is disabled or no notifications are pending.
+     */
     private void stopSchedulerIfIdle() {
         synchronized (schedulerLock) {
             if (scheduler == null) {
@@ -326,6 +430,12 @@ public class NotificationService {
         }
     }
 
+    /**
+     * Result of a notification test (Discord or email).
+     *
+     * @param success {@code true} if the test message was delivered
+     * @param message localised description of the outcome
+     */
     public record NotificationTestResult(boolean success, String message) {
         public static NotificationTestResult success(String message) {
             return new NotificationTestResult(true, message);

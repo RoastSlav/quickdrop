@@ -38,6 +38,29 @@ import static org.rostislav.quickdrop.util.DataValidator.safeNumber;
 import static org.rostislav.quickdrop.util.DataValidator.validateObjects;
 import static org.rostislav.quickdrop.util.FileUtils.*;
 
+/**
+ * Core service for all file and paste lifecycle operations.
+ *
+ * <p>Responsibilities include:
+ * <ul>
+ *   <li>Persisting file records after a chunked upload completes ({@link #saveFile}).</li>
+ *   <li>Streaming file downloads — plain or AES-decrypted ({@link #downloadFile}).</li>
+ *   <li>In-browser file preview with size and type gating ({@link #previewFile}).</li>
+ *   <li>Paste creation, editing, and content retrieval ({@link #createPaste},
+ *       {@link #updatePaste}, {@link #getPasteContent}).</li>
+ *   <li>Share token generation and share-link streaming ({@link #generateShareToken},
+ *       {@link #streamFileByShareToken}).</li>
+ *   <li>File metadata mutations: hide/show, extend expiry, keep-indefinitely
+ *       ({@link #toggleHidden}, {@link #extendFile}, {@link #updateKeepIndefinitely}).</li>
+ *   <li>Deletion from the filesystem and/or database ({@link #deleteFileFromFileSystem},
+ *       {@link #deleteFileFromDatabaseAndFileSystem}, {@link #removeFileFromDatabase}).</li>
+ * </ul>
+ *
+ * <p>Several methods are annotated with {@link CacheEvict} to keep the {@code publicFiles},
+ * {@code adminFiles}, {@code adminPastes}, and {@code analytics} caches consistent.
+ * Paginated list queries are backed by {@link Cacheable} caches keyed by page, size, and
+ * optional search query.
+ */
 @Service
 public class FileService {
     public static final Logger logger = LoggerFactory.getLogger(FileService.class);
@@ -64,6 +87,18 @@ public class FileService {
         this.asyncFileMergeService = asyncFileMergeService;
     }
 
+    /**
+     * Persists a database record for a file that has already been written to disk by
+     * {@link AsyncFileMergeService}, logs the upload event, and sends a notification.
+     *
+     * <p>Returns {@code null} and does nothing if either argument fails
+     * {@link org.rostislav.quickdrop.util.DataValidator#validateObjects}.
+     *
+     * @param file              the merged file on disk (used only for its name in logging)
+     * @param fileUploadRequest metadata from the original upload request
+     * @param uuid              the pre-generated UUID assigned to the file on disk
+     * @return the saved {@link FileEntity}, or {@code null} on validation failure
+     */
     @CacheEvict(value = {"publicFiles", "adminFiles", "adminPastes", "analytics"}, allEntries = true)
     public FileEntity saveFile(File file, FileUploadRequest fileUploadRequest, String uuid) {
         if (!validateObjects(file, fileUploadRequest)) {
@@ -83,10 +118,24 @@ public class FileService {
         return saved;
     }
 
+    /**
+     * Returns all file records from the database (pastes and files combined).
+     * Prefer the paginated variants for large datasets.
+     *
+     * @return all persisted {@link FileEntity} rows
+     */
     public List<FileEntity> getFiles() {
         return fileRepository.findAll();
     }
 
+    /**
+     * Maps a {@link FileUploadRequest} and a pre-assigned UUID into a transient
+     * {@link FileEntity} ready for persistence.
+     *
+     * @param request upload metadata
+     * @param uuid    UUID to assign to the new entity
+     * @return unpersisted {@link FileEntity}
+     */
     private FileEntity populateFileEntity(FileUploadRequest request, String uuid) {
         FileEntity fileEntity = new FileEntity();
         fileEntity.name = request.fileName;
@@ -108,10 +157,22 @@ public class FileService {
         return fileEntity;
     }
 
+    /**
+     * Returns a single file entity by UUID.
+     *
+     * @param uuid the file UUID
+     * @return the matching {@link FileEntity}, or {@code null} if not found
+     */
     public FileEntity getFile(String uuid) {
         return fileRepository.findByUUID(uuid).orElse(null);
     }
 
+    /**
+     * Deletes the physical file from the configured storage directory.
+     *
+     * @param uuid the file UUID (also the filename on disk)
+     * @return {@code true} if deleted successfully, {@code false} if deletion failed
+     */
     public boolean deleteFileFromFileSystem(String uuid) {
         Path path = Path.of(applicationSettingsService.getFileStoragePath(), uuid);
         try {
@@ -124,6 +185,14 @@ public class FileService {
         return true;
     }
 
+    /**
+     * Deletes a file from both the filesystem and the database in a single transaction.
+     * The filesystem deletion is attempted first; if it fails the database record is left
+     * intact so the discrepancy can be resolved later by the maintenance schedule.
+     *
+     * @param uuid the file UUID
+     * @return {@code true} if both deletions succeeded
+     */
     @Transactional
     @CacheEvict(value = {"publicFiles", "adminFiles", "adminPastes", "analytics"}, allEntries = true)
     public boolean deleteFileFromDatabaseAndFileSystem(String uuid) {
@@ -142,6 +211,13 @@ public class FileService {
         return true;
     }
 
+    /**
+     * Removes a file record from the database along with its share tokens and history logs,
+     * and sends a deletion notification. Does not touch the filesystem.
+     *
+     * @param uuid the file UUID
+     * @return {@code true} if the record was found and removed, {@code false} if not found
+     */
     @Transactional
     @CacheEvict(value = {"publicFiles", "adminFiles", "adminPastes", "analytics"}, allEntries = true)
     public boolean removeFileFromDatabase(String uuid) {
@@ -159,6 +235,16 @@ public class FileService {
         return true;
     }
 
+    /**
+     * Streams a file to the client as an attachment, decrypting it if necessary.
+     *
+     * <p>The file password is read from the session token stored in the HTTP session.
+     * Returns {@code 404} if the file is not found, {@code 500} if decryption fails.
+     *
+     * @param uuid    the file UUID
+     * @param request the HTTP request (used to extract the session token for the file password)
+     * @return a streaming download response, or an error response
+     */
     @CacheEvict(value = {"adminFiles", "analytics"}, allEntries = true)
     public ResponseEntity<StreamingResponseBody> downloadFile(String uuid, HttpServletRequest request) {
         FileEntity fileEntity = fileRepository.findByUUID(uuid).orElse(null);
@@ -190,6 +276,19 @@ public class FileService {
         return createFileDownloadResponse(inputStream, fileEntity, request);
     }
 
+    /**
+     * Returns the file content for in-browser preview.
+     *
+     * <p>Preview is refused ({@code 403}) if it is globally disabled. Returns
+     * {@code 415} if the file type is not previewable (only images, plaintext, and PDF
+     * are supported). Returns {@code 428} if the file exceeds the preview size limit
+     * and {@code manualOverride} is false.
+     *
+     * @param uuid           the file UUID
+     * @param request        the HTTP request (provides the file session token for decryption)
+     * @param manualOverride if {@code true}, bypasses the file-size limit check
+     * @return a streaming inline response, or an appropriate error response
+     */
     public ResponseEntity<StreamingResponseBody> previewFile(String uuid, HttpServletRequest request, boolean manualOverride) {
         FileEntity fileEntity = fileRepository.findByUUID(uuid).orElse(null);
         if (fileEntity == null) {
@@ -238,6 +337,16 @@ public class FileService {
                 .body(body);
     }
 
+    /**
+     * Returns {@code true} if the current HTTP session is authorised to access the file.
+     *
+     * <p>Files without a password hash are always accessible. Password-protected files
+     * require a valid file session token in the HTTP session that is bound to the requested UUID.
+     *
+     * @param uuid    the file UUID
+     * @param request the HTTP request carrying the session
+     * @return {@code true} if access is permitted
+     */
     public boolean isAuthorizedForFile(String uuid, HttpServletRequest request) {
         FileEntity fileEntity = fileRepository.findByUUID(uuid).orElse(null);
         if (fileEntity == null) {
@@ -250,6 +359,13 @@ public class FileService {
         return sessionToken != null && sessionService.validateFileSessionToken(sessionToken.toString(), uuid);
     }
 
+    /**
+     * Logs a download event for a file and sends a download notification.
+     * Does nothing if the file UUID is not found.
+     *
+     * @param uuid    the file UUID
+     * @param request the HTTP request (provides requester IP and user-agent)
+     */
     @CacheEvict(value = {"adminFiles", "analytics"}, allEntries = true)
     public void logDownload(String uuid, HttpServletRequest request) {
         FileEntity fileEntity = fileRepository.findByUUID(uuid).orElse(null);
@@ -259,6 +375,13 @@ public class FileService {
         notificationService.notifyFileAction(fileEntity, FileHistoryType.DOWNLOAD);
     }
 
+    /**
+     * Extracts the cleartext file password from the file session token stored in the
+     * HTTP session, if present.
+     *
+     * @param request the HTTP request
+     * @return the file access password, or {@code null} if no session token is present
+     */
     private String getFilePasswordFromSessionToken(HttpServletRequest request) {
         Object sessionToken = request.getSession().getAttribute("file-session-token");
         if (sessionToken == null) {
@@ -269,6 +392,14 @@ public class FileService {
         return fileSession == null ? null : fileSession.getPassword();
     }
 
+    /**
+     * Returns a paginated list of non-hidden files, optionally filtered by a search query.
+     * Results are cached per page/size/query combination.
+     *
+     * @param pageable pagination parameters
+     * @param query    optional search string; a blank/null value returns all visible files
+     * @return a page of matching {@link FileEntity} records
+     */
     @Cacheable(value = "publicFiles", key = "'page:' + #pageable.pageNumber + ':size:' + #pageable.pageSize + ':q:' + (#query == null ? '' : #query.toLowerCase())")
     public Page<FileEntity> getVisibleFiles(Pageable pageable, String query) {
         if (query == null || query.isBlank()) {
@@ -277,27 +408,50 @@ public class FileService {
         return fileRepository.searchNotHiddenFiles(query, pageable);
     }
 
+    /**
+     * Returns the total bytes consumed by all file-type records (excluding pastes).
+     *
+     * @return total storage used in bytes
+     */
     public long calculateTotalSpaceUsed() {
         return safeNumber(fileRepository.totalFileSizeForFilesOnly());
     }
 
+    /**
+     * @return number of non-paste file records
+     */
     public long getFileCount() {
         return fileRepository.countByPasteFalse();
     }
 
+    /** @return number of paste records */
     public long getPasteCount() {
         return fileRepository.countByPasteTrue();
     }
 
+    /**
+     * Returns the average size of paste content in bytes.
+     *
+     * @return average paste size, or {@code 0.0} if there are no pastes
+     */
     public double getAveragePasteLength() {
         Double avg = fileRepository.averagePasteLength();
         return avg != null ? avg : 0.0;
     }
 
+    /** @return number of paste records whose filename ends with {@code .md} */
     public long getMarkdownPasteCount() {
         return fileRepository.countMarkdownPastes();
     }
 
+    /**
+     * Returns a paginated list of pastes with pre-aggregated view counts, optionally
+     * filtered by a search query. Results are cached per page/size/query combination.
+     *
+     * @param pageable pagination parameters
+     * @param query    optional search string
+     * @return a page of {@link PasteEntityView} projections
+     */
     @Cacheable(value = "adminPastes", key = "'page:' + #pageable.pageNumber + ':size:' + #pageable.pageSize + ':q:' + (#query == null ? '' : #query.toLowerCase())")
     public Page<PasteEntityView> getPaginatedPastes(Pageable pageable, String query) {
         if (query == null || query.isBlank()) {
@@ -306,6 +460,13 @@ public class FileService {
         return fileRepository.searchPastesWithViewCounts(query, pageable);
     }
 
+    /**
+     * Logs a {@link FileHistoryType#PASTE_VIEW} event for a paste.
+     * Does nothing if the UUID is not found or does not refer to a paste.
+     *
+     * @param uuid    the paste UUID
+     * @param request the HTTP request providing requester metadata
+     */
     @CacheEvict(value = {"adminPastes", "analytics"}, allEntries = true)
     public void logPasteView(String uuid, HttpServletRequest request) {
         FileEntity fileEntity = fileRepository.findByUUID(uuid).orElse(null);
@@ -314,6 +475,13 @@ public class FileService {
         fileHistoryLogRepository.save(new FileHistoryLog(fileEntity, FileHistoryType.PASTE_VIEW, info.ipAddress(), info.userAgent()));
     }
 
+    /**
+     * Resets a file's {@code uploadDate} to today, effectively extending its scheduled
+     * deletion by {@code maxFileLifeTime} days.
+     *
+     * @param uuid    the file UUID
+     * @param request the HTTP request (for history logging)
+     */
     @CacheEvict(value = {"publicFiles", "adminFiles", "analytics"}, allEntries = true)
     public void extendFile(String uuid, HttpServletRequest request) {
         Optional<FileEntity> referenceById = fileRepository.findByUUID(uuid);
@@ -328,6 +496,16 @@ public class FileService {
         logHistory(fileEntity, request, FileHistoryType.RENEWAL);
     }
 
+    /**
+     * Toggles the {@code hidden} flag on a file.
+     *
+     * <p>If {@code hideFromListAdminOnly} is enabled in settings, non-admin requests are
+     * silently rejected and the unchanged entity is returned.
+     *
+     * @param uuid    the file UUID
+     * @param request the HTTP request (used for admin session check)
+     * @return the (possibly updated) {@link FileEntity}, or {@code null} if not found
+     */
     @CacheEvict(value = {"publicFiles", "adminFiles", "analytics"}, allEntries = true)
     public FileEntity toggleHidden(String uuid, HttpServletRequest request) {
         Optional<FileEntity> referenceById = fileRepository.findByUUID(uuid);
@@ -349,6 +527,14 @@ public class FileService {
         return fileEntity;
     }
 
+    /**
+     * Returns a paginated list of file records (non-pastes) with pre-aggregated download
+     * counts. Results are cached per page/size/query.
+     *
+     * @param pageable pagination parameters
+     * @param query    optional search string
+     * @return a page of {@link FileEntityView} projections
+     */
     @Cacheable(value = "adminFiles", key = "'page:' + #pageable.pageNumber + ':size:' + #pageable.pageSize + ':q:' + (#query == null ? '' : #query.toLowerCase())")
     public Page<FileEntityView> getFilesWithDownloadCounts(Pageable pageable, String query) {
         if (query == null || query.isBlank()) {
@@ -357,6 +543,13 @@ public class FileService {
         return fileRepository.searchFilesWithDownloadCounts(query, pageable);
     }
 
+    /**
+     * Verifies a candidate plaintext password against a file's stored BCrypt hash.
+     *
+     * @param uuid     the file UUID
+     * @param password the candidate plaintext password
+     * @return {@code true} if the password matches
+     */
     public boolean checkFilePassword(String uuid, String password) {
         Optional<FileEntity> referenceByUUID = fileRepository.findByUUID(uuid);
         if (referenceByUUID.isEmpty()) {
@@ -370,6 +563,23 @@ public class FileService {
         return passwordEncoder.matches(password, fileEntity.passwordHash);
     }
 
+    /**
+     * Creates a new paste from the provided title, content, and syntax hint.
+     *
+     * <p>The content is written to disk as a single-chunk upload via
+     * {@link AsyncFileMergeService}. Paste files are always marked {@code hidden}.
+     * The filename is derived from the title with the extension {@code .md} for Markdown
+     * syntax and {@code .txt} otherwise.
+     *
+     * @param title           paste title (used as the stored filename after sanitization)
+     * @param content         paste body text
+     * @param syntax          syntax hint: {@code "markdown"} or any other value for plain text
+     * @param keepIndefinitely whether the paste should be exempt from scheduled deletion
+     * @param password        optional access password
+     * @param request         the HTTP request (provides requester metadata and admin session)
+     * @return the saved {@link FileEntity}
+     * @throws IOException if writing the paste to disk fails
+     */
     @CacheEvict(value = {"publicFiles", "adminFiles", "adminPastes", "analytics"}, allEntries = true)
     public FileEntity createPaste(String title,
                                   String content,
@@ -414,6 +624,24 @@ public class FileService {
         return saved;
     }
 
+    /**
+     * Overwrites the content of an existing paste.
+     *
+     * <p>The new content is written to a temporary file alongside the original, then
+     * atomically replaced with {@link StandardCopyOption#REPLACE_EXISTING}. For encrypted
+     * pastes the existing password from the session token is reused; the request is
+     * rejected if the session is missing or the password cannot be retrieved.
+     *
+     * @param uuid            the paste UUID
+     * @param title           new paste title (used to derive the filename)
+     * @param content         new paste body text
+     * @param syntax          syntax hint for filename extension
+     * @param keepIndefinitely whether the paste should be exempt from scheduled deletion
+     * @param request         the HTTP request (provides session token and admin check)
+     * @return the updated {@link FileEntity}, or {@code null} if the UUID is not a paste
+     * @throws IOException              if writing the new content fails
+     * @throws IllegalArgumentException if the paste is encrypted but no valid session exists
+     */
     @CacheEvict(value = {"publicFiles", "adminFiles", "adminPastes", "analytics"}, allEntries = true)
     public FileEntity updatePaste(String uuid,
                                   String title,
@@ -459,6 +687,17 @@ public class FileService {
         return fileEntity;
     }
 
+    /**
+     * Reads and returns the full text content of a paste.
+     *
+     * <p>Decrypts the content if the paste is encrypted, using the password from the
+     * current file session token. Returns {@code null} if the UUID is not found, does
+     * not refer to a paste, or if an I/O error occurs.
+     *
+     * @param uuid    the paste UUID
+     * @param request the HTTP request (provides session token for decryption)
+     * @return paste content as a UTF-8 string, or {@code null} on failure
+     */
     public String getPasteContent(String uuid, HttpServletRequest request) {
         Optional<FileEntity> byUuid = fileRepository.findByUUID(uuid);
         if (byUuid.isEmpty() || !byUuid.get().paste) {
@@ -479,6 +718,15 @@ public class FileService {
         }
     }
 
+    /**
+     * Writes byte content to a file, encrypting it if a password is provided and
+     * encryption is enabled. Any pre-existing file at {@code outputPath} is deleted first.
+     *
+     * @param outputPath   destination file path
+     * @param contentBytes raw content bytes
+     * @param password     optional encryption password; {@code null} or blank writes plaintext
+     * @throws IOException if writing fails
+     */
     private void writeContentToFile(Path outputPath, byte[] contentBytes, String password) throws IOException {
         Files.deleteIfExists(outputPath);
 
@@ -495,6 +743,19 @@ public class FileService {
         }
     }
 
+    /**
+     * Resolves the effective upload options for a paste based on admin session state
+     * and global settings.
+     *
+     * <p>{@code keepIndefinitely} is only honoured if the setting is unrestricted or the
+     * request carries an admin session. Passwords are suppressed entirely when upload
+     * passwords are disabled in settings.
+     *
+     * @param keepIndefinitely requested keep-indefinitely flag
+     * @param password         requested access password
+     * @param request          the HTTP request (for admin session check)
+     * @return resolved {@link PasteUploadOptions}
+     */
     private PasteUploadOptions resolvePasteUploadOptions(boolean keepIndefinitely,
                                                          String password,
                                                          HttpServletRequest request) {
@@ -506,12 +767,29 @@ public class FileService {
         return new PasteUploadOptions(keepIndefinitelyValue, effectivePassword);
     }
 
+    /**
+     * Validates that the paste content does not exceed the configured maximum file size.
+     *
+     * @param contentBytes paste content bytes
+     * @throws IllegalArgumentException if the limit is exceeded
+     */
     private void validatePasteSize(byte[] contentBytes) {
         if (contentBytes.length > applicationSettingsService.getMaxFileSize()) {
             throw new IllegalArgumentException("Paste exceeds max file size limit.");
         }
     }
 
+    /**
+     * Sanitizes a paste title and appends the appropriate extension based on syntax.
+     *
+     * <p>Special characters (anything other than alphanumerics, dots, spaces, underscores,
+     * and hyphens) are replaced with underscores. Any trailing {@code .txt} or {@code .md}
+     * extension in the title is stripped before the canonical extension is appended.
+     *
+     * @param title  paste title, or {@code null} / blank for a default name
+     * @param syntax {@code "markdown"} for {@code .md}, anything else for {@code .txt}
+     * @return sanitized filename with extension
+     */
     private String sanitizePasteFileName(String title, String syntax) {
         String baseName = title == null || title.isBlank() ? "paste" : title.trim();
         String sanitized = baseName.replaceAll("[^a-zA-Z0-9._ -]", "_");
@@ -526,6 +804,19 @@ public class FileService {
         return sanitized + extension;
     }
 
+    /**
+     * Returns a {@link StreamingResponseBody} that streams the file associated with
+     * a share token, decrementing the remaining download count and deleting the token
+     * when exhausted.
+     *
+     * <p>If a pre-decrypted sidecar file exists alongside the encrypted original it is
+     * streamed directly; otherwise the encrypted file is streamed as-is (the share token
+     * flow creates a sidecar for encrypted files at token generation time).
+     *
+     * @param shareTokenEntity the validated share token
+     * @param request          the HTTP request (for history logging)
+     * @return a streaming body, or {@code null} if the token is invalid
+     */
     @CacheEvict(value = {"adminFiles", "analytics"}, allEntries = true)
     public StreamingResponseBody streamFileByShareToken(ShareTokenEntity shareTokenEntity, HttpServletRequest request) {
         if (!validateShareToken(shareTokenEntity)) {
@@ -547,6 +838,13 @@ public class FileService {
         };
     }
 
+    /**
+     * Decrements the remaining download count on a share token after a successful
+     * download and deletes the token if it is now exhausted or expired.
+     *
+     * @param shareTokenEntity the share token to update
+     * @param fileEntity       the file that was streamed (used only for logging)
+     */
     private void updateShareTokenAfterDownload(ShareTokenEntity shareTokenEntity, FileEntity fileEntity) {
         if (shareTokenEntity.numberOfAllowedDownloads != null) {
             shareTokenEntity.numberOfAllowedDownloads--;
@@ -560,6 +858,19 @@ public class FileService {
         logger.info("Share token updated/invalidated. File streamed successfully: {}", fileEntity.name);
     }
 
+    /**
+     * Updates the {@code keepIndefinitely} flag on a file.
+     *
+     * <p>When the flag is cleared (set to {@code false}) the file's upload date is
+     * also reset to today via {@link #extendFile}, restarting the deletion countdown.
+     * If the {@code keepIndefinitelyAdminOnly} setting is active, non-admin requests
+     * are silently rejected and the unchanged entity is returned.
+     *
+     * @param uuid             the file UUID
+     * @param keepIndefinitely the new flag value
+     * @param request          the HTTP request (for admin session check and history logging)
+     * @return the (possibly updated) {@link FileEntity}, or {@code null} if not found
+     */
     @CacheEvict(value = {"publicFiles", "adminFiles", "analytics"}, allEntries = true)
     public FileEntity updateKeepIndefinitely(String uuid, boolean keepIndefinitely, HttpServletRequest request) {
         Optional<FileEntity> referenceById = fileRepository.findByUUID(uuid);
@@ -584,12 +895,25 @@ public class FileService {
         return fileEntity;
     }
 
+    /**
+     * Saves a history log entry and sends a notification for a file event.
+     *
+     * @param fileEntity the file that triggered the event
+     * @param request    the HTTP request providing requester metadata
+     * @param eventType  the event type to record
+     */
     private void logHistory(FileEntity fileEntity, HttpServletRequest request, FileHistoryType eventType) {
         RequesterInfo info = getRequesterInfo(request);
         fileHistoryLogRepository.save(new FileHistoryLog(fileEntity, eventType, info.ipAddress(), info.userAgent()));
         notificationService.notifyFileAction(fileEntity, eventType);
     }
 
+    /**
+     * Generates a unique share token string for the given file, retrying on collision.
+     *
+     * @param fileEntity the file to generate a token for
+     * @return a collision-free token string
+     */
     private String generateUniqueShareToken(FileEntity fileEntity) {
         String token;
         do {
@@ -598,10 +922,29 @@ public class FileService {
         return token;
     }
 
+    /**
+     * Looks up an existing unlimited (no expiry, no download limit) share token for a file.
+     *
+     * @param file the file entity
+     * @return an existing unlimited token if one exists
+     */
     private Optional<ShareTokenEntity> findUnlimitedShareToken(FileEntity file) {
         return shareTokenRepository.findFirstByFileAndTokenExpirationDateIsNullAndNumberOfAllowedDownloadsIsNull(file);
     }
 
+    /**
+     * Generates (or returns an existing) share token for a non-encrypted file.
+     *
+     * <p>If both {@code tokenExpirationDate} and {@code numberOfDownloads} are {@code null}
+     * and an unlimited token already exists for the file, it is returned without creating
+     * a new one.
+     *
+     * @param uuid                 the file UUID
+     * @param tokenExpirationDate  optional expiry date for the token
+     * @param numberOfDownloads    optional download limit; {@code null} means unlimited
+     * @return the new or existing {@link ShareTokenEntity}
+     * @throws IllegalArgumentException if the UUID is not found
+     */
     public ShareTokenEntity generateShareToken(String uuid, LocalDate tokenExpirationDate, Integer numberOfDownloads) {
         Optional<FileEntity> optionalFile = fileRepository.findByUUID(uuid);
         if (optionalFile.isEmpty()) {
@@ -623,6 +966,21 @@ public class FileService {
         return shareToken;
     }
 
+    /**
+     * Generates (or returns an existing) share token for a file, decrypting it first
+     * if the file is encrypted so that share-link recipients do not need the password.
+     *
+     * <p>The decrypted sidecar is stored alongside the encrypted file with a
+     * {@code -decrypted} suffix. If the sidecar already exists it is not recreated.
+     *
+     * @param uuid                the file UUID
+     * @param tokenExpirationDate optional expiry date
+     * @param sessionToken        file session token (provides the decryption password)
+     * @param numberOfDownloads   optional download limit
+     * @return the new or existing {@link ShareTokenEntity}
+     * @throws IllegalArgumentException if the UUID is not found
+     * @throws RuntimeException         if decryption of the encrypted file fails
+     */
     public ShareTokenEntity generateShareToken(String uuid, LocalDate tokenExpirationDate, String sessionToken, Integer numberOfDownloads) {
         Optional<FileEntity> optionalFile = fileRepository.findByUUID(uuid);
         if (optionalFile.isEmpty()) {
@@ -655,10 +1013,25 @@ public class FileService {
         return shareToken;
     }
 
+    /**
+     * Looks up a share token entity by its token string.
+     *
+     * @param token the share token string
+     * @return the matching {@link ShareTokenEntity}, or empty if not found
+     */
     public Optional<ShareTokenEntity> getShareTokenEntityByToken(String token) {
         return shareTokenRepository.findByShareToken(token);
     }
 
+    /**
+     * Builds the HTTP response for a file download, including correct
+     * {@code Content-Disposition}, {@code Content-Type}, and {@code Content-Length} headers.
+     *
+     * @param inputStream the (possibly decrypted) content stream
+     * @param fileEntity  the file metadata
+     * @param request     the HTTP request (for history logging)
+     * @return a {@code 200 OK} streaming response
+     */
     private ResponseEntity<StreamingResponseBody> createFileDownloadResponse(InputStream inputStream, FileEntity fileEntity, HttpServletRequest request) {
         StreamingResponseBody responseBody = getStreamingResponseBody(inputStream);
         logger.info("Sending file: {}", fileEntity);
@@ -672,18 +1045,42 @@ public class FileService {
                 .body(responseBody);
     }
 
+    /**
+     * Returns {@code true} if the physical file exists in the configured storage directory.
+     *
+     * @param uuid the file UUID
+     * @return {@code true} if the file is present on disk
+     */
     public boolean fileExistsInFileSystem(String uuid) {
         return Files.exists(Path.of(applicationSettingsService.getFileStoragePath(), uuid));
     }
 
-
+    /**
+     * Returns {@code true} if the upload request should result in an encrypted file on disk.
+     * Encryption requires a non-blank password and that encryption is enabled in settings.
+     *
+     * @param request the upload request
+     * @return {@code true} if the file should be AES-encrypted
+     */
     public boolean shouldEncrypt(FileUploadRequest request) {
         return request.password != null && !request.password.isBlank() && applicationSettingsService.isEncryptionEnabled();
     }
 
+    /**
+     * Immutable holder for the IP address and user-agent string of a requester.
+     *
+     * @param ipAddress  client IP address
+     * @param userAgent  HTTP {@code User-Agent} header value
+     */
     public record RequesterInfo(String ipAddress, String userAgent) {
     }
 
+    /**
+     * Resolved options for a paste upload after admin and settings checks have been applied.
+     *
+     * @param keepIndefinitely effective keep-indefinitely flag
+     * @param password         effective access password (may be {@code null} if disabled)
+     */
     private record PasteUploadOptions(boolean keepIndefinitely, String password) {
     }
 }

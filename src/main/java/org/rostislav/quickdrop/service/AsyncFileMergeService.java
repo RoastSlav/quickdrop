@@ -17,6 +17,22 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.*;
 
+/**
+ * Merges chunked file uploads into a single file asynchronously.
+ *
+ * <p>Each unique file upload (keyed by filename) gets its own {@link MergeTask} running
+ * on the shared thread pool. Chunks are enqueued as they arrive via
+ * {@link #submitChunk(FileUploadRequest, MultipartFile, int)} and processed in order
+ * by the task's {@link BlockingQueue}. When the caller submits the last chunk it
+ * blocks on the {@link CompletableFuture} until the merge and database save complete,
+ * then returns the saved {@link FileEntity}.
+ *
+ * <p>The thread pool uses {@link ThreadPoolExecutor.CallerRunsPolicy} so that if all
+ * worker threads are busy the submitting request thread runs the merge itself, providing
+ * natural backpressure. A background TTL sweeper runs every
+ * {@value #TASK_TTL_MINUTES} minutes to evict entries for uploads that were abandoned
+ * before the last chunk arrived.
+ */
 @Service
 public class AsyncFileMergeService {
     private static final Logger logger = LoggerFactory.getLogger(AsyncFileMergeService.class);
@@ -51,6 +67,21 @@ public class AsyncFileMergeService {
         ttlSweeper.scheduleAtFixedRate(this::evictStaleTasks, TASK_TTL_MINUTES, TASK_TTL_MINUTES, TimeUnit.MINUTES);
     }
 
+    /**
+     * Saves a chunk to the temp directory and enqueues it for merging.
+     *
+     * <p>A {@link MergeTask} is created for the upload on the first chunk and reused for
+     * subsequent chunks. When the last chunk (index {@code totalChunks - 1}) is submitted
+     * the caller blocks until the merge thread finishes writing and saving the file, and
+     * the resulting {@link FileEntity} is returned. For non-final chunks {@code null} is
+     * returned immediately.
+     *
+     * @param request        metadata for the upload (filename, total chunk count, password, etc.)
+     * @param multipartChunk the chunk bytes received from the HTTP request
+     * @param chunkNumber    zero-based chunk index
+     * @return the saved {@link FileEntity} after the last chunk, or {@code null} for intermediate chunks
+     * @throws IOException if saving the chunk to disk or waiting on the merge future fails
+     */
     public FileEntity submitChunk(FileUploadRequest request, MultipartFile multipartChunk, int chunkNumber) throws IOException {
         File savedChunk = new File(tempDir, request.fileName + "_chunk_" + chunkNumber);
         multipartChunk.transferTo(savedChunk);
@@ -76,6 +107,10 @@ public class AsyncFileMergeService {
         return null;
     }
 
+    /**
+     * Removes {@link MergeTask} entries whose creation timestamp is older than
+     * {@value #TASK_TTL_MINUTES} minutes. Called periodically by the TTL sweeper.
+     */
     private void evictStaleTasks() {
         Instant threshold = Instant.now().minusSeconds(TASK_TTL_MINUTES * 60);
         Iterator<Map.Entry<String, MergeTask>> it = mergeTasks.entrySet().iterator();
@@ -88,6 +123,12 @@ public class AsyncFileMergeService {
         }
     }
 
+    /**
+     * Deletes all temporary chunk files created for a given upload request.
+     * Called on merge failure to avoid leaving orphaned temp files.
+     *
+     * @param request the upload request whose chunks should be removed
+     */
     private void cleanUpChunks(FileUploadRequest request) {
         for (int i = 0; i < request.totalChunks; i++) {
             File chunkFile = new File(tempDir, request.fileName + "_chunk_" + i);
@@ -98,6 +139,15 @@ public class AsyncFileMergeService {
         }
     }
 
+    /**
+     * Worker that reads {@link ChunkInfo} items from a blocking queue and streams
+     * them sequentially into the final output file.
+     *
+     * <p>The output is written through {@link FileEncryptionService} when the upload
+     * request specifies a password and encryption is enabled, otherwise through a plain
+     * {@link BufferedOutputStream}. After all chunks are merged {@link FileService#saveFile}
+     * is called to persist the database record and the future is completed.
+     */
     private class MergeTask implements Runnable {
         final Instant createdAt = Instant.now();
         private final BlockingQueue<ChunkInfo> queue = new LinkedBlockingQueue<>();

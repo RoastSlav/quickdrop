@@ -6,53 +6,147 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import org.rostislav.quickdrop.model.ApplicationSettingsViewModel;
 
+/**
+ * Persistent store for all application-wide configuration.
+ *
+ * <p>Only a single row (id = 1) is ever created. {@link org.rostislav.quickdrop.service.ApplicationSettingsService}
+ * initialises defaults on startup and is the only intended writer. Reads are served from a
+ * Spring cache ({@code applicationSettings}) to avoid a database hit on every request.
+ */
 @Entity
 public class ApplicationSettingsEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    /**
+     * Maximum allowed upload size in bytes.
+     */
     private long maxFileSize;
+
+    /** Number of days before a non-pinned file is eligible for automatic deletion. */
     private long maxFileLifeTime;
+
+    /** File-system path (relative or absolute) where uploaded files are stored. */
     private String fileStoragePath;
+
+    /** File-system path for log output. */
     private String logStoragePath;
+
+    /** Spring cron expression that controls when the scheduled file-deletion job runs. */
     private String fileDeletionCron;
+
+    /** Whether a site-wide application password is enforced for all users. */
     private boolean appPasswordEnabled;
+
+    /** BCrypt hash of the application-level access password. */
     private String appPasswordHash;
+
+    /** BCrypt hash of the administrator password. */
     private String adminPasswordHash;
+
+    /** HTTP session timeout in minutes. */
     private long sessionLifetime;
+
+    /** Whether the public /file/list page is accessible to unauthenticated users. */
     private boolean isFileListPageEnabled;
+
+    /** Whether the Admin Dashboard navigation button is shown to non-admin users. */
     private boolean isAdminDashboardButtonEnabled;
+
+    /** When {@code true}, AES encryption is not applied even if a password is provided. */
     private boolean disableEncryption;
+
+    /** When {@code true}, upload-time passwords are rejected entirely. */
     private boolean disableUploadPassword;
+
+    /** When {@code true}, in-browser file preview is disabled. */
     private boolean disablePreview;
+
+    /** Whether EXIF and other metadata is stripped from images on upload. */
     private boolean metadataStrippingEnabled;
+
+    /** Maximum file size (bytes) that is previewed without a manual override. */
     private long maxPreviewSizeBytes;
+
+    /** Page shown when navigating to "/". One of: "upload", "paste", "list". */
     private String defaultHomePage;
+
+    /** When {@code true}, only admins may pin files with "keep indefinitely". */
     private boolean keepIndefinitelyAdminOnly;
+
+    /** When {@code true}, only admins may hide files from the public listing. */
     private boolean hideFromListAdminOnly;
+
+    /** Whether Discord webhook notifications are enabled. */
     private boolean discordWebhookEnabled;
+
+    /** Full HTTPS URL of the Discord webhook endpoint. */
     private String discordWebhookUrl;
+
+    /** Whether email notifications are enabled. */
     private boolean emailNotificationsEnabled;
+
+    /** RFC-5321 sender address used in notification e-mails. */
     private String emailFrom;
+
+    /** Comma-separated list of notification recipients. */
     private String emailTo;
+
+    /** SMTP server hostname. */
     private String smtpHost;
+
+    /** SMTP server port (default 587). */
     private Integer smtpPort;
+
+    /** SMTP authentication username. */
     private String smtpUsername;
+
+    /** SMTP authentication password (stored in plaintext; use a dedicated app password). */
     private String smtpPassword;
+
+    /** Whether STARTTLS is requested on the SMTP connection. */
     private boolean smtpUseTls;
+
+    /** Whether implicit TLS (SMTPS) is used instead of STARTTLS. */
     private boolean smtpUseSsl;
+
+    /** Whether notifications are queued and dispatched in periodic batches. */
     private boolean notificationBatchEnabled;
+
+    /** Interval in minutes between batch notification flushes. */
     private Integer notificationBatchMinutes;
+
+    /**
+     * When {@code true}, share tokens are generated without expiry or download limits
+     * and the existing unlimited token is reused.
+     */
     private boolean simplifiedShareLinks;
+
+    /** When {@code true}, share-link generation is disabled entirely. */
     private boolean shareLinksDisabled;
+
+    /** Whether the Pastebin feature is available. */
     private boolean pastebinEnabled;
+
+    /** Custom application name displayed in the UI (defaults to "QuickDrop"). */
     private String appName;
+
+    /** Filename of the custom logo stored under the {@code branding/} directory, or {@code null} for the default. */
     private String logoFileName;
+
+    /** BCP-47 language tag used as the default locale (e.g. "en", "de"). */
     private String defaultLanguage = "en";
 
     public ApplicationSettingsEntity() {
     }
 
+    /**
+     * Convenience constructor that copies values from a view-model.
+     * Does not copy the app password — use {@link #setAppPasswordHash(String)} separately.
+     *
+     * @param settings the view-model populated from the settings form
+     */
     public ApplicationSettingsEntity(ApplicationSettingsViewModel settings) {
         this.id = settings.getId();
         this.maxFileSize = settings.getMaxFileSize();

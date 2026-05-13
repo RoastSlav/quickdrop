@@ -1,276 +1,264 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8"/>
     <meta name="_csrf" th:content="${_csrf != null ? _csrf.token : ''}"/>
-    <title th:text="#{page.pasteView.title.browser(${appName})}">Paste View</title>
+    <title th:text="#{page.pasteView.title.browser(${appName})}">Paste — QuickDrop</title>
     <meta content="width=device-width, initial-scale=1" name="viewport"/>
+    <link href="https://fonts.googleapis.com" rel="preconnect"/>
+    <link crossorigin href="https://fonts.gstatic.com" rel="preconnect"/>
     <link href="/css/tailwind.css" rel="stylesheet"/>
     <link href="/css/custom.css" rel="stylesheet"/>
-    <link
-            href="/images/favicon.png"
-            rel="icon"
-            th:href="${appLogoPath}"
-            type="image/png"
-    />
+    <link href="/images/favicon.png" rel="icon" th:href="${appLogoPath}" type="image/png"/>
     <script src="/js/tailwindTheme.js"></script>
+    <script src="/js/toast.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <th:block th:replace="~{fragments/header :: scripts}"></th:block>
     <style>
-        .title-action-bar {
-            background-color: #f1f5f9;
-        }
-
-        .title-action-bar .paste-title {
-            color: #0f172a !important;
-        }
-
-        .dark .title-action-bar {
-            background-color: #0f172a;
-        }
-
-        .dark .title-action-bar .paste-title {
-            color: #e2e8f0 !important;
-        }
-
-        .markdown-content h1,
-        .markdown-content h2,
-        .markdown-content h3,
-        .markdown-content h4,
-        .markdown-content h5,
-        .markdown-content h6 {
+        .markdown-content h1, .markdown-content h2, .markdown-content h3, .markdown-content h4, .markdown-content h5, .markdown-content h6 {
             margin-top: 1.25rem;
-            margin-bottom: 0.75rem;
+            margin-bottom: .75rem;
             font-weight: 700;
-            line-height: 1.25;
+            line-height: 1.25
         }
 
         .markdown-content h1 {
-            font-size: 1.875rem;
+            font-size: 1.875rem
         }
 
         .markdown-content h2 {
-            font-size: 1.5rem;
+            font-size: 1.5rem
         }
 
         .markdown-content h3 {
-            font-size: 1.25rem;
+            font-size: 1.25rem
         }
 
-        .markdown-content p,
-        .markdown-content ul,
-        .markdown-content ol,
-        .markdown-content pre,
-        .markdown-content blockquote,
-        .markdown-content table {
-            margin-top: 0.75rem;
-            margin-bottom: 0.75rem;
+        .markdown-content p, .markdown-content ul, .markdown-content ol, .markdown-content pre, .markdown-content blockquote, .markdown-content table {
+            margin-top: .75rem;
+            margin-bottom: .75rem
         }
 
-        .markdown-content ul,
-        .markdown-content ol {
-            padding-left: 1.25rem;
+        .markdown-content ul, .markdown-content ol {
+            padding-left: 1.25rem
         }
 
         .markdown-content ul {
-            list-style: disc;
+            list-style: disc
         }
 
         .markdown-content ol {
-            list-style: decimal;
+            list-style: decimal
         }
 
         .markdown-content code {
-            background-color: #e2e8f0;
-            border-radius: 0.25rem;
-            padding: 0.1rem 0.3rem;
-        }
-
-        .dark .markdown-content code {
-            background-color: #334155;
+            background: var(--c-surface-subtle);
+            border-radius: .25rem;
+            padding: .1rem .3rem;
+            font-family: 'JetBrains Mono', ui-monospace, monospace
         }
 
         .markdown-content pre {
-            background-color: #e2e8f0;
-            border-radius: 0.5rem;
+            background: var(--c-surface-subtle);
+            border-radius: .75rem;
             overflow: auto;
-            padding: 0.75rem;
-        }
-
-        .dark .markdown-content pre {
-            background-color: #1e293b;
+            padding: .75rem
         }
 
         .markdown-content pre code {
-            background-color: transparent;
-            padding: 0;
+            background: transparent;
+            padding: 0
         }
 
         .markdown-content hr {
             border: 0;
-            border-top: 1px solid #94a3b8;
-            margin: 1rem 0;
+            border-top: 1px solid var(--c-border);
+            margin: 1rem 0
+        }
+
+        .markdown-content blockquote {
+            border-left: 3px solid var(--c-primary);
+            padding-left: 1rem;
+            color: var(--c-text-muted)
+        }
+
+        .markdown-content table {
+            width: 100%;
+            border-collapse: collapse
+        }
+
+        .markdown-content th, .markdown-content td {
+            border: 1px solid var(--c-border);
+            padding: .4rem .75rem;
+            text-align: left
+        }
+
+        .markdown-content th {
+            background: var(--c-surface-subtle);
+            font-weight: 600
         }
     </style>
 </head>
-<body class="bg-gray-50 text-gray-800 dark:bg-slate-900 dark:text-gray-100">
+<body>
+
 <div th:replace="~{fragments/header :: header(false)}"></div>
 
-<main class="max-w-7xl mx-auto px-4 py-6 md:py-8">
-    <span hidden id="fileUuid" th:text="${file.uuid}"></span>
+<!-- Floating orbs -->
+<div aria-hidden="true" class="orb-field">
+    <div class="orb orb--primary"></div>
+    <div class="orb orb--secondary"></div>
+</div>
+
+<main class="flex-1 hero-scene">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
+
+        <span hidden id="fileUuid" th:text="${file.uuid}"></span>
     <span hidden id="isMarkdownPaste" th:text="${isMarkdownPaste}"></span>
-    <div class="grid grid-cols-1 xl:grid-cols-5 gap-6 items-start">
-        <section class="xl:col-span-4 bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-6 md:p-8 space-y-5">
-            <div class="title-action-bar sticky top-2 z-10 -mx-2 px-2 py-2 rounded-xl border border-slate-200 dark:border-slate-700">
-                <div class="flex flex-wrap items-center justify-between gap-3">
-                    <h1
-                            class="paste-title text-2xl md:text-3xl font-semibold tracking-tight break-all"
-                            th:text="${#strings.isEmpty(file.name) ? #{page.pasteView.untitled} : file.name}"
-                    >Paste</h1
-                    >
-                    <div class="flex flex-wrap gap-2">
-                        <button
-                                class="rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium px-4 py-2 transition-colors"
-                                id="copyTextButton"
-                                type="button"
-                                th:text="#{page.pasteView.copyText}"
-                        >
-                            Copy text
-                        </button>
-                        <a
-                                class="rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium px-4 py-2 transition-colors"
-                                th:href="@{/file/paste/edit/{uuid}(uuid=${file.uuid})}"
-                                th:text="#{button.edit}"
-                        >Edit</a
-                        >
-                        <a
-                                class="rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium px-4 py-2 transition-colors"
-                                th:href="@{/file/download/{uuid}(uuid=${file.uuid})}"
-                                th:text="#{button.download}"
-                        >Download</a
-                        >
+
+        <div th:class="${isShareLinksDisabled} ? 'flex flex-col gap-6' : 'grid grid-cols-1 xl:grid-cols-4 gap-6 items-start'">
+
+            <!-- ── Main column ────────────────────────────────────────── -->
+            <section th:class="${isShareLinksDisabled} ? 'w-full' : 'xl:col-span-3'">
+                <div class="card-glass card-xl flex flex-col gap-5 animate-in" style="padding: 2rem">
+
+                    <!-- Sticky title bar -->
+                    <div class="flex flex-wrap items-center justify-between gap-4 p-4 rounded-xl"
+                         style="background: var(--c-surface-raised); border: 1px solid var(--c-border); position: sticky; top: calc(var(--nav-h, 4rem) + .5rem); z-index: 10">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                                 style="background: var(--c-indigo-muted); color: var(--c-indigo)">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8"
+                                     viewBox="0 0 24 24">
+                                    <path d="M17.25 6.75 22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3-4.5 16.5" stroke-linecap="round"
+                                          stroke-linejoin="round"/>
+                                </svg>
+                            </div>
+                            <h1 class="text-xl font-extrabold tracking-tight break-all"
+                                th:text="${#strings.isEmpty(file.name) ? #messages.msg('page.pasteView.untitled') : file.name}">
+                                Paste</h1>
+                        </div>
+                        <div class="flex flex-wrap gap-2">
+                            <button class="btn btn-primary btn-sm" id="copyTextButton" th:text="#{page.pasteView.copyText}"
+                                    type="button">Copy text
+                            </button>
+                            <a class="btn btn-ghost btn-sm"
+                               th:href="@{/file/paste/edit/{uuid}(uuid=${file.uuid})}"
+                               th:text="#{button.edit}">Edit</a>
+                            <a class="btn btn-gradient btn-sm"
+                               th:href="@{/file/download/{uuid}(uuid=${file.uuid})}"
+                               th:text="#{button.download}">Download</a>
+                        </div>
+                    </div>
+
+                    <!-- View toggle -->
+                    <div class="flex items-center gap-2">
+                        <div class="segmented">
+                            <button class="segmented-btn is-active" id="showRawBtn" th:text="#{page.pasteView.raw}"
+                                    type="button">Raw
+                            </button>
+                            <button class="segmented-btn hidden" id="showMarkdownBtn"
+                                    th:text="#{page.pasteView.markdown}" type="button">Markdown
+                            </button>
+            </div>
+                        <span class="text-xs ml-2" style="color:var(--c-text-faint)" th:if="${isMarkdownPaste}"
+                              th:text="#{page.pasteView.renderedHint}">Rendered markdown is enabled for this paste.</span>
+                    </div>
+
+                    <!-- Raw content -->
+                    <pre class="code-preview max-h-[72vh] overflow-auto text-sm font-mono whitespace-pre-wrap break-words"
+                         id="rawPasteContent" th:text="${pasteContent}"></pre>
+
+                    <!-- Markdown content -->
+                    <div class="markdown-content hidden max-h-[72vh] overflow-auto rounded-xl p-5"
+                         id="markdownPasteContent"
+                         style="border:1px solid var(--c-border);background:var(--c-surface-subtle)"></div>
+                </div>
+            </section>
+
+            <!-- ── Sidebar ────────────────────────────────────────────── -->
+            <aside class="xl:col-span-1" th:if="${!isShareLinksDisabled}">
+                <div class="card card-lg flex flex-col gap-4 animate-in animate-in-delay-1 accent-stripe accent-stripe--secondary">
+                    <h2 class="section-title flex items-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" style="color:var(--c-secondary)"
+                             viewBox="0 0 24 24">
+                            <path d="M7.217 10.907a2.25 2.25 0 1 0 0 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186 9.566-5.314m-9.566 7.5 9.566 5.314m0 0a2.25 2.25 0 1 0 3.935 2.186 2.25 2.25 0 0 0-3.935-2.186Zm0-12.814a2.25 2.25 0 1 0 3.933-2.185 2.25 2.25 0 0 0-3.933 2.185Z" stroke-linecap="round"
+                                  stroke-linejoin="round"/>
+                        </svg>
+                        <span th:text="#{page.pasteView.share}">Share</span>
+                    </h2>
+
+                    <div class="flex flex-col gap-2">
+                        <label class="sr-only" for="shareLink">Share link</label>
+                        <input class="form-input form-input-mono text-xs w-full" id="shareLink" placeholder="Generate a share link…" readonly
+                               th:placeholder="#{page.fileView.sharePlaceholder}" type="text"
+                               value=""/>
+                        <div class="flex gap-2">
+                            <button class="btn btn-gradient btn-sm flex-1" id="generateShareButton" th:text="#{page.pasteView.generateLink}"
+                                    type="button">Generate link
+                            </button>
+                            <button class="btn btn-ghost btn-sm shrink-0" id="copyShareButton" th:text="#{button.copy}"
+                                    type="button">Copy
+                            </button>
+                        </div>
                     </div>
                 </div>
-            </div>
+            </aside>
 
-            <div class="flex items-center gap-2 text-sm pt-1">
-                <button class="rounded-lg px-3 py-1 bg-sky-500 text-white" id="showRawBtn" th:text="#{page.pasteView.raw}"
-                        type="button">Raw
-                </button>
-                <button class="hidden rounded-lg px-3 py-1 border border-slate-300 dark:border-slate-600"
-                        id="showMarkdownBtn" th:text="#{page.pasteView.markdown}" type="button">
-                    Markdown
-                </button>
-                <span class="text-gray-600 dark:text-gray-400" th:if="${isMarkdownPaste}"
-                      th:text="#{page.pasteView.renderedHint}">Rendered markdown is enabled for this paste.</span>
-            </div>
-
-            <pre
-                    class="max-h-[72vh] overflow-auto rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 p-4 md:p-5 text-sm font-mono whitespace-pre-wrap break-words"
-                    id="rawPasteContent"
-                    th:text="${pasteContent}"
-            ></pre>
-
-            <div
-                    class="markdown-content hidden max-h-[72vh] overflow-auto rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 p-4 md:p-5"
-                    id="markdownPasteContent"
-            ></div>
-        </section>
-
-        <aside class="xl:col-span-1 bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-6 md:p-8 space-y-4"
-               th:if="${!isShareLinksDisabled}">
-            <h2 class="text-lg font-semibold tracking-tight" th:text="#{page.pasteView.share}">Share</h2>
-            <button
-                    class="w-full rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium px-4 py-2 transition-colors"
-                    id="generateShareButton"
-                    type="button"
-                    th:text="#{page.pasteView.generateLink}"
-            >
-                Generate link
-            </button>
-            <input
-                    class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2 text-sm"
-                    id="shareLink"
-                    readonly
-                    type="text"
-                    value=""
-            />
-            <button
-                    class="w-full rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-sm hover:bg-slate-100 dark:hover:bg-slate-700"
-                    id="copyShareButton"
-                    type="button"
-                    th:text="#{page.pasteView.copyShareLink}"
-            >
-                Copy share link
-            </button>
-        </aside>
+        </div>
     </div>
 </main>
 
-<script>
-    const rawEl = document.getElementById("rawPasteContent");
-    const markdownEl = document.getElementById("markdownPasteContent");
-    const rawButton = document.getElementById("showRawBtn");
-    const markdownButton = document.getElementById("showMarkdownBtn");
-    const copyTextButton = document.getElementById("copyTextButton");
-    const rawText = rawEl.textContent || "";
+<script th:inline="javascript">
+    const rawEl = document.getElementById('rawPasteContent');
+    const markdownEl = document.getElementById('markdownPasteContent');
+    const rawButton = document.getElementById('showRawBtn');
+    const markdownButton = document.getElementById('showMarkdownBtn');
+    const copyTextButton = document.getElementById('copyTextButton');
+    const rawText = rawEl.textContent || '';
     const markedApi = window.marked;
-    const markdownRuntimeAvailable =
-        !!markedApi &&
-        typeof markedApi.setOptions === "function" &&
-        typeof markedApi.parse === "function";
-    const isMarkdownPaste =
-        (document.getElementById("isMarkdownPaste")?.textContent || "")
-            .trim()
-            .toLowerCase() === "true";
+    const markdownRuntimeAvailable = !!markedApi && typeof markedApi.setOptions === 'function' && typeof markedApi.parse === 'function';
+    const isMarkdownPaste = (document.getElementById('isMarkdownPaste')?.textContent || '').trim().toLowerCase() === 'true';
 
-    if (markdownRuntimeAvailable) {
-        markedApi.setOptions({
-            gfm: true,
-            breaks: true,
-        });
-    }
+    if (markdownRuntimeAvailable) markedApi.setOptions({gfm: true, breaks: true});
 
     function showRaw() {
-        rawEl.classList.remove("hidden");
-        markdownEl.classList.add("hidden");
-        rawButton.className = "rounded-lg px-3 py-1 bg-sky-500 text-white";
-        if (isMarkdownPaste) {
-            markdownButton.className = "rounded-lg px-3 py-1 border border-slate-300 dark:border-slate-600";
-        }
+        rawEl.classList.remove('hidden');
+        markdownEl.classList.add('hidden');
+        rawButton.classList.add('is-active');
+        markdownButton.classList.remove('is-active');
     }
 
     function showMarkdown() {
-        if (!isMarkdownPaste || !markdownRuntimeAvailable) {
-            return;
-        }
+        if (!isMarkdownPaste || !markdownRuntimeAvailable) return;
         try {
             markdownEl.innerHTML = markedApi.parse(rawText);
         } catch (_) {
             showRaw();
             return;
         }
-        markdownEl.classList.remove("hidden");
-        rawEl.classList.add("hidden");
-        markdownButton.className = "rounded-lg px-3 py-1 bg-sky-500 text-white";
-        rawButton.className = "rounded-lg px-3 py-1 border border-slate-300 dark:border-slate-600";
+        markdownEl.classList.remove('hidden');
+        rawEl.classList.add('hidden');
+        markdownButton.classList.add('is-active');
+        rawButton.classList.remove('is-active');
     }
 
-    rawButton.addEventListener("click", showRaw);
+    rawButton.addEventListener('click', showRaw);
     if (isMarkdownPaste && markdownRuntimeAvailable) {
-        markdownButton.classList.remove("hidden");
-        markdownButton.addEventListener("click", showMarkdown);
-    } else if (isMarkdownPaste && !markdownRuntimeAvailable) {
-        markdownButton.classList.add("hidden");
+        markdownButton.classList.remove('hidden');
+        markdownButton.addEventListener('click', showMarkdown);
     }
-    const copySuccessText = /*[[#{notification.copied}]]*/ "Copied";
-    const copyFailedText = /*[[#{notification.failed}]]*/ "Failed";
-    const copyButtonText = /*[[#{page.pasteView.copyText}]]*/ "Copy text";
-    const copyShareButtonText = /*[[#{page.pasteView.copyShareLink}]]*/ "Copy share link";
-    const generateLinkFailedText = /*[[#{page.pasteView.generateLinkFailed}]]*/ "Unable to generate share link";
-    copyTextButton.addEventListener("click", async () => {
+
+    const copySuccessText = /*[[#{notification.copied}]]*/ 'Copied';
+    const copyFailedText = /*[[#{notification.failed}]]*/ 'Failed';
+    const copyButtonText = /*[[#{page.pasteView.copyText}]]*/ 'Copy text';
+    const copyShareButtonText = document.getElementById('copyShareButton')?.textContent?.trim() || /*[[#{button.copy}]]*/ 'Copy';
+    const generateLinkFailedText = /*[[#{page.pasteView.generateLinkFailed}]]*/ 'Unable to generate share link';
+
+    copyTextButton.addEventListener('click', async () => {
         try {
             await navigator.clipboard.writeText(rawText);
             copyTextButton.textContent = copySuccessText;
+            if (typeof window.toast === 'function') window.toast(copySuccessText, 'success');
             setTimeout(() => {
                 copyTextButton.textContent = copyButtonText;
             }, 1200);
@@ -282,30 +270,24 @@
         }
     });
 
-    const generateShareButton = document.getElementById("generateShareButton");
-    const copyShareButton = document.getElementById("copyShareButton");
-    const shareLinkInput = document.getElementById("shareLink");
-    const fileUuid = document.getElementById("fileUuid")?.textContent?.trim();
-    const csrfToken = document.querySelector('meta[name="_csrf"]')?.content || "";
+    const generateShareButton = document.getElementById('generateShareButton');
+    const copyShareButton = document.getElementById('copyShareButton');
+    const shareLinkInput = document.getElementById('shareLink');
+    const fileUuid = document.getElementById('fileUuid')?.textContent?.trim();
+    const csrfToken = document.querySelector('meta[name="_csrf"]')?.content || '';
 
     if (generateShareButton && fileUuid) {
-        generateShareButton.addEventListener("click", async () => {
+        generateShareButton.addEventListener('click', async () => {
             try {
                 const response = await fetch(`/api/file/share/${fileUuid}`, {
-                    method: "POST",
-                    credentials: "same-origin",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "X-XSRF-TOKEN": csrfToken,
-                        Accept: "application/json",
-                    },
+                    method: 'POST', credentials: 'same-origin',
+                    headers: {'Content-Type': 'application/json', 'X-XSRF-TOKEN': csrfToken, Accept: 'application/json'}
                 });
                 const data = await response.json();
                 if (response.ok) {
-                    const sharePath = data.sharePath || (data.token ? `/share/${data.token}` : "");
-                    shareLinkInput.value = sharePath
-                        ? new URL(sharePath, window.location.origin).toString()
-                        : "";
+                    const sharePath = data.sharePath || (data.token ? `/share/${data.token}` : '');
+                    shareLinkInput.value = sharePath ? new URL(sharePath, window.location.origin).toString() : '';
+                    if (typeof window.toast === 'function') window.toast('Share link generated', 'success');
                 } else {
                     shareLinkInput.value = data?.message || generateLinkFailedText;
                 }
@@ -316,13 +298,12 @@
     }
 
     if (copyShareButton) {
-        copyShareButton.addEventListener("click", async () => {
-            if (!shareLinkInput.value) {
-                return;
-            }
+        copyShareButton.addEventListener('click', async () => {
+            if (!shareLinkInput.value) return;
             try {
                 await navigator.clipboard.writeText(shareLinkInput.value);
                 copyShareButton.textContent = copySuccessText;
+                if (typeof window.toast === 'function') window.toast(copySuccessText, 'success');
                 setTimeout(() => {
                     copyShareButton.textContent = copyShareButtonText;
                 }, 1200);
@@ -335,14 +316,8 @@
         });
     }
 
-    if (isMarkdownPaste && markdownRuntimeAvailable) {
-        showMarkdown();
-    } else {
-        showRaw();
-    }
+    if (isMarkdownPaste && markdownRuntimeAvailable) showMarkdown(); else showRaw();
 </script>
 <script src="/js/locale-switcher.js"></script>
 </body>
 </html>
-
-

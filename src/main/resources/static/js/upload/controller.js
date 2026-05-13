@@ -106,7 +106,7 @@ export function initUploadPage(config = {}) {
 
     const file = files[0];
     if (file.size > maxSize) {
-      dropZoneText.textContent = `File exceeds the ${maxSizeLabel} limit.`;
+        dropZoneText.textContent = (window.i18n?.upload?.fileExceedsLimit || 'File exceeds the {0} limit.').replace('{0}', maxSizeLabel);
       dropZoneText.classList.remove("hidden");
       fileNameEl.textContent = "";
       fileNameEl.classList.add("hidden");
@@ -132,13 +132,11 @@ export function initUploadPage(config = {}) {
     uploadCandidates = { ...candidates, source: "single" };
     if (candidates.failures.length > 0) {
       applyState(UploadState.NEEDS_CONFIRMATION);
-      renderStripWarning(candidates.failures, "single", ui);
+        renderStripWarning(candidates.failures, ui);
     } else {
       applyState(UploadState.READY);
       if (candidates.warnings.length > 0) {
-        renderStripWarning(candidates.warnings, "single", ui, {
-          type: "warning",
-        });
+          renderStripWarning(candidates.warnings, ui);
       }
     }
   }
@@ -152,13 +150,13 @@ export function initUploadPage(config = {}) {
     let totalOriginalSize = 0;
     for (const file of fileList) totalOriginalSize += file.size;
     if (totalOriginalSize > maxSize) {
-      showMessage("danger", `Folder exceeds the ${maxSizeLabel} limit.`);
+        showMessage("danger", (window.i18n?.upload?.folderExceedsLimit || 'Folder exceeds the {0} limit.').replace('{0}', maxSizeLabel));
       resetFileSelection();
       return;
     }
 
     if (dropZoneText) {
-      dropZoneText.textContent = "Processing folder...";
+        dropZoneText.textContent = window.i18n?.upload?.processingFolder || 'Processing folder...';
       dropZoneText.classList.remove("hidden");
     }
     if (fileNameEl) fileNameEl.classList.add("hidden");
@@ -171,7 +169,7 @@ export function initUploadPage(config = {}) {
       candidates = await buildFolderCandidates(fileList, { metadataEnabled });
     } catch (err) {
       console.error("Folder processing failed", err);
-      showMessage("danger", "Unable to prepare folder for upload.");
+        showMessage("danger", window.i18n?.upload?.folderFailed || 'Unable to prepare folder for upload.');
       resetFileSelection();
       return;
     }
@@ -184,7 +182,7 @@ export function initUploadPage(config = {}) {
       fileNameEl.classList.remove("hidden");
     }
     if (dropZoneText) {
-      dropZoneText.textContent = `Folder selected: ${candidates.rootFolder} (${fileList.length} items)`;
+        dropZoneText.textContent = (window.i18n?.upload?.folderSelected || 'Folder selected: {0} ({1} items)').replace('{0}', candidates.rootFolder).replace('{1}', fileList.length);
       dropZoneText.classList.remove("hidden");
     }
     if (fileInput) fileInput.value = "";
@@ -192,20 +190,18 @@ export function initUploadPage(config = {}) {
     uploadCandidates = { ...candidates, source: "folder" };
     if (candidates.failures.length > 0) {
       applyState(UploadState.NEEDS_CONFIRMATION);
-      renderStripWarning(candidates.failures, "folder", ui);
+        renderStripWarning(candidates.failures, ui);
     } else {
       applyState(UploadState.READY);
       if (candidates.warnings.length > 0) {
-        renderStripWarning(candidates.warnings, "folder", ui, {
-          type: "warning",
-        });
+          renderStripWarning(candidates.warnings, ui);
       }
     }
   }
 
   async function onUploadPrimaryClick() {
     if (!uploadCandidates) {
-      showMessage("warning", "Select a file or folder to upload first.");
+        showMessage("warning", window.i18n?.upload?.selectionRequired || 'Select a file or folder to upload first.');
       return;
     }
     if (isUploading) return;
@@ -218,7 +214,7 @@ export function initUploadPage(config = {}) {
       ? fallbackCandidate
       : cleanCandidate || fallbackCandidate;
     if (!candidate || !candidate.file) {
-      showMessage("danger", "No upload candidate is available.");
+        showMessage("danger", window.i18n?.upload?.noCandidate || 'No upload candidate is available.');
       return;
     }
 
@@ -236,15 +232,12 @@ export function initUploadPage(config = {}) {
           window.location.href = `/file/${uuid}`;
         },
         onWarn: () => {
-          showMessage(
-            "warning",
-            "Upload finished but no file information was returned from the server."
-          );
+            showMessage("warning", window.i18n?.upload?.noFileInfo || 'Upload finished but no file information was returned from the server.');
           isUploading = false;
           applyState(UploadState.READY);
         },
         onError: () => {
-          showMessage("danger", "Upload failed. Please try again.");
+            showMessage("danger", window.i18n?.upload?.uploadFailed || 'Upload failed. Please try again.');
           resetUploadUI();
         },
       });
@@ -270,14 +263,14 @@ export function initUploadPage(config = {}) {
       dropZone.addEventListener(eventName, (e) => {
         e.preventDefault();
         e.stopPropagation();
-        dropZone.classList.add("ring-2", "ring-sky-500");
+          dropZone.classList.add("drag-active");
       });
     });
     ["dragleave", "drop"].forEach((eventName) => {
       dropZone.addEventListener(eventName, (e) => {
         e.preventDefault();
         e.stopPropagation();
-        dropZone.classList.remove("ring-2", "ring-sky-500");
+          dropZone.classList.remove("drag-active");
       });
     });
     dropZone.addEventListener("drop", async (e) => {

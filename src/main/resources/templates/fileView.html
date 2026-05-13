@@ -1,435 +1,361 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="_csrf" th:content="${_csrf.token}" />
-    <title th:text="#{page.fileView.title.browser(${appName})}">File View</title>
-    <meta content="width=device-width, initial-scale=1" name="viewport" />
-    <link href="/css/tailwind.css" rel="stylesheet" />
-    <link href="/css/custom.css" rel="stylesheet" />
-    <link
-      href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css"
-      rel="stylesheet"
-    />
-    <link
-      th:href="${appLogoPath}"
-      href="/images/favicon.png"
-      rel="icon"
-      type="image/png"
-    />
-    <script src="/js/tailwindTheme.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.4.4/build/qrcode.min.js"></script>
-    <script
-      defer
-      src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"
-    ></script>
-  </head>
-  <body class="bg-gray-50 text-gray-800 dark:bg-slate-900 dark:text-gray-100">
-  <div th:replace="~{fragments/header :: header(false)}"></div>
-    <main class="max-w-7xl mx-auto px-4 py-6 md:py-8">
-      <header class="text-center mb-8 space-y-1">
-        <h1 class="text-3xl md:text-4xl font-semibold tracking-tight">
-          <span th:text="#{page.fileView.title}">File View</span>
-        </h1>
-      </header>
-      <span hidden id="fileUuid" th:text="${file.uuid}"></span>
-      <span hidden id="downloadLink" th:text="${downloadLink}"></span>
-      <span hidden id="previewUrl" th:text="${previewUrl}"></span>
-      <div
-        th:class="${isShareLinksDisabled} ? 'grid grid-cols-1 gap-6 items-start' : 'grid grid-cols-1 sm:grid-cols-3 gap-6 items-start'"
-      >
-        <section
-          th:class="${isShareLinksDisabled} ? 'w-full sm:col-span-3' : 'w-full sm:col-span-2'"
-        >
-          <div
-            class="bg-white dark:bg-slate-800 p-6 md:p-8 rounded-2xl shadow-lg flex flex-col gap-4 w-full"
-            id="fileInfoCard"
-          >
-            <h2
-              class="text-center text-xl font-semibold tracking-tight"
-              th:text="${file.name}"
-            >
-              File Name
-            </h2>
-            <p
-              class="text-center text-gray-700 dark:text-gray-300"
-              th:if="${!#strings.isEmpty(file.description)}"
-              th:text="${file.description}"
-            ></p>
-            <div class="flex justify-between border-t pt-4">
-              <span
-                class="font-semibold"
-                th:text="${file.keepIndefinitely} ? #{page.fileView.uploadedAt} : #{page.fileView.uploadedRenewedAt}"
-              ></span>
-              <span
-                th:text="${#temporals.format(file.uploadDate, 'dd.MM.yyyy')}"
-              ></span>
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="_csrf" th:content="${_csrf.token}"/>
+  <title th:text="#{page.fileView.title.browser(${appName})}">File — QuickDrop</title>
+  <meta content="width=device-width, initial-scale=1" name="viewport"/>
+  <link href="https://fonts.googleapis.com" rel="preconnect"/>
+  <link crossorigin href="https://fonts.gstatic.com" rel="preconnect"/>
+  <link href="/css/tailwind.css" rel="stylesheet"/>
+  <link href="/css/custom.css" rel="stylesheet"/>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css" rel="stylesheet"/>
+  <link href="/images/favicon.png" rel="icon" th:href="${appLogoPath}" type="image/png"/>
+  <script src="/js/tailwindTheme.js"></script>
+  <script src="/js/toast.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.4.4/build/qrcode.min.js"></script>
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <th:block th:replace="~{fragments/header :: scripts}"></th:block>
+</head>
+<body>
+
+<div th:replace="~{fragments/header :: header(false)}"></div>
+
+<!-- Floating orbs -->
+<div aria-hidden="true" class="orb-field">
+  <div class="orb orb--primary"></div>
+  <div class="orb orb--secondary"></div>
+</div>
+
+<main class="flex-1 hero-scene">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
+
+    <span hidden id="fileUuid" th:text="${file.uuid}"></span>
+    <span hidden id="downloadLink" th:text="${downloadLink}"></span>
+    <span hidden id="previewUrl" th:text="${previewUrl}"></span>
+
+    <!-- ── File hero banner ──────────────────────────────────────── -->
+    <div class="card-glass card-xl mb-8 animate-in" style="padding: 2.5rem">
+      <div class="flex flex-col lg:flex-row gap-6 lg:gap-10 items-start">
+
+        <!-- Large file icon -->
+        <div class="flex-shrink-0">
+          <div class="w-20 h-20 rounded-2xl flex items-center justify-center"
+               style="background: var(--c-primary-muted); color: var(--c-primary); box-shadow: 0 12px 32px -8px color-mix(in srgb, var(--c-primary) 30%, transparent)">
+            <svg class="w-10 h-10" fill="none" stroke="currentColor" stroke-width="1.4" viewBox="0 0 24 24">
+              <path d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" stroke-linecap="round"
+                    stroke-linejoin="round"/>
+            </svg>
+          </div>
+        </div>
+
+        <!-- File info -->
+        <div class="min-w-0 flex-1">
+          <span class="section-eyebrow mb-1 block">File</span>
+          <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight break-all leading-tight"
+              th:text="${file.name}">Filename</h1>
+          <p class="mt-2 text-sm" style="color: var(--c-text-muted)"
+             th:if="${!#strings.isEmpty(file.description)}" th:text="${file.description}"></p>
+
+          <!-- Status chips -->
+          <div class="flex flex-wrap gap-2 mt-4">
+            <span class="badge badge-secondary" th:if="${file.passwordHash != null}">
+              <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path
+                      d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" stroke-linecap="round"
+                      stroke-linejoin="round"/></svg>
+              <span th:text="#{page.password.protectedLabel}">Protected</span>
+            </span>
+            <span class="badge badge-teal" id="badge-permanent"
+                  th:classappend="${file.keepIndefinitely} ? '' : ' hidden'">
+              <span class="status-dot status-dot--static"
+                    style="color: var(--c-teal); width:0.4rem; height:0.4rem"></span>
+              <span th:text="#{badge.permanent}">Permanent</span>
+            </span>
+            <span class="badge badge-amber" id="badge-expires"
+                  th:classappend="${file.keepIndefinitely} ? ' hidden' : ''">
+              <span th:text="#{badge.autoExpires}">Auto-expires</span>
+            </span>
+            <span class="badge badge-rose" id="badge-hidden" th:classappend="${file.hidden} ? '' : ' hidden'">
+              <span th:text="#{badge.hidden}">Hidden</span>
+            </span>
+            <span class="badge badge-indigo" th:if="${file.folderUpload}">
+              <span th:text="#{badge.folder}">Folder</span>
+            </span>
+            <span class="badge badge-primary" th:if="${file.paste}">
+              <span th:text="#{badge.paste}">Paste</span>
+            </span>
+          </div>
+        </div>
+
+        <!-- Action buttons (right-aligned on desktop) -->
+        <div class="flex flex-wrap gap-3 lg:flex-col lg:items-end flex-shrink-0">
+          <a class="btn btn-gradient btn-lg" id="downloadButton"
+             th:href="@{/file/download/{uuid}(uuid=${file.uuid})}"
+             th:onclick="${file.passwordHash != null} ? 'showPreparingMessage()' : ''">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-6-6-3 3m0 0-3-3m3 3V3" stroke-linecap="round"
+                    stroke-linejoin="round"/>
+            </svg>
+            <span th:text="#{button.download}">Download</span>
+          </a>
+
+          <form id="renewForm" method="post" th:action="@{/file/extend/{uuid}(uuid=${file.uuid})}"
+                th:classappend="${file.keepIndefinitely} ? ' hidden'">
+            <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden"/>
+            <button class="btn btn-teal" th:text="#{page.fileView.renewLifetime}" type="submit">Renew Lifetime</button>
+          </form>
+
+          <a class="btn btn-ghost"
+             th:href="@{/file/paste/edit/{uuid}(uuid=${file.uuid})}"
+             th:if="${file.paste}"
+             th:text="#{page.fileView.editPaste}">Edit Paste</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Content grid ──────────────────────────────────────────── -->
+    <div th:class="${isShareLinksDisabled} ? 'flex flex-col gap-6' : 'grid grid-cols-1 lg:grid-cols-3 gap-6 items-start'">
+
+      <!-- ── Main column ────────────────────────────────────────── -->
+      <section class="flex flex-col gap-6" th:classappend="${isShareLinksDisabled} ? 'w-full' : 'lg:col-span-2'">
+        <div class="card card-lg flex flex-col gap-6 animate-in animate-in-delay-1" id="fileInfoCard">
+
+          <!-- Metadata grid -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="p-4 rounded-xl" style="background: var(--c-surface-raised); border: 1px solid var(--c-border)">
+              <span class="section-eyebrow block mb-1"
+                    th:text="${file.keepIndefinitely} ? #{page.fileView.uploadedAt} : #{page.fileView.uploadedRenewedAt}">Uploaded</span>
+              <span class="font-mono text-lg font-bold" th:text="${#temporals.format(file.uploadDate, 'dd.MM.yyyy')}">01.01.2025</span>
+              <p class="text-xs mt-1" style="color: var(--c-text-faint)"
+                 th:if="${file.keepIndefinitely == false}">
+                <span th:text="#{page.fileView.retention.beforeDays}">Kept for</span>
+                <span th:text="${maxFileLifeTime}">30</span>
+                <span th:text="#{page.fileView.retention.afterDays}">days after this date.</span>
+              </p>
             </div>
-            <small
-              class="text-gray-600 dark:text-gray-400"
-              th:if="${file.keepIndefinitely == false}"
-            ><span th:text="#{page.fileView.retention.beforeDays}">Files are kept only for </span>
-              <span th:text="${maxFileLifeTime}">30</span> <span th:text="#{page.fileView.retention.afterDays}">days after this date.</span></small
-            >
-            <div
-              class="flex justify-between items-center pt-4"
-              th:with="keepDisabled=${(isKeepIndefinitelyAdminOnly and !hasAdminSession) or (!hasAdminSession and file.passwordHash == null)}"
-              th:if="${keepDisabled == false or file.keepIndefinitely == true}"
-            >
-              <span class="font-semibold" th:text="#{page.fileView.keepIndefinitely}">Keep indefinitely:</span>
-              <form
-                method="post"
-                th:action="@{/file/keep-indefinitely/{uuid}(uuid=${file.uuid})}"
-              >
-                <input
-                  th:name="${_csrf.parameterName}"
-                  th:value="${_csrf.token}"
-                  type="hidden"
-                />
-                <input name="keepIndefinitely" type="hidden" value="false" />
-                <label class="inline-flex items-center gap-2">
+            <div class="p-4 rounded-xl" style="background: var(--c-surface-raised); border: 1px solid var(--c-border)">
+              <span class="section-eyebrow block mb-1" th:text="#{page.fileView.fileSize}">File Size</span>
+              <span class="font-mono text-lg font-bold" th:text="${fileSize}">—</span>
+            </div>
+          </div>
+
+          <!-- Owner toggles -->
+          <div class="flex flex-col gap-3" th:with="
+                keepDisabled=${(isKeepIndefinitelyAdminOnly and !hasAdminSession) or (!hasAdminSession and file.passwordHash == null)},
+                hiddenDisabled=${(isHideFromListAdminOnly and !hasAdminSession) or (!hasAdminSession and file.passwordHash == null)}">
+            <div class="flex items-center justify-between gap-4 p-3 rounded-xl"
+                 style="background: var(--c-surface-raised); border: 1px solid var(--c-border)"
+                 th:if="${keepDisabled == false or file.keepIndefinitely == true}">
+              <span class="font-semibold text-sm" th:text="#{page.fileView.keepIndefinitely}">Keep indefinitely</span>
+              <form method="post" th:action="@{/file/keep-indefinitely/{uuid}(uuid=${file.uuid})}">
+                <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden"/>
+                <input name="keepIndefinitely" type="hidden" value="false"/>
+                <label class="toggle toggle--teal">
                   <input
-                    class="h-4 w-4 rounded border-gray-400 dark:border-gray-600 accent-sky-500 dark:accent-sky-400 focus:ring-sky-500"
-                    id="keepIndefinitely"
-                    name="keepIndefinitely"
-                    onchange="updateCheckboxState(event, this)"
+                          name="keepIndefinitely" onchange="updateCheckboxState(event,this)" type="checkbox"
+                          value="true"
                     th:checked="${file.keepIndefinitely}"
                     th:disabled="${keepDisabled}"
-                    type="checkbox"
-                    value="true"
                   />
+                  <span class="toggle-slider"></span>
                 </label>
               </form>
             </div>
-            <div
-              class="flex justify-between items-center"
-              th:with="hiddenDisabled=${(isHideFromListAdminOnly and !hasAdminSession) or (!hasAdminSession and file.passwordHash == null)}"
-              th:if="${hiddenDisabled == false or file.hidden == true}"
-            >
-              <span class="font-semibold" th:text="#{page.fileView.hideFromList}">Hide file from list:</span>
-              <form
-                method="post"
-                th:action="@{/file/toggle-hidden/{uuid}(uuid=${file.uuid})}"
-              >
-                <input
-                  th:name="${_csrf.parameterName}"
-                  th:value="${_csrf.token}"
-                  type="hidden"
-                />
-                <input name="hidden" type="hidden" value="false" />
-                <label class="inline-flex items-center gap-2">
+
+            <div class="flex items-center justify-between gap-4 p-3 rounded-xl"
+                 style="background: var(--c-surface-raised); border: 1px solid var(--c-border)"
+                 th:if="${hiddenDisabled == false or file.hidden == true}">
+              <span class="font-semibold text-sm" th:text="#{page.fileView.hideFromList}">Hide from list</span>
+              <form method="post" th:action="@{/file/toggle-hidden/{uuid}(uuid=${file.uuid})}">
+                <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden"/>
+                <input name="hidden" type="hidden" value="false"/>
+                <label class="toggle toggle--rose">
                   <input
-                    class="h-4 w-4 rounded border-gray-400 dark:border-gray-600 accent-sky-500 dark:accent-sky-400 focus:ring-sky-500"
-                    id="hidden"
-                    name="hidden"
-                    onchange="updateCheckboxState(event, this)"
+                          name="hidden" onchange="updateCheckboxState(event,this)" type="checkbox"
+                          value="true"
                     th:checked="${file.hidden}"
                     th:disabled="${hiddenDisabled}"
-                    type="checkbox"
-                    value="true"
                   />
+                  <span class="toggle-slider"></span>
                 </label>
               </form>
             </div>
-            <div class="flex justify-between items-center border-t pt-4">
-              <span class="font-semibold" th:text="#{page.fileView.fileSize}">File Size:</span>
-              <span th:text="${fileSize}"></span>
-            </div>
-            <div class="border-t pt-4" th:if="${file.folderUpload}">
-              <div class="flex items-center justify-between mb-2">
-                <div class="text-sm font-semibold" th:text="#{page.fileView.folderContents}">Folder contents</div>
-              </div>
-              <div
-                id="folderTree"
-                class="text-sm font-mono whitespace-pre-wrap bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-100 rounded-lg p-3 max-h-64 overflow-auto folder-tree-box"
-                th:attr="data-manifest=${file.folderManifest},data-folder-name=${file.folderName}"
-              ></div>
-              <script
-                id="folderManifestData"
-                type="application/json"
-                th:utext="${file.folderManifest}"
-              ></script>
-            </div>
-            <div
-              class="hidden bg-sky-50 dark:bg-sky-900 text-sky-800 dark:text-sky-300 rounded-lg p-2"
-              id="preparingMessage"
-              th:text="#{page.fileView.preparingDownload}"
-            >
-              Your file is being prepared for download. Please wait...
-            </div>
-            <div class="mt-4 flex flex-wrap justify-center gap-4 items-center">
-              <a
-                class="rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium px-4 py-2 transition-colors active:scale-95"
-                id="downloadButton"
-                th:href="@{/file/download/{uuid}(uuid=${file.uuid})}"
-                th:onclick="${file.passwordHash != null} ? 'showPreparingMessage()' : ''"
-                th:text="#{button.download}"
-                >Download</a
-              >
-              <form
-                method="post"
-                th:action="@{/file/extend/{uuid}(uuid=${file.uuid})}"
-                th:if="${file.keepIndefinitely == false}"
-              >
-                <input
-                  th:name="${_csrf.parameterName}"
-                  th:value="${_csrf.token}"
-                  type="hidden"
-                />
-                <button
-                  class="rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium px-4 py-2 transition-colors active:scale-95"
-                  type="submit"
-                  th:text="#{page.fileView.renewLifetime}"
-                >
-                  Renew File Lifetime
-                </button>
-              </form>
-              <a
-                      class="rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium px-4 py-2 transition-colors active:scale-95"
-                      th:href="@{/file/paste/edit/{uuid}(uuid=${file.uuid})}"
-                      th:if="${file.paste}"
-                      th:text="#{page.fileView.editPaste}"
-              >Edit Paste</a
-              >
-              <form
-                      class="flex gap-2 items-center"
-                      method="post"
-                      th:action="@{/file/delete/{uuid}(uuid=${file.uuid})}"
-                      th:if="${file.passwordHash != null}"
-              >
-                <input
-                        th:name="${_csrf.parameterName}"
-                        th:value="${_csrf.token}"
-                        type="hidden"
-                />
-                <button
-                        class="rounded-lg bg-red-600 hover:bg-red-700 text-white font-medium px-4 py-2 transition-colors active:scale-95"
-                        id="deleteStartBtn"
-                        type="button"
-                        th:text="#{page.fileView.deleteFile}"
-                >
-                  Delete File
-                </button>
-                <button
-                        class="hidden rounded-lg bg-red-600 hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-500 text-white font-medium px-4 py-2 transition-all active:scale-95 focus:outline-none focus:ring-2 focus:ring-red-300 dark:focus:ring-red-700 shadow-sm"
-                        id="deleteConfirmBtn"
-                        type="submit"
-                        th:text="#{button.confirm}"
-                >
-                  Confirm
-                </button>
-                <button
-                        class="hidden rounded-lg border border-slate-400/70 bg-slate-200 hover:bg-slate-300 dark:border-slate-500 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-900 dark:text-slate-100 font-medium px-4 py-2 transition-all active:scale-95 focus:outline-none focus:ring-2 focus:ring-slate-400 dark:focus:ring-slate-600"
-                        id="deleteCancelBtn"
-                        type="button"
-                        th:text="#{button.cancel}"
-                >
-                  Cancel
-                </button>
-              </form>
-            </div>
           </div>
-        </section>
-        <aside class="sm:col-span-1" th:if="${!isShareLinksDisabled}">
-          <div
-            class="bg-white dark:bg-slate-800 p-6 md:p-8 rounded-2xl shadow-lg space-y-4 w-full"
-            id="sharePanel"
-            th:attr="data-simplified-share-links=${isSimplifiedShareLinksEnabled},data-share-links-disabled=${isShareLinksDisabled}"
-          >
-            <h2 class="text-xl font-semibold tracking-tight" th:text="#{page.fileView.share}">Share</h2>
 
-            <div class="text-sm text-gray-700 dark:text-gray-300 space-y-1">
-              <p th:text="#{page.fileView.shareBypassNotice}">Share links always bypass file and app passwords.</p>
-              <p
-                class="text-amber-600 dark:text-amber-400"
-                th:if="${!isSimplifiedShareLinksEnabled}"
-                th:text="#{page.fileView.shareAdvancedHint}"
-              >
-                Add an expiration date and/or download limit, or choose
-                unlimited to keep the link open-ended.
-              </p>
-              <p
-                class="text-amber-600 dark:text-amber-400"
-                th:if="${isSimplifiedShareLinksEnabled}"
-                th:text="#{page.fileView.shareSimplifiedHint}"
-              >
-                Simplified share links are enabled: a non-expiring link with
-                unlimited downloads is generated automatically.
-              </p>
-            </div>
-
-            <div class="space-y-4" th:if="${!isSimplifiedShareLinksEnabled}">
-              <div
-                class="grid grid-cols-1 sm:grid-cols-2 gap-4"
-                id="linkOptions"
-              >
-                <div class="space-y-2">
-                  <label class="block text-sm" for="daysValid" th:text="#{page.fileView.daysValid}"
-                    >Days valid</label
-                  >
-                  <input
-                    class="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2"
-                    id="daysValid"
-                    min="0"
-                    type="number"
-                    value="30"
-                  />
-                  <label
-                    class="flex items-center gap-2 text-sm"
-                    for="noExpiration"
-                  >
-                    <input
-                      class="h-4 w-4 rounded border-gray-400 dark:border-gray-600 accent-sky-500 dark:accent-sky-400 focus:ring-sky-500"
-                      id="noExpiration"
-                      onchange="toggleExpirationLimit()"
-                      type="checkbox"
-                    />
-                    <span th:text="#{page.fileView.noExpiration}">No expiration (unlimited time)</span>
-                  </label>
-                </div>
-                <div class="space-y-2">
-                  <label
-                    class="block text-sm"
-                    for="allowedNumberOfDownloadsCount"
-                    th:text="#{page.fileView.allowedDownloads}"
-                    >Allowed downloads</label
-                  >
-                  <input
-                    class="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2"
-                    id="allowedNumberOfDownloadsCount"
-                    min="0"
-                    type="number"
-                    value="1"
-                  />
-                  <label
-                    class="flex items-center gap-2 text-sm"
-                    for="unlimitedDownloads"
-                  >
-                    <input
-                      class="h-4 w-4 rounded border-gray-400 dark:border-gray-600 accent-sky-500 dark:accent-sky-400 focus:ring-sky-500"
-                      id="unlimitedDownloads"
-                      onchange="toggleDownloadLimit()"
-                      type="checkbox"
-                    />
-                    <span th:text="#{page.fileView.unlimitedDownloads}">Unlimited downloads</span>
-                  </label>
-                </div>
-              </div>
-
-              <div class="flex justify-end items-center gap-2">
-                <div
-                  class="hidden animate-spin rounded-full h-5 w-5 border-2 border-sky-500 border-t-transparent"
-                  id="spinnerShare"
-                ></div>
-                <button
-                  class="rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium px-4 py-2"
-                  id="generateLinkButton"
-                  onclick="createShareLink()"
-                  type="button"
-                  th:text="#{page.pasteView.generateLink}"
-                >
-                  Generate link
-                </button>
-              </div>
-            </div>
-
-            <div
-              class="flex justify-end items-center gap-2"
-              th:if="${isSimplifiedShareLinksEnabled}"
-            >
-              <div
-                class="hidden animate-spin rounded-full h-5 w-5 border-2 border-sky-500 border-t-transparent"
-                id="spinnerShareAuto"
-              ></div>
-              <span class="text-sm text-gray-600 dark:text-gray-300" th:text="#{page.fileView.autoShareLink}"
-                >Automatic share link</span
-              >
-            </div>
-
-            <div class="border-t border-slate-200 dark:border-slate-700"></div>
-
-            <div class="flex flex-col sm:flex-row gap-2">
-              <label class="sr-only" for="shareLink" th:text="#{page.fileView.sharePlaceholder}">Share Link</label>
-              <input
-                class="w-full min-w-0 flex-1 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2"
-                id="shareLink"
-                readonly
-                th:placeholder="#{page.fileView.sharePlaceholder}"
-                placeholder="Generate a share link that bypasses passwords"
-                type="text"
-              />
-              <button
-                class="w-full sm:w-auto shrink-0 rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium px-4 py-2"
-                id="copyShareButton"
-                onclick="copyShareLink()"
-                type="button"
-                th:text="#{button.copy}"
-              >
-                Copy
-              </button>
-            </div>
-
-            <div class="text-center hidden" id="shareQRCodeContainer">
-              <canvas
-                class="mx-auto"
-                height="150"
-                id="shareQRCode"
-                width="150"
-              ></canvas>
-            </div>
+          <!-- Folder tree -->
+          <div th:if="${file.folderUpload}">
+            <p class="section-eyebrow mb-2" th:text="#{page.fileView.folderContents}">Folder contents</p>
+            <div class="folder-tree-box" id="folderTree"
+                 th:attr="data-manifest=${file.folderManifest},data-folder-name=${file.folderName}"></div>
+            <script id="folderManifestData" th:utext="${file.folderManifest}" type="application/json"></script>
           </div>
-          <div
-                  class="rounded-xl border border-slate-200 dark:border-slate-700 p-3 bg-slate-50 dark:bg-slate-900 mt-6"
-                  id="previewContainer"
-                  th:if="${isPreviewEnabled and (isPreviewableImage or isPreviewableText or isPreviewablePdf)}"
-                  th:attr="data-preview-url=${previewUrl},data-preview-image=${isPreviewableImage},data-preview-text=${isPreviewableText},data-preview-pdf=${isPreviewablePdf},data-preview-json=${isPreviewableJson},data-preview-csv=${isPreviewableCsv},data-preview-type=${previewType},data-file-name=${file.name},data-require-manual=${requireManualPreview},data-max-preview-mb=${maxPreviewSizeMB}"
-          >
-            <div
-                    class="flex items-center justify-between mb-2 text-sm text-gray-600 dark:text-gray-400"
-            >
+
+          <!-- Preparing -->
+          <div class="alert alert-info" hidden id="preparingMessage"
+               th:text="#{page.fileView.preparingDownload}">Preparing download…
+          </div>
+
+          <!-- Delete -->
+          <form class="flex gap-2 items-center pt-2" method="post"
+                style="border-top: 1px solid var(--c-border)"
+                th:action="@{/file/delete/{uuid}(uuid=${file.uuid})}"
+                th:if="${file.passwordHash != null}"
+                x-data="{ confirming: false }">
+            <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden"/>
+            <button @click.prevent="confirming = true" class="btn btn-rose" id="deleteStartBtn"
+                    th:text="#{page.fileView.deleteFile}" type="button"
+                    x-show="!confirming">Delete File
+            </button>
+            <button class="btn btn-danger" id="deleteConfirmBtn" th:text="#{button.confirm}"
+                    type="submit" x-cloak x-show="confirming">Confirm
+            </button>
+            <button @click.prevent="confirming = false" class="btn btn-ghost" id="deleteCancelBtn"
+                    th:text="#{button.cancel}" type="button" x-cloak
+                    x-show="confirming">Cancel
+            </button>
+          </form>
+        </div>
+
+        <!-- Preview panel -->
+        <div class="card card-lg animate-in animate-in-delay-3" id="previewContainer"
+             th:attr="data-preview-url=${previewUrl},data-preview-image=${isPreviewableImage},data-preview-text=${isPreviewableText},data-preview-pdf=${isPreviewablePdf},data-preview-json=${isPreviewableJson},data-preview-csv=${isPreviewableCsv},data-preview-type=${previewType},data-file-name=${file.name},data-require-manual=${requireManualPreview},data-max-preview-mb=${maxPreviewSizeMB}"
+             th:if="${isPreviewEnabled and (isPreviewableImage or isPreviewableText or isPreviewablePdf)}">
+          <div class="flex items-center justify-between mb-4">
+            <span class="section-title flex items-center gap-2">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" style="color:var(--c-indigo)"
+                   viewBox="0 0 24 24"><path d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" stroke-linecap="round"
+                                                       stroke-linejoin="round"/><path
+                      d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" stroke-linecap="round" stroke-linejoin="round"/></svg>
               <span th:text="#{page.fileView.preview}">Preview</span>
-              <button
-                      class="text-xs px-2 py-1 rounded bg-sky-500 text-white hover:bg-sky-600 disabled:opacity-50"
-                      type="button"
-                      id="loadPreviewBtn"
-                      th:if="${requireManualPreview}"
-                      th:text="#{page.fileView.loadPreview(${maxPreviewSizeMB})}"
-              >
-                Load preview (<span th:text="${maxPreviewSizeMB}">5</span> MB
-                limit)
+            </span>
+            <button class="btn btn-soft-primary btn-sm" id="loadPreviewBtn" th:if="${requireManualPreview}"
+                    th:text="#{page.fileView.loadPreview(${maxPreviewSizeMB})}"
+                    type="button">Load preview
+            </button>
+          </div>
+          <div class="flex justify-center" id="previewContent">
+            <div class="text-sm" id="previewStatus" style="color: var(--c-text-muted)"
+                 th:text="${requireManualPreview} ? #{page.fileView.preview.clickToLoad} : #{page.fileView.preview.loading}"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Sidebar ────────────────────────────────────────────── -->
+      <aside class="lg:col-span-1 flex flex-col gap-5" th:if="${!isShareLinksDisabled}">
+
+        <!-- Share panel -->
+        <div class="card card-lg flex flex-col gap-4 animate-in animate-in-delay-2 accent-stripe accent-stripe--gradient"
+             id="sharePanel"
+             th:attr="data-simplified-share-links=${isSimplifiedShareLinksEnabled},data-share-links-disabled=${isShareLinksDisabled}">
+          <h2 class="section-title flex items-center gap-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" style="color:var(--c-secondary)"
+                 viewBox="0 0 24 24">
+              <path d="M7.217 10.907a2.25 2.25 0 1 0 0 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186 9.566-5.314m-9.566 7.5 9.566 5.314m0 0a2.25 2.25 0 1 0 3.935 2.186 2.25 2.25 0 0 0-3.935-2.186Zm0-12.814a2.25 2.25 0 1 0 3.933-2.185 2.25 2.25 0 0 0-3.933 2.185Z" stroke-linecap="round"
+                    stroke-linejoin="round"/>
+            </svg>
+            <span th:text="#{page.fileView.share}">Share</span>
+          </h2>
+
+          <p class="text-sm" style="color: var(--c-text-muted)"
+             th:text="#{page.fileView.shareBypassNotice}">Share links bypass file and app passwords.</p>
+
+          <p class="text-xs" style="color: var(--c-warning-text)"
+             th:if="${!isSimplifiedShareLinksEnabled}" th:text="#{page.fileView.shareAdvancedHint}">
+            Add an expiration date and/or download limit.
+          </p>
+          <p class="text-xs" style="color: var(--c-warning-text)"
+             th:if="${isSimplifiedShareLinksEnabled}" th:text="#{page.fileView.shareSimplifiedHint}">
+            Simplified share links are enabled.
+          </p>
+
+          <!-- Advanced options -->
+          <div class="flex flex-col gap-3" id="linkOptions" th:if="${!isSimplifiedShareLinksEnabled}">
+            <div class="form-row">
+              <label class="form-label" for="daysValid" th:text="#{page.fileView.daysValid}">Days valid</label>
+              <input class="form-input form-input-mono" id="daysValid" min="0" type="number" value="30"/>
+              <label class="form-check mt-1">
+                <input id="noExpiration" onchange="toggleExpirationLimit()" type="checkbox"/>
+                <span class="text-sm" th:text="#{page.fileView.noExpiration}">No expiration</span>
+              </label>
+            </div>
+            <div class="form-row">
+              <label class="form-label" for="allowedNumberOfDownloadsCount" th:text="#{page.fileView.allowedDownloads}">Allowed
+                downloads</label>
+              <input class="form-input form-input-mono" id="allowedNumberOfDownloadsCount" min="0" type="number"
+                     value="1"/>
+              <label class="form-check mt-1">
+                <input id="unlimitedDownloads" onchange="toggleDownloadLimit()" type="checkbox"/>
+                <span class="text-sm" th:text="#{page.fileView.unlimitedDownloads}">Unlimited downloads</span>
+              </label>
+            </div>
+            <div class="flex justify-end items-center gap-2">
+              <div class="hidden animate-spin rounded-full h-4 w-4 border-2"
+                   id="spinnerShare" style="border-color: var(--c-primary); border-top-color: transparent"></div>
+              <button class="btn btn-gradient btn-sm" id="generateLinkButton" onclick="createShareLink()" th:text="#{page.pasteView.generateLink}"
+                      type="button">Generate link
               </button>
             </div>
-            <div class="flex justify-center" id="previewContent">
-              <div
-                      class="text-sm text-gray-500"
-                      id="previewStatus"
-                      th:text="${requireManualPreview} ? #{page.fileView.preview.clickToLoad} : #{page.fileView.preview.loading}"
-              ></div>
-            </div>
           </div>
-        </aside>
-      </div>
-    </main>
-    <script th:inline="javascript">
-      /*<![CDATA[*/
-      window.i18n = window.i18n || {};
-      window.i18n.fileView = {
-        copied: /*[[#{notification.copied}]]*/ 'Copied',
-        failed: /*[[#{notification.failed}]]*/ 'Failed',
-        copy: /*[[#{button.copy}]]*/ 'Copy',
-        previewUnavailable: /*[[#{page.fileView.preview.unavailable}]]*/ 'Preview unavailable.',
-        jsonFormatted: /*[[#{page.fileView.preview.jsonFormatted}]]*/ 'Formatted',
-        jsonTree: /*[[#{page.fileView.preview.jsonTree}]]*/ 'Tree',
-        csvNoRows: /*[[#{page.fileView.preview.csvNoRows}]]*/ 'No rows to display.',
-        folderNoManifest: /*[[#{page.fileView.folderNoManifest}]]*/ 'No manifest available.',
-        folderRenderFailed: /*[[#{page.fileView.folderRenderFailed}]]*/ 'Unable to render folder contents.',
-        openInNewTab: /*[[#{page.fileView.preview.openInNewTab}]]*/ 'Open {0} in a new tab',
-        csvShowingFirst: /*[[#{page.fileView.preview.csvShowingFirst}]]*/ 'Showing first {0} rows out of {1}.',
-        deleteConfirm: /*[[#{page.dashboard.deleteConfirm}]]*/ 'Are you sure you want to delete this file? This action cannot be undone.'
-      };
-      /*]]>*/
-    </script>
-    <script src="/js/fileView.js"></script>
-    <script src="/js/locale-switcher.js"></script>
-  </body>
+
+          <div class="flex justify-end items-center gap-2" th:if="${isSimplifiedShareLinksEnabled}">
+            <div class="hidden animate-spin rounded-full h-4 w-4 border-2"
+                 id="spinnerShareAuto" style="border-color: var(--c-primary); border-top-color: transparent"></div>
+            <span class="text-sm font-mono" style="color: var(--c-text-muted)" th:text="#{page.fileView.autoShareLink}">Automatic share link</span>
+          </div>
+
+          <hr class="divider divider-soft hidden" id="shareDivider" style="margin:0"/>
+
+          <!-- Copy row — hidden until a link is generated -->
+          <div class="hidden flex gap-2" id="shareCopyRow">
+            <label class="sr-only" for="shareLink" th:text="#{page.fileView.sharePlaceholder}">Share Link</label>
+            <input class="form-input form-input-mono flex-1 min-w-0" id="shareLink" placeholder="Generate a share link…"
+                   readonly
+                   th:placeholder="#{page.fileView.sharePlaceholder}" type="text"/>
+            <button class="btn btn-ghost btn-sm shrink-0" id="copyShareButton" onclick="copyShareLink()" th:text="#{button.copy}"
+                    type="button">Copy
+            </button>
+          </div>
+
+          <!-- QR -->
+          <div class="text-center hidden p-3 rounded-xl"
+               id="shareQRCodeContainer"
+               style="background: var(--c-surface-raised); border: 1px solid var(--c-border)">
+            <canvas class="mx-auto rounded-lg" height="150" id="shareQRCode" width="150"></canvas>
+          </div>
+        </div>
+      </aside>
+
+    </div>
+  </div>
+</main>
+
+<script th:inline="javascript">
+  /*<![CDATA[*/
+  window.i18n = window.i18n || {};
+  window.i18n.fileView = {
+    copied:                      /*[[#{notification.copied}]]*/ 'Copied',
+    failed:                      /*[[#{notification.failed}]]*/ 'Failed',
+    copy:                        /*[[#{button.copy}]]*/ 'Copy',
+    previewUnavailable:          /*[[#{page.fileView.preview.unavailable}]]*/ 'Preview unavailable.',
+    jsonFormatted:               /*[[#{page.fileView.preview.jsonFormatted}]]*/ 'Formatted',
+    jsonTree:                    /*[[#{page.fileView.preview.jsonTree}]]*/ 'Tree',
+    csvNoRows:                   /*[[#{page.fileView.preview.csvNoRows}]]*/ 'No rows to display.',
+    folderNoManifest:            /*[[#{page.fileView.folderNoManifest}]]*/ 'No manifest available.',
+    folderRenderFailed:          /*[[#{page.fileView.folderRenderFailed}]]*/ 'Unable to render folder contents.',
+    openInNewTab:                /*[[#{page.fileView.preview.openInNewTab}]]*/ 'Open {0} in a new tab',
+    csvShowingFirst:             /*[[#{page.fileView.preview.csvShowingFirst}]]*/ 'Showing first {0} rows out of {1}.',
+    deleteConfirm:               /*[[#{page.dashboard.deleteConfirm}]]*/ 'Are you sure you want to delete this file? This action cannot be undone.',
+    shareDisabled:               /*[[#{page.fileView.shareDisabled}]]*/ 'Share links are disabled by the administrator.',
+    daysValidNonNegative:        /*[[#{page.fileView.daysValidNonNegative}]]*/ 'Days valid cannot be negative.',
+    allowedDownloadsNonNegative: /*[[#{page.fileView.allowedDownloadsNonNegative}]]*/ 'Allowed downloads cannot be negative.',
+    shareGenerateFailed:         /*[[#{page.fileView.shareGenerateFailed}]]*/ 'Failed to generate share link.',
+    previewImageAlt:             /*[[#{page.fileView.preview.imageAlt}]]*/ 'Preview',
+    previewCodeTruncated:        /*[[#{page.fileView.preview.codeTruncated}]]*/ '... (truncated)',
+    folderFallbackName:          /*[[#{page.fileView.folderFallbackName}]]*/ 'folder'
+  };
+  /*]]>*/
+</script>
+<script src="/js/fileView.js"></script>
+<script src="/js/locale-switcher.js"></script>
+</body>
 </html>

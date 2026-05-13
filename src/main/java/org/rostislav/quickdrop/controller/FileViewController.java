@@ -61,7 +61,7 @@ public class FileViewController {
         model.addAttribute("isEditMode", false);
         model.addAttribute("pasteTitle", "");
         model.addAttribute("pasteContent", "");
-        model.addAttribute("pasteSyntax", "markdown");
+        model.addAttribute("pasteSyntax", "text");
         model.addAttribute("pasteFormAction", "/file/paste");
         model.addAttribute("pasteCancelUrl", "/file/upload");
         return "pastebin";
@@ -177,7 +177,8 @@ public class FileViewController {
         int pageNumber = Math.max(page, 0);
         int pageSize = Math.min(Math.max(size, 1), 100);
 
-        Page<FileEntity> filesPage = fileService.getVisibleFiles(PageRequest.of(pageNumber, pageSize), query);
+        Page<FileEntityView> filesPage = fileService.getVisibleFiles(PageRequest.of(pageNumber, pageSize), query)
+                .map(f -> new FileEntityView(f, 0L));
         model.addAttribute("filesPage", filesPage);
         model.addAttribute("query", query == null ? "" : query);
         model.addAttribute("pageSize", pageSize);

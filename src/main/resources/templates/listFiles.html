@@ -1,174 +1,209 @@
 <!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <title th:text="#{page.files.title.browser(${appName})}">All files</title>
-    <meta content="width=device-width, initial-scale=1" name="viewport" />
-    <link href="/css/tailwind.css" rel="stylesheet" />
-    <link href="/css/custom.css" rel="stylesheet" />
-    <link
-      th:href="${appLogoPath}"
-      href="/images/favicon.png"
-      rel="icon"
-      type="image/png"
-    />
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title th:text="#{page.files.title.browser(${appName})}">Files — QuickDrop</title>
+    <meta content="width=device-width, initial-scale=1" name="viewport"/>
+    <link href="https://fonts.googleapis.com" rel="preconnect"/>
+    <link crossorigin href="https://fonts.gstatic.com" rel="preconnect"/>
+    <link href="/css/tailwind.css" rel="stylesheet"/>
+    <link href="/css/custom.css" rel="stylesheet"/>
+    <link href="/images/favicon.png" rel="icon" th:href="${appLogoPath}" type="image/png"/>
     <script src="/js/tailwindTheme.js"></script>
-  </head>
-  <body class="bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200 flex flex-col min-h-screen transition-colors duration-200">
-  <div th:replace="~{fragments/header :: header(false)}"></div>
+    <script src="/js/toast.js"></script>
+    <th:block th:replace="~{fragments/header :: scripts}"></th:block>
+</head>
+<body>
 
-  <main class="flex-grow container mx-auto px-4 py-8 max-w-5xl">
-      <header class="text-center mb-8 space-y-1">
-        <h1 class="text-3xl md:text-4xl font-semibold tracking-tight">
-          <span th:text="#{page.files.title}">All files</span>
-        </h1>
-      </header>
-      <div class="mx-auto w-full max-w-xl mb-8">
-        <form action="/file/list" class="w-full" method="GET">
+<div th:replace="~{fragments/header :: header(false)}"></div>
+
+<!-- Floating orbs -->
+<div aria-hidden="true" class="orb-field">
+    <div class="orb orb--primary"></div>
+    <div class="orb orb--secondary"></div>
+</div>
+
+<main class="flex-1 hero-scene">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
+
+        <!-- ── Hero title (static) ──────────────────────────────────────── -->
+        <div class="text-center mb-8 animate-in">
+            <h1 class="page-title-xl">
+                <span class="gradient-text" th:text="#{page.files.title}">All Files</span>
+            </h1>
+        </div>
+
+        <!-- ── Search (static) ─────────────────────────────────────────── -->
+        <div class="max-w-2xl mx-auto mb-10 animate-in animate-in-delay-1">
+            <form action="/file/list" id="listSearchForm" method="GET">
+                <input name="page" type="hidden" value="0"/>
+                <input name="size" th:value="${pageSize}" type="hidden"/>
+                <div class="search-bar" style="height: 3.25rem">
+          <span class="search-bar-icon">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path
+                    d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" stroke-linecap="round"
+                    stroke-linejoin="round"/></svg>
+          </span>
           <label class="sr-only" for="searchInput" th:text="#{page.files.search.label}">Search files</label>
-          <div
-            class="h-14 flex items-center space-x-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-gray-800 rounded-full px-4 shadow-sm focus-within:border-sky-500 focus-within:ring-2 focus-within:ring-sky-500"
-          >
-            <svg
-              aria-hidden="true"
-              class="w-5 h-5 text-gray-500 dark:text-gray-400"
-              fill="currentColor"
-              viewBox="0 0 20 20"
-            >
-              <path
-                clip-rule="evenodd"
-                d="M12.9 14.32a8 8 0 111.414-1.414l4.387 4.387a1 1 0 01-1.414 1.414l-4.387-4.387zM14 8a6 6 0 11-12 0 6 6 0 0112 0z"
-                fill-rule="evenodd"
-              />
-            </svg>
-            <input
-              class="flex-grow bg-transparent py-2 focus:outline-none focus-visible:ring-0"
-              id="searchInput"
-              name="query"
-              th:placeholder="#{page.files.search.placeholder}"
-              placeholder="Search files by name or date…"
-              th:value="${query}"
-              type="text"
-            />
-            <input name="page" type="hidden" value="0" />
-            <input name="size" th:value="${pageSize}" type="hidden" />
-            <button
-              class="rounded-full bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium px-4 py-2 h-10 transition-colors active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500"
-              id="search-button"
-              type="submit"
-            >
-              <span th:text="#{button.search}">Search</span>
-            </button>
-          </div>
-        </form>
-      </div>
-      <div
-        class="text-center text-gray-600 dark:text-gray-300 my-5"
-        th:if="${filesPage.totalElements == 0}"
-      >
-        <h3 class="mb-2" th:text="#{page.files.empty.title}">No files have been uploaded yet.</h3>
-        <p>
-          <span th:text="#{page.files.empty.startBy}">Start by</span>
-          <a
-            class="text-sky-600 dark:text-sky-400 hover:underline"
-            href="/file/upload"
-            th:text="#{page.files.empty.uploadLink}"
-            >uploading a file</a
-          >.
-        </p>
-      </div>
-      <div
-              class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
-        th:if="${filesPage.totalElements > 0}"
-      >
-        <div
-                class="bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-6 flex flex-col"
-                th:each="file : ${filesPage.content}"
-        >
-          <div class="flex-grow space-y-3 overflow-hidden">
-            <h2
-                    class="text-xl font-semibold tracking-tight truncate"
-                    th:text="${file.name}"
-            >
-              File Name
-            </h2>
-            <hr class="border-t border-slate-200 dark:border-slate-700"/>
-            <p
-                    class="text-sm text-gray-700 dark:text-gray-300 line-clamp-2 overflow-hidden"
-                    th:if="${!#strings.isEmpty(file.description)}"
-                    th:text="${file.description}"
-            ></p>
-            <div
-                    class="flex justify-between text-sm text-gray-600 dark:text-gray-400"
-            >
-              <span
-                      th:text="${#messages.msg('page.dashboard.keepIndefinitely')} + ': ' + (${file.keepIndefinitely} ? 'Yes' : 'No')"
-              ></span>
-              <span
-                      th:text="${#messages.msg('page.password.protectedLabel')} + ': ' + (${file.passwordHash != null} ? 'Yes' : 'No')"
-              ></span>
-            </div>
-            <p
-                    class="text-sm text-gray-600 dark:text-gray-400"
-                    th:text="(${file.keepIndefinitely} ? #{page.fileView.uploadedAt} : #{page.fileView.uploadedRenewedAt}) + ' ' + ${#temporals.format(file.uploadDate, 'dd.MM.yyyy')}"
-            ></p>
-          </div>
-          <div class="mt-4 text-center">
-            <a
-                    class="inline-block rounded-lg bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-500 text-white font-medium px-4 py-2 transition-colors active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500"
-                    th:href="@{/file/{UUID}(UUID=${file.uuid})}"
-                    th:text="#{page.files.goToFilePage}"
-            >Go to file page</a
-            >
-          </div>
+                    <input autocomplete="off" id="searchInput" name="query"
+                           placeholder="Search files by name or date…"
+                           style="font-size: 0.9375rem" th:placeholder="#{page.files.search.placeholder}" th:value="${query}"
+                           type="text"/>
+                    <button class="btn btn-primary btn-sm" id="search-button" type="submit">
+                        <span th:text="#{button.search}">Search</span>
+                    </button>
+                </div>
+            </form>
         </div>
+
+        <!-- ── Dynamic content (replaced on search / paginate) ──────────── -->
+        <div id="listDynamicContent">
+
+            <!-- Subtitle: count + keyboard hint -->
+            <p class="text-center page-subtitle mb-8" th:if="${filesPage.totalElements > 0}">
+                <span class="font-mono font-bold text-lg" style="color: var(--c-text)"
+                      th:text="${filesPage.totalElements}">0</span>
+                <span th:text="${filesPage.totalElements == 1} ? #{page.files.item} : #{page.files.items}">items</span>
+                <span style="color: var(--c-text-faint)">·</span>
+                <span class="kbd">/</span>
+                <span class="ml-1" th:text="#{page.files.keyboardSearch}">to search</span>
+            </p>
+
+            <!-- ── Empty state ─────────────────────────────────────────────── -->
+            <div class="flex flex-col items-center justify-center gap-6 py-24 text-center"
+                 th:if="${filesPage.totalElements == 0}">
+                <div class="gate-icon gate-icon--primary">
+                    <svg class="w-10 h-10" fill="none" stroke="currentColor" stroke-width="1.4" viewBox="0 0 24 24">
+                        <path d="M3.75 9.776c.112-.017.227-.026.344-.026h15.812c.117 0 .232.009.344.026M3.75 9.776a2.25 2.25 0 0 0-1.883 2.542l.857 6a2.25 2.25 0 0 0 2.227 1.932H19.05a2.25 2.25 0 0 0 2.227-1.932l.857-6a2.25 2.25 0 0 0-1.883-2.542M3.75 9.776V6A2.25 2.25 0 0 1 6 3.75h3.879a1.5 1.5 0 0 1 1.06.44l2.122 2.12a1.5 1.5 0 0 0 1.06.44H18A2.25 2.25 0 0 1 20.25 9v.776" stroke-linecap="round"
+                              stroke-linejoin="round"/>
+                    </svg>
+                </div>
+                <div>
+                    <p class="text-xl font-bold" th:text="#{page.files.empty.title}">No files uploaded yet.</p>
+                    <p class="mt-2 text-sm" style="color: var(--c-text-muted)">
+                        <span th:text="#{page.files.empty.startBy}">Start by</span>
+                        <a class="font-semibold underline" href="/file/upload" style="color: var(--c-primary)"
+                           th:text="#{page.files.empty.uploadLink}">uploading a file</a>.
+                    </p>
+                </div>
+                <a class="btn btn-gradient btn-xl" href="/file/upload">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" stroke-linecap="round"
+                              stroke-linejoin="round"/>
+                    </svg>
+                    <span th:text="#{nav.uploadFile}">Upload</span>
+                </a>
+            </div>
+
+            <!-- ── File grid ────────────────────────────────────────────────── -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5"
+                 th:if="${filesPage.totalElements > 0}">
+                <a class="file-card group"
+                   style="text-decoration:none; color:inherit; animation: qd-fade-in-up 400ms var(--ease-out-expo) both"
+                   th:each="file, iterStat : ${filesPage.content}"
+                   th:href="@{/file/{UUID}(UUID=${file.uuid})}"
+                   th:styleappend="'animation-delay:' + ${iterStat.index * 60} + 'ms'">
+
+                    <div class="flex items-start gap-3">
+                        <div class="file-card-icon">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.6"
+                                 viewBox="0 0 24 24">
+                                <path d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" stroke-linecap="round"
+                                      stroke-linejoin="round"/>
+                            </svg>
+                        </div>
+                        <div class="min-w-0 flex-1">
+                            <p class="file-card-name" th:text="${file.name}" th:title="${file.name}">filename.zip</p>
+                            <p class="file-card-meta mt-1">
+                                <span th:text="${#temporals.format(file.uploadDate, 'dd.MM.yyyy')}">01.01.2025</span>
+                                <span style="color: var(--c-text-faint)">·</span>
+                                <span th:text="${file.size}">—</span>
+                            </p>
+                        </div>
+                    </div>
+
+                    <p class="text-sm line-clamp-2"
+                       style="color: var(--c-text-muted)" th:if="${!#strings.isEmpty(file.description)}"
+                       th:text="${file.description}"></p>
+
+                    <div class="flex flex-wrap gap-1.5">
+            <span class="badge badge-secondary" th:if="${file.passwordProtected}">
+              <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path
+                      d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" stroke-linecap="round"
+                      stroke-linejoin="round"/></svg>
+              <span th:text="#{page.password.protectedLabel}">Protected</span>
+            </span>
+                        <span class="badge badge-teal" th:if="${file.keepIndefinitely}">
+              <span class="status-dot status-dot--static"
+                    style="color: var(--c-teal); width:0.4rem; height:0.4rem"></span>
+              <span th:text="#{badge.permanent}">Permanent</span>
+            </span>
+                        <span class="badge badge-neutral" th:unless="${file.keepIndefinitely}">
+              <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path
+                      d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" stroke-linecap="round"
+                      stroke-linejoin="round"/></svg>
+              <span th:text="#{badge.autoExpires}">Auto-expires</span>
+            </span>
+          </div>
+
+                    <div class="mt-auto flex items-center justify-between pt-3"
+                         style="border-top: 1px dashed var(--c-border)">
+                        <span class="text-xs font-bold" style="color: var(--c-primary)"
+                              th:text="#{page.files.goToFilePage}">View file</span>
+                        <svg class="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1"
+                             fill="none" stroke="currentColor" stroke-width="2" style="color: var(--c-primary)"
+                             viewBox="0 0 24 24">
+                            <path d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" stroke-linecap="round"
+                                  stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                </a>
       </div>
 
-      <div
-        class="flex flex-col md:flex-row items-center justify-between gap-4 mt-6"
-        th:if="${filesPage.totalElements > 0}"
-      >
+            <!-- ── Pagination ────────────────────────────────────────────── -->
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-4 mt-10 pt-6"
+                 style="border-top: 1px solid var(--c-border)"
+                 th:if="${filesPage.totalElements > 0}">
         <div class="flex items-center gap-2">
-          <a
-            class="px-4 py-2 rounded-lg bg-slate-200 dark:bg-slate-700 text-sm font-semibold transition disabled:opacity-50 disabled:pointer-events-none"
-            th:classappend="${filesPage.first} ? ' opacity-50 pointer-events-none' : ' hover:bg-slate-300 dark:hover:bg-slate-600'"
-            th:href="@{/file/list(page=${filesPage.first ? filesPage.number : filesPage.number - 1}, size=${pageSize}, query=${query})}"
-            th:text="#{pagination.previous}"
-            >Previous</a
-          >
-          <a
-            class="px-4 py-2 rounded-lg bg-slate-200 dark:bg-slate-700 text-sm font-semibold transition disabled:opacity-50 disabled:pointer-events-none"
-            th:classappend="${filesPage.last} ? ' opacity-50 pointer-events-none' : ' hover:bg-slate-300 dark:hover:bg-slate-600'"
-            th:href="@{/file/list(page=${filesPage.last ? filesPage.number : filesPage.number + 1}, size=${pageSize}, query=${query})}"
-            th:text="#{pagination.next}"
-            >Next</a
-          >
+            <a class="pagination-btn"
+               th:classappend="${filesPage.first} ? ' pagination-btn-disabled'"
+               th:href="@{/file/list(page=${filesPage.first ? filesPage.number : filesPage.number - 1}, size=${pageSize}, query=${query})}"
+               th:text="#{pagination.previous}">Previous</a>
+            <a class="pagination-btn"
+               th:classappend="${filesPage.last} ? ' pagination-btn-disabled'"
+               th:href="@{/file/list(page=${filesPage.last ? filesPage.number : filesPage.number + 1}, size=${pageSize}, query=${query})}"
+               th:text="#{pagination.next}">Next</a>
         </div>
-        <form action="/file/list" class="flex items-center gap-2" method="get">
-          <input name="query" th:value="${query}" type="hidden" />
-          <input name="page" type="hidden" value="0" />
-          <label class="text-sm text-gray-700 dark:text-gray-300" for="pageSize" th:text="#{pagination.perPage}"
-            >Per page</label
-          >
-          <select
-            class="rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
-            id="pageSize"
-            name="size"
-            onchange="this.form.submit()"
-          >
-            <option th:selected="${pageSize == 10}" value="10">10</option>
-            <option th:selected="${pageSize == 20}" value="20">20</option>
-            <option th:selected="${pageSize == 50}" value="50">50</option>
+
+                <p class="text-sm font-mono" style="color: var(--c-text-muted)">
+                    <span th:text="#{pagination.page}">Page</span>
+                    <span th:text="${filesPage.number + 1}"></span>
+                    <span th:text="#{pagination.of}">of</span>
+                    <span th:text="${filesPage.totalPages}"></span>
+                </p>
+
+                <form action="/file/list" class="flex items-center gap-2" data-perpage-form method="get">
+                    <input name="query" th:value="${query}" type="hidden"/>
+                    <input name="page" type="hidden" value="0"/>
+                    <label class="text-sm" for="pageSize" style="color: var(--c-text-muted)"
+                           th:text="#{pagination.perPage}">Per page</label>
+                    <select class="form-input" id="pageSize"
+                            name="size" style="width:auto; padding:0.3125rem 0.5rem">
+                        <option th:selected="${pageSize == 10}" value="10">10</option>
+                        <option th:selected="${pageSize == 20}" value="20">20</option>
+                        <option th:selected="${pageSize == 50}" value="50">50</option>
             <option th:selected="${pageSize == 100}" value="100">100</option>
           </select>
         </form>
-        <div class="text-sm text-gray-600 dark:text-gray-300">
-          <span th:text="#{pagination.page}">Page</span> <span th:text="${filesPage.number + 1}"></span> <span
-                th:text="#{pagination.of}">of</span>
-          <span th:text="${filesPage.totalPages}"></span>
-        </div>
-      </div>
-    </main>
-    <script src="/js/locale-switcher.js"></script>
-  </body>
+            </div>
+
+        </div><!-- /listDynamicContent -->
+
+    </div>
+</main>
+
+<script src="/js/spa.js"></script>
+<script src="/js/list-files.js"></script>
+<script src="/js/locale-switcher.js"></script>
+</body>
 </html>

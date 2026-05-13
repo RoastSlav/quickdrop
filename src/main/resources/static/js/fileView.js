@@ -9,23 +9,38 @@ function getI18nStr(path, defaultStr) {
   return obj;
 }
 
-function confirmDelete() {
-  return confirm(
-      getI18nStr('deleteConfirm', "Are you sure you want to delete this file? This action cannot be undone.")
-  );
-}
-
-function updateCheckboxState(event, checkbox) {
+async function updateCheckboxState(event, checkbox) {
   event.preventDefault();
 
   const hiddenField = checkbox.form.querySelector(
     `input[name="${checkbox.name}"][type="hidden"]`
   );
-  if (hiddenField) {
-    hiddenField.value = checkbox.checked;
-  }
+  if (hiddenField) hiddenField.value = checkbox.checked;
 
-  checkbox.form.submit();
+  updateFileViewBadges(checkbox.name, checkbox.checked);
+
+  try {
+    const res = await fetch(checkbox.form.action, {
+      method: 'POST',
+      body: new FormData(checkbox.form)
+    });
+    if (!res.ok && !res.redirected) throw new Error(res.status);
+  } catch {
+    checkbox.checked = !checkbox.checked;
+    if (hiddenField) hiddenField.value = checkbox.checked;
+    updateFileViewBadges(checkbox.name, checkbox.checked);
+  }
+}
+
+function updateFileViewBadges(name, checked) {
+  if (name === 'keepIndefinitely') {
+    document.getElementById('badge-permanent')?.classList.toggle('hidden', !checked);
+    document.getElementById('badge-expires')?.classList.toggle('hidden', checked);
+    const renewForm = document.getElementById('renewForm');
+    renewForm?.classList.toggle('hidden', checked);
+  } else if (name === 'hidden') {
+    document.getElementById('badge-hidden')?.classList.toggle('hidden', !checked);
+  }
 }
 
 function initializeModal() {
@@ -176,62 +191,15 @@ function generateShareLink(fileUuid, daysValid, allowedNumberOfDownloads) {
 function setCopyButtonState(state) {
   const button = document.getElementById("copyShareButton");
   if (!button) return;
-
-  const baseClasses = [
-    "w-full",
-    "sm:w-auto",
-    "shrink-0",
-    "rounded-lg",
-    "text-white",
-    "font-medium",
-    "px-4",
-    "py-2",
-    "transition-colors",
-    "active:scale-95",
-    "focus:outline-none",
-    "focus:ring-2",
-  ];
-  const skyClasses = [
-    "bg-sky-500",
-    "hover:bg-sky-600",
-    "dark:bg-sky-400",
-    "dark:hover:bg-sky-500",
-  ];
-  const greenClasses = [
-    "bg-green-600",
-    "hover:bg-green-700",
-    "dark:bg-green-500",
-    "dark:hover:bg-green-600",
-  ];
-  const redClasses = [
-    "bg-red-600",
-    "hover:bg-red-700",
-    "dark:bg-red-600",
-    "dark:hover:bg-red-500",
-  ];
-
-  button.className = [
-    ...baseClasses,
-    ...(state === "success"
-      ? greenClasses
-      : state === "error"
-        ? redClasses
-        : skyClasses),
-  ].join(" ");
-
-  // Inline fallback colors to avoid transient invisibility if Tailwind classes are purged in some builds
-  const bgFallback =
-    state === "success" ? "#16a34a" : state === "error" ? "#dc2626" : "#0284c7";
-  button.style.backgroundColor = bgFallback;
-  button.style.color = "#ffffff";
-
-  if (state === "success") {
-    button.textContent = "Copied";
-  } else if (state === "error") {
-    button.textContent = "Failed";
-  } else {
-    button.textContent = "Copy";
-  }
+  const label = getI18nStr(
+      state === 'success' ? 'copied' : state === 'error' ? 'failed' : 'copy',
+      state === 'success' ? 'Copied' : state === 'error' ? 'Failed' : 'Copy'
+  );
+  button.textContent = label;
+  button.style.background = state === 'success' ? 'var(--c-emerald)'
+      : state === 'error' ? 'var(--c-danger)'
+          : '';
+  button.style.color = (state === 'success' || state === 'error') ? '#ffffff' : '';
 }
 
 function copyShareLink() {
@@ -257,7 +225,7 @@ function copyShareLink() {
 
 function createShareLink() {
   if (isShareLinksDisabled()) {
-    alert("Share links are disabled by the administrator.");
+    alert(getI18nStr('shareDisabled', 'Share links are disabled by the administrator.'));
     return;
   }
 
@@ -275,7 +243,7 @@ function createShareLink() {
   );
 
   if (!noExpiration.checked && !isNaN(daysValid) && daysValid < 0) {
-    alert("Days valid cannot be negative.");
+    alert(getI18nStr('daysValidNonNegative', 'Days valid cannot be negative.'));
     return;
   }
 
@@ -284,7 +252,7 @@ function createShareLink() {
     !isNaN(allowedNumberOfDownloads) &&
     allowedNumberOfDownloads < 0
   ) {
-    alert("Allowed downloads cannot be negative.");
+    alert(getI18nStr('allowedDownloadsNonNegative', 'Allowed downloads cannot be negative.'));
     return;
   }
 
@@ -314,7 +282,7 @@ function createShareLink() {
     })
     .catch((error) => {
       console.error(error);
-      alert(error?.message || "Failed to generate share link.");
+      alert(error?.message || getI18nStr('shareGenerateFailed', 'Failed to generate share link.'));
     })
     .finally(() => {
       if (spinner) {
@@ -329,6 +297,8 @@ function updateShareLink(link) {
   const shareLinkInput = document.getElementById("shareLink");
   const canvas = document.getElementById("shareQRCode");
   const qrContainer = document.getElementById("shareQRCodeContainer");
+  const copyRow = document.getElementById("shareCopyRow");
+  const divider = document.getElementById("shareDivider");
 
   if (!shareLinkInput || !canvas || !qrContainer) {
     return;
@@ -336,15 +306,19 @@ function updateShareLink(link) {
 
   shareLinkInput.value = link || "";
 
+  const hasLink = !!link;
+  copyRow?.classList.toggle("hidden", !hasLink);
+  divider?.classList.toggle("hidden", !hasLink);
+
   const ctx = canvas.getContext("2d");
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   if (!link) {
-    if (qrContainer) qrContainer.classList.add("hidden");
+    qrContainer.classList.add("hidden");
     return;
   }
 
-  if (qrContainer) qrContainer.classList.remove("hidden");
+  qrContainer.classList.remove("hidden");
   QRCode.toCanvas(canvas, link, { width: 150, height: 150 });
 }
 
@@ -380,35 +354,6 @@ function toggleDownloadLimit() {
   }
 }
 
-function openShareModal() {
-  const modal = document.getElementById("shareModal");
-  modal.classList.remove("hidden");
-  positionShareModal();
-}
-
-function closeShareModal() {
-  document.getElementById("shareModal").classList.add("hidden");
-}
-
-function positionShareModal() {
-  const card = document.getElementById("fileInfoCard");
-  const modal = document.getElementById("shareModalContent");
-  if (!card || !modal) return;
-
-  const margin = 16; // space between modal, card and screen edge
-  const cardRect = card.getBoundingClientRect();
-  const modalRect = modal.getBoundingClientRect();
-
-  let left = cardRect.left - modalRect.width - margin;
-  if (left < margin) {
-    left = margin;
-  }
-
-  const top = cardRect.top + cardRect.height / 2 - modalRect.height / 2;
-
-  modal.style.left = `${left}px`;
-  modal.style.top = `${Math.max(top, margin)}px`;
-}
 
 document.addEventListener("DOMContentLoaded", () => {
   initializeModal();
@@ -555,7 +500,7 @@ function normalizeLanguageExtension(ext) {
 function renderImagePreview(container, objectUrl) {
   const img = document.createElement("img");
   img.src = objectUrl;
-  img.alt = "Preview";
+  img.alt = getI18nStr('previewImageAlt', 'Preview');
   img.className = "max-h-[28rem] rounded-lg shadow";
   img.onload = () => URL.revokeObjectURL(objectUrl);
   container.appendChild(img);
@@ -743,7 +688,7 @@ function renderCodeBlock(text, extension) {
   const code = document.createElement("code");
   const limit = 20000;
   const body =
-    text.length > limit ? `${text.slice(0, limit)}\n... (truncated)` : text;
+      text.length > limit ? `${text.slice(0, limit)}\n${getI18nStr('previewCodeTruncated', '... (truncated)')}` : text;
   code.textContent = body;
   if (extension) {
     code.classList.add(`language-${extension}`);
@@ -842,7 +787,7 @@ function renderFolderTree() {
   if (!treeEl) return;
 
   const manifestScript = document.getElementById("folderManifestData");
-  const folderName = treeEl.dataset.folderName || "folder";
+  const folderName = treeEl.dataset.folderName || getI18nStr('folderFallbackName', 'folder');
   if (!manifestScript || !manifestScript.textContent) {
     treeEl.textContent = "No manifest available.";
     return;

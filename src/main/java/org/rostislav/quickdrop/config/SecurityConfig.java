@@ -27,6 +27,23 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import java.util.Arrays;
 import java.util.List;
 
+/**
+ * Spring Security configuration for the application.
+ *
+ * <p>When {@code appPasswordEnabled} is set in application settings, all routes
+ * except the login page, static assets, and share-download endpoints require
+ * form-based authentication. When the setting is disabled, all requests are
+ * permitted without authentication.
+ *
+ * <p>The {@link SecurityFilterChain} bean is {@link RefreshScope}-scoped so that
+ * toggling the app password in the admin settings panel takes effect without a
+ * restart.
+ *
+ * <p>CSRF protection uses a cookie-based token repository (readable by JavaScript)
+ * to support the htmx/Alpine.js frontend. The {@code X-Frame-Options} header is
+ * disabled and replaced with a permissive {@code Content-Security-Policy:
+ * frame-ancestors *} to allow embedding.
+ */
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
@@ -37,6 +54,15 @@ public class SecurityConfig {
         this.applicationSettingsService = applicationSettingsService;
     }
 
+    /**
+     * Builds the security filter chain. When the app password is enabled, only the
+     * listed public endpoints are accessible without authentication; all others
+     * redirect to the login page.
+     *
+     * @param http the Spring Security HTTP builder
+     * @return the configured filter chain
+     * @throws Exception if the security configuration cannot be applied
+     */
     @Bean
     @RefreshScope
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -77,6 +103,12 @@ public class SecurityConfig {
         return http.build();
     }
 
+    /**
+     * CORS configuration that allows all origins and the standard request headers.
+     * Credentials are allowed so that cookie-based sessions work cross-origin.
+     *
+     * @return the CORS configuration source
+     */
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
@@ -91,6 +123,12 @@ public class SecurityConfig {
         return source;
     }
 
+    /**
+     * Authentication provider that validates the site-wide app password stored as a
+     * BCrypt hash in the application settings.
+     *
+     * @return the authentication provider
+     */
     @Bean
     public AuthenticationProvider authenticationProvider() {
         return new AuthenticationProvider() {
@@ -113,6 +151,11 @@ public class SecurityConfig {
         };
     }
 
+    /**
+     * Password encoder used for hashing and verifying file-level access passwords.
+     *
+     * @return BCrypt password encoder
+     */
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();

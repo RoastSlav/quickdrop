@@ -8,12 +8,26 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+/**
+ * An in-memory {@link MultipartFile} implementation backed by a byte array.
+ *
+ * <p>Used when paste content needs to be fed through the same chunked-upload
+ * pipeline as regular file uploads without writing to a temporary file first.
+ * The content byte array is defensively copied on {@link #getBytes()} to prevent
+ * external mutation.
+ */
 public class InMemoryMultipartFile implements MultipartFile {
     private final String name;
     private final String originalFilename;
     private final String contentType;
     private final byte[] content;
 
+    /**
+     * @param name             form field name
+     * @param originalFilename original filename as it should appear in metadata
+     * @param contentType      MIME type of the content
+     * @param content          raw file bytes ({@code null} is treated as empty)
+     */
     public InMemoryMultipartFile(String name, String originalFilename, String contentType, byte[] content) {
         this.name = name;
         this.originalFilename = originalFilename;
@@ -46,6 +60,9 @@ public class InMemoryMultipartFile implements MultipartFile {
         return content.length;
     }
 
+    /**
+     * Returns a defensive copy of the underlying byte array.
+     */
     @Override
     public byte[] getBytes() {
         return content.clone();
@@ -66,4 +83,3 @@ public class InMemoryMultipartFile implements MultipartFile {
         Files.write(dest.toPath(), content);
     }
 }
-

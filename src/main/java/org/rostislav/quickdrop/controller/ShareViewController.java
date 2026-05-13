@@ -17,6 +17,13 @@ import java.util.Optional;
 
 import static org.rostislav.quickdrop.util.FileUtils.validateShareToken;
 
+/**
+ * Renders the public share-link landing page for a single file.
+ *
+ * <p>Share tokens are validated before the page is rendered; expired or
+ * exhausted tokens redirect to the {@code invalid-share-link} template.
+ * The actual file download is served by {@link FileRestController#downloadFile}.
+ */
 @Controller
 @RequestMapping("/share")
 public class ShareViewController {

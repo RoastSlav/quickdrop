@@ -23,7 +23,17 @@ import java.util.concurrent.ThreadLocalRandom;
 
 import static org.rostislav.quickdrop.service.FileService.logger;
 
+/**
+ * Static utility methods for file handling, preview type detection, share token
+ * validation, streaming, and formatting.
+ *
+ * <p>Non-instantiable utility class following the static-factory pattern.
+ */
 public class FileUtils {
+
+    /**
+     * Extensions treated as plain-text and eligible for the in-browser text preview.
+     */
     private static final Set<String> TEXT_EXTENSIONS = Set.of(
             ".txt", ".log", ".md", ".json", ".jsonl", ".yaml", ".yml", ".csv", ".tsv", ".xml",
             ".c", ".cpp", ".cxx", ".h", ".hpp",
@@ -42,9 +52,16 @@ public class FileUtils {
     private static final Set<String> CSV_TSV_EXTENSIONS = Set.of(".csv", ".tsv");
 
     private FileUtils() {
-        // To prevent instantiation
+        // Prevent instantiation
     }
 
+    /**
+     * Wraps an {@link InputStream} in a {@link StreamingResponseBody} that copies
+     * all bytes to the response output stream in 8 KB chunks.
+     *
+     * @param inputStream source stream (caller is responsible for closing it)
+     * @return a streaming response body
+     */
     public static StreamingResponseBody getStreamingResponseBody(InputStream inputStream) {
         return outputStream -> {
             byte[] buffer = new byte[8192];
@@ -56,13 +73,20 @@ public class FileUtils {
         };
     }
 
+    /**
+     * Resolves the real client IP address from the request, preferring the
+     * {@code X-Forwarded-For} header (first entry) over {@code X-Real-IP}, then
+     * falling back to {@link jakarta.servlet.http.HttpServletRequest#getRemoteAddr()}.
+     *
+     * @param request the current HTTP request
+     * @return a record containing the resolved IP and User-Agent string
+     */
     public static FileService.RequesterInfo getRequesterInfo(HttpServletRequest request) {
         String forwardedFor = request.getHeader("X-Forwarded-For");
         String realIp = request.getHeader("X-Real-IP");
         String ipAddress;
 
         if (forwardedFor != null && !forwardedFor.isEmpty()) {
-            // The X-Forwarded-For header can contain multiple IPs, pick the first one
             ipAddress = forwardedFor.split(",")[0].trim();
         } else if (realIp != null && !realIp.isEmpty()) {
             ipAddress = realIp;
@@ -74,6 +98,13 @@ public class FileUtils {
         return new FileService.RequesterInfo(ipAddress, userAgent);
     }
 
+    /**
+     * Formats a raw byte count as a human-readable size string with two decimal places
+     * (e.g. {@code 1.50 MB}).
+     *
+     * @param size size in bytes
+     * @return formatted size string
+     */
     public static String formatFileSize(long size) {
         String[] units = {"B", "KB", "MB", "GB", "TB"};
         int unitIndex = 0;
@@ -87,14 +118,28 @@ public class FileUtils {
         return String.format("%.2f %s", sizeInUnits, units[unitIndex]);
     }
 
+    /**
+     * Builds the absolute download URL for a file, respecting the {@code X-Forwarded-Proto}
+     * header so that links work correctly behind a reverse proxy.
+     *
+     * @param request    the current HTTP request (used for scheme and server name)
+     * @param fileEntity the file whose download link should be generated
+     * @return absolute URL string (e.g. {@code https://example.com/file/abc-123})
+     */
     public static String getDownloadLink(HttpServletRequest request, FileEntity fileEntity) {
         String scheme = request.getHeader("X-Forwarded-Proto");
         if (scheme == null) {
-            scheme = request.getScheme(); // Fallback to the default scheme
+            scheme = request.getScheme();
         }
         return scheme + "://" + request.getServerName() + "/file/" + fileEntity.uuid;
     }
 
+    /**
+     * Returns the URL path for a share token (e.g. {@code /share/abc12}).
+     *
+     * @param token the share token string, or {@code null}
+     * @return the share path, or {@code ""} if the token is null
+     */
     public static String getSharePath(String token) {
         if (token == null) {
             return "";
@@ -102,10 +147,22 @@ public class FileUtils {
         return "/share/" + token;
     }
 
+    /**
+     * Converts bytes to mebibytes (integer division).
+     *
+     * @param bytes value in bytes
+     * @return value in mebibytes
+     */
     public static long bytesToMegabytes(long bytes) {
         return bytes / 1024 / 1024;
     }
 
+    /**
+     * Converts mebibytes to bytes.
+     *
+     * @param megabytes value in mebibytes
+     * @return value in bytes
+     */
     public static long megabytesToBytes(long megabytes) {
         return megabytes * 1024 * 1024;
     }
@@ -114,6 +171,16 @@ public class FileUtils {
         return fileEntity == null || fileEntity.name == null ? "" : fileEntity.name.toLowerCase(Locale.ROOT);
     }
 
+    /**
+     * Returns the canonical preview type string for use in Thymeleaf templates.
+     *
+     * @param isImage {@code true} if the file is a previewable image
+     * @param isPdf   {@code true} if the file is a PDF
+     * @param isJson  {@code true} if the file is JSON
+     * @param isCsv   {@code true} if the file is CSV/TSV
+     * @param isText  {@code true} if the file is a plain-text type
+     * @return one of {@code "image"}, {@code "pdf"}, {@code "json"}, {@code "csv"}, {@code "text"}, or {@code ""}
+     */
     public static String determinePreviewType(boolean isImage, boolean isPdf, boolean isJson, boolean isCsv, boolean isText) {
         if (isImage) return "image";
         if (isPdf) return "pdf";
@@ -123,31 +190,45 @@ public class FileUtils {
         return "";
     }
 
+    /** Returns {@code true} when the file's extension indicates plain-text content. */
     public static boolean isPreviewableText(FileEntity fileEntity) {
         String lower = lowerName(fileEntity);
         return TEXT_EXTENSIONS.stream().anyMatch(lower::endsWith);
     }
 
+    /** Returns {@code true} when the file's extension indicates an image format. */
     public static boolean isPreviewableImage(FileEntity fileEntity) {
         String lower = lowerName(fileEntity);
         return IMAGE_EXTENSIONS.stream().anyMatch(lower::endsWith);
     }
 
+    /** Returns {@code true} when the file's extension indicates a PDF document. */
     public static boolean isPreviewablePdf(FileEntity fileEntity) {
         String lower = lowerName(fileEntity);
         return PDF_EXTENSIONS.stream().anyMatch(lower::endsWith);
     }
 
+    /** Returns {@code true} when the file's extension indicates JSON content. */
     public static boolean isPreviewableJson(FileEntity fileEntity) {
         String lower = lowerName(fileEntity);
         return JSON_EXTENSIONS.stream().anyMatch(lower::endsWith);
     }
 
+    /** Returns {@code true} when the file's extension indicates CSV or TSV content. */
     public static boolean isPreviewableCsvOrTsv(FileEntity fileEntity) {
         String lower = lowerName(fileEntity);
         return CSV_TSV_EXTENSIONS.stream().anyMatch(lower::endsWith);
     }
 
+    /**
+     * Returns an appropriate MIME type string for inline browser preview.
+     *
+     * @param fileName original filename (used to distinguish image subtypes)
+     * @param isImage  whether the file is an image
+     * @param isText   whether the file is plain text
+     * @param isPdf    whether the file is a PDF
+     * @return MIME type string
+     */
     public static String guessContentType(String fileName, boolean isImage, boolean isText, boolean isPdf) {
         if (isImage) {
             if (fileName.toLowerCase().endsWith(".webp")) return "image/webp";
@@ -164,6 +245,17 @@ public class FileUtils {
         return "application/octet-stream";
     }
 
+    /**
+     * Generates a short (5-character) base-62 share token seeded from the file's
+     * UUID, size, upload date, and additional randomness.
+     *
+     * <p>The seed is SHA-256 hashed and truncated to 5 characters from the base-62
+     * encoding of the digest. Callers must loop until a unique token is obtained
+     * (see {@link org.rostislav.quickdrop.service.FileService#generateShareToken}).
+     *
+     * @param fileEntity the file to generate a token for
+     * @return a 5-character base-62 token string
+     */
     public static String generateHashedToken(FileEntity fileEntity) {
         String seed = String.join(":",
                 fileEntity.uuid,
@@ -182,6 +274,12 @@ public class FileUtils {
         }
     }
 
+    /**
+     * Encodes a byte array as a base-62 string ({@code 0-9A-Za-z}).
+     *
+     * @param bytes the bytes to encode
+     * @return base-62 string representation
+     */
     public static String toBase62(byte[] bytes) {
         final String alphabet = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
         BigInteger value = new BigInteger(1, bytes);
@@ -201,6 +299,12 @@ public class FileUtils {
         return builder.reverse().toString();
     }
 
+    /**
+     * Returns {@code true} if the share token has not expired and has remaining downloads.
+     *
+     * @param token the token to validate (may be {@code null})
+     * @return {@code true} when the token is usable
+     */
     public static boolean validateShareToken(ShareTokenEntity token) {
         if (token == null) {
             return false;
@@ -211,6 +315,18 @@ public class FileUtils {
         return notExpired && hasDownloads;
     }
 
+    /**
+     * Streams a file to the output stream, then deletes any temporary decrypted copy.
+     *
+     * <p>If {@code filePathToStream} equals {@code decryptedFilePath}, the file is
+     * assumed to be a temporary decrypted copy and is deleted after streaming.
+     *
+     * @param filePathToStream  path of the file to read (may be the decrypted copy)
+     * @param decryptedFilePath expected path of any temporary decrypted file
+     * @param uuid              file UUID (used in log messages only)
+     * @param outputStream      destination output stream
+     * @throws IOException if streaming or cleanup fails
+     */
     public static void streamFile(Path filePathToStream, Path decryptedFilePath, String uuid, OutputStream outputStream) throws IOException {
         try (InputStream in = Files.newInputStream(filePathToStream)) {
             byte[] buffer = new byte[8192];
@@ -223,7 +339,6 @@ public class FileUtils {
             logger.error("Error streaming file for UUID: {}", uuid, e);
             throw e;
         } finally {
-            // If there's a decrypted file, remove it after streaming
             if (filePathToStream != null && filePathToStream.equals(decryptedFilePath)) {
                 try {
                     Files.deleteIfExists(decryptedFilePath);

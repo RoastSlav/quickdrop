@@ -26,6 +26,23 @@ import java.util.Optional;
 import static org.rostislav.quickdrop.util.FileUtils.validateShareToken;
 import static org.springframework.http.ResponseEntity.ok;
 
+/**
+ * REST API for file upload, share-link generation, and share-link downloads.
+ *
+ * <p>Three endpoints are exposed under {@code /api/file}:
+ * <ul>
+ *   <li>{@code POST /api/file/upload-chunk} — receives a single chunk of a
+ *       multi-part chunked upload, delegates to {@link AsyncFileMergeService},
+ *       and returns the saved {@link FileEntity} JSON on the last chunk.</li>
+ *   <li>{@code POST /api/file/share/{uuid}} — generates (or returns) a share
+ *       token for a file. For encrypted files a valid file session token is
+ *       required to decrypt the sidecar; simplified/disabled share-link
+ *       settings are enforced here.</li>
+ *   <li>{@code GET /api/file/download/{token}} — streams a file identified by
+ *       its share token. The token is validated and its download counter
+ *       decremented atomically by {@link FileService#streamFileByShareToken}.</li>
+ * </ul>
+ */
 @RestController
 @RequestMapping("/api/file")
 public class FileRestController {

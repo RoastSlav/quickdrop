@@ -23,6 +23,23 @@ import java.util.UUID;
 import static org.rostislav.quickdrop.util.FileUtils.bytesToMegabytes;
 import static org.rostislav.quickdrop.util.FileUtils.megabytesToBytes;
 
+/**
+ * Handles all admin UI pages and admin-only actions under {@code /admin}.
+ *
+ * <p>Access to every endpoint in this controller is guarded by
+ * {@link org.rostislav.quickdrop.interceptor.AdminPasswordInterceptor}, which
+ * redirects unauthenticated requests to the admin login page.
+ *
+ * <p>Responsibilities:
+ * <ul>
+ *   <li>Dashboard analytics display</li>
+ *   <li>Paginated file and paste management (list, delete, hide, keep-indefinitely)</li>
+ *   <li>Paste history views</li>
+ *   <li>Application settings read and write (form and JSON API variants)</li>
+ *   <li>Admin password setup and login/logout</li>
+ *   <li>On-demand notification tests (Discord / email)</li>
+ * </ul>
+ */
 @Controller
 @RequestMapping("/admin")
 public class AdminViewController {

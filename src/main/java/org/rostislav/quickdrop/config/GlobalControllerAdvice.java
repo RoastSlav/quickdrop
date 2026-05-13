@@ -10,6 +10,17 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 
 import java.util.Locale;
 
+/**
+ * Injects shared view-model attributes into every Thymeleaf template.
+ *
+ * <p>The {@link #addGlobalAttributes(Model, HttpServletRequest)} method runs before
+ * every controller handler and populates the model with application settings,
+ * session state, and locale information that all templates depend on (navigation
+ * visibility, feature flags, app name/logo, etc.).
+ *
+ * <p>Reads are served from the {@code applicationSettings} cache so there is no
+ * extra database round-trip per request.
+ */
 @ControllerAdvice
 public class GlobalControllerAdvice {
 
@@ -21,6 +32,25 @@ public class GlobalControllerAdvice {
         this.sessionService = sessionService;
     }
 
+    /**
+     * Adds global model attributes available to every view.
+     *
+     * <p>Attributes injected:
+     * <ul>
+     *   <li>Feature flags: {@code isFileListPageEnabled}, {@code isAdminDashboardButtonEnabled},
+     *       {@code isEncryptionEnabled}, {@code uploadPasswordEnabled}, {@code isPreviewEnabled},
+     *       {@code isMetadataStrippingEnabled}, {@code isSimplifiedShareLinksEnabled},
+     *       {@code isShareLinksDisabled}, {@code isPastebinEnabled}</li>
+     *   <li>Session state: {@code hasAdminSession}, {@code hasAppSession}</li>
+     *   <li>Permission flags: {@code canUseKeepIndefinitely}, {@code canHideFromList},
+     *       {@code isKeepIndefinitelyAdminOnly}, {@code isHideFromListAdminOnly}</li>
+     *   <li>Branding: {@code appName}, {@code appLogoPath}</li>
+     *   <li>Locale: {@code currentLang} (BCP-47 language tag, defaults to "en")</li>
+     * </ul>
+     *
+     * @param model   the Spring MVC model
+     * @param request the current HTTP request (used to resolve the admin session)
+     */
     @ModelAttribute
     public void addGlobalAttributes(Model model, HttpServletRequest request) {
         boolean hasAdminSession = sessionService.hasValidAdminSession(request);

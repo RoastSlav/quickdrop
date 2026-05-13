@@ -31,3 +31,60 @@ pre.hljs, code.hljs {
 [x-cloak] {
     display: none !important;
 }
+
+/* Nav logo: hide alt text and fade in once the image is ready */
+.nav-brand img {
+    color: transparent;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+}
+
+.nav-brand img.nav-logo-loaded {
+    opacity: 1;
+}
+
+/* Mobile nav language chips */
+.mobile-lang-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.3rem 0.7rem;
+    border-radius: 9999px;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    text-decoration: none;
+    background: var(--c-surface-raised);
+    color: var(--c-nav-text-muted);
+    border: 1px solid var(--c-border);
+    transition: background 0.15s, color 0.15s;
+    white-space: nowrap;
+}
+
+.mobile-lang-chip:hover {
+    background: var(--c-nav-hover);
+    color: var(--c-nav-text);
+}
+
+.mobile-lang-chip.is-active {
+    background: var(--c-primary-muted);
+    color: var(--c-primary);
+    border-color: var(--c-primary);
+    font-weight: 700;
+}
+
+/* Upload page: allow the security fieldset badge to wrap onto a new line on narrow screens */
+@media (max-width: 639px) {
+    .fieldset-title {
+        flex-wrap: wrap;
+    }
+
+    .fieldset-title .badge {
+        margin-left: 1.5rem;
+    }
+}
+
+/* Stat hero: reduce minimum font size on narrow screens so values don't overflow 2-col cards */
+@media (max-width: 639px) {
+    .stat-hero-value {
+        font-size: clamp(1.25rem, 7vw, 2rem);
+    }
+}

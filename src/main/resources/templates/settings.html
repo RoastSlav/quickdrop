@@ -311,33 +311,36 @@
                 </div>
                 <div class="settings-list-item">
                   <div class="flex flex-col sm:flex-row gap-4 items-start">
-                    <div class="form-row flex-1">
+                    <div class="form-row flex-1 min-w-0">
                       <label class="form-label" for="fileDeletionCron"
                              th:text="#{page.settings.system.fileDeletionCron}">File Deletion Cron</label>
                       <!-- Preset buttons -->
                       <div class="flex flex-wrap gap-1.5 mb-2" id="cronPresets">
-                        <button class="btn btn-sm text-xs" data-cron="0 0 * * * *" th:text="#{page.settings.system.cron.hourly}"
+                        <button class="btn btn-sm btn-ghost cron-preset" data-cron="0 0 * * * *"
+                                th:text="#{page.settings.system.cron.hourly}"
                                 type="button">Hourly
                         </button>
-                        <button class="btn btn-sm text-xs" data-cron="0 0 2 * * *" th:text="#{page.settings.system.cron.daily2am}"
+                        <button class="btn btn-sm btn-ghost cron-preset" data-cron="0 0 2 * * *"
+                                th:text="#{page.settings.system.cron.daily2am}"
                                 type="button">Daily at 2 AM
                         </button>
-                        <button class="btn btn-sm text-xs" data-cron="0 0 0 * * *" th:text="#{page.settings.system.cron.midnight}"
+                        <button class="btn btn-sm btn-ghost cron-preset" data-cron="0 0 0 * * *"
+                                th:text="#{page.settings.system.cron.midnight}"
                                 type="button">Daily at midnight
                         </button>
-                        <button class="btn btn-sm text-xs" data-cron="0 0 0 * * SUN" th:text="#{page.settings.system.cron.weekly}"
+                        <button class="btn btn-sm btn-ghost cron-preset" data-cron="0 0 0 * * SUN"
+                                th:text="#{page.settings.system.cron.weekly}"
                                 type="button">Weekly (Sun)
                         </button>
-                        <button class="btn btn-sm text-xs" data-cron="0 0 0 1 * *" th:text="#{page.settings.system.cron.monthly}"
+                        <button class="btn btn-sm btn-ghost cron-preset" data-cron="0 0 0 1 * *"
+                                th:text="#{page.settings.system.cron.monthly}"
                                 type="button">Monthly (1st)
                         </button>
                       </div>
                       <input class="form-input font-mono" id="fileDeletionCron" required
                              th:field="*{fileDeletionCron}" type="text"/>
-                      <!-- Live human-readable description -->
-                      <p class="text-xs mt-1.5 min-h-[1.25rem]" style="color:var(--c-teal)">
-                        <span id="cronReadable"></span>
-                      </p>
+                      <!-- Live human-readable description / validation error -->
+                      <p class="text-xs mt-1.5 min-h-[1.25rem]" id="cronFeedback"></p>
                       <p class="text-xs" style="color:var(--c-text-faint)"
                          th:text="#{page.settings.system.cron.hint}">Spring format: second minute hour day month
                         weekday</p>
@@ -775,6 +778,9 @@
       enableChannelBeforeBatch: /*[[#{validation.settings.enableChannelBeforeBatch}]]*/ 'Enable Discord or Email before batching.',
       batchInterval:            /*[[#{validation.settings.batchInterval}]]*/ 'Enter a batch interval in minutes.',
       failed:                   /*[[#{validation.settings.failed}]]*/ 'Validation failed'
+    },
+    cron: {
+      locale: /*[[${#locale.language == 'zh' ? 'zh_CN' : #locale.language}]]*/ 'en'
     }
   };
 
@@ -909,6 +915,13 @@
     color: var(--c-text-muted);
     background: transparent;
     border: none;
+    min-width: 0;
+  }
+
+  .sn-btn span {
+    overflow-wrap: break-word;
+    word-break: break-word;
+    min-width: 0;
   }
 
   .sn-btn:hover {
@@ -929,6 +942,8 @@
   }
 </style>
 
+<script src="/js/toast.js"></script>
+<script src="/js/vendor/cronstrue-i18n.min.js"></script>
 <script src="/js/settings.js"></script>
 <script src="/js/locale-switcher.js"></script>
 </body>

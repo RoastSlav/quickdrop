@@ -9,56 +9,56 @@
 
 :root {
     /* ── Surfaces ─────────────────────────────────────────────────────── */
-    --c-bg: #f0f4f8;
-    --c-bg-deep: #e2e8f0;
+    --c-bg: #f0f2f0;
+    --c-bg-deep: #e4e7e2;
     --c-surface: #ffffff;
-    --c-surface-raised: #f8fafc;
-    --c-surface-subtle: #f1f5f9;
+    --c-surface-raised: #f7f8f6;
+    --c-surface-subtle: #f0f2ee;
     --c-surface-elevated: rgba(255, 255, 255, 0.80);
     --c-surface-glass: rgba(255, 255, 255, 0.55);
-    --c-glow: rgba(14, 165, 233, 0.25);
+    --c-glow: rgba(74, 215, 240, 0.22);
 
     /* ── Borders ──────────────────────────────────────────────────────── */
-    --c-border: #e2e8f0;
-    --c-border-strong: #cbd5e1;
-    --c-border-soft: rgba(15, 23, 42, 0.06);
+    --c-border: #dde2d8;
+    --c-border-strong: #c4cdc0;
+    --c-border-soft: rgba(46, 64, 87, 0.06);
 
     /* ── Text ─────────────────────────────────────────────────────────── */
-    --c-text: #0f172a;
-    --c-text-muted: #64748b;
-    --c-text-faint: #94a3b8;
-    --c-text-placeholder: #94a3b8;
+    --c-text: #1a2332;
+    --c-text-muted: #5a6b7a;
+    --c-text-faint: #8a9ba8;
+    --c-text-placeholder: #8a9ba8;
 
     /* ── Nav ──────────────────────────────────────────────────────────── */
-    --c-nav-bg: rgba(2, 6, 23, 0.92);
-    --c-nav-bg-solid: #020617;
+    --c-nav-bg: rgba(47, 55, 67, 0.94);
+    --c-nav-bg-solid: #2F3743;
     --c-nav-text: #f1f5f9;
     --c-nav-text-muted: #94a3b8;
     --c-nav-hover: rgba(255, 255, 255, 0.08);
     --c-nav-border: rgba(255, 255, 255, 0.06);
 
-    /* ── Brand: Sky (primary) ─────────────────────────────────────────── */
-    --c-primary: #0ea5e9;
-    --c-primary-hover: #0284c7;
-    --c-primary-muted: #e0f2fe;
+    /* ── Brand: Sky Aqua (primary) ────────────────────────────────────── */
+    --c-primary: #0BA8C4;
+    --c-primary-hover: #0990A8;
+    --c-primary-muted: #d8f5fb;
     --c-primary-fg: #ffffff;
 
-    /* ── Brand: Violet (secondary) ────────────────────────────────────── */
-    --c-secondary: #8b5cf6;
-    --c-secondary-hover: #7c3aed;
-    --c-secondary-muted: #ede9fe;
+    /* ── Brand: Carrot Orange (secondary) ────────────────────────────── */
+    --c-secondary: #D97A00;
+    --c-secondary-hover: #BF6C00;
+    --c-secondary-muted: #fdefd4;
     --c-secondary-fg: #ffffff;
 
-    /* ── Accent: Teal ─────────────────────────────────────────────────── */
-    --c-teal: #14b8a6;
-    --c-teal-hover: #0d9488;
-    --c-teal-muted: #ccfbf1;
+    /* ── Accent: Yellow Green (teal slot) ────────────────────────────── */
+    --c-teal: #6A9E2F;
+    --c-teal-hover: #5A8727;
+    --c-teal-muted: #eaf4d6;
     --c-teal-fg: #ffffff;
 
-    /* ── Accent: Emerald ──────────────────────────────────────────────── */
-    --c-emerald: #10b981;
-    --c-emerald-hover: #059669;
-    --c-emerald-muted: #d1fae5;
+    /* ── Accent: Muted Olive (emerald slot) ──────────────────────────── */
+    --c-emerald: #6B8C50;
+    --c-emerald-hover: #587540;
+    --c-emerald-muted: #e8f0df;
     --c-emerald-fg: #ffffff;
 
     /* ── Accent: Rose ─────────────────────────────────────────────────── */
@@ -73,11 +73,11 @@
     --c-indigo-muted: #e0e7ff;
     --c-indigo-fg: #ffffff;
 
-    /* ── Accent: Amber ────────────────────────────────────────────────── */
-    --c-amber: #f59e0b;
-    --c-amber-hover: #d97706;
-    --c-amber-muted: #fef3c7;
-    --c-amber-fg: #1f2937;
+    /* ── Accent: Old Gold (amber slot) ───────────────────────────────── */
+    --c-amber: #9E8220;
+    --c-amber-hover: #876E18;
+    --c-amber-muted: #f7f0cc;
+    --c-amber-fg: #1a2332;
 
     /* ── State: Danger ────────────────────────────────────────────────── */
     --c-danger: #ef4444;
@@ -86,32 +86,32 @@
     --c-danger-fg: #ffffff;
 
     /* ── State: Warning/Success ───────────────────────────────────────── */
-    --c-warning-bg: #fffbeb;
-    --c-warning-border: #fcd34d;
-    --c-warning-text: #92400e;
-    --c-success-bg: #f0fdf4;
-    --c-success-border: #86efac;
-    --c-success-text: #166534;
+    --c-warning-bg: #fdf8e4;
+    --c-warning-border: #C5A927;
+    --c-warning-text: #6b5810;
+    --c-success-bg: #eef5e4;
+    --c-success-border: #97AE6F;
+    --c-success-text: #3a5c22;
 
     /* ── Gradients ────────────────────────────────────────────────────── */
-    --g-brand: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 50%, #14b8a6 100%);
-    --g-brand-vivid: linear-gradient(135deg, #38bdf8 0%, #22d3ee 40%, #2dd4bf 70%, #14b8a6 100%);
-    --g-brand-soft: linear-gradient(135deg, rgba(14, 165, 233, 0.10) 0%, rgba(6, 182, 212, 0.08) 50%, rgba(20, 184, 166, 0.10) 100%);
-    --g-teal-emerald: linear-gradient(135deg, #14b8a6 0%, #10b981 100%);
-    --g-rose-amber: linear-gradient(135deg, #f43f5e 0%, #f59e0b 100%);
-    --g-dark-surface: linear-gradient(180deg, rgba(15, 23, 42, 0.02) 0%, rgba(15, 23, 42, 0.06) 100%);
+    --g-brand: linear-gradient(135deg, #4AD7F0 0%, #97AE6F 50%, #99C24D 100%);
+    --g-brand-vivid: linear-gradient(135deg, #6EE2F5 0%, #B8D48A 40%, #A8D05C 70%, #99C24D 100%);
+    --g-brand-soft: linear-gradient(135deg, rgba(74, 215, 240, 0.10) 0%, rgba(151, 174, 111, 0.08) 50%, rgba(153, 194, 77, 0.10) 100%);
+    --g-teal-emerald: linear-gradient(135deg, #99C24D 0%, #97AE6F 100%);
+    --g-rose-amber: linear-gradient(135deg, #f43f5e 0%, #F18F01 100%);
+    --g-dark-surface: linear-gradient(180deg, rgba(46, 64, 87, 0.02) 0%, rgba(46, 64, 87, 0.06) 100%);
 
-    --g-aurora: radial-gradient(ellipse 80% 50% at 20% -10%, rgba(14, 165, 233, 0.25) 0%, transparent 70%),
-    radial-gradient(ellipse 60% 40% at 80% 0%, rgba(6, 182, 212, 0.20) 0%, transparent 70%),
-    radial-gradient(ellipse 50% 50% at 50% 100%, rgba(20, 184, 166, 0.15) 0%, transparent 60%);
+    --g-aurora: radial-gradient(ellipse 80% 50% at 20% -10%, rgba(74, 215, 240, 0.22) 0%, transparent 70%),
+    radial-gradient(ellipse 60% 40% at 80% 0%, rgba(153, 194, 77, 0.18) 0%, transparent 70%),
+    radial-gradient(ellipse 50% 50% at 50% 100%, rgba(241, 143, 1, 0.12) 0%, transparent 60%);
 
     /* ── Folder tree ──────────────────────────────────────────────────── */
-    --c-folder-root: #0369a1;
-    --c-folder-dir: #b45309;
-    --c-folder-file: #065f46;
-    --c-folder-connector: #475569;
-    --c-folder-box-bg: #f1f5f9;
-    --c-folder-box-border: #cbd5e1;
+    --c-folder-root: #0BA8C4;
+    --c-folder-dir: #D97A00;
+    --c-folder-file: #6B8C50;
+    --c-folder-connector: #5a6b7a;
+    --c-folder-box-bg: #f0f2ee;
+    --c-folder-box-border: #c4cdc0;
 
     /* ── Motion ───────────────────────────────────────────────────────── */
     --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
@@ -123,90 +123,96 @@
 }
 
 html.dark {
-    --c-bg: #030712;
-    --c-bg-deep: #0f172a;
-    --c-surface: #0f172a;
-    --c-surface-raised: #1e293b;
-    --c-surface-subtle: #0b1424;
-    --c-surface-elevated: rgba(15, 23, 42, 0.80);
-    --c-surface-glass: rgba(15, 23, 42, 0.60);
-    --c-glow: rgba(56, 189, 248, 0.25);
+    /* bg/deep = near-black · surface = Graphite · raised = Jet Black · border = Charcoal Blue */
+    --c-bg: #0e0d0e;
+    --c-bg-deep: #070607;
+    --c-surface: #2F2D2E;
+    --c-surface-raised: #2F3743;
+    --c-surface-subtle: #131113;
+    --c-surface-elevated: rgba(47, 45, 46, 0.90);
+    --c-surface-glass: rgba(14, 13, 14, 0.72);
+    --c-glow: rgba(74, 215, 240, 0.40);
 
-    --c-border: #1e293b;
-    --c-border-strong: #334155;
-    --c-border-soft: rgba(148, 163, 184, 0.08);
+    --c-border: #2E4057;
+    --c-border-strong: #3d5470;
+    --c-border-soft: rgba(74, 215, 240, 0.10);
 
-    --c-text: #f1f5f9;
-    --c-text-muted: #94a3b8;
-    --c-text-faint: #64748b;
-    --c-text-placeholder: #475569;
+    --c-text: #e8edf2;
+    --c-text-muted: #8a9ba8;
+    --c-text-faint: #4a5a68;
+    --c-text-placeholder: #384858;
 
-    --c-nav-bg: rgba(3, 7, 18, 0.88);
-    --c-nav-bg-solid: #030712;
+    --c-nav-bg: rgba(7, 6, 7, 0.95);
+    --c-nav-bg-solid: #070607;
 
-    --c-primary: #38bdf8;
-    --c-primary-hover: #0ea5e9;
-    --c-primary-muted: rgba(56, 189, 248, 0.15);
-    --c-primary-fg: #0f172a;
+    /* Sky Aqua #4AD7F0 */
+    --c-primary: #4AD7F0;
+    --c-primary-hover: #2EC8E3;
+    --c-primary-muted: rgba(74, 215, 240, 0.18);
+    --c-primary-fg: #0e0d0e;
 
-    --c-secondary: #a78bfa;
-    --c-secondary-hover: #8b5cf6;
-    --c-secondary-muted: rgba(167, 139, 250, 0.15);
-    --c-secondary-fg: #0f172a;
+    /* Carrot Orange #F18F01 */
+    --c-secondary: #F18F01;
+    --c-secondary-hover: #D97D00;
+    --c-secondary-muted: rgba(241, 143, 1, 0.18);
+    --c-secondary-fg: #0e0d0e;
 
-    --c-teal: #2dd4bf;
-    --c-teal-hover: #14b8a6;
-    --c-teal-muted: rgba(45, 212, 191, 0.15);
-    --c-teal-fg: #0f172a;
+    /* Yellow Green #99C24D */
+    --c-teal: #99C24D;
+    --c-teal-hover: #84A83C;
+    --c-teal-muted: rgba(153, 194, 77, 0.18);
+    --c-teal-fg: #0e0d0e;
 
-    --c-emerald: #34d399;
-    --c-emerald-hover: #10b981;
-    --c-emerald-muted: rgba(52, 211, 153, 0.15);
-    --c-emerald-fg: #0f172a;
+    /* Muted Olive #97AE6F */
+    --c-emerald: #97AE6F;
+    --c-emerald-hover: #7D9459;
+    --c-emerald-muted: rgba(151, 174, 111, 0.18);
+    --c-emerald-fg: #0e0d0e;
 
     --c-rose: #fb7185;
     --c-rose-hover: #f43f5e;
-    --c-rose-muted: rgba(251, 113, 133, 0.15);
-    --c-rose-fg: #0f172a;
+    --c-rose-muted: rgba(251, 113, 133, 0.18);
+    --c-rose-fg: #0e0d0e;
 
     --c-indigo: #818cf8;
     --c-indigo-hover: #6366f1;
-    --c-indigo-muted: rgba(129, 140, 248, 0.15);
-    --c-indigo-fg: #0f172a;
+    --c-indigo-muted: rgba(129, 140, 248, 0.18);
+    --c-indigo-fg: #0e0d0e;
 
-    --c-amber: #fbbf24;
-    --c-amber-hover: #f59e0b;
-    --c-amber-muted: rgba(251, 191, 36, 0.15);
-    --c-amber-fg: #0f172a;
+    /* Old Gold #C5A927 */
+    --c-amber: #C5A927;
+    --c-amber-hover: #A88E1F;
+    --c-amber-muted: rgba(197, 169, 39, 0.18);
+    --c-amber-fg: #0e0d0e;
 
     --c-danger: #f87171;
     --c-danger-hover: #ef4444;
-    --c-danger-muted: rgba(248, 113, 113, 0.15);
-    --c-danger-fg: #0f172a;
+    --c-danger-muted: rgba(248, 113, 113, 0.18);
+    --c-danger-fg: #0e0d0e;
 
-    --c-warning-bg: rgba(251, 191, 36, 0.08);
-    --c-warning-border: rgba(251, 191, 36, 0.30);
-    --c-warning-text: #fcd34d;
-    --c-success-bg: rgba(52, 211, 153, 0.08);
-    --c-success-border: rgba(52, 211, 153, 0.30);
-    --c-success-text: #6ee7b7;
+    --c-warning-bg: rgba(197, 169, 39, 0.12);
+    --c-warning-border: rgba(197, 169, 39, 0.40);
+    --c-warning-text: #D4BC4A;
+    --c-success-bg: rgba(153, 194, 77, 0.12);
+    --c-success-border: rgba(153, 194, 77, 0.40);
+    --c-success-text: #B0D472;
 
-    --g-brand: linear-gradient(135deg, #38bdf8 0%, #22d3ee 50%, #2dd4bf 100%);
-    --g-brand-vivid: linear-gradient(135deg, #7dd3fc 0%, #67e8f9 40%, #5eead4 70%, #2dd4bf 100%);
-    --g-brand-soft: linear-gradient(135deg, rgba(56, 189, 248, 0.14) 0%, rgba(34, 211, 238, 0.12) 50%, rgba(45, 212, 191, 0.14) 100%);
-    --g-teal-emerald: linear-gradient(135deg, #2dd4bf 0%, #34d399 100%);
-    --g-rose-amber: linear-gradient(135deg, #fb7185 0%, #fbbf24 100%);
-    --g-dark-surface: linear-gradient(180deg, rgba(148, 163, 184, 0.02) 0%, rgba(148, 163, 184, 0.04) 100%);
-    --g-aurora: radial-gradient(ellipse 80% 50% at 20% -10%, rgba(56, 189, 248, 0.22) 0%, transparent 70%),
-    radial-gradient(ellipse 60% 40% at 80% 0%, rgba(34, 211, 238, 0.18) 0%, transparent 70%),
-    radial-gradient(ellipse 50% 50% at 50% 100%, rgba(45, 212, 191, 0.12) 0%, transparent 60%);
+    --g-brand: linear-gradient(135deg, #4AD7F0 0%, #97AE6F 50%, #99C24D 100%);
+    --g-brand-vivid: linear-gradient(135deg, #7DE8F8 0%, #B8D48A 40%, #A8D05C 70%, #99C24D 100%);
+    --g-brand-soft: linear-gradient(135deg, rgba(74, 215, 240, 0.18) 0%, rgba(151, 174, 111, 0.14) 50%, rgba(153, 194, 77, 0.18) 100%);
+    --g-teal-emerald: linear-gradient(135deg, #99C24D 0%, #97AE6F 100%);
+    --g-rose-amber: linear-gradient(135deg, #fb7185 0%, #F18F01 100%);
+    --g-dark-surface: linear-gradient(180deg, rgba(74, 215, 240, 0.03) 0%, rgba(74, 215, 240, 0.06) 100%);
+    --g-aurora: radial-gradient(ellipse 80% 50% at 20% -10%, rgba(74, 215, 240, 0.30) 0%, transparent 70%),
+    radial-gradient(ellipse 60% 40% at 80% 0%, rgba(153, 194, 77, 0.22) 0%, transparent 70%),
+    radial-gradient(ellipse 50% 50% at 50% 100%, rgba(241, 143, 1, 0.14) 0%, transparent 60%);
 
-    --c-folder-root: #38bdf8;
-    --c-folder-dir: #fbbf24;
-    --c-folder-file: #4ade80;
-    --c-folder-connector: #cbd5e1;
-    --c-folder-box-bg: #0b1424;
-    --c-folder-box-border: #1e293b;
+    --c-folder-root: #4AD7F0;
+    --c-folder-dir: #F18F01;
+    --c-folder-file: #99C24D;
+    --c-folder-connector: #8a9ba8;
+    --c-folder-box-bg: #131113;
+    --c-folder-box-border: #2E4057;
 }
 
 /* ════════════════════════════════════════════════════════════════════════
@@ -635,6 +641,30 @@ html.dark {
 
     .btn-soft-primary:hover {
         background: color-mix(in srgb, var(--c-primary) 22%, transparent);
+    }
+
+    .cron-preset {
+        border-radius: 999px;
+        font-weight: 500;
+        letter-spacing: 0.01em;
+        background: transparent;
+        color: var(--c-text-muted);
+        border: 1px solid var(--c-border-strong);
+        transition: all 180ms var(--ease-out-quart);
+    }
+
+    .cron-preset:hover {
+        background: var(--c-surface-raised);
+        border-color: var(--c-primary);
+        color: var(--c-primary);
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--c-primary) 10%, transparent);
+    }
+
+    .cron-preset.is-active {
+        background: var(--c-primary-muted);
+        color: var(--c-primary);
+        border-color: color-mix(in srgb, var(--c-primary) 35%, transparent);
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--c-primary) 10%, transparent);
     }
 
     .btn-ghost-nav {

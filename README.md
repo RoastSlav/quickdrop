@@ -125,8 +125,8 @@ Three automatic jobs run on configurable schedules:
 | **DB reconciliation**   | Daily 03:00       | Removes database rows for files deleted outside the application               |
 | **Share token cleanup** | Daily 03:30       | Deletes expired or exhausted share tokens                                     |
 
-The file cleanup cron is validated and previewed (next run time) in the settings UI, and takes effect immediately on
-save.
+The file cleanup cron expression has a preset-button helper (hourly, daily, weekly, monthly), the input and the
+expression is validated client-side before the form can be saved.
 
 ### Security
 

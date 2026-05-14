@@ -150,7 +150,7 @@ public interface ShareTokenRepository extends JpaRepository<ShareTokenEntity, Lo
      * @param pageable  pagination and sort configuration
      * @return page of matching active tokens
      */
-    @Query(value = "SELECT s FROM ShareTokenEntity s WHERE " +
+    @Query(value = "SELECT s FROM ShareTokenEntity s JOIN FETCH s.file WHERE " +
             "(s.tokenExpirationDate IS NULL OR s.tokenExpirationDate >= :today) AND " +
             "(s.numberOfAllowedDownloads IS NULL OR s.numberOfAllowedDownloads > 0) AND " +
             "(:isPaste IS NULL OR s.file.paste = :isPaste) AND " +

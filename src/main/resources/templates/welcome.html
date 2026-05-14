@@ -10,6 +10,7 @@
     <link href="/css/custom.css" rel="stylesheet"/>
     <link href="/images/favicon.png" rel="icon" th:href="${appLogoPath}" type="image/png"/>
     <script src="/js/tailwindTheme.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
 </head>
 <body>
 
@@ -21,12 +22,41 @@
 
 <!-- top-right controls (no nav on setup page) -->
 <div class="fixed top-4 right-4 flex items-center gap-2 z-20">
-    <label class="sr-only" for="localeSwitchWelcome" th:text="#{nav.language}">Language</label>
-    <select class="locale-select-standalone" data-locale-select="true" id="localeSwitchWelcome">
-        <option th:selected="${currentLang == 'en'}" value="en">EN</option>
-        <option th:selected="${currentLang == 'bg'}" value="bg">BG</option>
-        <option th:selected="${currentLang == 'de'}" value="de">DE</option>
-    </select>
+    <div @click.outside="langOpen = false" class="relative" x-data="{ langOpen: false }">
+        <button @click="langOpen = !langOpen" aria-label="Select language" class="lang-btn" type="button">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                <path d="M12 21a9.004 9.004 0 0 0 8.716-6.747M12 21a9.004 9.004 0 0 1-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 0 1 7.843 4.582M12 3a8.997 8.997 0 0 0-7.843 4.582m15.686 0A11.953 11.953 0 0 1 12 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0 1 21 12c0 .778-.099 1.533-.284 2.253M3 12c0 .778.099 1.533.284 2.253"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"/>
+            </svg>
+            <span th:text="${#strings.toUpperCase(currentLang)}">EN</span>
+            <svg :class="{ 'rotate-180': langOpen }" class="w-3 h-3 transition-transform duration-200"
+                 fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                <path d="m19.5 8.25-7.5 7.5-7.5-7.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </button>
+        <div class="lang-dropdown" x-cloak x-show="langOpen"
+             x-transition:enter="transition ease-out duration-150" x-transition:enter-end="opacity-100 scale-100"
+             x-transition:enter-start="opacity-0 scale-95" x-transition:leave="transition ease-in duration-100"
+             x-transition:leave-end="opacity-0 scale-95" x-transition:leave-start="opacity-100 scale-100">
+            <a class="lang-option locale-switch-link" data-lang="en" href="#"
+               th:classappend="${currentLang == 'en'} ? ' is-active'">English <span class="lang-code">EN</span></a>
+            <a class="lang-option locale-switch-link" data-lang="bg" href="#"
+               th:classappend="${currentLang == 'bg'} ? ' is-active'">Български <span class="lang-code">BG</span></a>
+            <a class="lang-option locale-switch-link" data-lang="de" href="#"
+               th:classappend="${currentLang == 'de'} ? ' is-active'">Deutsch <span class="lang-code">DE</span></a>
+            <a class="lang-option locale-switch-link" data-lang="es" href="#"
+               th:classappend="${currentLang == 'es'} ? ' is-active'">Español <span class="lang-code">ES</span></a>
+            <a class="lang-option locale-switch-link" data-lang="fr" href="#"
+               th:classappend="${currentLang == 'fr'} ? ' is-active'">Français <span class="lang-code">FR</span></a>
+            <a class="lang-option locale-switch-link" data-lang="it" href="#"
+               th:classappend="${currentLang == 'it'} ? ' is-active'">Italiano <span class="lang-code">IT</span></a>
+            <a class="lang-option locale-switch-link" data-lang="ja" href="#"
+               th:classappend="${currentLang == 'ja'} ? ' is-active'">日本語 <span class="lang-code">JA</span></a>
+            <a class="lang-option locale-switch-link" data-lang="zh" href="#"
+               th:classappend="${currentLang == 'zh'} ? ' is-active'">中文 <span class="lang-code">ZH</span></a>
+        </div>
+    </div>
     <button aria-label="Toggle theme" class="nav-icon-btn" id="themeToggle" style="color: var(--c-text-muted)"
             type="button">
         <svg class="hidden w-5 h-5" fill="none" id="themeIconSun" stroke="currentColor" stroke-width="1.5"

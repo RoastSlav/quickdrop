@@ -837,13 +837,14 @@ public class FileService {
         FileEntity fileEntity = shareTokenEntity.file;
         String storagePath = applicationSettingsService.getFileStoragePath();
 
-        logHistory(fileEntity, request, FileHistoryType.SHARE_DOWNLOAD);
-
         if (shareTokenEntity.shareKeyHash != null) {
             Path sidecarPath = Path.of(storagePath, fileEntity.uuid + "-share-" + shareTokenEntity.shareToken);
             if (!Files.exists(sidecarPath)) {
+                logger.warn("Sidecar missing for token {}, deleting broken token", shareTokenEntity.shareToken);
+                shareTokenRepository.deleteByIdTransactional(shareTokenEntity.getId());
                 return null;
             }
+            logHistory(fileEntity, request, FileHistoryType.SHARE_DOWNLOAD);
             String shareKey = (String) request.getSession().getAttribute("share-key-" + shareTokenEntity.shareToken);
             return outputStream -> {
                 try {
@@ -867,6 +868,7 @@ public class FileService {
             };
         } else {
             // Legacy path: stream plaintext sidecar if it exists, otherwise raw file
+            logHistory(fileEntity, request, FileHistoryType.SHARE_DOWNLOAD);
             Path decryptedFilePath = Path.of(storagePath, fileEntity.uuid + "-decrypted");
             Path filePathToStream = Files.exists(decryptedFilePath)
                     ? decryptedFilePath
@@ -895,7 +897,7 @@ public class FileService {
 
         if (!validateShareToken(shareTokenEntity)) {
             deleteShareSidecar(shareTokenEntity);
-            shareTokenRepository.delete(shareTokenEntity);
+            shareTokenRepository.deleteByIdTransactional(shareTokenEntity.getId());
         } else {
             shareTokenRepository.save(shareTokenEntity);
         }

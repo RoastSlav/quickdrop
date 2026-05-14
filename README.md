@@ -30,11 +30,13 @@ restart required for configuration changes.
 
 ## Screenshots
 
-<img width="1296" alt="Upload page" src="https://github.com/user-attachments/assets/724267eb-7f43-4351-9167-6703ce6b5c1c" />
+<img width="1912" height="946" alt="Screenshot 2026-05-14 143255" src="https://github.com/user-attachments/assets/5c449f50-5646-428a-a85c-b3f9e6879d86" />
 
-<img width="1315" alt="Admin settings" src="https://github.com/user-attachments/assets/4cc67404-7631-4126-851c-75330a1c4321" />
+<img width="1916" height="947" alt="image" src="https://github.com/user-attachments/assets/e02f5146-619b-4e0a-9366-2c2aad9b3efe" />
 
-<img width="1270" alt="Admin analytics" src="https://github.com/user-attachments/assets/9e6a95d4-48e2-4fad-8d56-edfea63df119" />
+<img width="1917" height="943" alt="image" src="https://github.com/user-attachments/assets/c41c3e18-d48a-4ec4-934f-0e26f609577b" />
+
+<img width="1916" height="944" alt="image" src="https://github.com/user-attachments/assets/de1670d0-1fa6-4175-a480-8609cb33d8f5" />
 
 ---
 

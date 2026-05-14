@@ -23,9 +23,16 @@ import static org.rostislav.quickdrop.util.FileUtils.validateShareToken;
 /**
  * Renders the public share-link landing page for a single file.
  *
- * <p>Share tokens are validated before the page is rendered; expired or
- * exhausted tokens redirect to the {@code invalid-share-link} template.
- * The actual file download is served by {@link FileRestController#downloadFile}.
+ * <p>Share tokens are validated before the page is rendered:
+ * <ul>
+ *   <li>Expired or exhausted tokens render {@code invalid-share-link}.</li>
+ *   <li>Tokens whose sidecar re-encryption is still in progress
+ *       ({@link org.rostislav.quickdrop.entity.ShareTokenEntity#sidecarReady} is
+ *       {@code false}) render {@code file-share-preparing} so the recipient can
+ *       refresh once the file is ready.</li>
+ *   <li>Valid, ready tokens render {@code file-share-view} with a download link
+ *       pointing to {@link FileRestController#downloadFile}.</li>
+ * </ul>
  */
 @Controller
 @RequestMapping("/share")
@@ -41,6 +48,20 @@ public class ShareViewController {
         this.passwordEncoder = passwordEncoder;
     }
 
+    /**
+     * Renders the appropriate view for a share-link URL.
+     *
+     * <p>For new-style encrypted tokens the {@code key} query parameter is verified
+     * against the stored BCrypt hash before the session attribute is written.
+     *
+     * @param token   the short token string from the URL path
+     * @param key     the plaintext share key (only present for AES-encrypted files)
+     * @param request the HTTP request (for session key storage)
+     * @param model   the Spring MVC model populated for the template
+     * @return {@code "invalid-share-link"} if the token is invalid or the key doesn't
+     * match; {@code "file-share-preparing"} if the sidecar is not yet ready;
+     * {@code "file-share-view"} otherwise
+     */
     @GetMapping("/{token}")
     public String viewSharedFile(@PathVariable String token,
                                  @RequestParam(required = false) String key,
@@ -64,6 +85,11 @@ public class ShareViewController {
         FileEntity file = shareToken.file;
         if (file == null) {
             return "redirect:/file/list";
+        }
+
+        if (!shareToken.sidecarReady) {
+            model.addAttribute("fileName", file.name);
+            return "file-share-preparing";
         }
 
         model.addAttribute("file", new FileEntityView(file, analyticsService.getTotalDownloadsByFile(file.uuid)));

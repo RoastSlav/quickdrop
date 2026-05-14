@@ -36,13 +36,16 @@ import static org.springframework.http.ResponseEntity.ok;
  *   <li>{@code POST /api/file/upload-chunk} — receives a single chunk of a
  *       multi-part chunked upload, delegates to {@link AsyncFileMergeService},
  *       and returns the saved {@link FileEntity} JSON on the last chunk.</li>
- *   <li>{@code POST /api/file/share/{uuid}} — generates (or returns) a share
- *       token for a file. For encrypted files a valid file session token is
- *       required to decrypt the sidecar; simplified/disabled share-link
- *       settings are enforced here.</li>
- *   <li>{@code GET /api/file/download/{token}} — streams a file identified by
- *       its share token. The token is validated and its download counter
- *       decremented atomically by {@link FileService#streamFileByShareToken}.</li>
+ *   <li>{@code POST /api/file/share/{uuid}} — generates a share token for a file
+ *       and returns the share path immediately. For encrypted files the sidecar
+ *       re-encryption is performed in the background by {@link org.rostislav.quickdrop.service.ShareEncryptionService};
+ *       the response includes a {@code preparingMessage} flag (string {@code "true"})
+ *       when the file exceeds 50 MB so the UI can inform the creator. Simplified
+ *       and disabled share-link settings are enforced here.</li>
+ *   <li>{@code GET /api/file/download/{token}} — streams a file identified by its
+ *       share token. Returns 503 if the sidecar is not yet ready, 403 if the token
+ *       is invalid or the sidecar file is missing. The download counter is decremented
+ *       atomically by {@link FileService#streamFileByShareToken}.</li>
  * </ul>
  */
 @RestController
@@ -129,6 +132,22 @@ public class FileRestController {
         }
     }
 
+    /**
+     * Creates or returns a share token for the file identified by {@code uuid}.
+     *
+     * <p>The JSON response always contains {@code token}, {@code sharePath}, and
+     * {@code preparingMessage}. {@code preparingMessage} is the string {@code "true"}
+     * when the file is AES-encrypted, the sidecar has not yet finished encrypting in the
+     * background, and the file is at least 50 MB (large enough that the delay is
+     * noticeable). The frontend uses this flag to show a transient notice to the creator.
+     *
+     * @param uuid              the file UUID
+     * @param expirationDate    optional expiry date for the token
+     * @param numberOfDownloads optional download limit; {@code null} means unlimited
+     * @param request           the HTTP request (for session and audit logging)
+     * @return 200 with token/sharePath/preparingMessage, 400 on bad input, 403 when
+     * share links are disabled or the file session is invalid
+     */
     @PostMapping("/share/{uuid}")
     public ResponseEntity<Map<String, String>> generateShareableLink(@PathVariable String uuid,
                                                                      @RequestParam(value = "expirationDate", required = false) LocalDate expirationDate,
@@ -154,6 +173,7 @@ public class FileRestController {
 
         String sharePath;
         String tokenString;
+        boolean preparingMessage = false;
         if (fileEntity.passwordHash != null && !fileEntity.passwordHash.isEmpty()) {
             String sessionToken = (String) request.getSession().getAttribute("file-session-token");
             if (sessionToken == null || !sessionService.validateFileSessionToken(sessionToken, uuid)) {
@@ -166,6 +186,10 @@ public class FileRestController {
             if (result.shareKey() != null) {
                 sharePath += "?key=" + URLEncoder.encode(result.shareKey(), StandardCharsets.UTF_8);
             }
+            // Warn the creator only for large files; small files encrypt quickly in the background
+            if (!result.token().sidecarReady && fileEntity.size >= 50L * 1024 * 1024) {
+                preparingMessage = true;
+            }
         } else {
             ShareTokenEntity token = fileService.generateShareToken(uuid, expirationDate, numberOfDownloads);
             tokenString = token.shareToken;
@@ -174,10 +198,24 @@ public class FileRestController {
         fileService.logShareCreate(fileEntity, request);
         return ok(Map.of(
                 "token", tokenString,
-                "sharePath", sharePath
+                "sharePath", sharePath,
+                "preparingMessage", String.valueOf(preparingMessage)
         ));
     }
 
+    /**
+     * Streams the file associated with the given share token.
+     *
+     * <p>Returns 403 when the token is missing, expired, exhausted, or the sidecar file
+     * has been removed. Returns 503 when the token is valid but the sidecar re-encryption
+     * is still running in the background ({@link org.rostislav.quickdrop.entity.ShareTokenEntity#sidecarReady}
+     * is {@code false}). On success the response carries
+     * {@code Content-Disposition: attachment} so browsers prompt a save dialog.
+     *
+     * @param token   the share token string from the URL
+     * @param request the HTTP request (for session key lookup and history logging)
+     * @return 200 with the file byte stream, 403 on invalid/missing token, 503 if not ready
+     */
     @GetMapping("/download/{token}")
     public ResponseEntity<StreamingResponseBody> downloadFile(@PathVariable String token, HttpServletRequest request) {
         try {
@@ -187,6 +225,9 @@ public class FileRestController {
             }
 
             ShareTokenEntity tokenEntity = shareTokenEntity.get();
+            if (!tokenEntity.sidecarReady) {
+                return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build();
+            }
             FileEntity fileEntity = tokenEntity.file;
             StreamingResponseBody responseBody = fileService.streamFileByShareToken(tokenEntity, request);
 

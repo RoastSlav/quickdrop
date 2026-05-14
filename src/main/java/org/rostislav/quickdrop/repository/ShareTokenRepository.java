@@ -5,8 +5,10 @@ import org.rostislav.quickdrop.entity.ShareTokenEntity;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -65,6 +67,30 @@ public interface ShareTokenRepository extends JpaRepository<ShareTokenEntity, Lo
      */
     @Query("SELECT s FROM ShareTokenEntity s WHERE s.tokenExpirationDate < :today OR s.numberOfAllowedDownloads = 0")
     List<ShareTokenEntity> getShareTokenEntitiesForDeletion(@Param("today") LocalDate today);
+
+    /**
+     * Flips {@code sidecarReady} to {@code true} for a single token. Used by the
+     * background sidecar-encryption task to mark the token as ready without touching
+     * any other columns (avoiding spurious updates to {@code createdAt} etc.).
+     *
+     * @param id the token's database id
+     */
+    @Modifying
+    @Transactional
+    @Query("UPDATE ShareTokenEntity s SET s.sidecarReady = true WHERE s.id = :id")
+    void markSidecarReady(@Param("id") Long id);
+
+    /**
+     * Deletes a token by id inside its own transaction. Used by the background
+     * sidecar-encryption task when encryption fails, so the caller doesn't need an
+     * active Spring-managed transaction.
+     *
+     * @param id the token's database id
+     */
+    @Modifying
+    @Transactional
+    @Query("DELETE FROM ShareTokenEntity s WHERE s.id = :id")
+    void deleteByIdTransactional(@Param("id") Long id);
 
     /**
      * Finds the first unlimited token (no expiry, no download cap) for a given file.

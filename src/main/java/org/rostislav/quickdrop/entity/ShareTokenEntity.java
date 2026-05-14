@@ -53,6 +53,14 @@ public class ShareTokenEntity {
      */
     @Column(name = "created_at")
     public LocalDateTime createdAt;
+    /**
+     * Whether the re-encrypted sidecar file is ready for download.
+     * Always {@code true} for non-encrypted files (no sidecar needed).
+     * Set to {@code false} when sidecar encryption is submitted as a background task,
+     * and flipped to {@code true} once the task completes.
+     */
+    @Column(name = "sidecar_ready", nullable = false)
+    public boolean sidecarReady = true;
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

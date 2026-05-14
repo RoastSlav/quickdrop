@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title th:text="#{page.share.preparing.title.browser(${appName})}">File Preparing — QuickDrop</title>
+    <meta content="width=device-width, initial-scale=1" name="viewport"/>
+    <link href="https://fonts.googleapis.com" rel="preconnect"/>
+    <link crossorigin href="https://fonts.gstatic.com" rel="preconnect"/>
+    <link href="/css/tailwind.css" rel="stylesheet"/>
+    <link href="/css/custom.css" rel="stylesheet"/>
+    <link href="/images/favicon.png" rel="icon" th:href="${appLogoPath}" type="image/png"/>
+    <script src="/js/tailwindTheme.js"></script>
+    <th:block th:replace="~{fragments/header :: scripts}"></th:block>
+</head>
+<body>
+
+<div th:replace="~{fragments/header :: header(false)}"></div>
+
+<!-- Floating orbs -->
+<div aria-hidden="true" class="orb-field">
+    <div class="orb orb--primary"></div>
+    <div class="orb orb--secondary"></div>
+</div>
+
+<main class="gate-page hero-scene" style="min-height: calc(100vh - var(--nav-h, 4rem))">
+
+    <div class="w-full max-w-md animate-in">
+
+        <!-- Clock icon -->
+        <div class="gate-icon gate-icon--primary mx-auto mb-6" style="width:5rem;height:5rem">
+            <svg class="w-10 h-10" fill="none" stroke="currentColor" stroke-width="1.4" viewBox="0 0 24 24">
+                <path d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" stroke-linecap="round"
+                      stroke-linejoin="round"/>
+            </svg>
+        </div>
+
+        <!-- Message -->
+        <div class="text-center mb-6">
+            <p class="section-eyebrow mb-2" th:text="#{page.share.title}">Shared File</p>
+            <h1 class="text-2xl font-extrabold tracking-tight break-all mb-2" th:text="${fileName}">File Name</h1>
+        </div>
+
+        <!-- Card -->
+        <div class="gate-card animate-in animate-in-delay-1 text-center">
+            <div class="mb-4">
+                <p class="text-base font-semibold mb-2" th:text="#{page.share.preparing.heading}">File is being
+                    prepared</p>
+                <p class="text-sm" style="color:var(--c-text-muted)" th:text="#{page.share.preparing.subtext}">
+                    This file is currently being processed. Please refresh the page in a moment.
+                </p>
+            </div>
+            <button class="btn btn-gradient btn-lg w-full justify-center" onclick="location.reload()">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"/>
+                </svg>
+                <span th:text="#{button.refresh}">Refresh</span>
+            </button>
+        </div>
+    </div>
+
+</main>
+
+<script src="/js/locale-switcher.js"></script>
+</body>
+</html>

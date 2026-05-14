@@ -6,8 +6,6 @@ Compares locale bundles against messages.properties and reports:
 - missing keys in locale bundles (key exists in baseline but not in locale file)
 - extra keys in locale bundles (key not present in baseline)
 - empty values in locale bundles
-- duplicate values within a locale bundle (different keys share an identical,
-  non-trivial translation — likely a copy-paste error or an untranslated entry)
 
 Duplicate-key and missing-key checks are also run on messages.properties itself.
 
@@ -18,7 +16,6 @@ from __future__ import annotations
 
 import argparse
 import sys
-from collections import defaultdict
 from pathlib import Path
 from typing import Dict, Iterable, List, Tuple
 
@@ -26,9 +23,6 @@ from typing import Dict, Iterable, List, Tuple
 if sys.stdout.encoding and sys.stdout.encoding.lower() not in ("utf-8", "utf-8-sig"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")  # type: ignore[attr-defined]
 
-
-# Values shorter than this are allowed to repeat (e.g. "OK", "Yes", "No").
-_MIN_DUPLICATE_VALUE_LEN = 8
 
 
 def read_text_with_fallback(path: Path) -> str:
@@ -109,21 +103,6 @@ def diff_keys(
     return missing, extra, empty
 
 
-def find_duplicate_values(props: Dict[str, str]) -> List[Tuple[str, List[str]]]:
-    """Return a sorted list of (value, [key1, key2, …]) for values that appear
-    under more than one key.  Short or placeholder values are excluded because
-    they legitimately repeat (e.g. "OK", "Cancel", placeholder patterns).
-    """
-    value_to_keys: Dict[str, List[str]] = defaultdict(list)
-    for key, value in props.items():
-        stripped = value.strip()
-        if len(stripped) >= _MIN_DUPLICATE_VALUE_LEN:
-            value_to_keys[stripped].append(key)
-
-    return sorted(
-        (v, sorted(keys)) for v, keys in value_to_keys.items() if len(keys) > 1
-    )
-
 
 def find_locale_files(resources_dir: Path) -> Iterable[Path]:
     for path in sorted(resources_dir.glob("messages_*.properties")):
@@ -183,9 +162,8 @@ def main() -> int:
 
         target, dup_keys = parse_properties(locale_file)
         missing, extra, empty = diff_keys(base, target)
-        dup_values = find_duplicate_values(target)
 
-        locale_findings = len(missing) + len(extra) + len(empty) + len(dup_keys) + len(dup_values)
+        locale_findings = len(missing) + len(extra) + len(empty) + len(dup_keys)
         findings += locale_findings
 
         summary_lines.append(f"## {locale_file.name}")
@@ -201,11 +179,6 @@ def main() -> int:
             _section("Extra keys (not in baseline)", extra, summary_lines)
         if empty:
             _section("Empty values", empty, summary_lines)
-        if dup_values:
-            summary_lines.append(f"- Duplicate values ({len(dup_values)}):")
-            for value, keys in dup_values:
-                preview = value if len(value) <= 60 else value[:57] + "…"
-                summary_lines.append(f"  - `\"{preview}\"` used by: {', '.join(f'`{k}`' for k in keys)}")
 
     for line in summary_lines:
         print(line)

@@ -44,9 +44,11 @@ import static org.springframework.http.ResponseEntity.ok;
  *       when the file exceeds 50 MB so the UI can inform the creator. Simplified
  *       and disabled share-link settings are enforced here.</li>
  *   <li>{@code GET /api/file/download/{token}} — streams a file identified by its
- *       share token. Returns 503 if the sidecar is not yet ready, 403 if the token
- *       is invalid or the sidecar file is missing. The download counter is decremented
- *       atomically by {@link FileService#streamFileByShareToken}.</li>
+ *       share token. Returns 503 if the sidecar is not yet ready. Redirects (302) to
+ *       {@code /share/{token}} when the token is invalid, exhausted, or the sidecar
+ *       file is missing; the missing-sidecar path also deletes the broken token so the
+ *       share page renders the invalid view on arrival. The download counter is
+ *       decremented atomically by {@link FileService#streamFileByShareToken}.</li>
  * </ul>
  */
 @RestController
@@ -207,15 +209,17 @@ public class FileRestController {
     /**
      * Streams the file associated with the given share token.
      *
-     * <p>Returns 403 when the token is missing, expired, exhausted, or the sidecar file
-     * has been removed. Returns 503 when the token is valid but the sidecar re-encryption
-     * is still running in the background ({@link org.rostislav.quickdrop.entity.ShareTokenEntity#sidecarReady}
+     * <p>Redirects (302) to {@code /share/{token}} when the token is missing, expired,
+     * exhausted, or the sidecar file has been removed — in the missing-sidecar case the
+     * broken token is deleted first so the share page renders the invalid view. Returns
+     * 503 when the token is valid but the sidecar re-encryption is still running in the
+     * background ({@link org.rostislav.quickdrop.entity.ShareTokenEntity#sidecarReady}
      * is {@code false}). On success the response carries
      * {@code Content-Disposition: attachment} so browsers prompt a save dialog.
      *
      * @param token   the share token string from the URL
      * @param request the HTTP request (for session key lookup and history logging)
-     * @return 200 with the file byte stream, 403 on invalid/missing token, 503 if not ready
+     * @return 200 with the file byte stream, 302 redirect on invalid/missing token, 503 if not ready
      */
     @GetMapping("/download/{token}")
     public ResponseEntity<StreamingResponseBody> downloadFile(@PathVariable String token, HttpServletRequest request) {

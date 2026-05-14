@@ -136,6 +136,12 @@ public interface ShareTokenRepository extends JpaRepository<ShareTokenEntity, Lo
      *   <li>{@code query = null} — no name/token substring filter</li>
      * </ul>
      *
+     * <p>The data query uses {@code JOIN FETCH s.file} to load the associated
+     * {@link org.rostislav.quickdrop.entity.FileEntity} in a single SQL join, avoiding
+     * the N+1 select problem when the caller iterates over results. The separate
+     * {@code countQuery} omits the fetch join so Spring Data can apply SQL-level
+     * pagination correctly.
+     *
      * <p>Sort order is controlled by the {@link Pageable} argument. Supported sort
      * properties: {@code createdAt}, {@code id}, {@code tokenExpirationDate},
      * {@code numberOfAllowedDownloads}, {@code file.name}.

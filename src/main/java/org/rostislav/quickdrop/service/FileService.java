@@ -30,6 +30,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
@@ -834,7 +835,7 @@ public class FileService {
         FileEntity fileEntity = shareTokenEntity.file;
         String storagePath = applicationSettingsService.getFileStoragePath();
 
-        logHistory(fileEntity, request, FileHistoryType.DOWNLOAD);
+        logHistory(fileEntity, request, FileHistoryType.SHARE_DOWNLOAD);
 
         if (shareTokenEntity.shareKeyHash != null) {
             Path sidecarPath = Path.of(storagePath, fileEntity.uuid + "-share-" + shareTokenEntity.shareToken);
@@ -1012,7 +1013,9 @@ public class FileService {
         if (tokenExpirationDate == null && numberOfDownloads == null) {
             Optional<ShareTokenEntity> existing = findUnlimitedShareToken(file);
             if (existing.isPresent()) {
-                return existing.get();
+                ShareTokenEntity token = existing.get();
+                token.createdAt = LocalDateTime.now();
+                return shareTokenRepository.save(token);
             }
         }
 
@@ -1091,6 +1094,39 @@ public class FileService {
      */
     public Optional<ShareTokenEntity> getShareTokenEntityByToken(String token) {
         return shareTokenRepository.findByShareToken(token);
+    }
+
+    /**
+     * Records a {@link FileHistoryType#SHARE_CREATE} log entry for the given file.
+     *
+     * <p>Called from the controller layer after a share token is successfully generated
+     * so that the requester's real IP address and user-agent are captured from the
+     * HTTP request.
+     *
+     * @param file    the file for which a share token was created
+     * @param request the HTTP request that triggered token generation
+     */
+    public void logShareCreate(FileEntity file, HttpServletRequest request) {
+        logHistory(file, request, FileHistoryType.SHARE_CREATE);
+    }
+
+    /**
+     * Revokes a share token by ID: deletes its sidecar file if present, logs a
+     * {@link FileHistoryType#SHARE_REVOKE} event against the associated file, and
+     * removes the token row. Does nothing if the token does not exist.
+     *
+     * @param tokenId the database ID of the token to revoke
+     * @param request the HTTP request used for history-log IP/user-agent metadata
+     */
+    public void revokeShareToken(Long tokenId, HttpServletRequest request) {
+        shareTokenRepository.findById(tokenId).ifPresent(token -> {
+            deleteShareSidecar(token);
+            if (token.file != null) {
+                logHistory(token.file, request, FileHistoryType.SHARE_REVOKE);
+            }
+            shareTokenRepository.delete(token);
+            logger.info("Share token {} revoked by admin", token.shareToken);
+        });
     }
 
     /**

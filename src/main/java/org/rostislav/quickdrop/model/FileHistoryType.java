@@ -28,5 +28,25 @@ public enum FileHistoryType {
     PASTE_VIEW,
 
     /** An existing paste was edited. */
-    PASTE_EDIT
+    PASTE_EDIT,
+
+    /**
+     * A share token was generated for a file.
+     */
+    SHARE_CREATE,
+
+    /**
+     * A file was downloaded via a share token.
+     */
+    SHARE_DOWNLOAD,
+
+    /**
+     * A share token was removed by the scheduled cleanup (expired or download-limit exhausted).
+     */
+    SHARE_EXPIRE,
+
+    /**
+     * A share token was manually revoked by an admin.
+     */
+    SHARE_REVOKE
 }

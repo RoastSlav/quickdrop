@@ -169,7 +169,55 @@
               </div>
           </a>
 
-    </div>
+          <!-- Share Links card -->
+          <a class="card card-lg flex flex-col gap-4 transition-all duration-200 hover:shadow-xl hover:-translate-y-0.5 accent-stripe accent-stripe--teal group"
+             href="/admin/share-links" style="text-decoration:none">
+              <div class="flex items-center gap-4">
+                  <div class="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
+                       style="background:var(--c-teal-muted);color:var(--c-teal)">
+                      <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                          <path d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244"
+                                stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                      <h2 class="text-lg font-extrabold tracking-tight" th:text="#{page.dashboard.manageShareLinks}">
+                          Share Links</h2>
+                      <p class="text-sm mt-0.5" style="color:var(--c-text-muted)"
+                         th:text="#{page.dashboard.manageShareLinksDesc}">View and revoke active share tokens</p>
+                  </div>
+                  <svg class="w-5 h-5 flex-shrink-0 transition-transform group-hover:translate-x-1" fill="none"
+                       stroke="currentColor" stroke-width="2" style="color:var(--c-text-faint)" viewBox="0 0 24 24">
+                      <path d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+              </div>
+          </a>
+
+          <!-- Activity card -->
+          <a class="card card-lg flex flex-col gap-4 transition-all duration-200 hover:shadow-xl hover:-translate-y-0.5 accent-stripe accent-stripe--rose group"
+             href="/admin/activity" style="text-decoration:none">
+              <div class="flex items-center gap-4">
+                  <div class="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
+                       style="background:var(--c-primary-muted);color:var(--c-primary)">
+                      <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                          <path d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 0 1 0 3.75H5.625a1.875 1.875 0 0 1 0-3.75Z"
+                                stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                      <h2 class="text-lg font-extrabold tracking-tight" th:text="#{page.dashboard.activity}">
+                          Activity</h2>
+                      <p class="text-sm mt-0.5" style="color:var(--c-text-muted)"
+                         th:text="#{page.dashboard.activityDesc}">Global event log with filters</p>
+                  </div>
+                  <svg class="w-5 h-5 flex-shrink-0 transition-transform group-hover:translate-x-1" fill="none"
+                       stroke="currentColor" stroke-width="2" style="color:var(--c-text-faint)" viewBox="0 0 24 24">
+                      <path d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+              </div>
+          </a>
+
+      </div>
   </div>
 </main>
 

@@ -138,6 +138,43 @@ public class ApplicationSettingsEntity {
     /** BCP-47 language tag used as the default locale (e.g. "en", "de"). */
     private String defaultLanguage = "en";
 
+    /**
+     * Whether Discord/email notifications are sent for file upload events.
+     */
+    private boolean notifyOnUpload = true;
+    /**
+     * Whether notifications are sent for direct file download events.
+     */
+    private boolean notifyOnDownload = true;
+    /**
+     * Whether notifications are sent when a file's expiry is renewed.
+     */
+    private boolean notifyOnRenewal = true;
+    /**
+     * Whether notifications are sent when a file is deleted.
+     */
+    private boolean notifyOnDeletion = true;
+    /**
+     * Whether notifications are sent when a share token is created.
+     */
+    private boolean notifyOnShareCreate = true;
+    /**
+     * Whether notifications are sent when a file is downloaded via a share token. Defaults to {@code false} to avoid spam.
+     */
+    private boolean notifyOnShareDownload = false;
+    /**
+     * Whether notifications are sent when a new paste is created.
+     */
+    private boolean notifyOnPasteCreate = true;
+    /**
+     * Whether notifications are sent when a paste is viewed. Defaults to {@code false} to avoid spam.
+     */
+    private boolean notifyOnPasteView = false;
+    /**
+     * Whether notifications are sent when a paste is edited.
+     */
+    private boolean notifyOnPasteEdit = true;
+
     public ApplicationSettingsEntity() {
     }
 
@@ -184,6 +221,15 @@ public class ApplicationSettingsEntity {
         this.appName = settings.getAppName();
         this.logoFileName = settings.getLogoFileName();
         this.defaultLanguage = settings.getDefaultLanguage() != null ? settings.getDefaultLanguage() : "en";
+        this.notifyOnUpload = settings.isNotifyOnUpload();
+        this.notifyOnDownload = settings.isNotifyOnDownload();
+        this.notifyOnRenewal = settings.isNotifyOnRenewal();
+        this.notifyOnDeletion = settings.isNotifyOnDeletion();
+        this.notifyOnShareCreate = settings.isNotifyOnShareCreate();
+        this.notifyOnShareDownload = settings.isNotifyOnShareDownload();
+        this.notifyOnPasteCreate = settings.isNotifyOnPasteCreate();
+        this.notifyOnPasteView = settings.isNotifyOnPasteView();
+        this.notifyOnPasteEdit = settings.isNotifyOnPasteEdit();
     }
 
     public String getAppName() {
@@ -497,4 +543,74 @@ public class ApplicationSettingsEntity {
     public void setPastebinEnabled(boolean pastebinEnabled) {
         this.pastebinEnabled = pastebinEnabled;
     }
+
+    public boolean isNotifyOnUpload() {
+        return notifyOnUpload;
+    }
+
+    public void setNotifyOnUpload(boolean notifyOnUpload) {
+        this.notifyOnUpload = notifyOnUpload;
+    }
+
+    public boolean isNotifyOnDownload() {
+        return notifyOnDownload;
+    }
+
+    public void setNotifyOnDownload(boolean notifyOnDownload) {
+        this.notifyOnDownload = notifyOnDownload;
+    }
+
+    public boolean isNotifyOnRenewal() {
+        return notifyOnRenewal;
+    }
+
+    public void setNotifyOnRenewal(boolean notifyOnRenewal) {
+        this.notifyOnRenewal = notifyOnRenewal;
+    }
+
+    public boolean isNotifyOnDeletion() {
+        return notifyOnDeletion;
+    }
+
+    public void setNotifyOnDeletion(boolean notifyOnDeletion) {
+        this.notifyOnDeletion = notifyOnDeletion;
+    }
+
+    public boolean isNotifyOnShareCreate() {
+        return notifyOnShareCreate;
+    }
+
+    public void setNotifyOnShareCreate(boolean notifyOnShareCreate) {
+        this.notifyOnShareCreate = notifyOnShareCreate;
+    }
+
+    public boolean isNotifyOnShareDownload() {
+        return notifyOnShareDownload;
+    }
+
+    public void setNotifyOnShareDownload(boolean notifyOnShareDownload) {
+        this.notifyOnShareDownload = notifyOnShareDownload;
+    }
+
+    public boolean isNotifyOnPasteCreate() {
+        return notifyOnPasteCreate;
+    }
+
+    public void setNotifyOnPasteCreate(boolean notifyOnPasteCreate) {
+        this.notifyOnPasteCreate = notifyOnPasteCreate;
+    }
+
+    public boolean isNotifyOnPasteView() {
+        return notifyOnPasteView;
+    }
+
+    public void setNotifyOnPasteView(boolean notifyOnPasteView) {
+        this.notifyOnPasteView = notifyOnPasteView;
+    }
+
+    public boolean isNotifyOnPasteEdit() {
+        return notifyOnPasteEdit;
+    }
+
+    public void setNotifyOnPasteEdit(boolean notifyOnPasteEdit) { this.notifyOnPasteEdit = notifyOnPasteEdit; }
 }

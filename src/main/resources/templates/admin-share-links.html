@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title th:text="#{page.adminShareLinks.title.browser(${appName})}">Share Links — Admin</title>
+    <meta content="width=device-width, initial-scale=1" name="viewport"/>
+    <link href="https://fonts.googleapis.com" rel="preconnect"/>
+    <link crossorigin href="https://fonts.gstatic.com" rel="preconnect"/>
+    <link href="/css/tailwind.css" rel="stylesheet"/>
+    <link href="/css/custom.css" rel="stylesheet"/>
+    <link href="/images/favicon.png" rel="icon" th:href="${appLogoPath}" type="image/png"/>
+    <script src="/js/tailwindTheme.js"></script>
+    <script src="/js/counter.js"></script>
+    <th:block th:replace="~{fragments/header :: scripts}"></th:block>
+</head>
+<body>
+
+<div th:replace="~{fragments/header :: header(false)}"></div>
+
+<div aria-hidden="true" class="orb-field">
+    <div class="orb orb--primary"></div>
+    <div class="orb orb--secondary"></div>
+    <div class="orb orb--teal"></div>
+</div>
+
+<main class="flex-1 hero-scene">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
+
+        <!-- Back -->
+        <div class="mb-6 animate-in">
+            <a class="btn btn-ghost btn-sm inline-flex items-center gap-1.5" href="/admin/dashboard">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span th:text="#{nav.admin}">Admin</span>
+            </a>
+        </div>
+
+        <!-- Hero header -->
+        <div class="flex flex-wrap items-center justify-between gap-4 mb-8 animate-in">
+            <h1 class="page-title-xl">
+                <span class="gradient-text" th:text="#{page.adminShareLinks.title}">Share Links</span>
+            </h1>
+        </div>
+
+        <!-- Stats row -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 lg:gap-5 mb-8 animate-in animate-in-delay-1">
+            <div class="stat-hero stat-hero--teal">
+                <span class="stat-hero-label" th:text="#{page.adminShareLinks.activeTokens}">Active Tokens</span>
+                <span class="stat-hero-value" th:attr="data-counter-target=${totalActive}"
+                      th:text="${totalActive}">0</span>
+            </div>
+        </div>
+
+        <!-- Tokens section -->
+        <div class="card card-xl animate-in animate-in-delay-2" id="shareLinksSectionWrapper">
+            <div id="shareLinksContent">
+
+                <div class="flex flex-col gap-5 mb-6">
+                    <div class="flex flex-wrap items-center justify-between gap-4">
+                        <h2 class="section-title flex items-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8"
+                                 style="color:var(--c-teal)" viewBox="0 0 24 24">
+                                <path d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244"
+                                      stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                            <span th:text="#{page.adminShareLinks.title}">Share Links</span>
+                        </h2>
+                        <span class="badge badge-primary font-mono text-sm"
+                              th:text="${tokensPage.totalElements} + ' ' + #{page.dashboard.total}">0 total</span>
+                    </div>
+
+                    <!-- Search + filter + sort -->
+                    <div class="flex flex-col gap-3">
+
+                        <!-- Search bar (normal GET navigates, keeps history entry) -->
+                        <form action="/admin/share-links" class="flex flex-col sm:flex-row gap-3" id="shareSearchForm"
+                              method="get">
+                            <input name="noExpiry" th:if="${noExpiry}" type="hidden" value="true"/>
+                            <input name="unlimited" th:if="${unlimited}" type="hidden" value="true"/>
+                            <input name="sortBy" th:value="${sortBy}" type="hidden"/>
+                            <input name="sortDir" th:value="${sortDir}" type="hidden"/>
+                            <input name="type" th:value="${type}" type="hidden"/>
+                            <input name="size" th:value="${pageSize}" type="hidden"/>
+                            <input name="page" type="hidden" value="0"/>
+                            <div class="search-bar flex-1">
+                            <span class="search-bar-icon">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2"
+                                     viewBox="0 0 24 24">
+                                    <path d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"
+                                          stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            </span>
+                                <label class="sr-only" for="shareSearch" th:text="#{page.adminShareLinks.search.label}">Search
+                                    share links</label>
+                                <input autocomplete="off" id="shareSearch" name="query"
+                                       th:placeholder="#{page.adminShareLinks.search.placeholder}"
+                                       th:value="${query}" type="text"/>
+                            </div>
+                            <button class="btn btn-primary" type="submit">
+                                <span th:text="#{button.search}">Search</span>
+                            </button>
+                            <a class="btn btn-ghost" href="/admin/share-links" th:text="#{button.reset}">Reset</a>
+                        </form>
+
+                        <!-- Filter + sort row — all changes use replaceState via JS -->
+                        <div class="flex flex-wrap items-center gap-3 rounded-xl px-4 py-3"
+                             style="background:var(--c-surface);border:1px solid var(--c-border)">
+
+                            <!-- Type segmented toggle -->
+                            <div class="flex items-center gap-2.5 flex-shrink-0">
+                            <span class="text-xs font-black uppercase tracking-widest"
+                                  style="color:var(--c-text-faint)"
+                                  th:text="#{page.adminShareLinks.filter.type}">Type</span>
+                                <div class="flex rounded-lg overflow-hidden flex-shrink-0"
+                                     style="border:1px solid var(--c-border)">
+                                    <button class="btn btn-sm rounded-none border-0 px-4"
+                                            data-type-val=""
+                                            th:classappend="${type == '' or type == null} ? 'btn-primary' : 'btn-ghost'" th:text="#{page.adminShareLinks.filter.all}"
+                                            type="button">All
+                                    </button>
+                                    <button class="btn btn-sm rounded-none border-0 border-l px-4"
+                                            data-type-val="file"
+                                            style="border-color:var(--c-border)"
+                                            th:classappend="${type == 'file'} ? 'btn-primary' : 'btn-ghost'" th:text="#{page.adminShareLinks.filter.files}"
+                                            type="button">Files
+                                    </button>
+                                    <button class="btn btn-sm rounded-none border-0 border-l px-4"
+                                            data-type-val="paste"
+                                            style="border-color:var(--c-border)"
+                                            th:classappend="${type == 'paste'} ? 'btn-primary' : 'btn-ghost'" th:text="#{page.adminShareLinks.filter.pastes}"
+                                            type="button">Pastes
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Divider -->
+                            <div class="hidden sm:block w-px self-stretch flex-shrink-0 my-0.5"
+                                 style="background:var(--c-border)"></div>
+
+                            <!-- Checkboxes -->
+                            <label class="flex items-center gap-2 cursor-pointer select-none text-sm flex-shrink-0">
+                                <input class="form-checkbox" id="noExpiryCheck"
+                                       th:checked="${noExpiry}" type="checkbox"/>
+                                <span th:text="#{page.adminShareLinks.filter.noExpiry}">No expiry only</span>
+                            </label>
+                            <label class="flex items-center gap-2 cursor-pointer select-none text-sm flex-shrink-0">
+                                <input class="form-checkbox" id="unlimitedCheck"
+                                       th:checked="${unlimited}" type="checkbox"/>
+                                <span th:text="#{page.adminShareLinks.filter.unlimited}">Unlimited only</span>
+                            </label>
+
+                            <!-- Sort pushed to the right -->
+                            <div class="flex items-center gap-2 ml-auto flex-shrink-0">
+                            <span class="text-xs font-black uppercase tracking-widest"
+                                  style="color:var(--c-text-faint)"
+                                  th:text="#{page.adminShareLinks.sort.label}">Sort</span>
+                                <select class="form-input" id="sortBySelect"
+                                        style="width:auto;padding:0.3125rem 0.5rem">
+                                    <option th:selected="${sortBy == 'created'}" th:text="#{page.adminShareLinks.sort.created}"
+                                            value="created">Created
+                                    </option>
+                                    <option th:selected="${sortBy == 'name'}" th:text="#{page.adminShareLinks.sort.name}"
+                                            value="name">Name
+                                    </option>
+                                    <option th:selected="${sortBy == 'expiry'}" th:text="#{page.adminShareLinks.sort.expiry}"
+                                            value="expiry">Expiry
+                                    </option>
+                                    <option th:selected="${sortBy == 'downloads'}" th:text="#{page.adminShareLinks.sort.downloads}"
+                                            value="downloads">Downloads
+                                    </option>
+                                </select>
+                                <button class="btn btn-ghost btn-sm font-mono px-2.5" id="sortDirBtn"
+                                        th:attr="data-sort-dir=${sortDir}"
+                                        th:title="${sortDir == 'asc' ? 'Ascending' : 'Descending'}"
+                                        type="button">
+                                    <span th:text="${sortDir == 'asc' ? '↑' : '↓'}">↓</span>
+                                </button>
+                            </div>
+                        </div>
+                        </form>
+                    </div>
+
+                    <!-- Empty state -->
+                    <div class="text-center py-16" th:if="${tokensPage.totalElements == 0}">
+                        <div class="gate-icon gate-icon--primary mx-auto mb-6">
+                            <svg class="w-10 h-10" fill="none" stroke="currentColor" stroke-width="1.4"
+                                 viewBox="0 0 24 24">
+                                <path d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244"
+                                      stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </div>
+                        <p class="text-lg font-semibold" style="color: var(--c-text-muted)"
+                           th:text="#{page.adminShareLinks.noTokens}">No active share links.</p>
+                    </div>
+
+                    <!-- Token cards -->
+                    <div class="flex flex-col gap-2.5" th:if="${tokensPage.totalElements > 0}">
+                        <div class="group flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 px-4 py-3.5 rounded-2xl transition-all duration-200 hover:shadow-md"
+                             th:each="token, iterStat : ${tokensPage.content}"
+                             th:style="'animation: qd-fade-in-up 350ms var(--ease-out-expo) both; animation-delay:' + ${iterStat.index * 35} + 'ms; background: var(--c-surface-raised); border: 1px solid var(--c-border); border-left: 4px solid var(--c-teal)'">
+
+                            <!-- Icon + info -->
+                            <div class="flex items-center gap-3 min-w-0 flex-1">
+                                <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+                                     style="background:var(--c-teal-muted);color:var(--c-teal)">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.6"
+                                         viewBox="0 0 24 24">
+                                        <path d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244"
+                                              stroke-linecap="round" stroke-linejoin="round"/>
+                                    </svg>
+                                </div>
+                                <div class="min-w-0 flex-1">
+                                    <div class="flex items-center gap-2 flex-wrap">
+                                        <a class="font-bold text-sm truncate hover:underline"
+                                           th:href="@{/file/{uuid}(uuid=${token.file.uuid})}"
+                                           th:text="${token.file.name}"
+                                           th:title="${token.file.name}">filename.zip</a>
+                                        <!-- File / Paste badge -->
+                                        <span class="badge text-xs"
+                                              th:classappend="${token.file.paste} ? '' : 'badge-primary'"
+                                              th:style="${token.file.paste} ? 'background:var(--c-indigo-muted,var(--c-secondary-muted));color:var(--c-indigo,var(--c-secondary))' : ''"
+                                              th:text="${token.file.paste} ? #{page.adminShareLinks.badge.paste} : #{page.adminShareLinks.badge.file}">File</span>
+                                    </div>
+                                    <p class="text-xs font-mono mt-0.5 flex flex-wrap gap-x-2"
+                                       style="color: var(--c-text-faint)">
+                                        <span class="font-semibold" th:text="${token.shareToken}">abc123</span>
+                                        <span class="opacity-40">·</span>
+                                        <span th:if="${token.createdAt != null}"
+                                              th:text="#{page.adminShareLinks.created} + ' ' + ${#temporals.format(token.createdAt, 'dd.MM.yyyy HH:mm')}">Created 01.01.2025</span>
+                                        <span class="opacity-40" th:if="${token.tokenExpirationDate != null}">·</span>
+                                        <span th:if="${token.tokenExpirationDate != null}"
+                                              th:text="#{page.adminShareLinks.expires} + ' ' + ${#temporals.format(token.tokenExpirationDate, 'dd.MM.yyyy')}">Expires 01.01.2025</span>
+                                        <span class="opacity-40" th:if="${token.tokenExpirationDate == null}">·</span>
+                                        <span style="color:var(--c-teal)" th:if="${token.tokenExpirationDate == null}"
+                                              th:text="#{page.adminShareLinks.noExpiry}">No expiry</span>
+                                        <span class="opacity-40">·</span>
+                                        <span th:if="${token.numberOfAllowedDownloads != null}"
+                                              th:text="${token.numberOfAllowedDownloads} + ' ' + #{page.adminShareLinks.downloadsLeft}">5 left</span>
+                                        <span style="color:var(--c-teal)"
+                                              th:if="${token.numberOfAllowedDownloads == null}"
+                                              th:text="#{page.adminShareLinks.unlimited}">∞</span>
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!-- Revoke button -->
+                            <div class="flex items-center gap-1.5 flex-shrink-0 pl-12 sm:pl-0">
+                                <form method="post" th:action="@{/admin/share-links/revoke/{id}(id=${token.id})}">
+                                    <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden"/>
+                                    <button class="btn btn-danger btn-sm" th:title="#{page.adminShareLinks.revoke}"
+                                            type="submit">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2"
+                                             viewBox="0 0 24 24">
+                                            <path d="M6 18 18 6M6 6l12 12" stroke-linecap="round"
+                                                  stroke-linejoin="round"/>
+                                        </svg>
+                                        <span class="hidden sm:inline"
+                                              th:text="#{page.adminShareLinks.revoke}">Revoke</span>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pagination -->
+                    <div class="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 pt-6"
+                         style="border-top: 1px solid var(--c-border)"
+                         th:if="${tokensPage.totalElements > 0}">
+                        <div class="flex items-center gap-2" th:if="${tokensPage.totalPages > 1}">
+                            <a class="pagination-btn"
+                               th:classappend="${tokensPage.first} ? ' pagination-btn-disabled'"
+                               th:href="@{/admin/share-links(page=${tokensPage.first ? tokensPage.number : tokensPage.number - 1}, size=${pageSize}, query=${query}, type=${type}, noExpiry=${noExpiry}, unlimited=${unlimited}, sortBy=${sortBy}, sortDir=${sortDir})}"
+                               th:text="#{pagination.previous}">Previous</a>
+                            <a class="pagination-btn"
+                               th:classappend="${tokensPage.last} ? ' pagination-btn-disabled'"
+                               th:href="@{/admin/share-links(page=${tokensPage.last ? tokensPage.number : tokensPage.number + 1}, size=${pageSize}, query=${query}, type=${type}, noExpiry=${noExpiry}, unlimited=${unlimited}, sortBy=${sortBy}, sortDir=${sortDir})}"
+                               th:text="#{pagination.next}">Next</a>
+                        </div>
+                        <p class="text-sm font-mono" style="color: var(--c-text-muted)">
+                            <span th:text="#{pagination.page}">Page</span>
+                            <span th:text="${tokensPage.number + 1}"></span>
+                            <span th:text="#{pagination.of}">of</span>
+                            <span th:text="${tokensPage.totalPages}"></span>
+                        </p>
+                        <form action="/admin/share-links" class="flex items-center gap-2" method="get">
+                            <input name="query" th:value="${query}" type="hidden"/>
+                            <input name="type" th:value="${type}" type="hidden"/>
+                            <input name="noExpiry" th:if="${noExpiry}" type="hidden" value="true"/>
+                            <input name="unlimited" th:if="${unlimited}" type="hidden" value="true"/>
+                            <input name="sortBy" th:value="${sortBy}" type="hidden"/>
+                            <input name="sortDir" th:value="${sortDir}" type="hidden"/>
+                            <input name="page" type="hidden" value="0"/>
+                            <label class="text-sm" for="sharePageSize" style="color: var(--c-text-muted)"
+                                   th:text="#{pagination.perPage}">Per page</label>
+                            <select class="form-input" id="sharePageSize" name="size"
+                                    onchange="this.form.submit()"
+                                    style="width: auto; padding: 0.3125rem 0.5rem">
+                                <option th:selected="${pageSize == 10}" value="10">10</option>
+                                <option th:selected="${pageSize == 20}" value="20">20</option>
+                                <option th:selected="${pageSize == 50}" value="50">50</option>
+                                <option th:selected="${pageSize == 100}" value="100">100</option>
+                            </select>
+                        </form>
+                    </div>
+
+                </div><!-- /shareLinksContent -->
+            </div>
+        </div>
+</main>
+
+<script src="/js/spa.js"></script>
+<script src="/js/admin-share-links.js"></script>
+<script src="/js/locale-switcher.js"></script>
+</body>
+</html>

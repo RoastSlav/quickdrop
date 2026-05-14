@@ -63,6 +63,15 @@ public class ApplicationSettingsViewModel {
     private String appName;
     private String logoFileName;
     private String defaultLanguage;
+    private boolean notifyOnUpload;
+    private boolean notifyOnDownload;
+    private boolean notifyOnRenewal;
+    private boolean notifyOnDeletion;
+    private boolean notifyOnShareCreate;
+    private boolean notifyOnShareDownload;
+    private boolean notifyOnPasteCreate;
+    private boolean notifyOnPasteView;
+    private boolean notifyOnPasteEdit;
 
     public ApplicationSettingsViewModel() {
     }
@@ -105,6 +114,15 @@ public class ApplicationSettingsViewModel {
         this.appName = settings.getAppName();
         this.logoFileName = settings.getLogoFileName();
         this.defaultLanguage = settings.getDefaultLanguage();
+        this.notifyOnUpload = settings.isNotifyOnUpload();
+        this.notifyOnDownload = settings.isNotifyOnDownload();
+        this.notifyOnRenewal = settings.isNotifyOnRenewal();
+        this.notifyOnDeletion = settings.isNotifyOnDeletion();
+        this.notifyOnShareCreate = settings.isNotifyOnShareCreate();
+        this.notifyOnShareDownload = settings.isNotifyOnShareDownload();
+        this.notifyOnPasteCreate = settings.isNotifyOnPasteCreate();
+        this.notifyOnPasteView = settings.isNotifyOnPasteView();
+        this.notifyOnPasteEdit = settings.isNotifyOnPasteEdit();
     }
 
     public Long getId() {
@@ -409,5 +427,77 @@ public class ApplicationSettingsViewModel {
 
     public void setDefaultLanguage(String defaultLanguage) {
         this.defaultLanguage = defaultLanguage;
+    }
+
+    public boolean isNotifyOnUpload() {
+        return notifyOnUpload;
+    }
+
+    public void setNotifyOnUpload(boolean v) {
+        this.notifyOnUpload = v;
+    }
+
+    public boolean isNotifyOnDownload() {
+        return notifyOnDownload;
+    }
+
+    public void setNotifyOnDownload(boolean v) {
+        this.notifyOnDownload = v;
+    }
+
+    public boolean isNotifyOnRenewal() {
+        return notifyOnRenewal;
+    }
+
+    public void setNotifyOnRenewal(boolean v) {
+        this.notifyOnRenewal = v;
+    }
+
+    public boolean isNotifyOnDeletion() {
+        return notifyOnDeletion;
+    }
+
+    public void setNotifyOnDeletion(boolean v) {
+        this.notifyOnDeletion = v;
+    }
+
+    public boolean isNotifyOnShareCreate() {
+        return notifyOnShareCreate;
+    }
+
+    public void setNotifyOnShareCreate(boolean v) {
+        this.notifyOnShareCreate = v;
+    }
+
+    public boolean isNotifyOnShareDownload() {
+        return notifyOnShareDownload;
+    }
+
+    public void setNotifyOnShareDownload(boolean v) {
+        this.notifyOnShareDownload = v;
+    }
+
+    public boolean isNotifyOnPasteCreate() {
+        return notifyOnPasteCreate;
+    }
+
+    public void setNotifyOnPasteCreate(boolean v) {
+        this.notifyOnPasteCreate = v;
+    }
+
+    public boolean isNotifyOnPasteView() {
+        return notifyOnPasteView;
+    }
+
+    public void setNotifyOnPasteView(boolean v) {
+        this.notifyOnPasteView = v;
+    }
+
+    public boolean isNotifyOnPasteEdit() {
+        return notifyOnPasteEdit;
+    }
+
+    public void setNotifyOnPasteEdit(boolean v) {
+        this.notifyOnPasteEdit = v;
     }
 }

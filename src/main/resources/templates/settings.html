@@ -314,8 +314,33 @@
                     <div class="form-row flex-1">
                       <label class="form-label" for="fileDeletionCron"
                              th:text="#{page.settings.system.fileDeletionCron}">File Deletion Cron</label>
-                      <input class="form-input" id="fileDeletionCron" required th:field="*{fileDeletionCron}"
-                             type="text"/>
+                      <!-- Preset buttons -->
+                      <div class="flex flex-wrap gap-1.5 mb-2" id="cronPresets">
+                        <button class="btn btn-sm text-xs" data-cron="0 0 * * * *" th:text="#{page.settings.system.cron.hourly}"
+                                type="button">Hourly
+                        </button>
+                        <button class="btn btn-sm text-xs" data-cron="0 0 2 * * *" th:text="#{page.settings.system.cron.daily2am}"
+                                type="button">Daily at 2 AM
+                        </button>
+                        <button class="btn btn-sm text-xs" data-cron="0 0 0 * * *" th:text="#{page.settings.system.cron.midnight}"
+                                type="button">Daily at midnight
+                        </button>
+                        <button class="btn btn-sm text-xs" data-cron="0 0 0 * * SUN" th:text="#{page.settings.system.cron.weekly}"
+                                type="button">Weekly (Sun)
+                        </button>
+                        <button class="btn btn-sm text-xs" data-cron="0 0 0 1 * *" th:text="#{page.settings.system.cron.monthly}"
+                                type="button">Monthly (1st)
+                        </button>
+                      </div>
+                      <input class="form-input font-mono" id="fileDeletionCron" required
+                             th:field="*{fileDeletionCron}" type="text"/>
+                      <!-- Live human-readable description -->
+                      <p class="text-xs mt-1.5 min-h-[1.25rem]" style="color:var(--c-teal)">
+                        <span id="cronReadable"></span>
+                      </p>
+                      <p class="text-xs" style="color:var(--c-text-faint)"
+                         th:text="#{page.settings.system.cron.hint}">Spring format: second minute hour day month
+                        weekday</p>
                     </div>
                     <div class="form-row">
                       <span class="form-label" th:text="#{page.settings.system.nextRun}">Next run</span>
@@ -501,6 +526,54 @@
                            th:text="#{page.settings.notifications.batch.interval}">Interval (minutes)</label>
                     <input class="form-input" id="notificationBatchMinutes" min="1"
                            th:field="*{notificationBatchMinutes}" type="number"/>
+                  </div>
+                </div>
+
+                <!-- Event Filters -->
+                <div class="rounded-2xl p-4 flex flex-col gap-3"
+                     style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
+                  <p class="text-sm font-semibold" th:text="#{page.settings.notifications.events.title}">Event
+                    Filters</p>
+                  <p class="form-hint" th:text="#{page.settings.notifications.events.help}">Choose which events trigger
+                    a notification.</p>
+                  <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-1">
+                    <label class="flex items-center gap-2 text-sm cursor-pointer">
+                      <input style="accent-color:var(--c-secondary)" th:field="*{notifyOnUpload}" type="checkbox"/>
+                      <span th:text="#{page.settings.notifications.events.upload}">Upload</span>
+                    </label>
+                    <label class="flex items-center gap-2 text-sm cursor-pointer">
+                      <input style="accent-color:var(--c-secondary)" th:field="*{notifyOnDownload}" type="checkbox"/>
+                      <span th:text="#{page.settings.notifications.events.download}">Download</span>
+                    </label>
+                    <label class="flex items-center gap-2 text-sm cursor-pointer">
+                      <input style="accent-color:var(--c-secondary)" th:field="*{notifyOnRenewal}" type="checkbox"/>
+                      <span th:text="#{page.settings.notifications.events.renewal}">Renewal</span>
+                    </label>
+                    <label class="flex items-center gap-2 text-sm cursor-pointer">
+                      <input style="accent-color:var(--c-secondary)" th:field="*{notifyOnDeletion}" type="checkbox"/>
+                      <span th:text="#{page.settings.notifications.events.deletion}">Deletion</span>
+                    </label>
+                    <label class="flex items-center gap-2 text-sm cursor-pointer">
+                      <input style="accent-color:var(--c-secondary)" th:field="*{notifyOnShareCreate}" type="checkbox"/>
+                      <span th:text="#{page.settings.notifications.events.shareCreate}">Share Link Created</span>
+                    </label>
+                    <label class="flex items-center gap-2 text-sm cursor-pointer">
+                      <input style="accent-color:var(--c-secondary)" th:field="*{notifyOnShareDownload}"
+                             type="checkbox"/>
+                      <span th:text="#{page.settings.notifications.events.shareDownload}">Share Link Download</span>
+                    </label>
+                    <label class="flex items-center gap-2 text-sm cursor-pointer">
+                      <input style="accent-color:var(--c-secondary)" th:field="*{notifyOnPasteCreate}" type="checkbox"/>
+                      <span th:text="#{page.settings.notifications.events.pasteCreate}">Paste Create</span>
+                    </label>
+                    <label class="flex items-center gap-2 text-sm cursor-pointer">
+                      <input style="accent-color:var(--c-secondary)" th:field="*{notifyOnPasteView}" type="checkbox"/>
+                      <span th:text="#{page.settings.notifications.events.pasteView}">Paste View</span>
+                    </label>
+                    <label class="flex items-center gap-2 text-sm cursor-pointer">
+                      <input style="accent-color:var(--c-secondary)" th:field="*{notifyOnPasteEdit}" type="checkbox"/>
+                      <span th:text="#{page.settings.notifications.events.pasteEdit}">Paste Edit</span>
+                    </label>
                   </div>
                 </div>
 

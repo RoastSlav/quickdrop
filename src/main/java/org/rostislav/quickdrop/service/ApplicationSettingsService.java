@@ -212,6 +212,15 @@ public class ApplicationSettingsService {
         String requestedAppName = settings.getAppName();
         entity.setAppName((requestedAppName == null || requestedAppName.isBlank()) ? "QuickDrop" : requestedAppName.trim());
         entity.setDefaultLanguage(settings.getDefaultLanguage() != null && !settings.getDefaultLanguage().isBlank() ? settings.getDefaultLanguage() : "en");
+        entity.setNotifyOnUpload(settings.isNotifyOnUpload());
+        entity.setNotifyOnDownload(settings.isNotifyOnDownload());
+        entity.setNotifyOnRenewal(settings.isNotifyOnRenewal());
+        entity.setNotifyOnDeletion(settings.isNotifyOnDeletion());
+        entity.setNotifyOnShareCreate(settings.isNotifyOnShareCreate());
+        entity.setNotifyOnShareDownload(settings.isNotifyOnShareDownload());
+        entity.setNotifyOnPasteCreate(settings.isNotifyOnPasteCreate());
+        entity.setNotifyOnPasteView(settings.isNotifyOnPasteView());
+        entity.setNotifyOnPasteEdit(settings.isNotifyOnPasteEdit());
 
         if (clearLogo) {
             entity.setLogoFileName(null);
@@ -464,6 +473,69 @@ public class ApplicationSettingsService {
     public String getDefaultLanguage() {
         String lang = self.getApplicationSettings().getDefaultLanguage();
         return (lang == null || lang.isBlank()) ? "en" : lang;
+    }
+
+    /**
+     * @return {@code true} if upload events should trigger a notification
+     */
+    public boolean isNotifyOnUpload() {
+        return self.getApplicationSettings().isNotifyOnUpload();
+    }
+
+    /**
+     * @return {@code true} if direct-download events should trigger a notification
+     */
+    public boolean isNotifyOnDownload() {
+        return self.getApplicationSettings().isNotifyOnDownload();
+    }
+
+    /**
+     * @return {@code true} if file-renewal events should trigger a notification
+     */
+    public boolean isNotifyOnRenewal() {
+        return self.getApplicationSettings().isNotifyOnRenewal();
+    }
+
+    /**
+     * @return {@code true} if file-deletion events should trigger a notification
+     */
+    public boolean isNotifyOnDeletion() {
+        return self.getApplicationSettings().isNotifyOnDeletion();
+    }
+
+    /**
+     * @return {@code true} if share-token creation events should trigger a notification
+     */
+    public boolean isNotifyOnShareCreate() {
+        return self.getApplicationSettings().isNotifyOnShareCreate();
+    }
+
+    /**
+     * @return {@code true} if share-link download events should trigger a notification
+     */
+    public boolean isNotifyOnShareDownload() {
+        return self.getApplicationSettings().isNotifyOnShareDownload();
+    }
+
+    /**
+     * @return {@code true} if paste-creation events should trigger a notification
+     */
+    public boolean isNotifyOnPasteCreate() {
+        return self.getApplicationSettings().isNotifyOnPasteCreate();
+    }
+
+    /**
+     * @return {@code true} if paste-view events should trigger a notification
+     */
+    public boolean isNotifyOnPasteView() {
+        return self.getApplicationSettings().isNotifyOnPasteView();
+    }
+
+    /**
+     * @return {@code true} if paste-edit events should trigger a notification
+     */
+    public boolean isNotifyOnPasteEdit() {
+        return self.getApplicationSettings().isNotifyOnPasteEdit();
     }
 
     /**

@@ -15,7 +15,11 @@
             const next = doc.getElementById(containerId);
             if (next) {
                 container.replaceWith(next);
-                history.pushState({}, '', url);
+                if (opts && opts.replace) {
+                    history.replaceState({}, '', url);
+                } else {
+                    history.pushState({}, '', url);
+                }
             }
         } catch (err) {
             console.error('QD.loadDynamic failed', err);

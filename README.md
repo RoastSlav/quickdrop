@@ -82,26 +82,33 @@ restart required for configuration changes.
   key. That key is embedded in the share URL (`/share/{token}?key=…`) and never stored in plaintext — only its BCrypt
   hash is kept in the database. Recipients follow the link and download the file without needing the original password.
   No unencrypted copy ever touches disk.
+- **Share link event logging** — creating a share token, downloading via a share link, token expiry, and admin
+  revocation are all recorded in the file's history log.
 
 ### Admin Dashboard
 
 The admin area is protected by a separate password and lives at `/admin`.
 
-| Page         | What it shows                                                                                            |
-|--------------|----------------------------------------------------------------------------------------------------------|
-| **Overview** | Aggregate stats: total downloads, storage used, average file size, paste counts and view totals          |
-| **Files**    | Paginated list with search, per-file download counts, delete / hide / extend / keep-indefinitely actions |
-| **Pastes**   | Paginated list with search, per-paste view counts, same actions                                          |
-| **Settings** | All configuration in one form, applied without restarting                                                |
+| Page            | What it shows                                                                                                                      |
+|-----------------|------------------------------------------------------------------------------------------------------------------------------------|
+| **Overview**    | Aggregate stats: total downloads, storage used, average file size, paste counts and view totals                                    |
+| **Files**       | Paginated list with search, per-file download counts, delete / hide / extend / keep-indefinitely actions                           |
+| **Pastes**      | Paginated list with search, per-paste view counts, same actions                                                                    |
+| **Share Links** | Paginated list of all active share tokens with file name, token string, expiry, remaining downloads, and a per-token Revoke button |
+| **Activity**    | Global event log across all files and pastes; filterable by date range, event type, IP address, and user agent                     |
+| **Settings**    | All configuration in one form, applied without restarting                                                                          |
 
-Each file and paste has a dedicated **history page** listing every event (upload, download, view, renewal, deletion)
+Each file and paste has a dedicated **history page** listing every event (upload, download, share-link download,
+renewal, deletion, share-link creation/expiry/revocation)
 with timestamp, IP address, and user agent.
 
 ### Notifications
 
-- **Discord webhook** — posts a message to a channel for every file event (upload, download, deletion, paste
-  create/edit/view, renewal).
+- **Discord webhook** — posts a message to a channel on file events.
 - **Email (SMTP)** — sends the same events via configurable SMTP with STARTTLS or implicit SSL support.
+- **Per-event toggles** — individually enable or disable notifications for uploads, downloads, renewals, deletions,
+  share-link creation, share-link downloads, paste creation/view/edit. Noisy events (share-link downloads, paste views)
+  default to off.
 - **Notification batching** — queue events and flush them as a single digest at a configurable interval to avoid
   per-event spam.
 - **Test buttons** — send a live test notification for Discord or email directly from the settings page.
@@ -224,33 +231,34 @@ If you run without volume mounts, all data lives inside the container and is los
 All settings are managed at runtime through the admin settings page (`/admin/settings`). Changes apply immediately — no
 restart needed.
 
-| Setting                            | Description                                                |
-|------------------------------------|------------------------------------------------------------|
-| **Max file size**                  | Maximum upload size in MB                                  |
-| **Max file lifetime**              | Days before a file is eligible for scheduled deletion      |
-| **File storage path**              | Directory where uploaded files are saved                   |
-| **Log storage path**               | Directory for the application log                          |
-| **Deletion cron**                  | Spring 6-field cron expression for the cleanup job         |
-| **Session timeout**                | HTTP session lifetime in minutes                           |
-| **Encryption**                     | Enable/disable AES encryption at rest                      |
-| **Upload passwords**               | Enable/disable per-file password support                   |
-| **Previews**                       | Enable/disable in-browser file preview                     |
-| **Max preview size**               | File size limit for auto-loading previews (MB)             |
-| **Metadata stripping**             | Strip EXIF data from uploaded images                       |
-| **File list page**                 | Show/hide the public file list at `/file/list`             |
-| **Default home page**              | Landing page for `/` — upload, list, or paste              |
-| **Keep indefinitely (admin only)** | Restrict the keep-indefinitely toggle to admins            |
-| **Hide from list (admin only)**    | Restrict the hide toggle to admins                         |
-| **Share links**                    | Enable/disable share token generation                      |
-| **Simplified share links**         | Generate unlimited, no-expiry share links only             |
-| **Pastebin**                       | Enable/disable the pastebin feature                        |
-| **App password**                   | Optional site-wide access password                         |
-| **App name**                       | Custom application display name                            |
-| **Logo**                           | Custom logo image (replaces the default favicon)           |
-| **Default language**               | Default UI language for new visitors                       |
-| **Discord webhook**                | Webhook URL and enable toggle for Discord notifications    |
-| **Email / SMTP**                   | Host, port, credentials, TLS/SSL, from address, recipients |
-| **Notification batching**          | Batch notifications into digests at a set interval         |
+| Setting                            | Description                                                                                                   |
+|------------------------------------|---------------------------------------------------------------------------------------------------------------|
+| **Max file size**                  | Maximum upload size in MB                                                                                     |
+| **Max file lifetime**              | Days before a file is eligible for scheduled deletion                                                         |
+| **File storage path**              | Directory where uploaded files are saved                                                                      |
+| **Log storage path**               | Directory for the application log                                                                             |
+| **Deletion cron**                  | Spring 6-field cron expression for the cleanup job                                                            |
+| **Session timeout**                | HTTP session lifetime in minutes                                                                              |
+| **Encryption**                     | Enable/disable AES encryption at rest                                                                         |
+| **Upload passwords**               | Enable/disable per-file password support                                                                      |
+| **Previews**                       | Enable/disable in-browser file preview                                                                        |
+| **Max preview size**               | File size limit for auto-loading previews (MB)                                                                |
+| **Metadata stripping**             | Strip EXIF data from uploaded images                                                                          |
+| **File list page**                 | Show/hide the public file list at `/file/list`                                                                |
+| **Default home page**              | Landing page for `/` — upload, list, or paste                                                                 |
+| **Keep indefinitely (admin only)** | Restrict the keep-indefinitely toggle to admins                                                               |
+| **Hide from list (admin only)**    | Restrict the hide toggle to admins                                                                            |
+| **Share links**                    | Enable/disable share token generation                                                                         |
+| **Simplified share links**         | Generate unlimited, no-expiry share links only                                                                |
+| **Pastebin**                       | Enable/disable the pastebin feature                                                                           |
+| **App password**                   | Optional site-wide access password                                                                            |
+| **App name**                       | Custom application display name                                                                               |
+| **Logo**                           | Custom logo image (replaces the default favicon)                                                              |
+| **Default language**               | Default UI language for new visitors                                                                          |
+| **Discord webhook**                | Webhook URL and enable toggle for Discord notifications                                                       |
+| **Email / SMTP**                   | Host, port, credentials, TLS/SSL, from address, recipients                                                    |
+| **Notification batching**          | Batch notifications into digests at a set interval                                                            |
+| **Notification event filters**     | Per-event on/off toggles (upload, download, renewal, deletion, share create/download, paste create/view/edit) |
 
 ---
 

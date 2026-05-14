@@ -3,12 +3,17 @@ package org.rostislav.quickdrop.controller;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import org.rostislav.quickdrop.entity.ApplicationSettingsEntity;
+import org.rostislav.quickdrop.entity.FileHistoryLog;
+import org.rostislav.quickdrop.entity.ShareTokenEntity;
 import org.rostislav.quickdrop.model.*;
+import org.rostislav.quickdrop.repository.FileHistoryLogRepository;
+import org.rostislav.quickdrop.repository.ShareTokenRepository;
 import org.rostislav.quickdrop.service.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.support.CronExpression;
 import org.springframework.security.crypto.bcrypt.BCrypt;
@@ -17,6 +22,9 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
@@ -50,14 +58,18 @@ public class AdminViewController {
     private final SessionService sessionService;
     private final SystemInfoService systemInfoService;
     private final NotificationService notificationService;
+    private final ShareTokenRepository shareTokenRepository;
+    private final FileHistoryLogRepository fileHistoryLogRepository;
 
-    public AdminViewController(ApplicationSettingsService applicationSettingsService, AnalyticsService analyticsService, FileService fileService, SessionService sessionService, SystemInfoService systemInfoService, NotificationService notificationService) {
+    public AdminViewController(ApplicationSettingsService applicationSettingsService, AnalyticsService analyticsService, FileService fileService, SessionService sessionService, SystemInfoService systemInfoService, NotificationService notificationService, ShareTokenRepository shareTokenRepository, FileHistoryLogRepository fileHistoryLogRepository) {
         this.applicationSettingsService = applicationSettingsService;
         this.analyticsService = analyticsService;
         this.fileService = fileService;
         this.sessionService = sessionService;
         this.systemInfoService = systemInfoService;
         this.notificationService = notificationService;
+        this.shareTokenRepository = shareTokenRepository;
+        this.fileHistoryLogRepository = fileHistoryLogRepository;
     }
 
     @GetMapping("/dashboard")
@@ -264,6 +276,153 @@ public class AdminViewController {
                              @RequestParam(defaultValue = "files") String source) {
         fileService.deleteFileFromDatabaseAndFileSystem(uuid);
         return "redirect:/admin/" + source;
+    }
+
+    /**
+     * Displays the active share links admin page with search, filters, sort, and pagination.
+     *
+     * @param page      zero-based page index (default 0)
+     * @param size      page size, clamped to [1, 100] (default 20)
+     * @param query     optional search string matched against file name and token string
+     * @param type      optional type filter: {@code "file"}, {@code "paste"}, or omitted for all
+     * @param noExpiry  when {@code true} show only tokens with no expiry date
+     * @param unlimited when {@code true} show only tokens with no download cap
+     * @param sortBy    sort field: {@code "created"} (default), {@code "name"},
+     *                  {@code "expiry"}, {@code "downloads"}
+     * @param sortDir   sort direction: {@code "desc"} (default) or {@code "asc"}
+     * @param model     Spring MVC model
+     * @return the {@code admin-share-links} template name
+     */
+    @GetMapping("/share-links")
+    public String getShareLinksPage(@RequestParam(name = "page", defaultValue = "0") int page,
+                                    @RequestParam(name = "size", defaultValue = "20") int size,
+                                    @RequestParam(required = false) String query,
+                                    @RequestParam(required = false) String type,
+                                    @RequestParam(defaultValue = "false") boolean noExpiry,
+                                    @RequestParam(defaultValue = "false") boolean unlimited,
+                                    @RequestParam(defaultValue = "created") String sortBy,
+                                    @RequestParam(defaultValue = "desc") String sortDir,
+                                    Model model) {
+        int pageNumber = Math.max(page, 0);
+        int pageSize = Math.min(Math.max(size, 1), 100);
+
+        Boolean isPaste = switch (type != null ? type : "") {
+            case "file" -> false;
+            case "paste" -> true;
+            default -> null;
+        };
+
+        Sort sort = buildShareSort(sortBy, sortDir);
+
+        Page<ShareTokenEntity> tokensPage = shareTokenRepository.findFiltered(
+                LocalDate.now(), isPaste, noExpiry, unlimited,
+                (query == null || query.isBlank()) ? null : query,
+                PageRequest.of(pageNumber, pageSize, sort));
+
+        model.addAttribute("tokensPage", tokensPage);
+        model.addAttribute("pageSize", pageSize);
+        model.addAttribute("query", query == null ? "" : query);
+        model.addAttribute("type", type == null ? "" : type);
+        model.addAttribute("noExpiry", noExpiry);
+        model.addAttribute("unlimited", unlimited);
+        model.addAttribute("sortBy", sortBy);
+        model.addAttribute("sortDir", sortDir);
+        model.addAttribute("totalActive", tokensPage.getTotalElements());
+        return "admin-share-links";
+    }
+
+    /**
+     * Builds a {@link Sort} for the share-links page from the user-supplied field name
+     * and direction string.
+     *
+     * @param sortBy  field token: {@code "created"}, {@code "name"}, {@code "expiry"},
+     *                or {@code "downloads"}
+     * @param sortDir {@code "asc"} or {@code "desc"}
+     * @return the resolved {@link Sort}
+     */
+    private Sort buildShareSort(String sortBy, String sortDir) {
+        Sort.Direction dir = "asc".equalsIgnoreCase(sortDir) ? Sort.Direction.ASC : Sort.Direction.DESC;
+        return switch (sortBy) {
+            case "name" -> Sort.by(dir, "file.name");
+            case "expiry" -> Sort.by(dir, "tokenExpirationDate");
+            case "downloads" -> Sort.by(dir, "numberOfAllowedDownloads");
+            default -> Sort.by(dir, "createdAt").and(Sort.by(Sort.Direction.DESC, "id"));
+        };
+    }
+
+    /**
+     * Revokes a share token by ID and redirects back to the share links page.
+     *
+     * @param id      database ID of the share token to revoke
+     * @param request the HTTP request (for history log IP/user-agent metadata)
+     * @return redirect to {@code /admin/share-links}
+     */
+    @PostMapping("/share-links/revoke/{id}")
+    public String revokeShareToken(@PathVariable Long id, HttpServletRequest request) {
+        fileService.revokeShareToken(id, request);
+        return "redirect:/admin/share-links";
+    }
+
+    /**
+     * Displays the global activity log with optional date-range, event-type, IP, and
+     * user-agent filters.
+     *
+     * @param startDate optional lower bound on event timestamp (ISO date-time string)
+     * @param endDate   optional upper bound on event timestamp (ISO date-time string)
+     * @param eventType optional exact event type filter
+     * @param ip        optional IP address substring filter
+     * @param ua        optional user-agent substring filter
+     * @param page      zero-based page index (default 0)
+     * @param size      page size, clamped to [1, 100] (default 30)
+     * @param model     Spring MVC model
+     * @return the {@code admin-activity} template name
+     */
+    @GetMapping("/activity")
+    public String getActivityPage(@RequestParam(required = false) String startDate,
+                                  @RequestParam(required = false) String endDate,
+                                  @RequestParam(required = false) String eventType,
+                                  @RequestParam(required = false) String ip,
+                                  @RequestParam(required = false) String ua,
+                                  @RequestParam(name = "page", defaultValue = "0") int page,
+                                  @RequestParam(name = "size", defaultValue = "30") int size,
+                                  Model model) {
+        int pageNumber = Math.max(page, 0);
+        int pageSize = Math.min(Math.max(size, 1), 100);
+
+        LocalDateTime start = null;
+        LocalDateTime end = null;
+        try {
+            if (startDate != null && !startDate.isBlank()) start = LocalDateTime.parse(startDate);
+        } catch (Exception ignored) {
+        }
+        try {
+            if (endDate != null && !endDate.isBlank()) end = LocalDateTime.parse(endDate);
+        } catch (Exception ignored) {
+        }
+
+        FileHistoryType typeFilter = null;
+        if (eventType != null && !eventType.isBlank()) {
+            try {
+                typeFilter = FileHistoryType.valueOf(eventType.toUpperCase());
+            } catch (IllegalArgumentException ignored) {
+            }
+        }
+
+        String ipFilter = (ip != null && ip.isBlank()) ? null : ip;
+        String uaFilter = (ua != null && ua.isBlank()) ? null : ua;
+
+        Page<FileHistoryLog> activityPage = fileHistoryLogRepository.findFiltered(
+                start, end, typeFilter, ipFilter, uaFilter, PageRequest.of(pageNumber, pageSize));
+
+        model.addAttribute("activityPage", activityPage);
+        model.addAttribute("pageSize", pageSize);
+        model.addAttribute("eventTypes", Arrays.asList(FileHistoryType.values()));
+        model.addAttribute("selectedEventType", eventType == null ? "" : eventType);
+        model.addAttribute("startDate", startDate == null ? "" : startDate);
+        model.addAttribute("endDate", endDate == null ? "" : endDate);
+        model.addAttribute("ip", ip == null ? "" : ip);
+        model.addAttribute("ua", ua == null ? "" : ua);
+        return "admin-activity";
     }
 
     @PostMapping("/notification-test")

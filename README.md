@@ -80,10 +80,12 @@ restart required for configuration changes.
 - **Download limits** — optionally cap how many times a token can be used before it self-destructs.
 - **Simplified links** — an optional mode that generates unlimited, no-expiry share links with a shorter URL.
 - **QR codes** — every share link has a QR code for quick mobile sharing.
-- **Encrypted files** — at share-token creation time the file is re-encrypted under a randomly generated one-time share
-  key. That key is embedded in the share URL (`/share/{token}?key=…`) and never stored in plaintext — only its BCrypt
-  hash is kept in the database. Recipients follow the link and download the file without needing the original password.
-  No unencrypted copy ever touches disk.
+- **Encrypted files** — when a share link is created for an encrypted file, the file is re-encrypted in the background
+  under a randomly generated one-time share key. That key is embedded in the share URL (`/share/{token}?key=…`) and
+  never stored in plaintext — only its BCrypt hash is kept in the database. Recipients follow the link and download the
+  file without needing the original password. No unencrypted copy ever touches disk. While the background encryption is
+  in progress (typically seconds for small files, longer for large ones), recipients see a "File is being prepared"
+  page and can refresh to check readiness.
 - **Share link event logging** — creating a share token, downloading via a share link, token expiry, and admin
   revocation are all recorded in the file's history log.
 
@@ -247,6 +249,7 @@ restart needed.
 | **Max preview size**               | File size limit for auto-loading previews (MB)                                                                |
 | **Metadata stripping**             | Strip EXIF data from uploaded images                                                                          |
 | **File list page**                 | Show/hide the public file list at `/file/list`                                                                |
+| **Admin dashboard button**         | Show/hide the Admin link in the nav bar for non-admin users                                                   |
 | **Default home page**              | Landing page for `/` — upload, list, or paste                                                                 |
 | **Keep indefinitely (admin only)** | Restrict the keep-indefinitely toggle to admins                                                               |
 | **Hide from list (admin only)**    | Restrict the hide toggle to admins                                                                            |

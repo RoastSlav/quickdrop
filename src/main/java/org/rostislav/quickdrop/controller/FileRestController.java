@@ -19,6 +19,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 import java.io.IOException;
+import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
@@ -221,7 +222,9 @@ public class FileRestController {
         try {
             Optional<ShareTokenEntity> shareTokenEntity = fileService.getShareTokenEntityByToken(token);
             if (shareTokenEntity.isEmpty() || !validateShareToken(shareTokenEntity.get())) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+                return ResponseEntity.status(HttpStatus.FOUND)
+                        .location(URI.create("/share/" + token))
+                        .build();
             }
 
             ShareTokenEntity tokenEntity = shareTokenEntity.get();
@@ -232,7 +235,9 @@ public class FileRestController {
             StreamingResponseBody responseBody = fileService.streamFileByShareToken(tokenEntity, request);
 
             if (responseBody == null) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+                return ResponseEntity.status(HttpStatus.FOUND)
+                        .location(URI.create("/share/" + token))
+                        .build();
             }
 
             return ok()

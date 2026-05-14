@@ -63,7 +63,7 @@
         <span class="stat-hero-value" th:text="${analytics.totalSpaceUsed}">0 MB</span>
               <span class="stat-hero-sub" th:text="#{page.dashboard.onDisk}">on disk</span>
       </div>
-          <div class="stat-hero" style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
+          <div class="stat-hero">
               <span class="stat-hero-label" th:text="#{page.dashboard.averageFileSize}">Avg. File Size</span>
               <span class="stat-hero-value" th:text="${analytics.averageFileSize}">0 B</span>
               <span class="stat-hero-sub" th:text="#{page.dashboard.perFile}">per file</span>
@@ -74,21 +74,21 @@
       <p class="text-xs font-black uppercase tracking-widest mb-3 mt-8 animate-in animate-in-delay-2"
          style="color:var(--c-text-faint)" th:text="#{page.dashboard.section.pastes}">Pastes</p>
       <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 lg:gap-5 mb-10 animate-in animate-in-delay-2">
-          <div class="stat-hero stat-hero--primary">
+          <div class="stat-hero stat-hero--primary" style="background:var(--c-surface-raised)">
               <span class="stat-hero-label" th:text="#{page.dashboard.totalPastes}">Total Pastes</span>
               <span class="stat-hero-value" th:attr="data-counter-target=${analytics.totalPastes}"
                     th:text="${analytics.totalPastes}">0</span>
           </div>
-          <div class="stat-hero stat-hero--secondary">
+          <div class="stat-hero stat-hero--secondary" style="background:var(--c-surface-raised)">
               <span class="stat-hero-label" th:text="#{page.dashboard.totalPasteViews}">Total Views</span>
               <span class="stat-hero-value" th:attr="data-counter-target=${analytics.totalPasteViews}"
                     th:text="${analytics.totalPasteViews}">0</span>
           </div>
-          <div class="stat-hero stat-hero--teal">
+          <div class="stat-hero stat-hero--teal" style="background:var(--c-surface-raised)">
               <span class="stat-hero-label" th:text="#{page.dashboard.averagePasteLength}">Avg. Length</span>
               <span class="stat-hero-value" th:text="${analytics.averagePasteLength}">0 B</span>
-      </div>
-          <div class="stat-hero" style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
+          </div>
+          <div class="stat-hero" style="background:var(--c-surface-raised)">
               <span class="stat-hero-label" th:text="#{page.dashboard.pasteTypes}">Types</span>
               <span class="stat-hero-value text-lg"
                     th:text="${analytics.markdownPasteCount} + ' / ' + ${analytics.plainTextPasteCount}">0 / 0</span>
@@ -198,7 +198,7 @@
              href="/admin/activity" style="text-decoration:none">
               <div class="flex items-center gap-4">
                   <div class="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
-                       style="background:var(--c-primary-muted);color:var(--c-primary)">
+                       style="background:var(--c-rose-muted);color:var(--c-rose)">
                       <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
                           <path d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 0 1 0 3.75H5.625a1.875 1.875 0 0 1 0-3.75Z"
                                 stroke-linecap="round" stroke-linejoin="round"/>

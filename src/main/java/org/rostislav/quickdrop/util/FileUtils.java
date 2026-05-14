@@ -310,7 +310,7 @@ public class FileUtils {
             return false;
         }
 
-        boolean notExpired = token.tokenExpirationDate == null || !LocalDate.now().isAfter(token.tokenExpirationDate);
+        boolean notExpired = token.tokenExpirationDate == null || LocalDate.now().isBefore(token.tokenExpirationDate);
         boolean hasDownloads = token.numberOfAllowedDownloads == null || token.numberOfAllowedDownloads > 0;
         return notExpired && hasDownloads;
     }

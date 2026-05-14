@@ -2,7 +2,9 @@ package org.rostislav.quickdrop.service;
 
 import jakarta.transaction.Transactional;
 import org.rostislav.quickdrop.entity.FileEntity;
+import org.rostislav.quickdrop.entity.FileHistoryLog;
 import org.rostislav.quickdrop.entity.ShareTokenEntity;
+import org.rostislav.quickdrop.model.FileHistoryType;
 import org.rostislav.quickdrop.repository.FileHistoryLogRepository;
 import org.rostislav.quickdrop.repository.FileRepository;
 import org.rostislav.quickdrop.repository.ShareTokenRepository;
@@ -168,7 +170,7 @@ public class ScheduleService {
                         String uuid = p.getFileName().toString().replace("-decrypted", "");
                         fileRepository.findByUUID(uuid).ifPresentOrElse(
                                 file -> {
-                                    if (!shareTokenRepository.existsValidTokenForFile(file)) {
+                                    if (!shareTokenRepository.existsValidTokenForFile(file, LocalDate.now())) {
                                         tryDelete(p);
                                     }
                                 },
@@ -198,9 +200,14 @@ public class ScheduleService {
     @Scheduled(cron = "0 30 3 * * *")
     public void cleanShareTokens() {
         logger.info("Cleaning invalid share tokens");
-        List<ShareTokenEntity> toDelete = shareTokenRepository.getShareTokenEntitiesForDeletion();
+        List<ShareTokenEntity> toDelete = shareTokenRepository.getShareTokenEntitiesForDeletion(LocalDate.now());
         if (!toDelete.isEmpty()) {
-            toDelete.forEach(fileService::deleteShareSidecar);
+            toDelete.forEach(token -> {
+                fileService.deleteShareSidecar(token);
+                if (token.file != null) {
+                    fileHistoryLogRepository.save(new FileHistoryLog(token.file, FileHistoryType.SHARE_EXPIRE, null, null));
+                }
+            });
             shareTokenRepository.deleteAll(toDelete);
             logger.info("Deleted {} invalid share tokens", toDelete.size());
         } else {

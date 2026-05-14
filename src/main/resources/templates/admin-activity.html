@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title th:text="#{page.adminActivity.title.browser(${appName})}">Activity — Admin</title>
+    <meta content="width=device-width, initial-scale=1" name="viewport"/>
+    <link href="https://fonts.googleapis.com" rel="preconnect"/>
+    <link crossorigin href="https://fonts.gstatic.com" rel="preconnect"/>
+    <link href="/css/tailwind.css" rel="stylesheet"/>
+    <link href="/css/custom.css" rel="stylesheet"/>
+    <link href="/images/favicon.png" rel="icon" th:href="${appLogoPath}" type="image/png"/>
+    <script src="/js/tailwindTheme.js"></script>
+    <th:block th:replace="~{fragments/header :: scripts}"></th:block>
+</head>
+<body>
+
+<div th:replace="~{fragments/header :: header(false)}"></div>
+
+<div aria-hidden="true" class="orb-field">
+    <div class="orb orb--primary"></div>
+    <div class="orb orb--secondary"></div>
+    <div class="orb orb--teal"></div>
+</div>
+
+<main class="flex-1 hero-scene">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
+
+        <!-- Back -->
+        <div class="mb-6 animate-in">
+            <a class="btn btn-ghost btn-sm inline-flex items-center gap-1.5" href="/admin/dashboard">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span th:text="#{nav.admin}">Admin</span>
+            </a>
+        </div>
+
+        <!-- Hero header -->
+        <div class="flex flex-wrap items-center justify-between gap-4 mb-8 animate-in">
+            <h1 class="page-title-xl">
+                <span class="gradient-text" th:text="#{page.adminActivity.title}">Activity</span>
+            </h1>
+        </div>
+
+        <!-- Filter + results (SPA-swappable) -->
+        <div id="activitySectionWrapper">
+            <div id="activityContent">
+
+                <!-- Filter bar -->
+                <div class="card card-lg mb-6">
+                    <form action="/admin/activity" id="activityFilterForm" method="get">
+                        <input name="page" type="hidden" value="0"/>
+                        <input name="size" th:value="${pageSize}" type="hidden"/>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+                            <!-- Date range presets -->
+                            <div class="sm:col-span-2 lg:col-span-3 flex flex-wrap gap-2">
+                        <span class="text-xs font-black uppercase tracking-widest self-center mr-1"
+                              style="color:var(--c-text-faint)"
+                              th:text="#{page.adminActivity.filter.preset}">Range:</span>
+                                <button class="btn btn-ghost btn-sm" data-preset="today" th:text="#{page.adminActivity.filter.today}"
+                                        type="button">Today
+                                </button>
+                                <button class="btn btn-ghost btn-sm" data-preset="7d" th:text="#{page.adminActivity.filter.last7Days}"
+                                        type="button">Last 7 days
+                                </button>
+                                <button class="btn btn-ghost btn-sm" data-preset="30d" th:text="#{page.adminActivity.filter.last30Days}"
+                                        type="button">Last 30 days
+                                </button>
+                                <button class="btn btn-ghost btn-sm" data-preset="all" th:text="#{page.adminActivity.filter.all}"
+                                        type="button">All time
+                                </button>
+                            </div>
+
+                            <!-- Start date + time -->
+                            <div class="form-row">
+                                <label class="form-label" th:text="#{page.adminActivity.filter.from}">From</label>
+                                <div class="flex gap-2">
+                                    <input class="form-input flex-1" id="startDatePicker" th:value="${#strings.isEmpty(startDate) ? '' : startDate.substring(0, 10)}"
+                                           type="date"/>
+                                    <input class="form-input w-24 font-mono" id="startTimePicker"
+                                           maxlength="5" pattern="[0-9]{2}:[0-9]{2}" placeholder="00:00" th:value="${#strings.isEmpty(startDate) || startDate.length() <= 10 ? '' : startDate.substring(11, 16)}"
+                                           type="text"/>
+                                </div>
+                            </div>
+
+                            <!-- End date + time -->
+                            <div class="form-row">
+                                <label class="form-label" th:text="#{page.adminActivity.filter.to}">To</label>
+                                <div class="flex gap-2">
+                                    <input class="form-input flex-1" id="endDatePicker" th:value="${#strings.isEmpty(endDate) ? '' : endDate.substring(0, 10)}"
+                                           type="date"/>
+                                    <input class="form-input w-24 font-mono" id="endTimePicker"
+                                           maxlength="5" pattern="[0-9]{2}:[0-9]{2}" placeholder="23:59" th:value="${#strings.isEmpty(endDate) || endDate.length() <= 10 ? '' : endDate.substring(11, 16)}"
+                                           type="text"/>
+                                </div>
+                            </div>
+
+                            <!-- Event type -->
+                            <div class="form-row">
+                                <label class="form-label" for="eventType"
+                                       th:text="#{page.adminActivity.filter.eventType}">Event Type</label>
+                                <select class="form-input" id="eventType" name="eventType">
+                                    <option th:selected="${selectedEventType == ''}" th:text="#{page.adminActivity.filter.allTypes}"
+                                            value="">All types
+                                    </option>
+                                    <option th:each="type : ${eventTypes}"
+                                            th:selected="${selectedEventType == type.name()}"
+                                            th:text="#{page.history.actionType.__${type.name().toLowerCase()}__}"
+                                            th:value="${type.name()}">type
+                                    </option>
+                                </select>
+                            </div>
+
+                            <!-- IP filter -->
+                            <div class="form-row">
+                                <label class="form-label" for="ipFilter" th:text="#{page.adminActivity.filter.ip}">IP
+                                    Address</label>
+                                <input class="form-input" id="ipFilter" name="ip"
+                                       th:placeholder="#{page.adminActivity.filter.ip.placeholder}"
+                                       th:value="${ip}" type="text"/>
+                            </div>
+
+                            <!-- User-agent filter -->
+                            <div class="form-row sm:col-span-2">
+                                <label class="form-label" for="uaFilter"
+                                       th:text="#{page.adminActivity.filter.userAgent}">User Agent</label>
+                                <input class="form-input" id="uaFilter" name="ua"
+                                       th:placeholder="#{page.adminActivity.filter.userAgent.placeholder}"
+                                       th:value="${ua}" type="text"/>
+                            </div>
+                        </div>
+
+                        <div class="flex gap-2 flex-wrap">
+                            <button class="btn btn-primary btn-sm" th:text="#{button.apply}"
+                                    type="submit">Apply
+                            </button>
+                            <a class="btn btn-ghost btn-sm" href="/admin/activity"
+                               th:text="#{button.reset}">Reset</a>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Results -->
+                <div class="card card-xl animate-in animate-in-delay-2">
+
+                    <div class="flex flex-wrap items-center justify-between gap-4 mb-5">
+                        <h2 class="section-title" th:text="#{page.adminActivity.results}">Results</h2>
+                        <span class="badge badge-primary font-mono text-sm"
+                              th:text="${activityPage.totalElements} + ' ' + #{page.dashboard.total}">0 total</span>
+                    </div>
+
+                    <!-- Empty state -->
+                    <div class="text-center py-16" th:if="${activityPage.totalElements == 0}">
+                        <div class="gate-icon gate-icon--primary mx-auto mb-6">
+                            <svg class="w-10 h-10" fill="none" stroke="currentColor" stroke-width="1.4"
+                                 viewBox="0 0 24 24">
+                                <path d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 0 1 0 3.75H5.625a1.875 1.875 0 0 1 0-3.75Z"
+                                      stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </div>
+                        <p class="text-lg font-semibold" style="color: var(--c-text-muted)"
+                           th:text="#{page.adminActivity.noResults}">No activity found.</p>
+                    </div>
+
+                    <!-- Activity table -->
+                    <div class="overflow-x-auto" th:if="${activityPage.totalElements > 0}">
+                        <table class="w-full text-sm">
+                            <thead>
+                            <tr style="border-bottom: 1px solid var(--c-border)">
+                                <th class="text-left py-2 px-3 font-semibold text-xs uppercase tracking-wider"
+                                    style="color:var(--c-text-faint)" th:text="#{page.adminActivity.col.date}">Date
+                                </th>
+                                <th class="text-left py-2 px-3 font-semibold text-xs uppercase tracking-wider"
+                                    style="color:var(--c-text-faint)" th:text="#{page.adminActivity.col.file}">File
+                                </th>
+                                <th class="text-left py-2 px-3 font-semibold text-xs uppercase tracking-wider"
+                                    style="color:var(--c-text-faint)" th:text="#{page.adminActivity.col.event}">Event
+                                </th>
+                                <th class="text-left py-2 px-3 font-semibold text-xs uppercase tracking-wider"
+                                    style="color:var(--c-text-faint)" th:text="#{page.adminActivity.col.ip}">IP
+                                </th>
+                                <th class="text-left py-2 px-3 font-semibold text-xs uppercase tracking-wider hidden lg:table-cell"
+                                    style="color:var(--c-text-faint)" th:text="#{page.adminActivity.col.userAgent}">User
+                                    Agent
+                                </th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr class="hover:bg-[var(--c-surface-raised)] transition-colors"
+                                style="border-bottom: 1px solid var(--c-border)"
+                                th:each="entry : ${activityPage.content}">
+                                <td class="py-2.5 px-3 font-mono text-xs whitespace-nowrap"
+                                    style="color:var(--c-text-muted)"
+                                    th:text="${#temporals.format(entry.eventDate, 'dd.MM.yyyy HH:mm')}">01.01.2025 12:00
+                                </td>
+                                <td class="py-2.5 px-3 max-w-[12rem]">
+                                    <a class="font-medium truncate block hover:underline"
+                                       th:href="@{/file/{uuid}(uuid=${entry.file.uuid})}"
+                                       th:text="${entry.file.name}"
+                                       th:title="${entry.file.name}">file.zip</a>
+                                </td>
+                                <td class="py-2.5 px-3">
+                            <span class="badge font-mono text-xs"
+                                  th:classappend="${entry.eventType.name().startsWith('SHARE')} ? 'badge-teal' : (${entry.eventType.name().startsWith('PASTE')} ? '' : (${entry.eventType == T(org.rostislav.quickdrop.model.FileHistoryType).DELETION} ? 'badge-danger' : 'badge-primary'))"
+                                  th:style="${entry.eventType.name().startsWith('PASTE')} ? 'background:var(--c-indigo-muted,var(--c-secondary-muted));color:var(--c-indigo,var(--c-secondary))' : ''"
+                                  th:text="#{page.history.actionType.__${entry.eventType.name().toLowerCase()}__}">upload</span>
+                                </td>
+                                <td class="py-2.5 px-3 font-mono text-xs" style="color:var(--c-text-muted)"
+                                    th:text="${entry.ipAddress != null ? entry.ipAddress : '—'}">0.0.0.0
+                                </td>
+                                <td class="py-2.5 px-3 text-xs hidden lg:table-cell max-w-[20rem]"
+                                    style="color:var(--c-text-faint)">
+                            <span class="truncate block" th:text="${entry.userAgent != null ? entry.userAgent : '—'}"
+                                  th:title="${entry.userAgent}">Mozilla/5.0…</span>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pagination -->
+                    <div class="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 pt-6"
+                         style="border-top: 1px solid var(--c-border)"
+                         th:if="${activityPage.totalElements > 0}">
+                        <div class="flex items-center gap-2" th:if="${activityPage.totalPages > 1}">
+                            <a class="pagination-btn"
+                               th:classappend="${activityPage.first} ? ' pagination-btn-disabled'"
+                               th:href="@{/admin/activity(page=${activityPage.first ? activityPage.number : activityPage.number - 1}, size=${pageSize}, startDate=${startDate}, endDate=${endDate}, eventType=${selectedEventType}, ip=${ip}, ua=${ua})}"
+                               th:text="#{pagination.previous}">Previous</a>
+                            <a class="pagination-btn"
+                               th:classappend="${activityPage.last} ? ' pagination-btn-disabled'"
+                               th:href="@{/admin/activity(page=${activityPage.last ? activityPage.number : activityPage.number + 1}, size=${pageSize}, startDate=${startDate}, endDate=${endDate}, eventType=${selectedEventType}, ip=${ip}, ua=${ua})}"
+                               th:text="#{pagination.next}">Next</a>
+                        </div>
+                        <p class="text-sm font-mono" style="color: var(--c-text-muted)">
+                            <span th:text="#{pagination.page}">Page</span>
+                            <span th:text="${activityPage.number + 1}"></span>
+                            <span th:text="#{pagination.of}">of</span>
+                            <span th:text="${activityPage.totalPages}"></span>
+                        </p>
+                        <form action="/admin/activity" class="flex items-center gap-2" method="get">
+                            <input name="startDate" th:value="${startDate}" type="hidden"/>
+                            <input name="endDate" th:value="${endDate}" type="hidden"/>
+                            <input name="eventType" th:value="${selectedEventType}" type="hidden"/>
+                            <input name="ip" th:value="${ip}" type="hidden"/>
+                            <input name="ua" th:value="${ua}" type="hidden"/>
+                            <input name="page" type="hidden" value="0"/>
+                            <label class="text-sm" for="activityPageSize" style="color: var(--c-text-muted)"
+                                   th:text="#{pagination.perPage}">Per page</label>
+                            <select class="form-input" id="activityPageSize" name="size"
+                                    onchange="this.form.submit()"
+                                    style="width: auto; padding: 0.3125rem 0.5rem">
+                                <option th:selected="${pageSize == 10}" value="10">10</option>
+                                <option th:selected="${pageSize == 30}" value="30">30</option>
+                                <option th:selected="${pageSize == 50}" value="50">50</option>
+                                <option th:selected="${pageSize == 100}" value="100">100</option>
+                            </select>
+                        </form>
+                    </div>
+                </div>
+
+            </div><!-- /activityContent -->
+        </div><!-- /activitySectionWrapper -->
+    </div>
+</main>
+
+<script src="/js/spa.js"></script>
+<script src="/js/admin-activity.js"></script>
+<script src="/js/locale-switcher.js"></script>
+</body>
+</html>

@@ -55,6 +55,10 @@ public class FileActionLogDTO {
             case PASTE_CREATE -> "paste_create";
             case PASTE_VIEW -> "paste_view";
             case PASTE_EDIT -> "paste_edit";
+            case SHARE_CREATE -> "share_create";
+            case SHARE_DOWNLOAD -> "share_download";
+            case SHARE_EXPIRE -> "share_expire";
+            case SHARE_REVOKE -> "share_revoke";
         };
     }
 

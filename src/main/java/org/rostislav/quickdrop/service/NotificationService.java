@@ -59,17 +59,43 @@ public class NotificationService {
     }
 
     /**
+     * Returns {@code true} if the per-event notification toggle for {@code type} is enabled.
+     * System-only events ({@code SHARE_EXPIRE}, {@code SHARE_REVOKE}) are always silent.
+     *
+     * @param type the event type to check
+     * @return {@code true} if notifications for this event type are enabled
+     */
+    private boolean isNotificationEventEnabled(FileHistoryType type) {
+        return switch (type) {
+            case UPLOAD -> applicationSettingsService.isNotifyOnUpload();
+            case DOWNLOAD -> applicationSettingsService.isNotifyOnDownload();
+            case RENEWAL -> applicationSettingsService.isNotifyOnRenewal();
+            case DELETION -> applicationSettingsService.isNotifyOnDeletion();
+            case SHARE_CREATE -> applicationSettingsService.isNotifyOnShareCreate();
+            case SHARE_DOWNLOAD -> applicationSettingsService.isNotifyOnShareDownload();
+            case PASTE_CREATE -> applicationSettingsService.isNotifyOnPasteCreate();
+            case PASTE_VIEW -> applicationSettingsService.isNotifyOnPasteView();
+            case PASTE_EDIT -> applicationSettingsService.isNotifyOnPasteEdit();
+            case SHARE_EXPIRE, SHARE_REVOKE -> false;
+        };
+    }
+
+    /**
      * Sends (or enqueues, if batching is enabled) a notification for a file event.
      *
-     * <p>Does nothing if both Discord and email notifications are disabled or
-     * not configured. The message format includes the file name and UUID; upload
-     * events additionally include the file size in bytes.
+     * <p>Does nothing if the per-event toggle is off, both Discord and email notifications
+     * are disabled, or no channels are configured. The message format includes the file name
+     * and UUID; upload events additionally include the file size in bytes.
      *
      * @param file the file that triggered the event; ignored if {@code null}
-     * @param type the event type (upload, download, deletion, paste create/view/edit, renewal)
+     * @param type the event type (upload, download, deletion, renewal, paste/share events)
      */
     public void notifyFileAction(FileEntity file, FileHistoryType type) {
         if (file == null) {
+            return;
+        }
+
+        if (!isNotificationEventEnabled(type)) {
             return;
         }
 
@@ -88,6 +114,10 @@ public class NotificationService {
             case PASTE_CREATE -> "created (paste)";
             case PASTE_VIEW -> "viewed (paste)";
             case PASTE_EDIT -> "edited (paste)";
+            case SHARE_CREATE -> "share link created";
+            case SHARE_DOWNLOAD -> "downloaded via share link";
+            case SHARE_EXPIRE -> "share link expired";
+            case SHARE_REVOKE -> "share link revoked";
         };
 
         String summary = "File '" + file.name + "' (" + file.uuid + ") was " + event + ".";

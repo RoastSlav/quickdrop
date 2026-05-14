@@ -9,6 +9,9 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+import static org.rostislav.quickdrop.model.FileHistoryType.DOWNLOAD;
+import static org.rostislav.quickdrop.model.FileHistoryType.SHARE_DOWNLOAD;
+
 import static org.rostislav.quickdrop.util.FileUtils.formatFileSize;
 
 /**
@@ -32,14 +35,15 @@ public class AnalyticsService {
     /**
      * Builds and caches a complete analytics snapshot.
      *
-     * <p>Aggregates total downloads, storage usage, file/paste counts, and paste
+     * <p>Aggregates total downloads (counting both direct {@code DOWNLOAD} and
+     * {@code SHARE_DOWNLOAD} events), storage usage, file/paste counts, and paste
      * statistics in a single service call.
      *
      * @return cached analytics view-model
      */
     @Cacheable("analytics")
     public AnalyticsDataView getAnalytics() {
-        long totalDownloads = fileHistoryLogRepository.countByEventType(FileHistoryType.DOWNLOAD);
+        long totalDownloads = fileHistoryLogRepository.countByEventTypeIn(List.of(DOWNLOAD, SHARE_DOWNLOAD));
         long totalSpaceUsed = fileService.calculateTotalSpaceUsed();
         long fileCount = fileService.getFileCount();
 
@@ -69,13 +73,14 @@ public class AnalyticsService {
     }
 
     /**
-     * Returns the total number of download events for a specific file.
+     * Returns the total number of download events for a specific file, counting both
+     * direct downloads ({@code DOWNLOAD}) and share-link downloads ({@code SHARE_DOWNLOAD}).
      *
      * @param uuid UUID of the file
-     * @return download count
+     * @return combined download count
      */
     public long getTotalDownloadsByFile(String uuid) {
-        return fileHistoryLogRepository.countByFileAndType(uuid, FileHistoryType.DOWNLOAD);
+        return fileHistoryLogRepository.countByFileAndTypeIn(uuid, List.of(DOWNLOAD, SHARE_DOWNLOAD));
     }
 
     /**

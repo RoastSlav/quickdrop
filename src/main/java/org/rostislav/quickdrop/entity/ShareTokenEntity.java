@@ -3,6 +3,7 @@ package org.rostislav.quickdrop.entity;
 import jakarta.persistence.*;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 /**
  * A short-lived or limited-use token that grants download access to a specific file
@@ -46,12 +47,15 @@ public class ShareTokenEntity {
      */
     @Column(name = "share_key_hash")
     public String shareKeyHash;
+    /**
+     * Timestamp when this token was created. Used for display ordering on the admin
+     * share-links page. {@code null} for tokens created before this column was added.
+     */
+    @Column(name = "created_at")
+    public LocalDateTime createdAt;
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    public ShareTokenEntity() {
-    }
 
     /**
      * @param token               the short share token string
@@ -64,5 +68,13 @@ public class ShareTokenEntity {
         this.file = file;
         this.tokenExpirationDate = tokenExpirationDate;
         this.numberOfAllowedDownloads = numberOfDownloads;
+        this.createdAt = LocalDateTime.now();
+    }
+
+    public ShareTokenEntity() {
+    }
+
+    public Long getId() {
+        return id;
     }
 }

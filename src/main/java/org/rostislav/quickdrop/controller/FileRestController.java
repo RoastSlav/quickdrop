@@ -171,6 +171,7 @@ public class FileRestController {
             tokenString = token.shareToken;
             sharePath = FileUtils.getSharePath(tokenString);
         }
+        fileService.logShareCreate(fileEntity, request);
         return ok(Map.of(
                 "token", tokenString,
                 "sharePath", sharePath

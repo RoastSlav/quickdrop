@@ -819,14 +819,21 @@ public class FileService {
      * <p>New-style tokens (where {@link ShareTokenEntity#shareKeyHash} is non-null) have an
      * AES-encrypted sidecar at {@code {uuid}-share-{token}}. The share key is read from the
      * HTTP session (stored there by {@link org.rostislav.quickdrop.controller.ShareViewController}
-     * after BCrypt verification) and used to decrypt the sidecar on-the-fly.
+     * after BCrypt verification) and used to decrypt the sidecar on-the-fly. If the sidecar
+     * file is missing (e.g. already deleted after a prior exhausted download), the broken
+     * token is removed via {@link org.rostislav.quickdrop.repository.ShareTokenRepository#deleteByIdTransactional}
+     * and {@code null} is returned without logging a download event.
+     *
+     * <p>The {@link org.rostislav.quickdrop.model.FileHistoryType#SHARE_DOWNLOAD} history
+     * entry is written only after confirming the sidecar exists, so failed attempts are
+     * not recorded as downloads.
      *
      * <p>Legacy tokens ({@code shareKeyHash == null}) fall back to streaming a plaintext
      * {@code {uuid}-decrypted} sidecar if one exists, or the raw file otherwise.
      *
      * @param shareTokenEntity the validated share token
      * @param request          the HTTP request (for history logging and session key lookup)
-     * @return a streaming body, or {@code null} if the token is invalid
+     * @return a streaming body, or {@code null} if the token is invalid or the sidecar is missing
      */
     @CacheEvict(value = {"adminFiles", "analytics"}, allEntries = true)
     public StreamingResponseBody streamFileByShareToken(ShareTokenEntity shareTokenEntity, HttpServletRequest request) {
@@ -886,6 +893,11 @@ public class FileService {
     /**
      * Decrements the remaining download count on a share token after a successful
      * download and deletes the token (and its sidecar) if it is now exhausted or expired.
+     * Deletion uses {@link org.rostislav.quickdrop.repository.ShareTokenRepository#deleteByIdTransactional}
+     * (a targeted {@code @Modifying @Transactional} JPQL DELETE) because this method runs
+     * inside the {@link org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody}
+     * lambda on Spring's async streaming thread, where the JPA persistence context from
+     * the original request thread is already closed.
      *
      * @param shareTokenEntity the share token to update
      * @param fileEntity       the file that was streamed (used only for logging)

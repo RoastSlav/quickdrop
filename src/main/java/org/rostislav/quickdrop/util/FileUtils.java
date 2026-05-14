@@ -301,6 +301,8 @@ public class FileUtils {
 
     /**
      * Returns {@code true} if the share token has not expired and has remaining downloads.
+     * A token whose {@code tokenExpirationDate} equals today is considered expired
+     * (i.e. valid only while {@code today < expirationDate}).
      *
      * @param token the token to validate (may be {@code null})
      * @return {@code true} when the token is usable

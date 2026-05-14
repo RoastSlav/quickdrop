@@ -72,7 +72,7 @@
     </button>
 </div>
 
-<main class="gate-page hero-scene">
+<main class="gate-page hero-scene" id="main-content">
 
     <div class="w-full max-w-md animate-in">
 
@@ -101,6 +101,7 @@
                     <label class="form-label" for="adminPassword" th:text="#{form.adminPassword.label}">Admin
                         Password</label>
                     <input
+                            aria-describedby="error-message"
                             autocomplete="new-password"
                             class="form-input"
                             id="adminPassword"
@@ -117,6 +118,7 @@
                     <label class="form-label" for="confirmPassword" th:text="#{form.password.confirm}">Confirm
                         Password</label>
                     <input
+                            aria-describedby="error-message"
                             autocomplete="new-password"
                             class="form-input"
                             id="confirmPassword"
@@ -146,11 +148,13 @@
 
     <script>
         document.getElementById('setupForm').addEventListener('submit', function (e) {
-            const pw = document.getElementById('adminPassword').value;
-            const cpw = document.getElementById('confirmPassword').value;
-            if (pw !== cpw) {
+            const pw = document.getElementById('adminPassword');
+            const cpw = document.getElementById('confirmPassword');
+            if (pw.value !== cpw.value) {
                 e.preventDefault();
                 document.getElementById('error-message').classList.remove('hidden');
+                pw.setAttribute('aria-invalid', 'true');
+                cpw.setAttribute('aria-invalid', 'true');
             }
         });
 

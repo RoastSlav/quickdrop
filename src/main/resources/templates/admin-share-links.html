@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8"/>
@@ -23,7 +23,7 @@
     <div class="orb orb--teal"></div>
 </div>
 
-<main class="flex-1 hero-scene">
+<main class="flex-1 hero-scene" id="main-content">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
 
         <!-- Back -->
@@ -267,16 +267,19 @@
                     <div class="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 pt-6"
                          style="border-top: 1px solid var(--c-border)"
                          th:if="${tokensPage.totalElements > 0}">
-                        <div class="flex items-center gap-2" th:if="${tokensPage.totalPages > 1}">
+                        <nav aria-label="#{pagination.navigation}" class="flex items-center gap-2"
+                             th:if="${tokensPage.totalPages > 1}">
                             <a class="pagination-btn"
                                th:classappend="${tokensPage.first} ? ' pagination-btn-disabled'"
+                               th:attr="aria-disabled=${tokensPage.first},tabindex=${tokensPage.first ? '-1' : null}"
                                th:href="@{/admin/share-links(page=${tokensPage.first ? tokensPage.number : tokensPage.number - 1}, size=${pageSize}, query=${query}, type=${type}, noExpiry=${noExpiry}, unlimited=${unlimited}, sortBy=${sortBy}, sortDir=${sortDir})}"
                                th:text="#{pagination.previous}">Previous</a>
                             <a class="pagination-btn"
                                th:classappend="${tokensPage.last} ? ' pagination-btn-disabled'"
+                               th:attr="aria-disabled=${tokensPage.last},tabindex=${tokensPage.last ? '-1' : null}"
                                th:href="@{/admin/share-links(page=${tokensPage.last ? tokensPage.number : tokensPage.number + 1}, size=${pageSize}, query=${query}, type=${type}, noExpiry=${noExpiry}, unlimited=${unlimited}, sortBy=${sortBy}, sortDir=${sortDir})}"
                                th:text="#{pagination.next}">Next</a>
-                        </div>
+                        </nav>
                         <p class="text-sm font-mono" style="color: var(--c-text-muted)">
                             <span th:text="#{pagination.page}">Page</span>
                             <span th:text="${tokensPage.number + 1}"></span>

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8"/>
@@ -22,7 +22,7 @@
     <div class="orb orb--teal"></div>
 </div>
 
-<main class="flex-1 hero-scene">
+<main class="flex-1 hero-scene" id="main-content">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
 
         <!-- Back -->
@@ -223,16 +223,19 @@
                     <div class="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 pt-6"
                          style="border-top: 1px solid var(--c-border)"
                          th:if="${activityPage.totalElements > 0}">
-                        <div class="flex items-center gap-2" th:if="${activityPage.totalPages > 1}">
+                        <nav aria-label="#{pagination.navigation}" class="flex items-center gap-2"
+                             th:if="${activityPage.totalPages > 1}">
                             <a class="pagination-btn"
                                th:classappend="${activityPage.first} ? ' pagination-btn-disabled'"
+                               th:attr="aria-disabled=${activityPage.first},tabindex=${activityPage.first ? '-1' : null}"
                                th:href="@{/admin/activity(page=${activityPage.first ? activityPage.number : activityPage.number - 1}, size=${pageSize}, startDate=${startDate}, endDate=${endDate}, eventType=${selectedEventType}, ip=${ip}, ua=${ua})}"
                                th:text="#{pagination.previous}">Previous</a>
                             <a class="pagination-btn"
                                th:classappend="${activityPage.last} ? ' pagination-btn-disabled'"
+                               th:attr="aria-disabled=${activityPage.last},tabindex=${activityPage.last ? '-1' : null}"
                                th:href="@{/admin/activity(page=${activityPage.last ? activityPage.number : activityPage.number + 1}, size=${pageSize}, startDate=${startDate}, endDate=${endDate}, eventType=${selectedEventType}, ip=${ip}, ua=${ua})}"
                                th:text="#{pagination.next}">Next</a>
-                        </div>
+                        </nav>
                         <p class="text-sm font-mono" style="color: var(--c-text-muted)">
                             <span th:text="#{pagination.page}">Page</span>
                             <span th:text="${activityPage.number + 1}"></span>

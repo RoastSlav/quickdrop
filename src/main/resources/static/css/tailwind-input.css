@@ -264,6 +264,28 @@ html.dark {
         background-color: color-mix(in srgb, var(--c-primary) 30%, transparent);
     }
 
+    /* ── Skip navigation link ────────────────────────────────────────────── */
+    .skip-link {
+        position: absolute;
+        left: -9999px;
+        top: 0.75rem;
+        z-index: 9999;
+        padding: 0.5rem 1.25rem;
+        background: var(--c-primary);
+        color: var(--c-primary-fg, #fff);
+        border-radius: 0.5rem;
+        font-weight: 600;
+        font-size: 0.875rem;
+        text-decoration: none;
+        white-space: nowrap;
+    }
+
+    .skip-link:focus {
+        left: 0.75rem;
+        outline: 2px solid var(--c-primary-fg, #fff);
+        outline-offset: 2px;
+    }
+
     :focus-visible {
         outline: 2px solid var(--c-primary);
         outline-offset: 2px;

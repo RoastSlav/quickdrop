@@ -179,6 +179,10 @@ function generateShareLink(fileUuid, daysValid, allowedNumberOfDownloads) {
       throw new Error(message);
     }
 
+      if (data.preparingMessage === "true" || data.preparingMessage === true) {
+          window.toast?.(getI18nStr('sharePreparingNotice', 'Your share link will be functional in a couple of minutes.'), 'info');
+      }
+
     const sharePath =
       data.sharePath || (data.token ? `/share/${data.token}` : "");
     if (!sharePath) return "";

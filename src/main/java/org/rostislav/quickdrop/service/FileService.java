@@ -74,9 +74,10 @@ public class FileService {
     private final ShareTokenRepository shareTokenRepository;
     private final NotificationService notificationService;
     private final AsyncFileMergeService asyncFileMergeService;
+    private final ShareEncryptionService shareEncryptionService;
 
     @Lazy
-    public FileService(FileRepository fileRepository, PasswordEncoder passwordEncoder, ApplicationSettingsService applicationSettingsService, FileHistoryLogRepository fileHistoryLogRepository, SessionService sessionService, FileEncryptionService fileEncryptionService, ShareTokenRepository shareTokenRepository, NotificationService notificationService, @Lazy AsyncFileMergeService asyncFileMergeService) {
+    public FileService(FileRepository fileRepository, PasswordEncoder passwordEncoder, ApplicationSettingsService applicationSettingsService, FileHistoryLogRepository fileHistoryLogRepository, SessionService sessionService, FileEncryptionService fileEncryptionService, ShareTokenRepository shareTokenRepository, NotificationService notificationService, @Lazy AsyncFileMergeService asyncFileMergeService, ShareEncryptionService shareEncryptionService) {
         this.fileRepository = fileRepository;
         this.passwordEncoder = passwordEncoder;
         this.applicationSettingsService = applicationSettingsService;
@@ -86,6 +87,7 @@ public class FileService {
         this.shareTokenRepository = shareTokenRepository;
         this.notificationService = notificationService;
         this.asyncFileMergeService = asyncFileMergeService;
+        this.shareEncryptionService = shareEncryptionService;
     }
 
     /**
@@ -839,6 +841,9 @@ public class FileService {
 
         if (shareTokenEntity.shareKeyHash != null) {
             Path sidecarPath = Path.of(storagePath, fileEntity.uuid + "-share-" + shareTokenEntity.shareToken);
+            if (!Files.exists(sidecarPath)) {
+                return null;
+            }
             String shareKey = (String) request.getSession().getAttribute("share-key-" + shareTokenEntity.shareToken);
             return outputStream -> {
                 try {
@@ -1029,23 +1034,25 @@ public class FileService {
     /**
      * Generates a share token for a password-protected file.
      *
-     * <p>For encrypted files a randomly generated share key is used to re-encrypt the
-     * file content into a sidecar at {@code {uuid}-share-{token}}. No plaintext copy
-     * ever touches disk. The share key is returned so the caller can embed it in the
-     * share URL; only its BCrypt hash is persisted in the database.
+     * <p>For encrypted files a randomly generated share key is BCrypt-hashed and stored
+     * in the token; the plaintext key is returned so the caller can embed it in the share
+     * URL. Sidecar re-encryption (decrypt original → re-encrypt with share key) is
+     * submitted to {@link ShareEncryptionService} and runs in the background, so this
+     * method returns immediately. The returned token will have
+     * {@link ShareTokenEntity#sidecarReady} set to {@code false}; callers should surface
+     * this to the creator and recipients accordingly. No plaintext copy ever touches disk.
      *
-     * <p>For files with a password but encryption disabled, the non-encrypted 3-param
+     * <p>For files with a password but encryption disabled the non-encrypted 3-param
      * overload handles token creation (reusing unlimited tokens when applicable) and this
-     * method wraps the result with a {@code null} share key.
+     * method wraps the result with a {@code null} share key and {@code sidecarReady = true}.
      *
      * @param uuid                the file UUID
      * @param tokenExpirationDate optional expiry date
      * @param sessionToken        file session token (provides the decryption password for encrypted files)
      * @param numberOfDownloads   optional download limit
-     * @return a result holding the new {@link ShareTokenEntity} and the plaintext share key
-     *         (the key is {@code null} when the file is not encrypted)
+     * @return a result holding the persisted {@link ShareTokenEntity} and the plaintext share key
+     *         (the key is {@code null} when the file is not AES-encrypted)
      * @throws IllegalArgumentException if the UUID is not found
-     * @throws RuntimeException         if sidecar re-encryption fails
      */
     public ShareTokenResult generateShareToken(String uuid, LocalDate tokenExpirationDate, String sessionToken, Integer numberOfDownloads) {
         Optional<FileEntity> optionalFile = fileRepository.findByUUID(uuid);
@@ -1061,28 +1068,23 @@ public class FileService {
             return new ShareTokenResult(shareToken, null);
         }
 
-        // Encrypted: generate a fresh token with a re-encrypted sidecar every time
+        // Encrypted: generate a fresh token and kick off sidecar re-encryption in the background
         String shareKey = java.util.UUID.randomUUID().toString();
         String token = generateUniqueShareToken(file);
-        Path encryptedFilePath = Path.of(applicationSettingsService.getFileStoragePath(), file.uuid);
-        Path sidecarPath = Path.of(applicationSettingsService.getFileStoragePath(), file.uuid + "-share-" + token);
 
-        try {
-            String password = sessionService.getPasswordForFileSessionToken(sessionToken).getPassword();
-            try (InputStream decIn = fileEncryptionService.getDecryptedInputStream(encryptedFilePath.toFile(), password);
-                 OutputStream encOut = fileEncryptionService.getEncryptedOutputStream(sidecarPath.toFile(), shareKey)) {
-                decIn.transferTo(encOut);
-            }
-            logger.info("Re-encrypted sidecar created for share token: {}", sidecarPath);
-        } catch (Exception e) {
-            logger.error("Error creating re-encrypted sidecar for sharing: {}", e.getMessage());
-            throw new RuntimeException("Failed to create share sidecar", e);
-        }
+        // Pre-fetch the password on the request thread before the async task runs,
+        // so the HTTP session is not accessed from a background thread.
+        String plainPassword = sessionService.getPasswordForFileSessionToken(sessionToken).getPassword();
 
         ShareTokenEntity shareToken = new ShareTokenEntity(token, file, tokenExpirationDate, numberOfDownloads);
         shareToken.shareKeyHash = passwordEncoder.encode(shareKey);
+        shareToken.sidecarReady = false;
         shareTokenRepository.save(shareToken);
-        logger.info("Share token generated for encrypted file: {}", file.name);
+
+        shareEncryptionService.encryptSidecarAsync(file.uuid, token, shareKey, plainPassword,
+                shareToken.getId(), shareTokenRepository);
+
+        logger.info("Share token saved; sidecar encryption submitted in background for file: {}", file.name);
         return new ShareTokenResult(shareToken, shareKey);
     }
 

@@ -30,15 +30,25 @@ restart required for configuration changes.
 
 ## Screenshots
 
-<img width="1691" height="943" alt="image" src="https://github.com/user-attachments/assets/16125ad7-98bf-4353-b779-4cd35932e1c4" />
+<img width="1691" height="943" alt="Upload page" src="https://github.com/user-attachments/assets/16125ad7-98bf-4353-b779-4cd35932e1c4" />
 
-<img width="1703" height="943" alt="image" src="https://github.com/user-attachments/assets/3b65b8bc-45fc-44bc-8e7a-cb52524261b4" />
+*Upload page — drag-and-drop with configurable size limit, retention period, and encryption status.*
 
-<img width="1686" height="945" alt="image" src="https://github.com/user-attachments/assets/4ef1a580-c89a-49d6-b565-77913871ca2a" />
+<img width="1703" height="943" alt="File view page" src="https://github.com/user-attachments/assets/3b65b8bc-45fc-44bc-8e7a-cb52524261b4" />
 
-<img width="1667" height="944" alt="image" src="https://github.com/user-attachments/assets/599812fd-f3a5-49b8-9bfa-b010be3caffc" />
+*File view page — download, renew, and generate a share link with expiry and download limits.*
 
-<img width="1695" height="942" alt="image" src="https://github.com/user-attachments/assets/0e5abc59-36ed-48ee-8afe-eecaf54f8b9a" />
+<img width="1686" height="945" alt="Share link recipient view" src="https://github.com/user-attachments/assets/4ef1a580-c89a-49d6-b565-77913871ca2a" />
+
+*Share link recipient view — clean download page, no password required.*
+
+<img width="1667" height="944" alt="Admin dashboard" src="https://github.com/user-attachments/assets/599812fd-f3a5-49b8-9bfa-b010be3caffc" />
+
+*Admin dashboard — aggregate stats for files and pastes, with quick links to all management pages.*
+
+<img width="1695" height="942" alt="Admin settings" src="https://github.com/user-attachments/assets/0e5abc59-36ed-48ee-8afe-eecaf54f8b9a" />
+
+*Admin settings — all configuration in one place, applied instantly without a restart.*
 
 
 ---

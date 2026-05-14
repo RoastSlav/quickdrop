@@ -222,6 +222,14 @@ function sv(key, fallback) {
   return window.i18n?.settings?.validation?.[key] || fallback;
 }
 
+function isValidSpringCron(expr) {
+  if (!expr || typeof expr !== 'string') return false;
+  const parts = expr.trim().split(/\s+/);
+  if (parts.length !== 6) return false;
+  const field = /^(\*|\?|(\d+(-\d+)?(\/\d+)?)(,(\d+(-\d+)?(\/\d+)?))*|\*\/\d+|[A-Z]{3}(-[A-Z]{3})?(,[A-Z]{3}(-[A-Z]{3})?)*)$/i;
+  return parts.every(p => field.test(p));
+}
+
 function validateSettingsForm() {
   let firstInvalid = null;
 
@@ -275,9 +283,15 @@ function validateSettingsForm() {
     firstInvalid = firstInvalid || fileStoragePath;
   }
 
-  if (!fileDeletionCron?.value.trim()) {
+  const cronVal = fileDeletionCron?.value.trim();
+  if (!cronVal) {
     markValidity(fileDeletionCron, sv('cron', 'Cron expression is required.'));
     firstInvalid = firstInvalid || fileDeletionCron;
+  } else if (!isValidSpringCron(cronVal)) {
+    markValidity(fileDeletionCron, sv('cronInvalid', 'Invalid cron expression (6 fields required, e.g. 0 0 2 * * *).'));
+    firstInvalid = firstInvalid || fileDeletionCron;
+  } else {
+    markValidity(fileDeletionCron, '');
   }
 
   const sessionVal = parsePositiveNumber(sessionLifeTime?.value);
@@ -365,13 +379,27 @@ async function saveSettings(csrf) {
     throw new Error("Validation failed");
   }
 
-  const formData = new FormData(form);
-  await fetch("/admin/api/save", {
+  const logoInput = document.getElementById("appLogo");
+  const hasFile = logoInput?.files?.length > 0;
+  let body;
+  if (hasFile) {
+    body = new FormData(form);
+  } else {
+    const params = new URLSearchParams();
+    new FormData(form).forEach((value, key) => {
+      if (!(value instanceof File)) params.append(key, value);
+    });
+    body = params;
+  }
+  const response = await fetch("/admin/api/save", {
     method: "POST",
     credentials: "same-origin",
     headers: buildCsrfHeaders(csrf),
-    body: formData,
+    body,
   });
+  if (!response.ok) {
+    throw new Error((await response.text()) || "Save failed");
+  }
 }
 
 async function sendNotificationTest(target, buttonId, statusId) {
@@ -424,13 +452,78 @@ document.addEventListener("DOMContentLoaded", function () {
     'form[method="post"][action="/admin/save"]'
   );
   if (form) {
-    form.addEventListener("submit", (e) => {
-      if (!validateSettingsForm()) {
-        e.preventDefault();
-        e.stopPropagation();
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const saveBtns = document.querySelectorAll('[form="settingsForm"]');
+      saveBtns.forEach(b => (b.disabled = true));
+      try {
+        await saveSettings(getCsrfToken());
+        window.toast?.("Settings saved", "success");
+      } catch (err) {
+        if (err.message !== "Validation failed") {
+          window.toast?.(err.message || "Failed to save settings", "error");
+        }
+      } finally {
+        saveBtns.forEach(b => (b.disabled = false));
       }
     });
   }
+
+  document.querySelectorAll('#cronPresets [data-cron]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const input = document.getElementById('fileDeletionCron');
+      if (input) {
+        input.value = btn.dataset.cron;
+        input.dispatchEvent(new Event('input'));
+        markValidity(input, '');
+      }
+    });
+  });
+
+  const cronInput = document.getElementById('fileDeletionCron');
+  const cronFeedback = document.getElementById('cronFeedback');
+  const cronLocale = window.i18n?.settings?.cron?.locale || 'en';
+
+  function updateCronFeedback() {
+    if (!cronInput || !cronFeedback) return;
+    const val = cronInput.value.trim();
+
+    document.querySelectorAll('#cronPresets [data-cron]').forEach(btn => {
+      const match = btn.dataset.cron === val;
+      btn.classList.toggle('btn-primary', match);
+      btn.classList.toggle('btn-ghost', !match);
+    });
+
+    if (!val) {
+      cronFeedback.textContent = '';
+      cronInput.setCustomValidity('');
+      return;
+    }
+
+    if (!isValidSpringCron(val)) {
+      const msg = sv('cronInvalid', 'Invalid cron expression (6 fields required).');
+      cronFeedback.textContent = msg;
+      cronFeedback.style.color = 'var(--c-danger, #ef4444)';
+      cronInput.setCustomValidity(msg);
+      return;
+    }
+
+    cronInput.setCustomValidity('');
+    let desc = '';
+    if (typeof cronstrue !== 'undefined') {
+      try {
+        desc = cronstrue.toString(val, {locale: cronLocale, throwExceptionOnParseError: true});
+      } catch (e) {
+        desc = '';
+      }
+    }
+    cronFeedback.textContent = desc;
+    cronFeedback.style.color = 'var(--c-teal)';
+  }
+
+  cronInput?.addEventListener('input', updateCronFeedback);
+  updateCronFeedback();
 
   document
     .getElementById("discordWebhookEnabled")

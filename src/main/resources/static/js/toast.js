@@ -13,12 +13,12 @@
     let container = null;
 
     function ensureContainer() {
-        if (container && document.body.contains(container)) return container;
+        if (container && document.documentElement.contains(container)) return container;
         container = document.createElement('div');
         container.className = 'toast-container';
         container.setAttribute('role', 'status');
         container.setAttribute('aria-live', 'polite');
-        document.body.appendChild(container);
+        document.documentElement.appendChild(container);
         return container;
     }
 
@@ -34,7 +34,7 @@
 
         const remove = () => {
             el.classList.add('toast--leaving');
-            el.addEventListener('animationend', () => el.remove(), {once: true});
+            setTimeout(() => el.remove(), 220);
         };
         const timer = setTimeout(remove, duration);
         el.addEventListener('click', () => {

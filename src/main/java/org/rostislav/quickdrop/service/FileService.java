@@ -71,19 +71,21 @@ public class FileService {
     private final FileHistoryLogRepository fileHistoryLogRepository;
     private final SessionService sessionService;
     private final FileEncryptionService fileEncryptionService;
+    private final SvgRasterizationService svgRasterizationService;
     private final ShareTokenRepository shareTokenRepository;
     private final NotificationService notificationService;
     private final AsyncFileMergeService asyncFileMergeService;
     private final ShareEncryptionService shareEncryptionService;
 
     @Lazy
-    public FileService(FileRepository fileRepository, PasswordEncoder passwordEncoder, ApplicationSettingsService applicationSettingsService, FileHistoryLogRepository fileHistoryLogRepository, SessionService sessionService, FileEncryptionService fileEncryptionService, ShareTokenRepository shareTokenRepository, NotificationService notificationService, @Lazy AsyncFileMergeService asyncFileMergeService, ShareEncryptionService shareEncryptionService) {
+    public FileService(FileRepository fileRepository, PasswordEncoder passwordEncoder, ApplicationSettingsService applicationSettingsService, FileHistoryLogRepository fileHistoryLogRepository, SessionService sessionService, FileEncryptionService fileEncryptionService, SvgRasterizationService svgRasterizationService, ShareTokenRepository shareTokenRepository, NotificationService notificationService, @Lazy AsyncFileMergeService asyncFileMergeService, ShareEncryptionService shareEncryptionService) {
         this.fileRepository = fileRepository;
         this.passwordEncoder = passwordEncoder;
         this.applicationSettingsService = applicationSettingsService;
         this.fileHistoryLogRepository = fileHistoryLogRepository;
         this.sessionService = sessionService;
         this.fileEncryptionService = fileEncryptionService;
+        this.svgRasterizationService = svgRasterizationService;
         this.shareTokenRepository = shareTokenRepository;
         this.notificationService = notificationService;
         this.asyncFileMergeService = asyncFileMergeService;
@@ -286,13 +288,16 @@ public class FileService {
     /**
      * Returns the file content for in-browser preview.
      *
-     * <p>Preview is refused ({@code 403}) if it is globally disabled. Returns
-     * {@code 415} if the file type is not previewable (only images, plaintext, and PDF
-     * are supported). Returns {@code 428} if the file exceeds the preview size limit
-     * and {@code manualOverride} is false.
+     * <p>Returns {@code 403} if previews are globally disabled, {@code 404} if the file does
+     * not exist, {@code 415} if the file type is not previewable (images, plain text, and PDF
+     * are supported), and {@code 428} if the file exceeds the configured preview size limit
+     * and {@code manualOverride} is {@code false}.
+     *
+     * <p>SVG files are transcoded to PNG via {@link SvgRasterizationService#rasterizeToPng}
+     * before streaming. If transcoding fails the method returns {@code 415}.
      *
      * @param uuid           the file UUID
-     * @param request        the HTTP request (provides the file session token for decryption)
+     * @param request        the HTTP request carrying the session token used for decryption
      * @param manualOverride if {@code true}, bypasses the file-size limit check
      * @return a streaming inline response, or an appropriate error response
      */
@@ -334,14 +339,36 @@ public class FileService {
 
         String contentType = guessContentType(fileEntity.name, isImage, isText, isPdf);
 
+        String previewFileName = fileEntity.name;
+        if (isSvgFile(fileEntity.name)) {
+            try {
+                byte[] pngPreview = svgRasterizationService.rasterizeToPng(inputStream);
+                inputStream = new ByteArrayInputStream(pngPreview);
+                contentType = "image/png";
+                previewFileName = fileEntity.name + ".png";
+            } catch (IOException e) {
+                logger.warn("Failed to rasterize SVG preview for file {}: {}", uuid, e.getMessage());
+                return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE).build();
+            }
+        }
+
         StreamingResponseBody body = getStreamingResponseBody(inputStream);
         return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + fileEntity.name + "\"")
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + previewFileName + "\"")
                 .header(HttpHeaders.CONTENT_TYPE, contentType)
                 .header(HttpHeaders.CACHE_CONTROL, "no-cache, no-store, must-revalidate")
+                .header("X-Content-Type-Options", "nosniff")
+                .header("X-Frame-Options", "DENY")
+                .header("Referrer-Policy", "no-referrer")
+                .header("Content-Security-Policy", "default-src 'none'; script-src 'none'; object-src 'none'; frame-ancestors 'none'; sandbox")
                 .header("Pragma", "no-cache")
                 .header("Expires", "0")
                 .body(body);
+    }
+
+    /** Returns {@code true} if {@code fileName} has a {@code .svg} extension (case-insensitive). */
+    private boolean isSvgFile(String fileName) {
+        return fileName != null && fileName.toLowerCase(Locale.ROOT).endsWith(".svg");
     }
 
     /**

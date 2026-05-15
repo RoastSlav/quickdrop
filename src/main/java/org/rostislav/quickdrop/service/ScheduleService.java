@@ -36,7 +36,7 @@ import java.util.concurrent.ScheduledFuture;
  *       restart via {@link #updateSchedule(String, long)}.</li>
  *   <li><strong>Fixed maintenance jobs</strong> — run on hardcoded cron expressions:
  *     <ul>
- *       <li>02:00 daily — {@link #cleanDatabaseFromDeletedFiles()}: removes database
+ *       <li>03:00 daily — {@link #cleanDatabaseFromDeletedFiles()}: removes database
  *           rows for files that no longer exist on disk (e.g. manually deleted).</li>
  *       <li>03:30 daily — {@link #cleanShareTokens()}: purges expired or exhausted
  *           share tokens.</li>

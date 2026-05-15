@@ -1,4 +1,4 @@
-﻿package org.rostislav.quickdrop.controller;
+package org.rostislav.quickdrop.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
@@ -6,8 +6,6 @@ import org.rostislav.quickdrop.entity.ApplicationSettingsEntity;
 import org.rostislav.quickdrop.entity.FileHistoryLog;
 import org.rostislav.quickdrop.entity.ShareTokenEntity;
 import org.rostislav.quickdrop.model.*;
-import org.rostislav.quickdrop.repository.FileHistoryLogRepository;
-import org.rostislav.quickdrop.repository.ShareTokenRepository;
 import org.rostislav.quickdrop.service.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,18 +58,14 @@ public class AdminViewController {
     private final SessionService sessionService;
     private final SystemInfoService systemInfoService;
     private final NotificationService notificationService;
-    private final ShareTokenRepository shareTokenRepository;
-    private final FileHistoryLogRepository fileHistoryLogRepository;
 
-    public AdminViewController(ApplicationSettingsService applicationSettingsService, AnalyticsService analyticsService, FileService fileService, SessionService sessionService, SystemInfoService systemInfoService, NotificationService notificationService, ShareTokenRepository shareTokenRepository, FileHistoryLogRepository fileHistoryLogRepository) {
+    public AdminViewController(ApplicationSettingsService applicationSettingsService, AnalyticsService analyticsService, FileService fileService, SessionService sessionService, SystemInfoService systemInfoService, NotificationService notificationService) {
         this.applicationSettingsService = applicationSettingsService;
         this.analyticsService = analyticsService;
         this.fileService = fileService;
         this.sessionService = sessionService;
         this.systemInfoService = systemInfoService;
         this.notificationService = notificationService;
-        this.shareTokenRepository = shareTokenRepository;
-        this.fileHistoryLogRepository = fileHistoryLogRepository;
     }
 
     @GetMapping("/dashboard")
@@ -122,7 +116,7 @@ public class AdminViewController {
 
     @GetMapping("/pastes/{uuid}/history")
     public String getPasteHistoryPage(@PathVariable String uuid, Model model) {
-        var fileEntity = fileService.getFile(uuid);
+        var fileEntity = fileService.getFile(uuid).orElse(null);
         if (fileEntity == null || !fileEntity.paste) {
             return "redirect:/admin/pastes";
         }
@@ -315,7 +309,7 @@ public class AdminViewController {
 
         Sort sort = buildShareSort(sortBy, sortDir);
 
-        Page<ShareTokenEntity> tokensPage = shareTokenRepository.findFiltered(
+        Page<ShareTokenEntity> tokensPage = fileService.getFilteredShareTokens(
                 LocalDate.now(), isPaste, noExpiry, unlimited,
                 (query == null || query.isBlank()) ? null : query,
                 PageRequest.of(pageNumber, pageSize, sort));
@@ -412,7 +406,7 @@ public class AdminViewController {
         String ipFilter = (ip != null && ip.isBlank()) ? null : ip;
         String uaFilter = (ua != null && ua.isBlank()) ? null : ua;
 
-        Page<FileHistoryLog> activityPage = fileHistoryLogRepository.findFiltered(
+        Page<FileHistoryLog> activityPage = analyticsService.getFilteredActivity(
                 start, end, typeFilter, ipFilter, uaFilter, PageRequest.of(pageNumber, pageSize));
 
         model.addAttribute("activityPage", activityPage);
@@ -450,4 +444,3 @@ public class AdminViewController {
         };
     }
 }
-

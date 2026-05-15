@@ -5,8 +5,11 @@ import org.rostislav.quickdrop.model.AnalyticsDataView;
 import org.rostislav.quickdrop.model.FileHistoryType;
 import org.rostislav.quickdrop.repository.FileHistoryLogRepository;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.rostislav.quickdrop.model.FileHistoryType.DOWNLOAD;
@@ -101,5 +104,23 @@ public class AnalyticsService {
      */
     public List<FileHistoryLog> getHistoryByFile(String fileUUID) {
         return fileHistoryLogRepository.findByFileUuidOrderByEventDateDesc(fileUUID);
+    }
+
+    /**
+     * Returns a filtered, paginated slice of the global activity log.
+     * Any parameter that is {@code null} is treated as "no filter on this dimension".
+     *
+     * @param startDate lower bound on event timestamp (inclusive), or {@code null}
+     * @param endDate   upper bound on event timestamp (inclusive), or {@code null}
+     * @param eventType exact event type filter, or {@code null} to include all types
+     * @param ip        substring filter on IP address, or {@code null}
+     * @param ua        substring filter on user-agent, or {@code null}
+     * @param pageable  pagination and sort configuration
+     * @return a page of matching log entries ordered by event date descending
+     */
+    public Page<FileHistoryLog> getFilteredActivity(LocalDateTime startDate, LocalDateTime endDate,
+                                                    FileHistoryType eventType, String ip, String ua,
+                                                    Pageable pageable) {
+        return fileHistoryLogRepository.findFiltered(startDate, endDate, eventType, ip, ua, pageable);
     }
 }

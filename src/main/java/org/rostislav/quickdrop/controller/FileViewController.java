@@ -95,7 +95,7 @@ public class FileViewController {
             return "redirect:/file/upload";
         }
 
-        FileEntity fileEntity = fileService.getFile(uuid);
+        FileEntity fileEntity = fileService.getFile(uuid).orElse(null);
         if (fileEntity == null) {
             return "redirect:/file/list";
         }
@@ -209,7 +209,10 @@ public class FileViewController {
 
     @GetMapping("/{uuid}")
     public String filePage(@PathVariable String uuid, Model model, HttpServletRequest request) {
-        FileEntity fileEntity = fileService.getFile(uuid);
+        FileEntity fileEntity = (FileEntity) request.getAttribute("fileEntity");
+        if (fileEntity == null) {
+            fileEntity = fileService.getFile(uuid).orElse(null);
+        }
         if (fileEntity == null) {
             logger.info("File not found for UUID: {}", uuid);
             return "redirect:/file/list";
@@ -277,7 +280,7 @@ public class FileViewController {
 
     @GetMapping("/history/{uuid}")
     public String viewFileHistory(@PathVariable String uuid, Model model) {
-        FileEntity fileEntity = fileService.getFile(uuid);
+        FileEntity fileEntity = fileService.getFile(uuid).orElse(null);
         long totalDownloads = analyticsService.getTotalDownloadsByFile(uuid);
         FileEntityView fileEntityView = new FileEntityView(fileEntity, totalDownloads);
 
@@ -313,10 +316,7 @@ public class FileViewController {
     @GetMapping("/password/{uuid}")
     public String passwordPage(@PathVariable String uuid, Model model) {
         model.addAttribute("uuid", uuid);
-        FileEntity fileEntity = fileService.getFile(uuid);
-        if (fileEntity != null) {
-            model.addAttribute("fileName", fileEntity.name);
-        }
+        fileService.getFile(uuid).ifPresent(f -> model.addAttribute("fileName", f.name));
         return "file-password";
     }
 
@@ -347,7 +347,10 @@ public class FileViewController {
         if (sessionService.hasValidAdminSession(request)) {
             return true;
         }
-        FileEntity fileEntity = fileService.getFile(uuid);
+        FileEntity fileEntity = (FileEntity) request.getAttribute("fileEntity");
+        if (fileEntity == null) {
+            fileEntity = fileService.getFile(uuid).orElse(null);
+        }
         if (fileEntity == null || fileEntity.passwordHash == null) {
             return false;
         }

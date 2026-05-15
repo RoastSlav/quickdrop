@@ -10,6 +10,8 @@ import org.rostislav.quickdrop.repository.FileRepository;
 import org.rostislav.quickdrop.repository.ShareTokenRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.scheduling.support.CronTrigger;
@@ -155,11 +157,19 @@ public class ScheduleService {
     public void cleanDatabaseFromDeletedFiles() {
         logger.info("Cleaning database from deleted files");
 
-        fileRepository.findAll().forEach(file -> {
-            if (!fileService.fileExistsInFileSystem(file.uuid)) {
-                fileService.removeFileFromDatabase(file.uuid);
+        List<String> uuidsToRemove = new ArrayList<>();
+        int page = 0;
+        final int BATCH_SIZE = 100;
+        Page<FileEntity> batch;
+        do {
+            batch = fileRepository.findAll(PageRequest.of(page++, BATCH_SIZE));
+            for (FileEntity file : batch) {
+                if (!fileService.fileExistsInFileSystem(file.uuid)) {
+                    uuidsToRemove.add(file.uuid);
+                }
             }
-        });
+        } while (batch.hasNext());
+        uuidsToRemove.forEach(uuid -> fileService.removeFileFromDatabase(uuid));
 
         // Remove legacy plaintext {uuid}-decrypted sidecars that have no active share tokens
         Path storageDir = Path.of(applicationSettingsService.getFileStoragePath());

@@ -57,7 +57,7 @@ public interface ShareTokenRepository extends JpaRepository<ShareTokenEntity, Lo
      * @param today today's date, used as the expiry cutoff (pass {@code LocalDate.now()})
      * @return list of tokens eligible for deletion
      */
-    @Query("SELECT s FROM ShareTokenEntity s WHERE s.tokenExpirationDate < :today OR s.numberOfAllowedDownloads = 0")
+    @Query("SELECT s FROM ShareTokenEntity s LEFT JOIN FETCH s.file WHERE s.tokenExpirationDate < :today OR s.numberOfAllowedDownloads = 0")
     List<ShareTokenEntity> getShareTokenEntitiesForDeletion(@Param("today") LocalDate today);
 
     /**

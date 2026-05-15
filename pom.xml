@@ -118,6 +118,11 @@
             <artifactId>spring-cloud-starter</artifactId>
             <version>4.2.0</version>
         </dependency>
+        <dependency>
+            <groupId>org.apache.xmlgraphics</groupId>
+            <artifactId>batik-transcoder</artifactId>
+            <version>1.18</version>
+        </dependency>
     </dependencies>
 
     <build>

@@ -221,10 +221,15 @@ public class FileUtils {
     }
 
     /**
-     * Returns an appropriate MIME type string for inline browser preview.
+     * Returns a MIME type string for the given file, suitable for the {@code Content-Type}
+     * response header when serving an inline preview.
      *
-     * @param fileName original filename (used to distinguish image subtypes)
-     * @param isImage  whether the file is an image
+     * <p>SVG files return {@code image/png} because they are transcoded to PNG by
+     * {@link org.rostislav.quickdrop.service.SvgRasterizationService} before streaming.
+     * All other image types without a specific match return {@code image/jpeg}.
+     *
+     * @param fileName the original filename, used to distinguish image subtypes
+     * @param isImage  whether the file is a previewable image
      * @param isText   whether the file is plain text
      * @param isPdf    whether the file is a PDF
      * @return MIME type string
@@ -234,6 +239,7 @@ public class FileUtils {
             if (fileName.toLowerCase().endsWith(".webp")) return "image/webp";
             if (fileName.toLowerCase().endsWith(".gif")) return "image/gif";
             if (fileName.toLowerCase().endsWith(".png")) return "image/png";
+            if (fileName.toLowerCase().endsWith(".svg")) return "image/png";
             return "image/jpeg";
         }
         if (isPdf) {

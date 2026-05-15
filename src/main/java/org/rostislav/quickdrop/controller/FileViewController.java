@@ -196,8 +196,8 @@ public class FileViewController {
             return "redirect:/";
         }
 
-        int pageNumber = Math.max(page, 0);
-        int pageSize = Math.min(Math.max(size, 1), 100);
+        int pageNumber = clampPage(page);
+        int pageSize = clampSize(size);
 
         Page<FileEntityView> filesPage = fileService.getVisibleFiles(PageRequest.of(pageNumber, pageSize), query)
                 .map(f -> new FileEntityView(f, 0L));
@@ -361,7 +361,7 @@ public class FileViewController {
         if (query == null || query.isBlank()) {
             return "redirect:/file/list";
         }
-        int pageSize = Math.min(Math.max(size, 1), 100);
+        int pageSize = clampSize(size);
         String encodedQuery = UriUtils.encodeQueryParam(query, java.nio.charset.StandardCharsets.UTF_8);
         return "redirect:/file/list?query=" + encodedQuery + "&page=0&size=" + pageSize;
     }

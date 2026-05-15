@@ -104,14 +104,18 @@ public class FileEncryptionService {
      */
     public InputStream getDecryptedInputStream(File inputFile, String password) throws Exception {
         FileInputStream fis = new FileInputStream(inputFile);
-        byte[] salt = fis.readNBytes(16);
-        byte[] iv = fis.readNBytes(16);
-        IvParameterSpec ivSpec = new IvParameterSpec(iv);
-        SecretKey secretKey = generateKeyFromPassword(password, salt);
-
-        Cipher cipher = Cipher.getInstance(ALGORITHM);
-        cipher.init(Cipher.DECRYPT_MODE, secretKey, ivSpec);
-        return new CipherInputStream(fis, cipher);
+        try {
+            byte[] salt = fis.readNBytes(16);
+            byte[] iv = fis.readNBytes(16);
+            IvParameterSpec ivSpec = new IvParameterSpec(iv);
+            SecretKey secretKey = generateKeyFromPassword(password, salt);
+            Cipher cipher = Cipher.getInstance(ALGORITHM);
+            cipher.init(Cipher.DECRYPT_MODE, secretKey, ivSpec);
+            return new CipherInputStream(fis, cipher);
+        } catch (Exception e) {
+            fis.close();
+            throw e;
+        }
     }
 
     /**
@@ -127,17 +131,19 @@ public class FileEncryptionService {
      */
     public OutputStream getEncryptedOutputStream(File finalFile, String password) throws Exception {
         FileOutputStream fos = new FileOutputStream(finalFile, true);
-        byte[] salt = generateRandomBytes();
-        byte[] iv = generateRandomBytes();
-
-        fos.write(salt);
-        fos.write(iv);
-
-        SecretKey secretKey = generateKeyFromPassword(password, salt);
-        IvParameterSpec ivSpec = new IvParameterSpec(iv);
-        Cipher cipher = Cipher.getInstance(ALGORITHM);
-
-        cipher.init(Cipher.ENCRYPT_MODE, secretKey, ivSpec);
-        return new CipherOutputStream(fos, cipher);
+        try {
+            byte[] salt = generateRandomBytes();
+            byte[] iv = generateRandomBytes();
+            fos.write(salt);
+            fos.write(iv);
+            SecretKey secretKey = generateKeyFromPassword(password, salt);
+            IvParameterSpec ivSpec = new IvParameterSpec(iv);
+            Cipher cipher = Cipher.getInstance(ALGORITHM);
+            cipher.init(Cipher.ENCRYPT_MODE, secretKey, ivSpec);
+            return new CipherOutputStream(fos, cipher);
+        } catch (Exception e) {
+            fos.close();
+            throw e;
+        }
     }
 }

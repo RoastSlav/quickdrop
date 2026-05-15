@@ -1,4 +1,4 @@
-package org.rostislav.quickdrop.controller;
+﻿package org.rostislav.quickdrop.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
@@ -29,6 +29,8 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.rostislav.quickdrop.util.FileUtils.bytesToMegabytes;
+import static org.rostislav.quickdrop.util.FileUtils.clampPage;
+import static org.rostislav.quickdrop.util.FileUtils.clampSize;
 import static org.rostislav.quickdrop.util.FileUtils.megabytesToBytes;
 
 /**
@@ -85,8 +87,8 @@ public class AdminViewController {
                                @RequestParam(name = "size", defaultValue = "20") int size,
                                @RequestParam(name = "query", required = false) String query,
                                Model model) {
-        int pageNumber = Math.max(page, 0);
-        int pageSize = Math.min(Math.max(size, 1), 100);
+        int pageNumber = clampPage(page);
+        int pageSize = clampSize(size);
 
         Page<FileEntityView> filesPage = fileService.getFilesWithDownloadCounts(PageRequest.of(pageNumber, pageSize), query);
         model.addAttribute("filesPage", filesPage);
@@ -104,8 +106,8 @@ public class AdminViewController {
                                 @RequestParam(name = "size", defaultValue = "20") int size,
                                 @RequestParam(name = "query", required = false) String query,
                                 Model model) {
-        int pageNumber = Math.max(page, 0);
-        int pageSize = Math.min(Math.max(size, 1), 100);
+        int pageNumber = clampPage(page);
+        int pageSize = clampSize(size);
 
         Page<PasteEntityView> pastesPage = fileService.getPaginatedPastes(PageRequest.of(pageNumber, pageSize), query);
         model.addAttribute("pastesPage", pastesPage);
@@ -181,17 +183,8 @@ public class AdminViewController {
                                @RequestParam(value = "appLogo", required = false) MultipartFile appLogo,
                                @RequestParam(value = "clearLogo", required = false, defaultValue = "false") boolean clearLogo,
                                HttpServletRequest request) {
-        settings.setMaxFileSize(megabytesToBytes(settings.getMaxFileSize()));
-        if (request.getParameter("maxPreviewSizeBytes") != null) {
-            try {
-                long previewMb = Long.parseLong(request.getParameter("maxPreviewSizeBytes"));
-                settings.setMaxPreviewSizeBytes(previewMb * 1024 * 1024);
-            } catch (NumberFormatException ignored) {
-            }
-        }
-        try {
-            CronExpression.parse(settings.getFileDeletionCron());
-        } catch (IllegalArgumentException ex) {
+        String cronError = applySettingsPreprocessing(settings, request);
+        if (cronError != null) {
             return "redirect:settings?error=invalidCron";
         }
         applicationSettingsService.updateApplicationSettings(settings, settings.getAppPassword(), appLogo, clearLogo);
@@ -204,6 +197,15 @@ public class AdminViewController {
                                                   @RequestParam(value = "appLogo", required = false) MultipartFile appLogo,
                                                   @RequestParam(value = "clearLogo", required = false, defaultValue = "false") boolean clearLogo,
                                                   HttpServletRequest request) {
+        String cronError = applySettingsPreprocessing(settings, request);
+        if (cronError != null) {
+            return ResponseEntity.badRequest().body("Invalid cron expression");
+        }
+        applicationSettingsService.updateApplicationSettings(settings, settings.getAppPassword(), appLogo, clearLogo);
+        return ResponseEntity.ok("Settings saved");
+    }
+
+    private String applySettingsPreprocessing(ApplicationSettingsViewModel settings, HttpServletRequest request) {
         settings.setMaxFileSize(megabytesToBytes(settings.getMaxFileSize()));
         if (request.getParameter("maxPreviewSizeBytes") != null) {
             try {
@@ -214,11 +216,10 @@ public class AdminViewController {
         }
         try {
             CronExpression.parse(settings.getFileDeletionCron());
+            return null;
         } catch (IllegalArgumentException ex) {
-            return ResponseEntity.badRequest().body("Invalid cron expression");
+            return "invalidCron";
         }
-        applicationSettingsService.updateApplicationSettings(settings, settings.getAppPassword(), appLogo, clearLogo);
-        return ResponseEntity.ok("Settings saved");
     }
 
     @PostMapping("/password")
@@ -303,8 +304,8 @@ public class AdminViewController {
                                     @RequestParam(defaultValue = "created") String sortBy,
                                     @RequestParam(defaultValue = "desc") String sortDir,
                                     Model model) {
-        int pageNumber = Math.max(page, 0);
-        int pageSize = Math.min(Math.max(size, 1), 100);
+        int pageNumber = clampPage(page);
+        int pageSize = clampSize(size);
 
         Boolean isPaste = switch (type != null ? type : "") {
             case "file" -> false;
@@ -386,8 +387,8 @@ public class AdminViewController {
                                   @RequestParam(name = "page", defaultValue = "0") int page,
                                   @RequestParam(name = "size", defaultValue = "30") int size,
                                   Model model) {
-        int pageNumber = Math.max(page, 0);
-        int pageSize = Math.min(Math.max(size, 1), 100);
+        int pageNumber = clampPage(page);
+        int pageSize = clampSize(size);
 
         LocalDateTime start = null;
         LocalDateTime end = null;
@@ -449,3 +450,4 @@ public class AdminViewController {
         };
     }
 }
+

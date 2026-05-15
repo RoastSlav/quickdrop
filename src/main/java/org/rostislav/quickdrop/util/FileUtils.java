@@ -55,6 +55,16 @@ public class FileUtils {
         // Prevent instantiation
     }
 
+    /** Returns {@code page} clamped to a minimum of {@code 0}. */
+    public static int clampPage(int page) {
+        return Math.max(page, 0);
+    }
+
+    /** Returns {@code size} clamped to the range {@code [1, 100]}. */
+    public static int clampSize(int size) {
+        return Math.min(Math.max(size, 1), 100);
+    }
+
     /**
      * Wraps an {@link InputStream} in a {@link StreamingResponseBody} that copies
      * all bytes to the response output stream in 8 KB chunks.

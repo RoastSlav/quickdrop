@@ -46,12 +46,7 @@ public class DataValidator {
      * @param value the potentially null value
      * @return primitive double, defaulting to zero
      */
-    public static double safeNumber(Double value) {
-        if (value == null) {
-            return 0;
-        }
-        return value;
-    }
+    public static double safeNumber(Double value) { return value == null ? 0 : value; }
 
     /**
      * Returns the {@code Integer} value, or {@code 0} if it is {@code null}.
@@ -59,12 +54,7 @@ public class DataValidator {
      * @param value the potentially null value
      * @return primitive int, defaulting to zero
      */
-    public static int safeNumber(Integer value) {
-        if (value == null) {
-            return 0;
-        }
-        return value;
-    }
+    public static int safeNumber(Integer value) { return value == null ? 0 : value; }
 
     /**
      * Returns the {@code Long} value, or {@code 0} if it is {@code null}.
@@ -72,12 +62,7 @@ public class DataValidator {
      * @param value the potentially null value
      * @return primitive long, defaulting to zero
      */
-    public static long safeNumber(Long value) {
-        if (value == null) {
-            return 0;
-        }
-        return value;
-    }
+    public static long safeNumber(Long value) { return value == null ? 0 : value; }
 
     /**
      * Returns the {@code Boolean} value, or {@code false} if it is {@code null}.
@@ -85,10 +70,5 @@ public class DataValidator {
      * @param value the potentially null value
      * @return primitive boolean, defaulting to false
      */
-    public static boolean safeBoolean(Boolean value) {
-        if (value == null) {
-            return false;
-        }
-        return value;
-    }
+    public static boolean safeBoolean(Boolean value) { return value != null && value; }
 }

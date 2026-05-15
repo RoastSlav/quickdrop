@@ -11,10 +11,7 @@ import java.nio.file.Path;
 /**
  * An in-memory {@link MultipartFile} implementation backed by a byte array.
  *
- * <p>Used when paste content needs to be fed through the same chunked-upload
- * pipeline as regular file uploads without writing to a temporary file first.
- * The content byte array is defensively copied on {@link #getBytes()} to prevent
- * external mutation.
+ * <p>The content byte array is defensively copied on {@link #getBytes()}.
  */
 public class InMemoryMultipartFile implements MultipartFile {
     private final String name;

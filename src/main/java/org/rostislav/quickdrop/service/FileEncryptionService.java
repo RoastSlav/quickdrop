@@ -16,8 +16,7 @@ import java.security.spec.InvalidKeySpecException;
 /**
  * AES/CBC encryption and decryption service for uploaded files.
  *
- * <p>When a file is uploaded with a password and encryption is enabled, the
- * file is stored on disk in an encrypted format. The on-disk layout is:
+ * <p>The on-disk layout is:
  * <pre>
  *   [16 bytes salt][16 bytes IV][AES-CBC ciphertext…]
  * </pre>
@@ -96,10 +95,7 @@ public class FileEncryptionService {
 
     /**
      * Returns an {@link InputStream} that transparently decrypts an AES/CBC-encrypted file.
-     *
-     * <p>The stream reads the salt and IV header bytes, derives the key, and wraps the
-     * remaining file bytes in a {@link CipherInputStream}. The caller is responsible for
-     * closing the returned stream.
+     * The caller is responsible for closing the returned stream.
      *
      * @param inputFile the encrypted file to read
      * @param password  the cleartext password used at encryption time
@@ -122,8 +118,7 @@ public class FileEncryptionService {
      * Returns an {@link OutputStream} that transparently encrypts data written to it
      * and appends the result to the given file, preceded by the salt and IV header.
      *
-     * <p>The caller is responsible for closing the returned stream, which will
-     * finalise the cipher and flush the last block.
+     * The caller is responsible for closing the returned stream.
      *
      * @param finalFile the destination file (opened in append mode)
      * @param password  the cleartext password to encrypt with

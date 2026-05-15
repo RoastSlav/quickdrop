@@ -107,9 +107,8 @@ public class ScheduleService {
      * Deletes files that have exceeded the configured maximum lifetime.
      *
      * <p>Only files with {@code keepIndefinitely = false} and an {@code uploadDate}
-     * strictly before {@code today - maxFileLifeTime} are eligible. Files are removed
-     * from the filesystem first; only those successfully removed are then deleted from
-     * the database (along with their history logs).
+     * strictly before {@code today - maxFileLifeTime} are eligible. Files not removed
+     * from the filesystem are not removed from the database.
      *
      * @param maxFileLifeTime maximum file age in days
      */
@@ -146,8 +145,8 @@ public class ScheduleService {
 
     /**
      * Removes database rows for files whose physical file no longer exists on disk,
-     * then cleans up any orphaned legacy {@code {uuid}-decrypted} sidecar files whose
-     * share tokens have all expired or been exhausted.
+     * then removes {@code {uuid}-decrypted} sidecar files whose share tokens have
+     * all expired or been exhausted.
      *
      * <p>Runs daily at 03:00.
      */

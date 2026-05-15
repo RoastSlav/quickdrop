@@ -57,8 +57,8 @@ import static org.rostislav.quickdrop.util.FileUtils.*;
  *       {@link #deleteFileFromDatabaseAndFileSystem}, {@link #removeFileFromDatabase}).</li>
  * </ul>
  *
- * <p>Several methods are annotated with {@link CacheEvict} to keep the {@code publicFiles},
- * {@code adminFiles}, {@code adminPastes}, and {@code analytics} caches consistent.
+ * <p>Mutating methods are annotated with {@link CacheEvict} on the {@code publicFiles},
+ * {@code adminFiles}, {@code adminPastes}, and {@code analytics} caches.
  * Paginated list queries are backed by {@link Cacheable} caches keyed by page, size, and
  * optional search query.
  */
@@ -192,8 +192,8 @@ public class FileService {
 
     /**
      * Deletes a file from both the filesystem and the database in a single transaction.
-     * The filesystem deletion is attempted first; if it fails the database record is left
-     * intact so the discrepancy can be resolved later by the maintenance schedule.
+     * If the filesystem deletion fails, the database record is not removed and the method
+     * returns {@code false}.
      *
      * @param uuid the file UUID
      * @return {@code true} if both deletions succeeded
@@ -221,7 +221,7 @@ public class FileService {
      * and sends a deletion notification. Does not touch the filesystem.
      *
      * <p>All share sidecars ({@code {uuid}-share-{token}}) are deleted before the token
-     * rows are removed so no orphaned encrypted sidecars remain on disk.
+     * rows are removed.
      *
      * @param uuid the file UUID
      * @return {@code true} if the record was found and removed, {@code false} if not found
@@ -247,8 +247,7 @@ public class FileService {
     /**
      * Streams a file to the client as an attachment, decrypting it if necessary.
      *
-     * <p>The file password is read from the session token stored in the HTTP session.
-     * Returns {@code 404} if the file is not found, {@code 500} if decryption fails.
+     * <p>Returns {@code 404} if the file is not found, {@code 500} if decryption fails.
      *
      * @param uuid    the file UUID
      * @param request the HTTP request (used to extract the session token for the file password)
@@ -293,8 +292,8 @@ public class FileService {
      * are supported), and {@code 428} if the file exceeds the configured preview size limit
      * and {@code manualOverride} is {@code false}.
      *
-     * <p>SVG files are transcoded to PNG via {@link SvgRasterizationService#rasterizeToPng}
-     * before streaming. If transcoding fails the method returns {@code 415}.
+     * <p>SVG files are served with {@code Content-Type: image/png}. If SVG-to-PNG
+     * conversion fails the method returns {@code 415}.
      *
      * @param uuid           the file UUID
      * @param request        the HTTP request carrying the session token used for decryption
@@ -374,8 +373,7 @@ public class FileService {
     /**
      * Returns {@code true} if the current HTTP session is authorised to access the file.
      *
-     * <p>Files without a password hash are always accessible. Password-protected files
-     * require a valid file session token in the HTTP session that is bound to the requested UUID.
+     * <p>Files without a password hash are always accessible.
      *
      * @param uuid    the file UUID
      * @param request the HTTP request carrying the session
@@ -600,10 +598,7 @@ public class FileService {
     /**
      * Creates a new paste from the provided title, content, and syntax hint.
      *
-     * <p>The content is written to disk as a single-chunk upload via
-     * {@link AsyncFileMergeService}. Paste files are always marked {@code hidden}.
-     * The filename is derived from the title with the extension {@code .md} for Markdown
-     * syntax and {@code .txt} otherwise.
+     * <p>The resulting file entity is marked {@code hidden}.
      *
      * @param title           paste title (used as the stored filename after sanitization)
      * @param content         paste body text
@@ -661,10 +656,8 @@ public class FileService {
     /**
      * Overwrites the content of an existing paste.
      *
-     * <p>The new content is written to a temporary file alongside the original, then
-     * atomically replaced with {@link StandardCopyOption#REPLACE_EXISTING}. For encrypted
-     * pastes the existing password from the session token is reused; the request is
-     * rejected if the session is missing or the password cannot be retrieved.
+     * <p>Returns {@code null} if the UUID does not refer to a paste.
+     * Throws {@link IllegalArgumentException} if the paste is encrypted but no valid session exists.
      *
      * @param uuid            the paste UUID
      * @param title           new paste title (used to derive the filename)
@@ -724,9 +717,8 @@ public class FileService {
     /**
      * Reads and returns the full text content of a paste.
      *
-     * <p>Decrypts the content if the paste is encrypted, using the password from the
-     * current file session token. Returns {@code null} if the UUID is not found, does
-     * not refer to a paste, or if an I/O error occurs.
+     * <p>Decrypts the content if the paste is encrypted. Returns {@code null} if the
+     * UUID is not found, does not refer to a paste, or if an I/O error occurs.
      *
      * @param uuid    the paste UUID
      * @param request the HTTP request (provides session token for decryption)
@@ -781,8 +773,8 @@ public class FileService {
      * Resolves the effective upload options for a paste based on admin session state
      * and global settings.
      *
-     * <p>{@code keepIndefinitely} is only honoured if the setting is unrestricted or the
-     * request carries an admin session. Passwords are suppressed entirely when upload
+     * <p>{@code keepIndefinitely} is applied only when the setting is unrestricted or the
+     * request carries an admin session. The password is set to {@code null} when upload
      * passwords are disabled in settings.
      *
      * @param keepIndefinitely requested keep-indefinitely flag
@@ -816,9 +808,6 @@ public class FileService {
     /**
      * Sanitizes a paste title and appends the appropriate extension based on syntax.
      *
-     * <p>Special characters (anything other than alphanumerics, dots, spaces, underscores,
-     * and hyphens) are replaced with underscores. Any trailing {@code .txt} or {@code .md}
-     * extension in the title is stripped before the canonical extension is appended.
      *
      * @param title  paste title, or {@code null} / blank for a default name
      * @param syntax {@code "markdown"} for {@code .md}, anything else for {@code .txt}
@@ -843,20 +832,14 @@ public class FileService {
      * a share token, decrementing the remaining download count and deleting the token
      * when exhausted.
      *
-     * <p>New-style tokens (where {@link ShareTokenEntity#shareKeyHash} is non-null) have an
-     * AES-encrypted sidecar at {@code {uuid}-share-{token}}. The share key is read from the
-     * HTTP session (stored there by {@link org.rostislav.quickdrop.controller.ShareViewController}
-     * after BCrypt verification) and used to decrypt the sidecar on-the-fly. If the sidecar
-     * file is missing (e.g. already deleted after a prior exhausted download), the broken
-     * token is removed via {@link org.rostislav.quickdrop.repository.ShareTokenRepository#deleteByIdTransactional}
-     * and {@code null} is returned without logging a download event.
+     * <p>For tokens with a non-null {@link ShareTokenEntity#shareKeyHash}, the sidecar at
+     * {@code {uuid}-share-{token}} is decrypted using the share key from the HTTP session.
+     * Returns {@code null} if the sidecar is missing, and deletes the token in that case.
+     * A {@link org.rostislav.quickdrop.model.FileHistoryType#SHARE_DOWNLOAD} entry is written
+     * only when the sidecar exists.
      *
-     * <p>The {@link org.rostislav.quickdrop.model.FileHistoryType#SHARE_DOWNLOAD} history
-     * entry is written only after confirming the sidecar exists, so failed attempts are
-     * not recorded as downloads.
-     *
-     * <p>Legacy tokens ({@code shareKeyHash == null}) fall back to streaming a plaintext
-     * {@code {uuid}-decrypted} sidecar if one exists, or the raw file otherwise.
+     * <p>For tokens with a null {@link ShareTokenEntity#shareKeyHash}, streams
+     * {@code {uuid}-decrypted} if it exists, otherwise the raw file.
      *
      * @param shareTokenEntity the validated share token
      * @param request          the HTTP request (for history logging and session key lookup)
@@ -920,11 +903,6 @@ public class FileService {
     /**
      * Decrements the remaining download count on a share token after a successful
      * download and deletes the token (and its sidecar) if it is now exhausted or expired.
-     * Deletion uses {@link org.rostislav.quickdrop.repository.ShareTokenRepository#deleteByIdTransactional}
-     * (a targeted {@code @Modifying @Transactional} JPQL DELETE) because this method runs
-     * inside the {@link org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody}
-     * lambda on Spring's async streaming thread, where the JPA persistence context from
-     * the original request thread is already closed.
      *
      * @param shareTokenEntity the share token to update
      * @param fileEntity       the file that was streamed (used only for logging)
@@ -945,7 +923,7 @@ public class FileService {
 
     /**
      * Deletes the re-encrypted sidecar file for a share token, if one exists.
-     * Only acts on new-style tokens ({@link ShareTokenEntity#shareKeyHash} non-null).
+     * Has no effect when {@link ShareTokenEntity#shareKeyHash} is {@code null}.
      * Silently ignores missing files.
      *
      * @param token the share token whose sidecar should be removed
@@ -966,7 +944,7 @@ public class FileService {
      * Updates the {@code keepIndefinitely} flag on a file.
      *
      * <p>When the flag is cleared (set to {@code false}) the file's upload date is
-     * also reset to today via {@link #extendFile}, restarting the deletion countdown.
+     * also reset to today via {@link #extendFile}.
      * If the {@code keepIndefinitelyAdminOnly} setting is active, non-admin requests
      * are silently rejected and the unchanged entity is returned.
      *
@@ -1075,17 +1053,14 @@ public class FileService {
     /**
      * Generates a share token for a password-protected file.
      *
-     * <p>For encrypted files a randomly generated share key is BCrypt-hashed and stored
-     * in the token; the plaintext key is returned so the caller can embed it in the share
-     * URL. Sidecar re-encryption (decrypt original → re-encrypt with share key) is
-     * submitted to {@link ShareEncryptionService} and runs in the background, so this
-     * method returns immediately. The returned token will have
-     * {@link ShareTokenEntity#sidecarReady} set to {@code false}; callers should surface
-     * this to the creator and recipients accordingly. No plaintext copy ever touches disk.
+     * <p>For encrypted files, a randomly generated share key is BCrypt-hashed and stored
+     * in the token; the plaintext key is returned in the result. A sidecar re-encryption
+     * task is submitted asynchronously; the returned token has
+     * {@link ShareTokenEntity#sidecarReady} set to {@code false} until the task completes.
      *
-     * <p>For files with a password but encryption disabled the non-encrypted 3-param
-     * overload handles token creation (reusing unlimited tokens when applicable) and this
-     * method wraps the result with a {@code null} share key and {@code sidecarReady = true}.
+     * <p>For non-encrypted files with a password, delegates to
+     * {@link #generateShareToken(String, LocalDate, Integer)} and returns a {@code null}
+     * share key with {@code sidecarReady = true}.
      *
      * @param uuid                the file UUID
      * @param tokenExpirationDate optional expiry date
@@ -1142,9 +1117,6 @@ public class FileService {
     /**
      * Records a {@link FileHistoryType#SHARE_CREATE} log entry for the given file.
      *
-     * <p>Called from the controller layer after a share token is successfully generated
-     * so that the requester's real IP address and user-agent are captured from the
-     * HTTP request.
      *
      * @param file    the file for which a share token was created
      * @param request the HTTP request that triggered token generation

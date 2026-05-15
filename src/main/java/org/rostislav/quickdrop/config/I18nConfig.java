@@ -21,13 +21,11 @@ import java.util.Locale;
  *
  * <p>Locale is persisted in a cookie named {@code lang} (24-hour TTL). When no
  * cookie is present the default locale is read from
- * {@link ApplicationSettingsService#getDefaultLanguage()} so that the admin can
- * change the site-wide default without restarting. Users can switch locale by
+ * {@link ApplicationSettingsService#getDefaultLanguage()}. Users can switch locale by
  * appending {@code ?lang=<tag>} to any request URL.
  *
  * <p>Message bundles are loaded from {@code classpath:messages*.properties} with
- * UTF-8 encoding. Validation messages resolve through the same {@link MessageSource}
- * so that constraint violation texts are also translated.
+ * UTF-8 encoding. Validation messages resolve through the same {@link MessageSource}.
  */
 @Configuration
 public class I18nConfig implements WebMvcConfigurer {

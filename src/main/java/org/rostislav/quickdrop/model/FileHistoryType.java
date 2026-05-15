@@ -3,8 +3,7 @@ package org.rostislav.quickdrop.model;
 /**
  * Categorises the events that can be recorded in a {@link org.rostislav.quickdrop.entity.FileHistoryLog}.
  *
- * <p>Values are persisted as strings ({@code EnumType.STRING}) so that adding new
- * constants does not require a database migration.
+ * <p>Values are persisted as strings ({@code EnumType.STRING}).
  */
 public enum FileHistoryType {
     /**

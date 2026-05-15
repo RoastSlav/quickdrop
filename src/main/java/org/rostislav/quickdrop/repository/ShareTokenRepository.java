@@ -22,14 +22,8 @@ import java.util.Optional;
  * {@link #getShareTokenEntitiesForDeletion(LocalDate)} and removed by the nightly sweep
  * in {@link org.rostislav.quickdrop.service.ScheduleService#cleanShareTokens()}.
  *
- * <p><strong>SQLite date storage note:</strong> Hibernate stores {@link LocalDate} and
- * {@link java.time.LocalDateTime} as epoch-millisecond integers in SQLite. JPQL's
- * {@code CURRENT_DATE} function generates {@code date('now')} which returns a text
- * string; comparing an integer column against a text value always evaluates to
- * {@code false} in SQLite (integers sort before text). All date-range predicates in
- * this repository therefore bind a Java {@code LocalDate} parameter instead of using
- * {@code CURRENT_DATE} so that Hibernate serialises both sides to the same integer
- * representation.
+ * <p>All date-range predicates bind a Java {@code LocalDate} parameter rather than
+ * using JPQL's {@code CURRENT_DATE}.
  */
 public interface ShareTokenRepository extends JpaRepository<ShareTokenEntity, Long> {
 
@@ -42,8 +36,7 @@ public interface ShareTokenRepository extends JpaRepository<ShareTokenEntity, Lo
     Optional<ShareTokenEntity> findByShareToken(String shareToken);
 
     /**
-     * Checks whether a given token string already exists (used during token generation
-     * to guarantee uniqueness).
+     * Checks whether a given token string already exists.
      *
      * @param shareToken the candidate token string
      * @return {@code true} if the token is already in use
@@ -51,8 +44,7 @@ public interface ShareTokenRepository extends JpaRepository<ShareTokenEntity, Lo
     boolean existsByShareToken(String shareToken);
 
     /**
-     * Removes all share tokens associated with a given file (called before the file
-     * is deleted to avoid orphaned token rows).
+     * Removes all share tokens associated with a given file.
      *
      * @param fileEntity the file whose tokens should be removed
      */

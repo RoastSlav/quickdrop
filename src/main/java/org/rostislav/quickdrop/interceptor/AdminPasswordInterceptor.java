@@ -9,13 +9,7 @@ import org.springframework.web.servlet.HandlerInterceptor;
 /**
  * Guards {@code /admin/**} and {@code /file/history/*} behind a valid admin session token.
  *
- * <p>An admin session token is placed in the HTTP session after a successful password
- * check at {@code POST /admin/password} and validated in memory by
- * {@link SessionService#validateAdminToken(String)}. The token is invalidated when
- * the session expires or when the user logs out.
- *
- * <p>The {@code /admin/logout} path is explicitly allowed through so that the logout
- * action itself is not blocked.
+ * <p>The {@code /admin/logout} path bypasses this check.
  */
 @Component
 public class AdminPasswordInterceptor implements HandlerInterceptor {

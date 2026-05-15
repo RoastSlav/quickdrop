@@ -35,14 +35,10 @@ import java.util.List;
  * form-based authentication. When the setting is disabled, all requests are
  * permitted without authentication.
  *
- * <p>The {@link SecurityFilterChain} bean is {@link RefreshScope}-scoped so that
- * toggling the app password in the admin settings panel takes effect without a
- * restart.
- *
- * <p>CSRF protection uses a cookie-based token repository (readable by JavaScript)
- * to support the htmx/Alpine.js frontend. The {@code X-Frame-Options} header is
- * disabled and replaced with a permissive {@code Content-Security-Policy:
- * frame-ancestors *} to allow embedding.
+ * <p>The {@link SecurityFilterChain} bean is {@link RefreshScope}-scoped.
+ * CSRF protection uses a cookie-based token repository (readable by JavaScript).
+ * {@code X-Frame-Options} is disabled; {@code Content-Security-Policy: frame-ancestors *}
+ * is set instead.
  */
 @Configuration
 @EnableWebSecurity
@@ -105,7 +101,7 @@ public class SecurityConfig {
 
     /**
      * CORS configuration that allows all origins and the standard request headers.
-     * Credentials are allowed so that cookie-based sessions work cross-origin.
+     * Credentials are allowed.
      *
      * @return the CORS configuration source
      */

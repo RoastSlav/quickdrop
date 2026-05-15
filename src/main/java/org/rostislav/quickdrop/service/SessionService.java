@@ -16,9 +16,7 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * In-memory session management for admin and file-level access tokens.
  *
- * <p>Implements {@link HttpSessionListener} so that tokens stored in the HTTP session
- * are automatically removed from the in-memory maps when the session expires,
- * preventing stale token accumulation.
+ * <p>Implements {@link HttpSessionListener} to remove tokens when their HTTP session expires.
  *
  * <p>Two separate token stores are maintained:
  * <ul>
@@ -26,7 +24,6 @@ import java.util.concurrent.ConcurrentHashMap;
  *   <li>{@code fileSessions} — token → {@link FileSession} mappings that bind a token to
  *       the cleartext password and UUID of a password-protected file.</li>
  * </ul>
- * Both maps use {@link ConcurrentHashMap} for thread-safe access under concurrent requests.
  */
 @Component
 public class SessionService implements HttpSessionListener {

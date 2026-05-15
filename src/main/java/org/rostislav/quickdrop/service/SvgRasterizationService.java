@@ -18,10 +18,9 @@ import java.io.InputStream;
 /**
  * Transcodes SVG files to PNG bitmaps using Apache Batik.
  *
- * <p>Script execution ({@code KEY_EXECUTE_ONLOAD = false}) and external resource loading
- * ({@code KEY_CONSTRAIN_SCRIPT_ORIGIN = true}) are disabled during transcoding. Any attempt
- * by Batik to load a script or external resource throws {@link SecurityException}, which is
- * wrapped and re-thrown as {@link IOException}. Canvas dimensions are capped at
+ * <p>Script execution and external resource loading are disabled. Any attempt to load
+ * a script or external resource throws {@link SecurityException}, wrapped as
+ * {@link IOException}. Canvas dimensions are capped at
  * {@value #MAX_DIMENSION}×{@value #MAX_DIMENSION} px and {@value #MAX_PIXELS} total pixels.
  */
 @Service

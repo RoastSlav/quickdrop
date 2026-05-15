@@ -26,11 +26,8 @@ import static org.rostislav.quickdrop.util.FileUtils.formatFileSize;
  * runtime updates to those settings.
  *
  * <p>The settings entity is cached under the {@code applicationSettings} cache.
- * Because {@link #getApplicationSettings()} is annotated with {@link Cacheable},
- * it must be invoked through the Spring proxy to benefit from caching. All
- * delegating getter methods therefore call through {@code self} — a
- * {@link Lazy @Lazy}-injected reference to this bean — rather than calling
- * {@code getApplicationSettings()} directly on {@code this}.
+ * Getter methods route calls through {@code self}, a {@link Lazy @Lazy}-injected
+ * self-reference, to ensure cache interception is applied.
  *
  * <p>On startup ({@link #initSettings()}) the settings row is created with
  * sensible defaults if it does not yet exist. After the application context is
@@ -38,9 +35,7 @@ import static org.rostislav.quickdrop.util.FileUtils.formatFileSize;
  * initialised with the persisted cron expression and max file lifetime.
  *
  * <p>{@link #updateApplicationSettings} evicts the cache, persists all changed
- * fields, updates the cleanup schedule, and triggers a Spring Cloud
- * {@link ContextRefresher#refresh()} so that {@code @RefreshScope} beans (e.g.
- * multipart config) pick up the new max file size.
+ * fields, updates the cleanup schedule, and triggers a Spring Cloud context refresh.
  */
 @Service
 public class ApplicationSettingsService {
@@ -48,16 +43,14 @@ public class ApplicationSettingsService {
     private final ContextRefresher contextRefresher;
 
     /**
-     * Self-reference used to route {@link #getApplicationSettings()} calls through the
-     * Spring AOP proxy so that {@link Cacheable} is honoured. Without this, direct
-     * {@code this.getApplicationSettings()} calls would bypass the cache.
+     * Self-reference for routing calls through the Spring AOP proxy.
      */
     @Lazy
     @Autowired
     private ApplicationSettingsService self;
 
     /**
-     * Injected lazily to avoid a circular dependency with {@link ScheduleService}.
+     * Lazily injected {@link ScheduleService}.
      */
     @Lazy
     @Autowired
@@ -125,9 +118,8 @@ public class ApplicationSettingsService {
     }
 
     /**
-     * Fires the initial cleanup schedule once the application context is fully started.
-     * Uses the persisted cron and max lifetime rather than the hardcoded defaults so that
-     * a previously saved schedule takes effect immediately.
+     * Fires the initial cleanup schedule once the application context is fully started,
+     * using the persisted cron expression and max file lifetime.
      */
     @EventListener(ApplicationReadyEvent.class)
     public void onApplicationReady() {
@@ -151,10 +143,10 @@ public class ApplicationSettingsService {
      * cleanup schedule, and triggers a Spring Cloud context refresh.
      *
      * <p>The SMTP password is only overwritten if a non-blank value is provided in the
-     * view-model, preserving the existing password otherwise. Disabling upload passwords
-     * also implicitly disables encryption. If {@code clearLogo} is {@code true} the
-     * stored logo filename is cleared; otherwise a non-empty {@code logoFile} is saved
-     * to the {@code branding/} directory and the filename is recorded.
+     * view-model. When upload passwords are disabled, encryption is also disabled.
+     * If {@code clearLogo} is {@code true} the stored logo filename is cleared;
+     * otherwise a non-empty {@code logoFile} is saved to the {@code branding/}
+     * directory and the filename is recorded.
      *
      * @param settings    the updated settings from the admin form
      * @param appPassword new plaintext app password, or {@code null}/{@code ""} to leave unchanged

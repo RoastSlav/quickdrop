@@ -57,10 +57,10 @@ import static org.rostislav.quickdrop.util.FileUtils.*;
  *       {@link #deleteFileFromDatabaseAndFileSystem}, {@link #removeFileFromDatabase}).</li>
  * </ul>
  *
- * <p>Mutating methods are annotated with {@link CacheEvict} on the {@code publicFiles},
- * {@code adminFiles}, {@code adminPastes}, and {@code analytics} caches.
- * Paginated list queries are backed by {@link Cacheable} caches keyed by page, size, and
- * optional search query.
+ * <p>Most mutating methods are annotated with {@link CacheEvict} to keep the
+ * {@code publicFiles}, {@code adminFiles}, {@code adminPastes}, and {@code analytics}
+ * caches consistent. Paginated list queries are backed by {@link Cacheable} caches
+ * keyed by page, size, and optional search query.
  */
 @Service
 public class FileService {

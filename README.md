@@ -83,6 +83,9 @@ restart required for configuration changes.
 ### File Previews
 
 - **Supported formats** — images (PNG, JPEG, GIF, WebP, SVG, …), plain text and code files, PDF, JSON, and CSV/TSV.
+- **SVG rasterization** — SVG files are transcoded to PNG server-side using Apache Batik before delivery. Script
+  execution and external resource loading are disabled during transcoding, so the preview is sandboxed regardless of
+  what the SVG contains.
 - **Size gate** — previews above a configurable limit require a manual override click so large files don't auto-load.
 - **Toggle** — previews can be disabled globally.
 
@@ -176,6 +179,7 @@ expression is validated client-side before the form can be saved.
 | Templates       | Thymeleaf (with Spring Security dialect)                      |
 | CSS             | Tailwind CSS + custom styles                                  |
 | Runtime config  | Spring Cloud Context (`@RefreshScope`)                        |
+| SVG rendering   | Apache Batik (server-side SVG-to-PNG transcoder)              |
 | Email           | Spring Mail (JavaMailSender)                                  |
 | Build           | Maven                                                         |
 | Container       | Docker (multi-stage: Maven builder → jlink slim JRE → Alpine) |

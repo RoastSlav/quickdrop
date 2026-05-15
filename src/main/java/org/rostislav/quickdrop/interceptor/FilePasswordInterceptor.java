@@ -14,10 +14,9 @@ import java.util.Map;
 /**
  * Enforces per-file password requirements on {@code /file/**} routes.
  *
- * <p>When a password-protected file is accessed without a valid file session token
- * in the HTTP session, the request is redirected to the password entry page
- * ({@code /file/password/{uuid}}). Shared file downloads ({@code GET /file/share/**})
- * bypass this check because they are validated separately by share token.
+ * <p>When a password-protected file is accessed without a valid file session token,
+ * the request is redirected to {@code /file/password/{uuid}}.
+ * Shared file downloads ({@code GET /file/share/**}) bypass this check.
  *
  * <p>Routes excluded from this interceptor (e.g. upload, list, paste) are declared
  * in {@link org.rostislav.quickdrop.config.WebConfig}.

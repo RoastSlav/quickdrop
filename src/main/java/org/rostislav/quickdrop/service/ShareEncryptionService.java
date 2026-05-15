@@ -16,11 +16,8 @@ import java.util.concurrent.TimeUnit;
 /**
  * Handles re-encryption of file sidecars for share links in a background thread pool.
  *
- * <p>When a share link is created for an encrypted file the sidecar encryption is
- * submitted here so the HTTP request returns immediately. The share token is saved to
- * the database with {@code sidecarReady = false}; once this service completes the work
- * it flips the flag to {@code true}. If encryption fails the token is deleted so the
- * creator can try again rather than being left with a permanently broken link.
+ * <p>On completion, flips {@link org.rostislav.quickdrop.entity.ShareTokenEntity#sidecarReady}
+ * to {@code true}. On failure, deletes the token.
  */
 @Service
 public class ShareEncryptionService {
@@ -46,12 +43,9 @@ public class ShareEncryptionService {
      * Submits a background task that decrypts the original file and re-encrypts it
      * into a sidecar at {@code {storagePath}/{uuid}-share-{token}}.
      *
-     * <p>On success: calls {@link ShareTokenRepository#markSidecarReady(Long)} to flip
-     * only the {@code sidecar_ready} column to {@code true}, leaving all other columns
-     * (including {@code created_at}) untouched.
-     * On failure: logs the error, removes any partial sidecar file, and calls
-     * {@link ShareTokenRepository#deleteByIdTransactional(Long)} so the creator can
-     * retry without being left with a permanently broken link.
+     * <p>On success: calls {@link ShareTokenRepository#markSidecarReady(Long)}.
+     * On failure: removes any partial sidecar file and calls
+     * {@link ShareTokenRepository#deleteByIdTransactional(Long)}.
      *
      * @param uuid          the file UUID (used to locate the AES-encrypted original)
      * @param token         the share token string (used to name the sidecar)

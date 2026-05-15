@@ -59,7 +59,7 @@ public class FileUtils {
      * Wraps an {@link InputStream} in a {@link StreamingResponseBody} that copies
      * all bytes to the response output stream in 8 KB chunks.
      *
-     * @param inputStream source stream (caller is responsible for closing it)
+     * @param inputStream source stream
      * @return a streaming response body
      */
     public static StreamingResponseBody getStreamingResponseBody(InputStream inputStream) {
@@ -76,7 +76,7 @@ public class FileUtils {
     /**
      * Resolves the real client IP address from the request, preferring the
      * {@code X-Forwarded-For} header (first entry) over {@code X-Real-IP}, then
-     * falling back to {@link jakarta.servlet.http.HttpServletRequest#getRemoteAddr()}.
+     * {@link jakarta.servlet.http.HttpServletRequest#getRemoteAddr()}.
      *
      * @param request the current HTTP request
      * @return a record containing the resolved IP and User-Agent string
@@ -119,8 +119,8 @@ public class FileUtils {
     }
 
     /**
-     * Builds the absolute download URL for a file, respecting the {@code X-Forwarded-Proto}
-     * header so that links work correctly behind a reverse proxy.
+     * Builds the absolute download URL for a file, preferring the {@code X-Forwarded-Proto}
+     * header for the scheme.
      *
      * @param request    the current HTTP request (used for scheme and server name)
      * @param fileEntity the file whose download link should be generated
@@ -224,9 +224,8 @@ public class FileUtils {
      * Returns a MIME type string for the given file, suitable for the {@code Content-Type}
      * response header when serving an inline preview.
      *
-     * <p>SVG files return {@code image/png} because they are transcoded to PNG by
-     * {@link org.rostislav.quickdrop.service.SvgRasterizationService} before streaming.
-     * All other image types without a specific match return {@code image/jpeg}.
+     * <p>SVG files return {@code image/png}. All other image types without a specific
+     * match return {@code image/jpeg}.
      *
      * @param fileName the original filename, used to distinguish image subtypes
      * @param isImage  whether the file is a previewable image
@@ -256,8 +255,7 @@ public class FileUtils {
      * UUID, size, upload date, and additional randomness.
      *
      * <p>The seed is SHA-256 hashed and truncated to 5 characters from the base-62
-     * encoding of the digest. Callers must loop until a unique token is obtained
-     * (see {@link org.rostislav.quickdrop.service.FileService#generateShareToken}).
+     * encoding of the digest. Uniqueness is not guaranteed.
      *
      * @param fileEntity the file to generate a token for
      * @return a 5-character base-62 token string
@@ -307,8 +305,7 @@ public class FileUtils {
 
     /**
      * Returns {@code true} if the share token has not expired and has remaining downloads.
-     * A token whose {@code tokenExpirationDate} equals today is considered expired
-     * (i.e. valid only while {@code today < expirationDate}).
+     * A token whose {@code tokenExpirationDate} equals today is considered expired.
      *
      * @param token the token to validate (may be {@code null})
      * @return {@code true} when the token is usable
@@ -327,7 +324,7 @@ public class FileUtils {
      * Streams a file to the output stream.
      *
      * @param filePathToStream  path of the file to read
-     * @param decryptedFilePath unused — retained for call-site compatibility
+     * @param decryptedFilePath unused
      * @param uuid              file UUID (used in log messages only)
      * @param outputStream      destination output stream
      * @throws IOException if streaming fails

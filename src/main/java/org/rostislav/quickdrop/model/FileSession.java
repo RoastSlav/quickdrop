@@ -3,16 +3,9 @@ package org.rostislav.quickdrop.model;
 /**
  * In-memory session record that binds a file-access token to the cleartext password
  * and the UUID of the protected file.
- *
- * <p>Stored in {@link org.rostislav.quickdrop.service.SessionService}'s in-memory map
- * and looked up whenever a download or preview of an encrypted file is requested.
- * The cleartext password is kept in memory so that the file can be decrypted
- * on-the-fly without prompting the user again.
  */
 public class FileSession {
-    /**
-     * Cleartext access password for the file (used to derive the AES decryption key).
-     */
+    /** Cleartext access password for the file. */
     private String password;
 
     /** UUID of the file this session grants access to. */

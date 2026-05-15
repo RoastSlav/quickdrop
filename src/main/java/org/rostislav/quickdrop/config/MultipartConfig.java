@@ -11,13 +11,8 @@ import org.springframework.util.unit.DataSize;
  * Configures the multipart file-upload limits to match the value stored in
  * application settings.
  *
- * <p>The bean is annotated with {@link RefreshScope} so that changing the max
- * file size in the admin settings panel (which triggers a Spring Cloud context
- * refresh) causes this bean to be recreated with the new limits — no restart
- * required.
- *
- * <p>The max request size is set to {@code maxFileSize + 10 MB} to accommodate
- * multipart form field overhead alongside the file data.
+ * <p>The bean is annotated with {@link RefreshScope}.
+ * The max request size is set to {@code maxFileSize + 10 MB}.
  */
 @Configuration
 public class MultipartConfig {

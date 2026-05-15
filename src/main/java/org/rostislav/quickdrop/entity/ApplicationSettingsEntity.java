@@ -10,8 +10,8 @@ import org.rostislav.quickdrop.model.ApplicationSettingsViewModel;
  * Persistent store for all application-wide configuration.
  *
  * <p>Only a single row (id = 1) is ever created. {@link org.rostislav.quickdrop.service.ApplicationSettingsService}
- * initialises defaults on startup and is the only intended writer. Reads are served from a
- * Spring cache ({@code applicationSettings}) to avoid a database hit on every request.
+ * initialises defaults on startup and is the only intended writer. Reads are served from
+ * the {@code applicationSettings} Spring cache.
  */
 @Entity
 public class ApplicationSettingsEntity {
@@ -102,7 +102,7 @@ public class ApplicationSettingsEntity {
     /** SMTP authentication username. */
     private String smtpUsername;
 
-    /** SMTP authentication password (stored in plaintext; use a dedicated app password). */
+    /** SMTP authentication password. */
     private String smtpPassword;
 
     /** Whether STARTTLS is requested on the SMTP connection. */
@@ -159,7 +159,7 @@ public class ApplicationSettingsEntity {
      */
     private boolean notifyOnShareCreate = true;
     /**
-     * Whether notifications are sent when a file is downloaded via a share token. Defaults to {@code false} to avoid spam.
+     * Whether notifications are sent when a file is downloaded via a share token.
      */
     private boolean notifyOnShareDownload = false;
     /**
@@ -167,7 +167,7 @@ public class ApplicationSettingsEntity {
      */
     private boolean notifyOnPasteCreate = true;
     /**
-     * Whether notifications are sent when a paste is viewed. Defaults to {@code false} to avoid spam.
+     * Whether notifications are sent when a paste is viewed.
      */
     private boolean notifyOnPasteView = false;
     /**

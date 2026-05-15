@@ -20,7 +20,7 @@ public class FileHistoryLog {
     private Long id;
 
     /**
-     * The file this event is associated with. Loaded lazily to avoid N+1 queries in list views.
+     * The file this event is associated with.
      */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "file_id", nullable = false)

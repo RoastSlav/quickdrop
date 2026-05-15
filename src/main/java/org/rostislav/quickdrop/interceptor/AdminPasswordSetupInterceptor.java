@@ -10,14 +10,8 @@ import org.springframework.web.servlet.HandlerInterceptor;
  * Redirects all requests to the first-time admin setup page until an admin
  * password has been configured.
  *
- * <p>This interceptor runs at the front of the chain (registered in
- * {@link org.rostislav.quickdrop.config.WebConfig}) and ensures that a fresh
- * installation cannot be accessed without first setting an admin password.
- * Once the password is set, this interceptor becomes a no-op.
- *
- * <p>Static asset paths ({@code /static/}, {@code /css/}, {@code /js/},
- * {@code /images/}) and the setup endpoint itself are excluded from redirection
- * so that the setup page can render correctly.
+ * <p>The setup endpoint and static asset paths ({@code /static/}, {@code /css/},
+ * {@code /js/}, {@code /images/}) are excluded from redirection.
  */
 @Component
 public class AdminPasswordSetupInterceptor implements HandlerInterceptor {

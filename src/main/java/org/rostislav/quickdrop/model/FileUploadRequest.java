@@ -4,9 +4,7 @@ package org.rostislav.quickdrop.model;
  * Carries all metadata for a file or paste upload through the chunked-merge pipeline.
  *
  * <p>An instance is created in the REST controller for each upload and passed to
- * {@link org.rostislav.quickdrop.service.AsyncFileMergeService#submitChunk}. The merge
- * task stores it for the duration of the upload so that it can persist the final
- * {@link org.rostislav.quickdrop.entity.FileEntity} once all chunks have been assembled.
+ * {@link org.rostislav.quickdrop.service.AsyncFileMergeService#submitChunk}.
  */
 public class FileUploadRequest {
     /**

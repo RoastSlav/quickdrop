@@ -11,7 +11,7 @@ import static org.rostislav.quickdrop.util.FileUtils.formatFileSize;
  *
  * <p>The raw {@code size} bytes are converted to a human-readable string at
  * construction time. The {@code totalDownloads} count is injected from the
- * repository JOIN query so that no additional per-row queries are needed.
+ * repository JOIN query.
  */
 public class FileEntityView {
     public Long id;

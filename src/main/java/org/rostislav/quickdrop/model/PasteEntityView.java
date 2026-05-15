@@ -10,7 +10,7 @@ import java.util.Locale;
  *
  * <p>Whether the paste is Markdown is determined by checking whether the stored
  * filename ends with {@code .md}. The {@code totalViews} count is injected from
- * the repository JOIN query so that no additional per-row queries are needed.
+ * the repository JOIN query.
  */
 public class PasteEntityView {
     public String uuid;

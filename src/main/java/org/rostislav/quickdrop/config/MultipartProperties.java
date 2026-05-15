@@ -8,12 +8,9 @@ import org.springframework.stereotype.Component;
  * Provides the current max-file-size value in the string format expected by
  * {@link org.springframework.util.unit.DataSize#parse(CharSequence)}.
  *
- * <p>This component is annotated with {@link RefreshScope} so it participates in
- * Spring Cloud context refreshes triggered when settings are saved. It reads
- * directly from the repository rather than through
- * {@link org.rostislav.quickdrop.service.ApplicationSettingsService} to avoid a
- * circular dependency ({@code ApplicationSettingsService} → {@code MultipartConfig}
- * → {@code MultipartProperties} → {@code ApplicationSettingsService}).
+ * <p>This component is annotated with {@link RefreshScope} and reads directly from
+ * the repository rather than through
+ * {@link org.rostislav.quickdrop.service.ApplicationSettingsService}.
  */
 @RefreshScope
 @Component

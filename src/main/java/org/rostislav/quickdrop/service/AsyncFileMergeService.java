@@ -27,11 +27,9 @@ import java.util.concurrent.*;
  * blocks on the {@link CompletableFuture} until the merge and database save complete,
  * then returns the saved {@link FileEntity}.
  *
- * <p>The thread pool uses {@link ThreadPoolExecutor.CallerRunsPolicy} so that if all
- * worker threads are busy the submitting request thread runs the merge itself, providing
- * natural backpressure. A background TTL sweeper runs every
- * {@value #TASK_TTL_MINUTES} minutes to evict entries for uploads that were abandoned
- * before the last chunk arrived.
+ * <p>The thread pool uses {@link ThreadPoolExecutor.CallerRunsPolicy}.
+ * A background TTL sweeper runs every {@value #TASK_TTL_MINUTES} minutes to evict
+ * entries for uploads that were abandoned before the last chunk arrived.
  */
 @Service
 public class AsyncFileMergeService {
@@ -125,7 +123,6 @@ public class AsyncFileMergeService {
 
     /**
      * Deletes all temporary chunk files created for a given upload request.
-     * Called on merge failure to avoid leaving orphaned temp files.
      *
      * @param request the upload request whose chunks should be removed
      */
@@ -141,12 +138,8 @@ public class AsyncFileMergeService {
 
     /**
      * Worker that reads {@link ChunkInfo} items from a blocking queue and streams
-     * them sequentially into the final output file.
-     *
-     * <p>The output is written through {@link FileEncryptionService} when the upload
-     * request specifies a password and encryption is enabled, otherwise through a plain
-     * {@link BufferedOutputStream}. After all chunks are merged {@link FileService#saveFile}
-     * is called to persist the database record and the future is completed.
+     * them sequentially into the final output file, encrypting if configured.
+     * Completes {@link #mergeCompletionFuture} with the saved {@link FileEntity}.
      */
     private class MergeTask implements Runnable {
         final Instant createdAt = Instant.now();

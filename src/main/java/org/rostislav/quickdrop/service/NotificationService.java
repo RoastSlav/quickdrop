@@ -22,18 +22,11 @@ import static org.rostislav.quickdrop.util.DataValidator.safeString;
  *
  * <p>Two delivery modes are supported, selected at runtime from application settings:
  * <ul>
- *   <li><strong>Immediate</strong> — each event dispatches a notification on a dedicated
- *       single-thread executor ({@code notification-dispatch}) so that slow HTTP or SMTP
- *       calls never block the file-operation request thread.</li>
- *   <li><strong>Batched</strong> — events are queued in memory and flushed together once
- *       per configured interval. A second single-thread executor ({@code notification-batch-flush})
- *       runs a periodic check and is started lazily on the first batched event, then shut
- *       down when batching is turned off.</li>
+ *   <li><strong>Immediate</strong> — each event is dispatched on a dedicated
+ *       single-thread executor ({@code notification-dispatch}).</li>
+ *   <li><strong>Batched</strong> — events are queued and flushed together once
+ *       per configured interval on the {@code notification-batch-flush} executor.</li>
  * </ul>
- *
- * <p>The mail sender is built on-the-fly from the current settings rather than being
- * declared as a Spring bean, allowing SMTP configuration to change at runtime without
- * a restart.
  */
 @Service
 public class NotificationService {
@@ -84,8 +77,7 @@ public class NotificationService {
      * Sends (or enqueues, if batching is enabled) a notification for a file event.
      *
      * <p>Does nothing if the per-event toggle is off, both Discord and email notifications
-     * are disabled, or no channels are configured. The message format includes the file name
-     * and UUID; upload events additionally include the file size in bytes.
+     * are disabled, or no channels are configured.
      *
      * @param file the file that triggered the event; ignored if {@code null}
      * @param type the event type (upload, download, deletion, renewal, paste/share events)
@@ -273,7 +265,6 @@ public class NotificationService {
 
     /**
      * Called by the batch scheduler to decide whether queued messages should be flushed.
-     * Re-reads settings each tick so that configuration changes take effect without a restart.
      */
     private void flushBatchIfDue() {
         try {

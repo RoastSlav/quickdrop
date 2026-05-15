@@ -30,8 +30,7 @@ import java.util.concurrent.TimeUnit;
  * </ol>
  *
  * <p>The {@code /branding/**} resource handler maps to the {@code branding/}
- * directory on disk (where the custom logo is stored) and sets a one-day
- * {@code Cache-Control} header to avoid unnecessary re-downloads on page navigation.
+ * directory on disk and sets a one-day {@code Cache-Control} header.
  */
 @Configuration
 public class WebConfig implements WebMvcConfigurer {

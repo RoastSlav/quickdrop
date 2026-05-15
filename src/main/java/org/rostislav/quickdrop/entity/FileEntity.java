@@ -57,7 +57,7 @@ public class FileEntity {
     /** Display name of the uploaded folder. */
     public String folderName;
 
-    /** JSON array describing the folder's file tree, stored as TEXT to avoid length limits. */
+    /** JSON array describing the folder's file tree, stored as TEXT. */
     @Column(columnDefinition = "TEXT")
     public String folderManifest;
 

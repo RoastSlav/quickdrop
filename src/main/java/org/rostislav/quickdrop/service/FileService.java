@@ -166,10 +166,10 @@ public class FileService {
      * Returns a single file entity by UUID.
      *
      * @param uuid the file UUID
-     * @return the matching {@link FileEntity}, or {@code null} if not found
+     * @return an {@link Optional} containing the matching entity, or empty if not found
      */
-    public FileEntity getFile(String uuid) {
-        return fileRepository.findByUUID(uuid).orElse(null);
+    public Optional<FileEntity> getFile(String uuid) {
+        return fileRepository.findByUUID(uuid);
     }
 
     /**
@@ -253,7 +253,6 @@ public class FileService {
      * @param request the HTTP request (used to extract the session token for the file password)
      * @return a streaming download response, or an error response
      */
-    @CacheEvict(value = {"adminFiles", "analytics"}, allEntries = true)
     public ResponseEntity<StreamingResponseBody> downloadFile(String uuid, HttpServletRequest request) {
         FileEntity fileEntity = fileRepository.findByUUID(uuid).orElse(null);
         if (fileEntity == null) {
@@ -514,7 +513,7 @@ public class FileService {
      * @param uuid    the file UUID
      * @param request the HTTP request (for history logging)
      */
-    @CacheEvict(value = {"publicFiles", "adminFiles", "analytics"}, allEntries = true)
+    @CacheEvict(value = {"publicFiles", "adminFiles"}, allEntries = true)
     public void extendFile(String uuid, HttpServletRequest request) {
         Optional<FileEntity> referenceById = fileRepository.findByUUID(uuid);
         if (referenceById.isEmpty()) {
@@ -1174,6 +1173,22 @@ public class FileService {
      */
     public boolean fileExistsInFileSystem(String uuid) {
         return Files.exists(Path.of(applicationSettingsService.getFileStoragePath(), uuid));
+    }
+
+    /**
+     * Returns a filtered, sorted, paginated page of active share tokens.
+     *
+     * @param today     today's date used as the expiry cutoff
+     * @param isPaste   {@code true} = pastes only, {@code false} = files only, {@code null} = both
+     * @param noExpiry  when {@code true} restrict to tokens with no expiry date
+     * @param unlimited when {@code true} restrict to tokens with no download cap
+     * @param query     optional case-insensitive substring filter on file name and token string
+     * @param pageable  pagination and sort configuration
+     * @return page of matching active tokens
+     */
+    public Page<ShareTokenEntity> getFilteredShareTokens(LocalDate today, Boolean isPaste, boolean noExpiry,
+                                                         boolean unlimited, String query, Pageable pageable) {
+        return shareTokenRepository.findFiltered(today, isPaste, noExpiry, unlimited, query, pageable);
     }
 
     /**

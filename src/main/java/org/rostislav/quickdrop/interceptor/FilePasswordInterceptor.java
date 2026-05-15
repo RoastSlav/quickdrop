@@ -59,11 +59,13 @@ public class FilePasswordInterceptor implements HandlerInterceptor {
             return false;
         }
 
-        FileEntity fileEntity = fileService.getFile(uuid);
+        FileEntity fileEntity = fileService.getFile(uuid).orElse(null);
         if (fileEntity == null) {
             response.sendError(HttpServletResponse.SC_NOT_FOUND, "File not found.");
             return false;
         }
+
+        request.setAttribute("fileEntity", fileEntity);
 
         String sessionToken = (String) request.getSession().getAttribute("file-session-token");
         if (fileEntity.passwordHash != null &&

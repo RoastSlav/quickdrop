@@ -164,7 +164,7 @@ public class FileRestController {
             expirationDate = null;
             numberOfDownloads = null;
         }
-        FileEntity fileEntity = fileService.getFile(uuid);
+        FileEntity fileEntity = fileService.getFile(uuid).orElse(null);
         if (fileEntity == null) {
             return ResponseEntity.badRequest().body(Map.of("message", "File not found."));
         }

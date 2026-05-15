@@ -30,31 +30,8 @@
         if (!form) return;
         e.preventDefault();
         if (!confirm(DELETE_MSG)) return;
-        deletePaste(form, form.closest('[data-uuid]'));
+        QD.deleteWithAnimation(form, form.closest('[data-uuid]'));
     });
 
-    async function deletePaste(form, card) {
-        if (card) {
-            card.style.transition = 'opacity 250ms, transform 250ms';
-            card.style.opacity = '0';
-            card.style.transform = 'translateX(1.5rem)';
-        }
-        try {
-            const res = await fetch(form.action, {method: 'POST', body: new FormData(form)});
-            if (res.ok || res.redirected) setTimeout(() => card?.remove(), 260);
-            else throw new Error(res.status);
-        } catch {
-            if (card) {
-                card.style.opacity = '';
-                card.style.transform = '';
-            }
-        }
-    }
-
-    document.addEventListener('keydown', e => {
-        if (e.key === '/' && !['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) {
-            e.preventDefault();
-            document.getElementById('pasteSearch')?.focus();
-        }
-    });
+    QD.bindSearchShortcut('pasteSearch');
 })();

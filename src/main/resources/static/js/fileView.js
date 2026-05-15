@@ -9,6 +9,11 @@ function getI18nStr(path, defaultStr) {
   return obj;
 }
 
+/** @returns {string} CSRF token from the page meta tag, or empty string */
+function getCsrfToken() {
+  return document.querySelector('meta[name="_csrf"]')?.content ?? '';
+}
+
 async function updateCheckboxState(event, checkbox) {
   event.preventDefault();
 
@@ -137,7 +142,7 @@ function generateShareLink(fileUuid, daysValid, allowedNumberOfDownloads) {
     return Promise.reject(new Error("Share links are disabled."));
   }
 
-  const csrfToken = document.querySelector('meta[name="_csrf"]').content;
+  const csrfToken = getCsrfToken();
   const params = new URLSearchParams();
 
   if (typeof daysValid === "number" && daysValid > 0) {
@@ -521,7 +526,7 @@ function renderPdfPreview(container, objectUrl, fileName) {
   link.href = objectUrl;
   link.target = "_blank";
   link.rel = "noopener noreferrer";
-  link.textContent = `Open ${fileName} in a new tab`;
+  link.textContent = getI18nStr('previewOpenInNewTab', 'Open {0} in a new tab').replace('{0}', fileName);
   fallback.appendChild(link);
   frame.appendChild(fallback);
   container.appendChild(frame);
@@ -651,6 +656,13 @@ function renderCsvPreview(container, text, extension) {
   }
 }
 
+/**
+ * Parses delimited text (CSV or TSV) into a 2D array of strings.
+ * Handles RFC 4180 double-quoted fields and escaped quotes (`""`).
+ * @param {string} text      - Raw file content
+ * @param {string} delimiter - Field delimiter (',' for CSV, '\t' for TSV)
+ * @returns {string[][]} Rows of cells; first row is the header
+ */
 function parseDelimited(text, delimiter) {
   const lines = text.split(/\r?\n/).filter((l) => l.trim().length > 0);
   const rows = [];
@@ -770,15 +782,15 @@ async function ensurePreviewReady() {
 
 async function logDownload() {
   const fileUuidEl = document.getElementById("fileUuid");
-  const csrfMeta = document.querySelector('meta[name="_csrf"]');
-  if (!fileUuidEl || !csrfMeta) return;
+  if (!fileUuidEl) return;
+  const csrf = getCsrfToken();
   try {
     await fetch(`/file/download/log/${fileUuidEl.textContent.trim()}`, {
       method: "POST",
       credentials: "same-origin",
       headers: {
-        "X-XSRF-TOKEN": csrfMeta.content,
-        "X-CSRF-TOKEN": csrfMeta.content,
+        "X-XSRF-TOKEN": csrf,
+        "X-CSRF-TOKEN": csrf,
       },
     });
   } catch (e) {
@@ -786,6 +798,11 @@ async function logDownload() {
   }
 }
 
+/**
+ * Reads the folder manifest from `#folderManifestData` (a JSON script block)
+ * and renders an ASCII tree inside `#folderTree`. Each line is built from
+ * typed `{text, type}` segments so CSS can colour roots, folders, and files.
+ */
 function renderFolderTree() {
   const treeEl = document.getElementById("folderTree");
   if (!treeEl) return;
@@ -847,6 +864,14 @@ function createTreeRoot(name) {
   return { name, children: [], files: [] };
 }
 
+/**
+ * Inserts a manifest path into the in-memory tree, creating intermediate
+ * directory nodes as needed. Skips a leading segment that duplicates the
+ * root folder name.
+ * @param {{ name: string, children: object[], files: string[] }} root
+ * @param {string} path       - Slash-separated manifest path
+ * @param {string} folderName - Root folder name used to detect duplicate prefix
+ */
 function addPathToTree(root, path, folderName) {
   const parts = path.split(/[\\/]/).filter(Boolean);
   let idx = 0;
@@ -876,6 +901,16 @@ function addPathToTree(root, path, folderName) {
   }
 }
 
+/**
+ * Recursively serializes a tree node into typed line-segment arrays.
+ * Each entry in `lines` is an array of `{ text, type }` objects where
+ * type is one of: "connector" | "root" | "folder" | "file".
+ * @param {{ name: string, children: object[], files: string[] }} node
+ * @param {string}   prefix  - ASCII connector prefix built up by recursion
+ * @param {boolean}  isLast  - Whether this node is the last sibling
+ * @param {Array[]}  lines   - Accumulator; each entry is a line's segments
+ * @param {boolean}  isRoot  - True only for the top-level root node
+ */
 function printTree(node, prefix, isLast, lines, isRoot = false) {
   const connector = prefix === "" ? "" : isLast ? "└─ " : "├─ ";
   const lineSegments = [

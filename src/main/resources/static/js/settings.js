@@ -222,6 +222,12 @@ function sv(key, fallback) {
   return window.i18n?.settings?.validation?.[key] || fallback;
 }
 
+/**
+ * Returns true when `expr` is a valid Spring 6-field cron expression.
+ * Does not validate ranges — only structural format (six whitespace-separated tokens).
+ * @param {string} expr
+ * @returns {boolean}
+ */
 function isValidSpringCron(expr) {
   if (!expr || typeof expr !== 'string') return false;
   const parts = expr.trim().split(/\s+/);
@@ -230,6 +236,11 @@ function isValidSpringCron(expr) {
   return parts.every(p => field.test(p));
 }
 
+/**
+ * Validates all settings form inputs, marking invalid fields with native
+ * constraint messages. Focuses the first invalid field.
+ * @returns {boolean} true when the form is fully valid
+ */
 function validateSettingsForm() {
   let firstInvalid = null;
 
@@ -369,6 +380,13 @@ function validateSettingsForm() {
   return !firstInvalid;
 }
 
+/**
+ * Validates the settings form and POSTs to /admin/api/save.
+ * Sends FormData when a logo file is selected; URL-encoded params otherwise
+ * (avoids a multipart boundary when no binary data is present).
+ * @param {string|null} csrf - CSRF token to include in request headers
+ * @throws {Error} if validation fails or the server returns a non-OK response
+ */
 async function saveSettings(csrf) {
   const form = document.querySelector(
     'form[method="post"][action="/admin/save"]'
@@ -402,6 +420,13 @@ async function saveSettings(csrf) {
   }
 }
 
+/**
+ * Saves the current settings and fires a notification test for the given
+ * channel. Updates the status element with the server's plain-text response.
+ * @param {'discord'|'email'} target  - Notification channel to test
+ * @param {string}            buttonId - ID of the trigger button
+ * @param {string}            statusId - ID of the status message element
+ */
 async function sendNotificationTest(target, buttonId, statusId) {
   const button = document.getElementById(buttonId);
   const status = document.getElementById(statusId);

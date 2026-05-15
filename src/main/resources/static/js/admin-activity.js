@@ -1,38 +1,43 @@
 (function () {
-    var WRAPPER_ID = 'activitySectionWrapper';
-    var CONTENT_ID = 'activityContent';
+    const WRAPPER_ID = 'activitySectionWrapper';
+    const CONTENT_ID = 'activityContent';
 
-    var wrapper = document.getElementById(WRAPPER_ID);
+    const wrapper = document.getElementById(WRAPPER_ID);
     if (!wrapper) return;
 
+    /** @param {Date} d @returns {string} YYYY-MM-DD */
     function localDateStr(d) {
-        return d.getFullYear() + '-' +
-            String(d.getMonth() + 1).padStart(2, '0') + '-' +
-            String(d.getDate()).padStart(2, '0');
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     }
 
+    /**
+     * Builds the activity filter URL from the current form values.
+     * @param {string|number|null} [sizeOverride] - Page size to use instead of the select value
+     * @returns {string} relative URL with query string
+     */
     function buildUrl(sizeOverride) {
-        var p = new URLSearchParams();
-        var sd = (wrapper.querySelector('#startDatePicker') || {}).value || '';
-        var st = (wrapper.querySelector('#startTimePicker') || {}).value || '00:00';
-        if (sd) p.set('startDate', sd + 'T' + st);
+        const p = new URLSearchParams();
 
-        var ed = (wrapper.querySelector('#endDatePicker') || {}).value || '';
-        var et = (wrapper.querySelector('#endTimePicker') || {}).value || '23:59';
-        if (ed) p.set('endDate', ed + 'T' + et);
+        const sd = wrapper.querySelector('#startDatePicker')?.value || '';
+        const st = wrapper.querySelector('#startTimePicker')?.value || '00:00';
+        if (sd) p.set('startDate', `${sd}T${st}`);
 
-        var evtType = (wrapper.querySelector('#eventType') || {}).value || '';
+        const ed = wrapper.querySelector('#endDatePicker')?.value || '';
+        const et = wrapper.querySelector('#endTimePicker')?.value || '23:59';
+        if (ed) p.set('endDate', `${ed}T${et}`);
+
+        const evtType = wrapper.querySelector('#eventType')?.value || '';
         if (evtType) p.set('eventType', evtType);
 
-        var ip = ((wrapper.querySelector('#ipFilter') || {}).value || '').trim();
+        const ip = (wrapper.querySelector('#ipFilter')?.value || '').trim();
         if (ip) p.set('ip', ip);
 
-        var ua = ((wrapper.querySelector('#uaFilter') || {}).value || '').trim();
+        const ua = (wrapper.querySelector('#uaFilter')?.value || '').trim();
         if (ua) p.set('ua', ua);
 
-        var size = sizeOverride != null
+        const size = sizeOverride != null
             ? sizeOverride
-            : ((wrapper.querySelector('#activityPageSize') || {}).value
+            : (wrapper.querySelector('#activityPageSize')?.value
                 || new URLSearchParams(window.location.search).get('size')
                 || '10');
         p.set('size', size);
@@ -47,40 +52,38 @@
     });
 
     wrapper.addEventListener('click', function (e) {
-        var presetBtn = e.target.closest('[data-preset]');
+        const presetBtn = e.target.closest('[data-preset]');
         if (presetBtn) {
-            var now = new Date();
-            var startD = '', startT = '', endD = '', endT = '';
-            switch (presetBtn.dataset.preset) {
-                case 'today':
-                    startD = localDateStr(now);
-                    startT = '00:00';
-                    endD = localDateStr(now);
-                    endT = '23:59';
-                    break;
-                case '7d':
-                    var d7 = new Date(now);
-                    d7.setDate(d7.getDate() - 7);
-                    startD = localDateStr(d7);
-                    startT = '00:00';
-                    endD = localDateStr(now);
-                    endT = '23:59';
-                    break;
-                case '30d':
-                    var d30 = new Date(now);
-                    d30.setDate(d30.getDate() - 30);
-                    startD = localDateStr(d30);
-                    startT = '00:00';
-                    endD = localDateStr(now);
-                    endT = '23:59';
-                    break;
-                case 'all':
-                    break;
+            const now = new Date();
+            let startD = '', startT = '', endD = '', endT = '';
+            const preset = presetBtn.dataset.preset;
+
+            if (preset === 'today') {
+                startD = localDateStr(now);
+                startT = '00:00';
+                endD = localDateStr(now);
+                endT = '23:59';
+            } else if (preset === '7d') {
+                const ago = new Date(now);
+                ago.setDate(ago.getDate() - 7);
+                startD = localDateStr(ago);
+                startT = '00:00';
+                endD = localDateStr(now);
+                endT = '23:59';
+            } else if (preset === '30d') {
+                const ago = new Date(now);
+                ago.setDate(ago.getDate() - 30);
+                startD = localDateStr(ago);
+                startT = '00:00';
+                endD = localDateStr(now);
+                endT = '23:59';
             }
-            var sp = wrapper.querySelector('#startDatePicker');
-            var st2 = wrapper.querySelector('#startTimePicker');
-            var ep = wrapper.querySelector('#endDatePicker');
-            var et2 = wrapper.querySelector('#endTimePicker');
+            // 'all': leave all fields blank
+
+            const sp = wrapper.querySelector('#startDatePicker');
+            const st2 = wrapper.querySelector('#startTimePicker');
+            const ep = wrapper.querySelector('#endDatePicker');
+            const et2 = wrapper.querySelector('#endTimePicker');
             if (sp) sp.value = startD;
             if (st2) st2.value = startT;
             if (ep) ep.value = endD;
@@ -88,7 +91,7 @@
             return;
         }
 
-        var pBtn = e.target.closest('a.pagination-btn:not(.pagination-btn-disabled)');
+        const pBtn = e.target.closest('a.pagination-btn:not(.pagination-btn-disabled)');
         if (pBtn) {
             e.preventDefault();
             window.scrollTo({top: 0, behavior: 'smooth'});

@@ -60,6 +60,11 @@ public class ScheduleService {
      */
     private volatile String currentCron;
 
+    /**
+     * The maxFileLifeTime (days) captured by the currently running cleanup task.
+     */
+    private volatile long currentMaxFileLifeTime = -1;
+
     public ScheduleService(FileRepository fileRepository, FileService fileService, FileHistoryLogRepository fileHistoryLogRepository, ShareTokenRepository shareTokenRepository, ApplicationSettingsService applicationSettingsService) {
         this.fileRepository = fileRepository;
         this.fileService = fileService;
@@ -87,8 +92,9 @@ public class ScheduleService {
             return;
         }
 
-        if (cronExpression.equals(currentCron) && scheduledTask != null && !scheduledTask.isCancelled()) {
-            logger.debug("Cron unchanged ({}), skipping reschedule", cronExpression);
+        if (cronExpression.equals(currentCron) && maxFileLifeTime == currentMaxFileLifeTime
+                && scheduledTask != null && !scheduledTask.isCancelled()) {
+            logger.debug("Schedule unchanged (cron={}, maxLife={}d), skipping reschedule", cronExpression, maxFileLifeTime);
             return;
         }
 
@@ -102,6 +108,7 @@ public class ScheduleService {
         );
 
         currentCron = cronExpression;
+        currentMaxFileLifeTime = maxFileLifeTime;
         logger.info("Scheduled cleanup with cron: {} and max life: {} days", cronExpression, maxFileLifeTime);
     }
 

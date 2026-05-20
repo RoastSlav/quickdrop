@@ -181,10 +181,14 @@ public class FileService {
     public boolean deleteFileFromFileSystem(String uuid) {
         Path path = Path.of(applicationSettingsService.getFileStoragePath(), uuid);
         try {
-            Files.delete(path);
-            logger.info("File deleted: {}", path);
-        } catch (
-                Exception e) {
+            boolean existed = Files.deleteIfExists(path);
+            if (existed) {
+                logger.info("File deleted: {}", path);
+            } else {
+                logger.warn("File already absent from filesystem, treating as deleted: {}", path);
+            }
+        } catch (Exception e) {
+            logger.error("Failed to delete file from filesystem: {}", path, e);
             return false;
         }
         return true;

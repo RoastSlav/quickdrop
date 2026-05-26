@@ -110,7 +110,7 @@
       <!-- ── Content panels ── -->
       <div class="settings-content">
 
-        <form enctype="multipart/form-data" id="settingsForm" method="post"
+        <form enctype="multipart/form-data" id="settingsForm" method="post" novalidate
               th:action="@{/admin/save}" th:attr="data-app-password-set=${isAppPasswordSet}" th:object="${settings}">
 
           <!-- ── Panel: Branding ── -->
@@ -203,8 +203,9 @@
                   <div class="settings-list-item">
                     <label class="form-label" for="maxPreviewSizeBytes" th:text="#{page.settings.file.maxPreviewMb}">Max
                       preview size (MB)</label>
-                    <input class="form-input" id="maxPreviewSizeBytes" min="1" name="maxPreviewSizeBytes"
+                    <input class="form-input" id="maxPreviewSizeBytes" name="maxPreviewSizeBytes"
                            step="1" th:disabled="${settings.disablePreview}"
+                           th:attr="min=${settings.disablePreview ? null : 1}"
                            th:value="${settings.maxPreviewSizeBytes / 1024 / 1024}" type="number"/>
                     <p class="form-hint" th:text="#{page.settings.file.maxPreviewMb.help}">Above this size users must
                       click "Load preview".</p>
@@ -943,7 +944,7 @@
 </style>
 
 <script src="/js/toast.js"></script>
-<script src="/js/vendor/cronstrue-i18n.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/cronstrue@2/dist/cronstrue-i18n.min.js"></script>
 <script src="/js/settings.js"></script>
 <script src="/js/locale-switcher.js"></script>
 </body>

@@ -51,7 +51,7 @@ export async function uploadCandidate(
 
       const csrfTokenElement = document.querySelector('input[name="_csrf"]');
       if (csrfTokenElement) {
-        xhr.setRequestHeader("X-CSRF-TOKEN", csrfTokenElement.value);
+          xhr.setRequestHeader("X-XSRF-TOKEN", csrfTokenElement.value);
       }
 
       xhr.onload = () => {

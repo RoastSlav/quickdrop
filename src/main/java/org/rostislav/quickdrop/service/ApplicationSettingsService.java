@@ -111,8 +111,40 @@ public class ApplicationSettingsService {
             return applicationSettingsRepository.save(defaults);
         });
 
+        boolean dirty = false;
         if (settings.getAppName() == null || settings.getAppName().isBlank()) {
             settings.setAppName("QuickDrop");
+            dirty = true;
+        }
+        if (settings.getMaxFileSize() == 0) {
+            settings.setMaxFileSize(1024L * 1024L * 1024L);
+            dirty = true;
+        }
+        if (settings.getMaxFileLifeTime() == 0) {
+            settings.setMaxFileLifeTime(30L);
+            dirty = true;
+        }
+        if (settings.getMaxPreviewSizeBytes() == 0) {
+            settings.setMaxPreviewSizeBytes(5L * 1024L * 1024L);
+            dirty = true;
+        }
+        if (settings.getSessionLifetime() == 0) {
+            settings.setSessionLifetime(30);
+            dirty = true;
+        }
+        if (settings.getFileDeletionCron() == null || settings.getFileDeletionCron().isBlank()) {
+            settings.setFileDeletionCron("0 0 2 * * *");
+            dirty = true;
+        }
+        if (settings.getDefaultHomePage() == null || settings.getDefaultHomePage().isBlank()) {
+            settings.setDefaultHomePage("upload");
+            dirty = true;
+        }
+        if (settings.getDefaultLanguage() == null || settings.getDefaultLanguage().isBlank()) {
+            settings.setDefaultLanguage("en");
+            dirty = true;
+        }
+        if (dirty) {
             applicationSettingsRepository.save(settings);
         }
     }

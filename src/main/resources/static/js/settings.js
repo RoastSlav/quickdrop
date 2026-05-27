@@ -52,53 +52,123 @@ function toggleBatchFields() {
   }
 }
 
-function syncUploadPasswordSetting() {
-  const disableUploadPw = document.getElementById("disableUploadPassword");
-  const encryptionDisabled = document.getElementById("encryptionDisabled");
-  if (!disableUploadPw || !encryptionDisabled) return;
+function syncUploadEnabled() {
+  const uploadEnabledCb = document.getElementById("uploadEnabled");
+  const uploadAdminOnlyRow = document.getElementById("uploadAdminOnlyRow");
+  const uploadAdminOnlyCb = document.getElementById("uploadAdminOnly");
 
-  const forced = disableUploadPw.checked;
-  if (forced) {
-    encryptionDisabled.checked = true;
-    encryptionDisabled.disabled = true;
-    encryptionDisabled.classList.add("cursor-not-allowed", "opacity-60");
-  } else {
-    encryptionDisabled.disabled = false;
-    encryptionDisabled.classList.remove("cursor-not-allowed", "opacity-60");
+  const enabled = Boolean(uploadEnabledCb?.checked);
+
+  if (uploadAdminOnlyRow) {
+    uploadAdminOnlyRow.classList.toggle("opacity-60", !enabled);
+    uploadAdminOnlyRow.classList.toggle("cursor-not-allowed", !enabled);
+  }
+  if (uploadAdminOnlyCb) {
+    uploadAdminOnlyCb.disabled = !enabled;
+    if (!enabled) uploadAdminOnlyCb.checked = false;
+  }
+
+  syncDefaultHomePageOptions();
+  syncUploadPasswordSetting();
+}
+
+function syncDefaultHomePageOptions() {
+  const uploadEnabled = Boolean(document.getElementById("uploadEnabled")?.checked);
+  const listEnabled = Boolean(document.getElementById("fileListPageEnabled")?.checked);
+  const pasteEnabled = Boolean(document.getElementById("pastebinEnabled")?.checked);
+
+  const select = document.getElementById("defaultHomePage");
+  if (!select) return;
+
+  const currentVal = select.value;
+
+  for (const opt of select.options) {
+    if (opt.value === "upload") {
+      opt.disabled = !uploadEnabled;
+    } else if (opt.value === "list") {
+      opt.disabled = !listEnabled;
+    } else if (opt.value === "paste") {
+      opt.disabled = !pasteEnabled;
+    }
+    // "none" is always enabled
+  }
+
+  // If selected option is now disabled, reset to first available
+  const selectedOpt = select.options[select.selectedIndex];
+  if (selectedOpt && selectedOpt.disabled) {
+    for (const opt of select.options) {
+      if (!opt.disabled) {
+        select.value = opt.value;
+        break;
+      }
+    }
+  }
+}
+
+function syncUploadPasswordSetting() {
+  const uploadPwEnabled = document.getElementById("uploadPasswordEnabled");
+  const encryptionEnabled = document.getElementById("encryptionEnabled");
+  const encryptionRow = document.getElementById("encryptionEnabledRow");
+  const uploadEnabled = Boolean(document.getElementById("uploadEnabled")?.checked);
+
+  if (!uploadPwEnabled || !encryptionEnabled) return;
+
+  // If uploads are globally disabled, dim the whole upload options section
+  const uploadOptionsSection = document.getElementById("uploadOptionsSection");
+  if (uploadOptionsSection) {
+    uploadOptionsSection.classList.toggle("opacity-60", !uploadEnabled);
+  }
+  if (!uploadEnabled) {
+    uploadPwEnabled.disabled = true;
+    encryptionEnabled.disabled = true;
+    return;
+  }
+
+  uploadPwEnabled.disabled = false;
+  const pwEnabled = uploadPwEnabled.checked;
+
+  encryptionEnabled.disabled = !pwEnabled;
+  encryptionEnabled.classList.toggle("cursor-not-allowed", !pwEnabled);
+  encryptionEnabled.classList.toggle("opacity-60", !pwEnabled);
+  if (encryptionRow) {
+    encryptionRow.classList.toggle("opacity-60", !pwEnabled);
+  }
+  if (!pwEnabled) {
+    encryptionEnabled.checked = false;
   }
 }
 
 function syncShareLinkSettings() {
-  const disableShareLinks = document.getElementById("shareLinksDisabled");
+  const shareLinksEnabled = document.getElementById("shareLinksEnabled");
   const simplifiedShareLinks = document.getElementById("simplifiedShareLinks");
   const simplifiedRow = document.getElementById("simplifiedShareLinksRow");
 
-  const disabled = Boolean(disableShareLinks?.checked);
+  const enabled = Boolean(shareLinksEnabled?.checked);
 
   if (simplifiedShareLinks) {
-    simplifiedShareLinks.disabled = disabled;
-    simplifiedShareLinks.classList.toggle("cursor-not-allowed", disabled);
-    simplifiedShareLinks.classList.toggle("opacity-60", disabled);
-    if (disabled) {
+    simplifiedShareLinks.disabled = !enabled;
+    simplifiedShareLinks.classList.toggle("cursor-not-allowed", !enabled);
+    simplifiedShareLinks.classList.toggle("opacity-60", !enabled);
+    if (!enabled) {
       simplifiedShareLinks.checked = false;
     }
   }
 
   if (simplifiedRow) {
-    simplifiedRow.classList.toggle("opacity-60", disabled);
-    simplifiedRow.classList.toggle("cursor-not-allowed", disabled);
+    simplifiedRow.classList.toggle("opacity-60", !enabled);
+    simplifiedRow.classList.toggle("cursor-not-allowed", !enabled);
   }
 }
 
 function togglePreviewSizeField() {
-  const disablePreview = document.getElementById("disablePreview");
+  const previewEnabled = document.getElementById("previewEnabled");
   const sizeInput = document.getElementById("maxPreviewSizeBytes");
-  if (!disablePreview || !sizeInput) return;
+  if (!previewEnabled || !sizeInput) return;
 
-  const disabled = disablePreview.checked;
-  sizeInput.disabled = disabled;
-  sizeInput.classList.toggle("opacity-60", disabled);
-  sizeInput.classList.toggle("cursor-not-allowed", disabled);
+  const enabled = previewEnabled.checked;
+  sizeInput.disabled = !enabled;
+  sizeInput.classList.toggle("opacity-60", !enabled);
+  sizeInput.classList.toggle("cursor-not-allowed", !enabled);
 }
 
 function updateBatchAvailability() {
@@ -250,7 +320,7 @@ function validateSettingsForm() {
   const fileDeletionCron = document.getElementById("fileDeletionCron");
   const sessionLifeTime = document.getElementById("sessionLifeTime");
   const maxPreviewSizeBytes = document.getElementById("maxPreviewSizeBytes");
-  const disablePreview = document.getElementById("disablePreview");
+  const previewEnabled = document.getElementById("previewEnabled");
   const defaultHomePage = document.getElementById("defaultHomePage");
 
   const appPasswordEnabled = document.getElementById("appPasswordEnabled");
@@ -311,7 +381,7 @@ function validateSettingsForm() {
     firstInvalid = firstInvalid || sessionLifeTime;
   }
 
-  if (!disablePreview?.checked) {
+  if (previewEnabled?.checked) {
     const previewVal = parsePositiveNumber(maxPreviewSizeBytes?.value);
     if (!previewVal) {
       markValidity(maxPreviewSizeBytes, sv('previewSize', 'Enter preview size (MB) greater than 0.'));
@@ -319,8 +389,8 @@ function validateSettingsForm() {
     }
   }
 
-  if (defaultHomePage && !["upload", "list", "paste"].includes(defaultHomePage.value)) {
-    markValidity(defaultHomePage, sv('defaultHomePage', 'Choose upload, list, or paste.'));
+  if (defaultHomePage && !["upload", "list", "paste", "none"].includes(defaultHomePage.value)) {
+    markValidity(defaultHomePage, sv('defaultHomePage', 'Choose a valid home page.'));
     firstInvalid = firstInvalid || defaultHomePage;
   }
 
@@ -469,9 +539,10 @@ document.addEventListener("DOMContentLoaded", function () {
   toggleEmailFields();
   syncSmtpSecurityModes();
   updateBatchAvailability();
-  syncUploadPasswordSetting();
+  syncUploadEnabled();
   syncShareLinkSettings();
   togglePreviewSizeField();
+  syncDefaultHomePageOptions();
 
   const form = document.querySelector(
     'form[method="post"][action="/admin/save"]'
@@ -566,17 +637,26 @@ document.addEventListener("DOMContentLoaded", function () {
     .getElementById("notificationBatchEnabled")
     ?.addEventListener("change", toggleBatchFields);
   document
-    .getElementById("disableUploadPassword")
+    .getElementById("uploadEnabled")
+    ?.addEventListener("change", syncUploadEnabled);
+  document
+    .getElementById("uploadPasswordEnabled")
     ?.addEventListener("change", syncUploadPasswordSetting);
   document
-    .getElementById("disablePreview")
+    .getElementById("previewEnabled")
     ?.addEventListener("change", togglePreviewSizeField);
   document
-    .getElementById("shareLinksDisabled")
+    .getElementById("shareLinksEnabled")
     ?.addEventListener("change", syncShareLinkSettings);
   document
     .getElementById("simplifiedShareLinks")
     ?.addEventListener("change", syncShareLinkSettings);
+  document
+    .getElementById("fileListPageEnabled")
+    ?.addEventListener("change", syncDefaultHomePageOptions);
+  document
+    .getElementById("pastebinEnabled")
+    ?.addEventListener("change", syncDefaultHomePageOptions);
 
   document
     .getElementById("clearLogoButton")

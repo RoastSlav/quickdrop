@@ -23,7 +23,7 @@ public class FileHistoryLog {
      * The file this event is associated with.
      */
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "file_id", nullable = false)
+    @JoinColumn(name = "file_id", nullable = true)
     private FileEntity file;
 
     /** Category of the event. */
@@ -55,6 +55,21 @@ public class FileHistoryLog {
      */
     public FileHistoryLog(FileEntity file, FileHistoryType eventType, String ipAddress, String userAgent) {
         this.file = file;
+        this.eventType = eventType;
+        this.ipAddress = ipAddress;
+        this.userAgent = userAgent;
+        this.eventDate = LocalDateTime.now();
+    }
+
+    /**
+     * Convenience constructor for admin-level events that are not associated with a specific file.
+     *
+     * @param eventType category of the event
+     * @param ipAddress requester IP address
+     * @param userAgent requester User-Agent header value
+     */
+    public FileHistoryLog(FileHistoryType eventType, String ipAddress, String userAgent) {
+        this.file = null;
         this.eventType = eventType;
         this.ipAddress = ipAddress;
         this.userAgent = userAgent;

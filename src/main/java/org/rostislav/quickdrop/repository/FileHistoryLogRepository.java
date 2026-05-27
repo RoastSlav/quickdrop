@@ -95,7 +95,7 @@ public interface FileHistoryLogRepository extends JpaRepository<FileHistoryLog, 
      * @param pageable  pagination and sort configuration
      * @return a page of matching log entries ordered by event date descending
      */
-    @Query(value = "SELECT h FROM FileHistoryLog h JOIN FETCH h.file WHERE " +
+    @Query(value = "SELECT h FROM FileHistoryLog h LEFT JOIN FETCH h.file WHERE " +
             "(:startDate IS NULL OR h.eventDate >= :startDate) AND " +
             "(:endDate IS NULL OR h.eventDate <= :endDate) AND " +
             "(:eventType IS NULL OR h.eventType = :eventType) AND " +

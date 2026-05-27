@@ -244,8 +244,20 @@
                                 </div>
                             </div>
 
-                            <!-- Revoke button -->
+                            <!-- Actions -->
                             <div class="flex items-center gap-1.5 flex-shrink-0 pl-12 sm:pl-0">
+                                <!-- File history button -->
+                                <a class="btn btn-ghost btn-sm"
+                                   th:href="@{/file/history/{uuid}(uuid=${token.file.uuid})}"
+                                   th:title="#{page.adminShareLinks.fileHistory}">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2"
+                                         viewBox="0 0 24 24">
+                                        <path d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+                                              stroke-linecap="round" stroke-linejoin="round"/>
+                                    </svg>
+                                    <span class="hidden sm:inline" th:text="#{page.adminShareLinks.fileHistory}">History</span>
+                                </a>
+                                <!-- Revoke button -->
                                 <form method="post" th:action="@{/admin/share-links/revoke/{id}(id=${token.id})}">
                                     <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden"/>
                                     <button class="btn btn-danger btn-sm" th:title="#{page.adminShareLinks.revoke}"

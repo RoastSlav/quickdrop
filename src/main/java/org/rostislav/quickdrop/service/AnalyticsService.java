@@ -107,6 +107,18 @@ public class AnalyticsService {
     }
 
     /**
+     * Records an admin-level audit event (login, logout, settings change) that is not
+     * associated with any specific file.
+     *
+     * @param eventType the admin event category
+     * @param ip        requester IP address
+     * @param ua        requester User-Agent header value
+     */
+    public void logAdminEvent(FileHistoryType eventType, String ip, String ua) {
+        fileHistoryLogRepository.save(new FileHistoryLog(eventType, ip, ua));
+    }
+
+    /**
      * Returns a filtered, paginated slice of the global activity log.
      * Any parameter that is {@code null} is treated as "no filter on this dimension".
      *

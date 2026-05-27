@@ -66,7 +66,14 @@ public class FileViewController {
     }
 
     @GetMapping("/upload")
-    public String showUploadFile(Model model) {
+    public String showUploadFile(Model model, HttpServletRequest request) {
+        boolean isAdmin = sessionService.hasValidAdminSession(request);
+        if (!isAdmin && !applicationSettingsService.isUploadEnabled()) {
+            return "redirect:/";
+        }
+        if (!isAdmin && applicationSettingsService.isUploadAdminOnly()) {
+            return "redirect:/";
+        }
         model.addAttribute("maxFileSize", applicationSettingsService.getFormattedMaxFileSize());
         model.addAttribute("maxFileLifeTime", applicationSettingsService.getMaxFileLifeTime());
         model.addAttribute("isMetadataStrippingEnabled", applicationSettingsService.isMetadataStrippingEnabled());
@@ -74,9 +81,9 @@ public class FileViewController {
     }
 
     @GetMapping("/paste/new")
-    public String showPastePage(Model model) {
-        if (!applicationSettingsService.isPastebinEnabled()) {
-            return "redirect:/file/upload";
+    public String showPastePage(Model model, HttpServletRequest request) {
+        if (!applicationSettingsService.isPastebinEnabled() && !sessionService.hasValidAdminSession(request)) {
+            return "redirect:/";
         }
 
         model.addAttribute("maxFileLifeTime", applicationSettingsService.getMaxFileLifeTime());
@@ -91,8 +98,8 @@ public class FileViewController {
 
     @GetMapping("/paste/edit/{uuid}")
     public String showPasteEditPage(@PathVariable String uuid, Model model, HttpServletRequest request) {
-        if (!applicationSettingsService.isPastebinEnabled()) {
-            return "redirect:/file/upload";
+        if (!applicationSettingsService.isPastebinEnabled() && !sessionService.hasValidAdminSession(request)) {
+            return "redirect:/";
         }
 
         FileEntity fileEntity = fileService.getFile(uuid).orElse(null);
@@ -128,8 +135,8 @@ public class FileViewController {
                               @RequestParam(name = "password", required = false) String password,
                               HttpServletRequest request,
                               RedirectAttributes redirectAttributes) {
-        if (!applicationSettingsService.isPastebinEnabled()) {
-            return "redirect:/file/upload";
+        if (!applicationSettingsService.isPastebinEnabled() && !sessionService.hasValidAdminSession(request)) {
+            return "redirect:/";
         }
         if (!applicationSettingsService.isUploadPasswordEnabled() && password != null && !password.isBlank()) {
             redirectAttributes.addFlashAttribute("pasteError", "Upload passwords are disabled.");
@@ -161,8 +168,8 @@ public class FileViewController {
                               @RequestParam(name = "keepIndefinitely", defaultValue = "false") boolean keepIndefinitely,
                               HttpServletRequest request,
                               RedirectAttributes redirectAttributes) {
-        if (!applicationSettingsService.isPastebinEnabled()) {
-            return "redirect:/file/upload";
+        if (!applicationSettingsService.isPastebinEnabled() && !sessionService.hasValidAdminSession(request)) {
+            return "redirect:/";
         }
         if (!fileService.isAuthorizedForFile(uuid, request)) {
             return "redirect:/file/password/" + uuid;

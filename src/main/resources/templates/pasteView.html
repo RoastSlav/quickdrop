@@ -115,10 +115,10 @@
         <span hidden id="fileUuid" th:text="${file.uuid}"></span>
     <span hidden id="isMarkdownPaste" th:text="${isMarkdownPaste}"></span>
 
-        <div th:class="${isShareLinksDisabled} ? 'flex flex-col gap-6' : 'grid grid-cols-1 xl:grid-cols-4 gap-6 items-start'">
+        <div th:class="${!isShareLinksEnabled} ? 'flex flex-col gap-6' : 'grid grid-cols-1 xl:grid-cols-4 gap-6 items-start'">
 
             <!-- ── Main column ────────────────────────────────────────── -->
-            <section th:class="${isShareLinksDisabled} ? 'w-full' : 'xl:col-span-3'">
+            <section th:class="${!isShareLinksEnabled} ? 'w-full' : 'xl:col-span-3'">
                 <div class="card-glass card-xl flex flex-col gap-5 animate-in" style="padding: 2rem">
 
                     <!-- Sticky title bar -->
@@ -176,7 +176,7 @@
             </section>
 
             <!-- ── Sidebar ────────────────────────────────────────────── -->
-            <aside class="xl:col-span-1" th:if="${!isShareLinksDisabled}">
+            <aside class="xl:col-span-1" th:if="${isShareLinksEnabled}">
                 <div class="card card-lg flex flex-col gap-4 animate-in animate-in-delay-1 accent-stripe accent-stripe--secondary">
                     <h2 class="section-title flex items-center gap-2">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" style="color:var(--c-secondary)"

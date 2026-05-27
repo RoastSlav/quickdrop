@@ -96,6 +96,16 @@ public class FileRestController {
             @RequestParam(value = "folderManifest", required = false) String folderManifest,
             HttpServletRequest request) {
 
+        boolean isAdmin = sessionService.hasValidAdminSession(request);
+        if (!isAdmin && !applicationSettingsService.isUploadEnabled()) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", "File uploads are currently disabled."));
+        }
+        if (!isAdmin && applicationSettingsService.isUploadAdminOnly()) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", "Uploads are restricted to administrators."));
+        }
+
         if (chunkNumber == 0) {
             logger.info("Upload started for file: {}", fileName);
         }
@@ -156,7 +166,7 @@ public class FileRestController {
                                                                      @RequestParam(value = "expirationDate", required = false) LocalDate expirationDate,
                                                                      @RequestParam(value = "nOfDownloads", required = false) Integer numberOfDownloads,
                                                                      HttpServletRequest request) {
-        if (applicationSettingsService.isShareLinksDisabled()) {
+        if (!applicationSettingsService.isShareLinksEnabled()) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(Map.of("message", "Share links are disabled."));
         }

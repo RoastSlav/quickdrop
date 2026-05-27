@@ -69,7 +69,8 @@ public class NotificationService {
             case PASTE_CREATE -> applicationSettingsService.isNotifyOnPasteCreate();
             case PASTE_VIEW -> applicationSettingsService.isNotifyOnPasteView();
             case PASTE_EDIT -> applicationSettingsService.isNotifyOnPasteEdit();
-            case SHARE_EXPIRE, SHARE_REVOKE -> false;
+            case SHARE_EXPIRE, SHARE_REVOKE,
+                    ADMIN_LOGIN, ADMIN_LOGIN_FAIL, ADMIN_LOGOUT, ADMIN_SETTINGS_CHANGE -> false;
         };
     }
 
@@ -110,6 +111,7 @@ public class NotificationService {
             case SHARE_DOWNLOAD -> "downloaded via share link";
             case SHARE_EXPIRE -> "share link expired";
             case SHARE_REVOKE -> "share link revoked";
+            case ADMIN_LOGIN, ADMIN_LOGIN_FAIL, ADMIN_LOGOUT, ADMIN_SETTINGS_CHANGE -> "";
         };
 
         String summary = "File '" + file.name + "' (" + file.uuid + ") was " + event + ".";

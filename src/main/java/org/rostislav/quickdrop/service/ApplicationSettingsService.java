@@ -165,7 +165,7 @@ public class ApplicationSettingsService {
      */
     @EventListener(ApplicationReadyEvent.class)
     public void onApplicationReady() {
-        ApplicationSettingsEntity settings = applicationSettingsRepository.findById(1L).orElseThrow();
+        ApplicationSettingsEntity settings = self.getApplicationSettings();
         scheduleService.updateSchedule(settings.getFileDeletionCron(), settings.getMaxFileLifeTime());
     }
 

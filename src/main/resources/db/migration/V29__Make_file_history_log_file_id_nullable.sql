@@ -1,7 +1,6 @@
 -- SQLite does not support ALTER COLUMN, so we recreate the table with file_id nullable
 -- to allow admin-level audit events (login, logout, settings changes) that have no file.
-
-PRAGMA foreign_keys = OFF;
+-- PRAGMA foreign_keys is intentionally omitted: nothing has an FK pointing TO this table.
 
 CREATE TABLE file_history_log_new (
     id         INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -22,5 +21,3 @@ ALTER TABLE file_history_log_new RENAME TO file_history_log;
 
 CREATE INDEX IF NOT EXISTS idx_file_history_file ON file_history_log (file_id);
 CREATE INDEX IF NOT EXISTS idx_file_history_type ON file_history_log (event_type);
-
-PRAGMA foreign_keys = ON;

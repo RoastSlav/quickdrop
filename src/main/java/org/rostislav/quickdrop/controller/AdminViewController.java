@@ -176,12 +176,16 @@ public class AdminViewController {
     public String saveSettings(ApplicationSettingsViewModel settings,
                                @RequestParam(value = "appLogo", required = false) MultipartFile appLogo,
                                @RequestParam(value = "clearLogo", required = false, defaultValue = "false") boolean clearLogo,
+                               @RequestParam(value = "adminPassword", required = false) String adminPassword,
                                HttpServletRequest request) {
         String cronError = applySettingsPreprocessing(settings, request);
         if (cronError != null) {
             return "redirect:settings?error=invalidCron";
         }
         applicationSettingsService.updateApplicationSettings(settings, settings.getAppPassword(), appLogo, clearLogo);
+        if (adminPassword != null && !adminPassword.isBlank()) {
+            applicationSettingsService.setAdminPassword(adminPassword);
+        }
         return "redirect:settings";
     }
 
@@ -190,12 +194,16 @@ public class AdminViewController {
     public ResponseEntity<String> saveSettingsApi(ApplicationSettingsViewModel settings,
                                                   @RequestParam(value = "appLogo", required = false) MultipartFile appLogo,
                                                   @RequestParam(value = "clearLogo", required = false, defaultValue = "false") boolean clearLogo,
+                                                  @RequestParam(value = "adminPassword", required = false) String adminPassword,
                                                   HttpServletRequest request) {
         String cronError = applySettingsPreprocessing(settings, request);
         if (cronError != null) {
             return ResponseEntity.badRequest().body("Invalid cron expression");
         }
         applicationSettingsService.updateApplicationSettings(settings, settings.getAppPassword(), appLogo, clearLogo);
+        if (adminPassword != null && !adminPassword.isBlank()) {
+            applicationSettingsService.setAdminPassword(adminPassword);
+        }
         return ResponseEntity.ok("Settings saved");
     }
 
@@ -230,14 +238,15 @@ public class AdminViewController {
         }
     }
 
+    @GetMapping({"", "/"})
+    public String getAdminRoot() {
+        return "redirect:/admin/dashboard";
+    }
+
     @PostMapping("/logout")
     public String logout(HttpServletRequest request) {
         sessionService.invalidateAdminSession(request);
-        try {
-            request.logout();
-        } catch (Exception ignored) {
-        }
-        var session = request.getSession(false);
+        HttpSession session = request.getSession(false);
         if (session != null) {
             session.invalidate();
         }

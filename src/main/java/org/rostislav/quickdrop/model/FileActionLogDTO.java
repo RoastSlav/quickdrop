@@ -59,6 +59,10 @@ public class FileActionLogDTO {
             case SHARE_DOWNLOAD -> "share_download";
             case SHARE_EXPIRE -> "share_expire";
             case SHARE_REVOKE -> "share_revoke";
+            case ADMIN_LOGIN -> "admin_login";
+            case ADMIN_LOGIN_FAIL -> "admin_login_fail";
+            case ADMIN_LOGOUT -> "admin_logout";
+            case ADMIN_SETTINGS_CHANGE -> "admin_settings_change";
         };
     }
 

@@ -114,10 +114,10 @@
     </div>
 
     <!-- ── Content grid ──────────────────────────────────────────── -->
-    <div th:class="${isShareLinksDisabled} ? 'flex flex-col gap-6' : 'grid grid-cols-1 lg:grid-cols-3 gap-6 items-start'">
+    <div th:class="${!isShareLinksEnabled} ? 'flex flex-col gap-6' : 'grid grid-cols-1 lg:grid-cols-3 gap-6 items-start'">
 
       <!-- ── Main column ────────────────────────────────────────── -->
-      <section class="flex flex-col gap-6" th:classappend="${isShareLinksDisabled} ? 'w-full' : 'lg:col-span-2'">
+      <section class="flex flex-col gap-6" th:classappend="${!isShareLinksEnabled} ? 'w-full' : 'lg:col-span-2'">
         <div class="card card-lg flex flex-col gap-6 animate-in animate-in-delay-1" id="fileInfoCard">
 
           <!-- Metadata grid -->
@@ -241,12 +241,12 @@
       </section>
 
       <!-- ── Sidebar ────────────────────────────────────────────── -->
-      <aside class="lg:col-span-1 flex flex-col gap-5" th:if="${!isShareLinksDisabled}">
+      <aside class="lg:col-span-1 flex flex-col gap-5" th:if="${isShareLinksEnabled}">
 
         <!-- Share panel -->
         <div class="card card-lg flex flex-col gap-4 animate-in animate-in-delay-2 accent-stripe accent-stripe--gradient"
              id="sharePanel"
-             th:attr="data-simplified-share-links=${isSimplifiedShareLinksEnabled},data-share-links-disabled=${isShareLinksDisabled}">
+             th:attr="data-simplified-share-links=${isSimplifiedShareLinksEnabled},data-share-links-enabled=${isShareLinksEnabled}">
           <h2 class="section-title flex items-center gap-2">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" style="color:var(--c-secondary)"
                  viewBox="0 0 24 24">

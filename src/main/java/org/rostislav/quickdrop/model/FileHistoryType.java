@@ -47,5 +47,17 @@ public enum FileHistoryType {
     /**
      * A share token was manually revoked by an admin.
      */
-    SHARE_REVOKE
+    SHARE_REVOKE,
+
+    /** An admin successfully authenticated. */
+    ADMIN_LOGIN,
+
+    /** An admin authentication attempt failed (wrong password). */
+    ADMIN_LOGIN_FAIL,
+
+    /** An admin session was explicitly logged out. */
+    ADMIN_LOGOUT,
+
+    /** The admin saved application settings. */
+    ADMIN_SETTINGS_CHANGE
 }

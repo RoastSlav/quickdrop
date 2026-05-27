@@ -196,14 +196,17 @@
                                 </td>
                                 <td class="py-2.5 px-3 max-w-[12rem]">
                                     <a class="font-medium truncate block hover:underline"
+                                       th:if="${entry.file != null}"
                                        th:href="@{/file/{uuid}(uuid=${entry.file.uuid})}"
                                        th:text="${entry.file.name}"
                                        th:title="${entry.file.name}">file.zip</a>
+                                    <span class="text-xs font-mono" style="color:var(--c-text-faint)"
+                                          th:if="${entry.file == null}">—</span>
                                 </td>
                                 <td class="py-2.5 px-3">
                             <span class="badge font-mono text-xs"
-                                  th:classappend="${entry.eventType.name().startsWith('SHARE')} ? 'badge-teal' : (${entry.eventType.name().startsWith('PASTE')} ? '' : (${entry.eventType == T(org.rostislav.quickdrop.model.FileHistoryType).DELETION} ? 'badge-danger' : 'badge-primary'))"
-                                  th:style="${entry.eventType.name().startsWith('PASTE')} ? 'background:var(--c-indigo-muted,var(--c-secondary-muted));color:var(--c-indigo,var(--c-secondary))' : ''"
+                                  th:classappend="${entry.eventType.name().startsWith('ADMIN')} ? 'badge-warning' : (${entry.eventType.name().startsWith('SHARE')} ? 'badge-teal' : (${entry.eventType.name().startsWith('PASTE')} ? '' : (${entry.eventType == T(org.rostislav.quickdrop.model.FileHistoryType).DELETION} ? 'badge-danger' : 'badge-primary')))"
+                                  th:style="${entry.eventType.name().startsWith('PASTE')} ? 'background:var(--c-indigo-muted,var(--c-secondary-muted));color:var(--c-indigo,var(--c-secondary))' : (${entry.eventType.name().startsWith('ADMIN')} ? 'background:var(--c-amber-muted,color-mix(in srgb,var(--c-amber,#f59e0b) 15%,transparent));color:var(--c-amber,#f59e0b)' : '')"
                                   th:text="#{page.history.actionType.__${entry.eventType.name().toLowerCase()}__}">upload</span>
                                 </td>
                                 <td class="py-2.5 px-3 font-mono text-xs" style="color:var(--c-text-muted)"

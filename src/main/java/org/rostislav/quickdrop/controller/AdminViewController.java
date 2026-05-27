@@ -26,6 +26,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
+import org.rostislav.quickdrop.util.FileUtils;
+
 import static org.rostislav.quickdrop.util.FileUtils.bytesToMegabytes;
 import static org.rostislav.quickdrop.util.FileUtils.clampPage;
 import static org.rostislav.quickdrop.util.FileUtils.clampSize;
@@ -186,6 +188,8 @@ public class AdminViewController {
         if (adminPassword != null && !adminPassword.isBlank()) {
             applicationSettingsService.setAdminPassword(adminPassword);
         }
+        FileService.RequesterInfo info = FileUtils.getRequesterInfo(request);
+        analyticsService.logAdminEvent(FileHistoryType.ADMIN_SETTINGS_CHANGE, info.ipAddress(), info.userAgent());
         return "redirect:settings";
     }
 
@@ -204,6 +208,8 @@ public class AdminViewController {
         if (adminPassword != null && !adminPassword.isBlank()) {
             applicationSettingsService.setAdminPassword(adminPassword);
         }
+        FileService.RequesterInfo info = FileUtils.getRequesterInfo(request);
+        analyticsService.logAdminEvent(FileHistoryType.ADMIN_SETTINGS_CHANGE, info.ipAddress(), info.userAgent());
         return ResponseEntity.ok("Settings saved");
     }
 
@@ -227,13 +233,16 @@ public class AdminViewController {
     @PostMapping("/password")
     public String checkAdminPassword(@RequestParam String password, HttpServletRequest request) {
         String adminPasswordHash = applicationSettingsService.getAdminPasswordHash();
+        FileService.RequesterInfo info = FileUtils.getRequesterInfo(request);
 
         if (BCrypt.checkpw(password, adminPasswordHash)) {
             String adminAccessToken = sessionService.addAdminToken(UUID.randomUUID().toString());
             HttpSession session = request.getSession();
             session.setAttribute("admin-session-token", adminAccessToken);
+            analyticsService.logAdminEvent(FileHistoryType.ADMIN_LOGIN, info.ipAddress(), info.userAgent());
             return "redirect:dashboard";
         } else {
+            analyticsService.logAdminEvent(FileHistoryType.ADMIN_LOGIN_FAIL, info.ipAddress(), info.userAgent());
             return "redirect:password";
         }
     }
@@ -245,6 +254,8 @@ public class AdminViewController {
 
     @PostMapping("/logout")
     public String logout(HttpServletRequest request) {
+        FileService.RequesterInfo info = FileUtils.getRequesterInfo(request);
+        analyticsService.logAdminEvent(FileHistoryType.ADMIN_LOGOUT, info.ipAddress(), info.userAgent());
         sessionService.invalidateAdminSession(request);
         HttpSession session = request.getSession(false);
         if (session != null) {

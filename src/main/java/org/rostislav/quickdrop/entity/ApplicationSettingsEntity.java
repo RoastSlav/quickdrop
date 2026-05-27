@@ -54,14 +54,14 @@ public class ApplicationSettingsEntity {
     /** Whether the Admin Dashboard navigation button is shown to non-admin users. */
     private boolean isAdminDashboardButtonEnabled;
 
-    /** When {@code true}, AES encryption is not applied even if a password is provided. */
-    private boolean disableEncryption;
+    /** When {@code true}, AES encryption is applied when a password is provided. */
+    private boolean encryptionEnabled;
 
-    /** When {@code true}, upload-time passwords are rejected entirely. */
-    private boolean disableUploadPassword;
+    /** When {@code true}, upload-time passwords are accepted. */
+    private boolean uploadPasswordEnabled;
 
-    /** When {@code true}, in-browser file preview is disabled. */
-    private boolean disablePreview;
+    /** When {@code true}, in-browser file preview is enabled. */
+    private boolean previewEnabled;
 
     /** Whether EXIF and other metadata is stripped from images on upload. */
     private boolean metadataStrippingEnabled;
@@ -123,8 +123,14 @@ public class ApplicationSettingsEntity {
      */
     private boolean simplifiedShareLinks;
 
-    /** When {@code true}, share-link generation is disabled entirely. */
-    private boolean shareLinksDisabled;
+    /** When {@code true}, share-link generation is enabled. */
+    private boolean shareLinksEnabled;
+
+    /** When {@code true}, file uploads are enabled for all users. */
+    private boolean uploadEnabled = true;
+
+    /** When {@code true}, only admin sessions may upload files. */
+    private boolean uploadAdminOnly;
 
     /** Whether the Pastebin feature is available. */
     private boolean pastebinEnabled;
@@ -194,9 +200,9 @@ public class ApplicationSettingsEntity {
         this.appPasswordEnabled = settings.isAppPasswordEnabled();
         this.isFileListPageEnabled = settings.isFileListPageEnabled();
         this.isAdminDashboardButtonEnabled = settings.isAdminDashboardButtonEnabled();
-        this.disableEncryption = settings.isEncryptionDisabled();
-        this.disableUploadPassword = settings.isDisableUploadPassword();
-        this.disablePreview = settings.isDisablePreview();
+        this.encryptionEnabled = settings.isEncryptionEnabled();
+        this.uploadPasswordEnabled = settings.isUploadPasswordEnabled();
+        this.previewEnabled = settings.isPreviewEnabled();
         this.metadataStrippingEnabled = settings.isMetadataStrippingEnabled();
         this.maxPreviewSizeBytes = settings.getMaxPreviewSizeBytes();
         this.defaultHomePage = settings.getDefaultHomePage();
@@ -216,7 +222,9 @@ public class ApplicationSettingsEntity {
         this.notificationBatchEnabled = settings.isNotificationBatchEnabled();
         this.notificationBatchMinutes = settings.getNotificationBatchMinutes();
         this.simplifiedShareLinks = settings.isSimplifiedShareLinks();
-        this.shareLinksDisabled = settings.isShareLinksDisabled();
+        this.shareLinksEnabled = settings.isShareLinksEnabled();
+        this.uploadEnabled = settings.isUploadEnabled();
+        this.uploadAdminOnly = settings.isUploadAdminOnly();
         this.pastebinEnabled = settings.isPastebinEnabled();
         this.appName = settings.getAppName();
         this.logoFileName = settings.getLogoFileName();
@@ -352,28 +360,28 @@ public class ApplicationSettingsEntity {
         isAdminDashboardButtonEnabled = adminDashboardButtonEnabled;
     }
 
-    public boolean isDisableEncryption() {
-        return disableEncryption;
+    public boolean isEncryptionEnabled() {
+        return encryptionEnabled;
     }
 
-    public void setDisableEncryption(boolean disableEncryption) {
-        this.disableEncryption = disableEncryption;
+    public void setEncryptionEnabled(boolean encryptionEnabled) {
+        this.encryptionEnabled = encryptionEnabled;
     }
 
-    public boolean isDisableUploadPassword() {
-        return disableUploadPassword;
+    public boolean isUploadPasswordEnabled() {
+        return uploadPasswordEnabled;
     }
 
-    public void setDisableUploadPassword(boolean disableUploadPassword) {
-        this.disableUploadPassword = disableUploadPassword;
+    public void setUploadPasswordEnabled(boolean uploadPasswordEnabled) {
+        this.uploadPasswordEnabled = uploadPasswordEnabled;
     }
 
-    public boolean isDisablePreview() {
-        return disablePreview;
+    public boolean isPreviewEnabled() {
+        return previewEnabled;
     }
 
-    public void setDisablePreview(boolean disablePreview) {
-        this.disablePreview = disablePreview;
+    public void setPreviewEnabled(boolean previewEnabled) {
+        this.previewEnabled = previewEnabled;
     }
 
     public boolean isMetadataStrippingEnabled() {
@@ -528,12 +536,28 @@ public class ApplicationSettingsEntity {
         this.simplifiedShareLinks = simplifiedShareLinks;
     }
 
-    public boolean isShareLinksDisabled() {
-        return shareLinksDisabled;
+    public boolean isShareLinksEnabled() {
+        return shareLinksEnabled;
     }
 
-    public void setShareLinksDisabled(boolean shareLinksDisabled) {
-        this.shareLinksDisabled = shareLinksDisabled;
+    public void setShareLinksEnabled(boolean shareLinksEnabled) {
+        this.shareLinksEnabled = shareLinksEnabled;
+    }
+
+    public boolean isUploadEnabled() {
+        return uploadEnabled;
+    }
+
+    public void setUploadEnabled(boolean uploadEnabled) {
+        this.uploadEnabled = uploadEnabled;
+    }
+
+    public boolean isUploadAdminOnly() {
+        return uploadAdminOnly;
+    }
+
+    public void setUploadAdminOnly(boolean uploadAdminOnly) {
+        this.uploadAdminOnly = uploadAdminOnly;
     }
 
     public boolean isPastebinEnabled() {

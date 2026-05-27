@@ -35,9 +35,9 @@ public class ApplicationSettingsViewModel {
     private long sessionLifeTime;
     private boolean isFileListPageEnabled;
     private boolean isAdminDashboardButtonEnabled;
-    private boolean encryptionDisabled;
-    private boolean disableUploadPassword;
-    private boolean disablePreview;
+    private boolean encryptionEnabled;
+    private boolean uploadPasswordEnabled;
+    private boolean previewEnabled;
     private boolean metadataStrippingEnabled;
     @Min(value = 1, message = "{validation.number.positive}")
     private long maxPreviewSizeBytes;
@@ -58,7 +58,9 @@ public class ApplicationSettingsViewModel {
     private boolean notificationBatchEnabled;
     private Integer notificationBatchMinutes;
     private boolean simplifiedShareLinks;
-    private boolean shareLinksDisabled;
+    private boolean shareLinksEnabled;
+    private boolean uploadEnabled;
+    private boolean uploadAdminOnly;
     private boolean pastebinEnabled;
     private String appName;
     private String logoFileName;
@@ -87,9 +89,9 @@ public class ApplicationSettingsViewModel {
         this.sessionLifeTime = settings.getSessionLifetime();
         this.isFileListPageEnabled = settings.isFileListPageEnabled();
         this.isAdminDashboardButtonEnabled = settings.isAdminDashboardButtonEnabled();
-        this.encryptionDisabled = settings.isDisableEncryption();
-        this.disableUploadPassword = settings.isDisableUploadPassword();
-        this.disablePreview = settings.isDisablePreview();
+        this.encryptionEnabled = settings.isEncryptionEnabled();
+        this.uploadPasswordEnabled = settings.isUploadPasswordEnabled();
+        this.previewEnabled = settings.isPreviewEnabled();
         this.metadataStrippingEnabled = settings.isMetadataStrippingEnabled();
         this.maxPreviewSizeBytes = settings.getMaxPreviewSizeBytes();
         this.defaultHomePage = settings.getDefaultHomePage();
@@ -109,7 +111,9 @@ public class ApplicationSettingsViewModel {
         this.notificationBatchEnabled = settings.isNotificationBatchEnabled();
         this.notificationBatchMinutes = settings.getNotificationBatchMinutes();
         this.simplifiedShareLinks = settings.isSimplifiedShareLinks();
-        this.shareLinksDisabled = settings.isShareLinksDisabled();
+        this.shareLinksEnabled = settings.isShareLinksEnabled();
+        this.uploadEnabled = settings.isUploadEnabled();
+        this.uploadAdminOnly = settings.isUploadAdminOnly();
         this.pastebinEnabled = settings.isPastebinEnabled();
         this.appName = settings.getAppName();
         this.logoFileName = settings.getLogoFileName();
@@ -213,28 +217,28 @@ public class ApplicationSettingsViewModel {
         isAdminDashboardButtonEnabled = adminDashboardButtonEnabled;
     }
 
-    public boolean isEncryptionDisabled() {
-        return encryptionDisabled;
+    public boolean isEncryptionEnabled() {
+        return encryptionEnabled;
     }
 
-    public void setEncryptionDisabled(boolean encryptionDisabled) {
-        this.encryptionDisabled = encryptionDisabled;
+    public void setEncryptionEnabled(boolean encryptionEnabled) {
+        this.encryptionEnabled = encryptionEnabled;
     }
 
-    public boolean isDisableUploadPassword() {
-        return disableUploadPassword;
+    public boolean isUploadPasswordEnabled() {
+        return uploadPasswordEnabled;
     }
 
-    public void setDisableUploadPassword(boolean disableUploadPassword) {
-        this.disableUploadPassword = disableUploadPassword;
+    public void setUploadPasswordEnabled(boolean uploadPasswordEnabled) {
+        this.uploadPasswordEnabled = uploadPasswordEnabled;
     }
 
-    public boolean isDisablePreview() {
-        return disablePreview;
+    public boolean isPreviewEnabled() {
+        return previewEnabled;
     }
 
-    public void setDisablePreview(boolean disablePreview) {
-        this.disablePreview = disablePreview;
+    public void setPreviewEnabled(boolean previewEnabled) {
+        this.previewEnabled = previewEnabled;
     }
 
     public boolean isMetadataStrippingEnabled() {
@@ -389,12 +393,28 @@ public class ApplicationSettingsViewModel {
         this.simplifiedShareLinks = simplifiedShareLinks;
     }
 
-    public boolean isShareLinksDisabled() {
-        return shareLinksDisabled;
+    public boolean isShareLinksEnabled() {
+        return shareLinksEnabled;
     }
 
-    public void setShareLinksDisabled(boolean shareLinksDisabled) {
-        this.shareLinksDisabled = shareLinksDisabled;
+    public void setShareLinksEnabled(boolean shareLinksEnabled) {
+        this.shareLinksEnabled = shareLinksEnabled;
+    }
+
+    public boolean isUploadEnabled() {
+        return uploadEnabled;
+    }
+
+    public void setUploadEnabled(boolean uploadEnabled) {
+        this.uploadEnabled = uploadEnabled;
+    }
+
+    public boolean isUploadAdminOnly() {
+        return uploadAdminOnly;
+    }
+
+    public void setUploadAdminOnly(boolean uploadAdminOnly) {
+        this.uploadAdminOnly = uploadAdminOnly;
     }
 
     public boolean isPastebinEnabled() {

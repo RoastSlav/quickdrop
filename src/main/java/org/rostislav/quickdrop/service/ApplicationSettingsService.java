@@ -81,9 +81,9 @@ public class ApplicationSettingsService {
             defaults.setSessionLifetime(30);
             defaults.setFileListPageEnabled(true);
             defaults.setAdminDashboardButtonEnabled(true);
-            defaults.setDisableEncryption(false);
-            defaults.setDisableUploadPassword(false);
-            defaults.setDisablePreview(false);
+            defaults.setEncryptionEnabled(true);
+            defaults.setUploadPasswordEnabled(true);
+            defaults.setPreviewEnabled(true);
             defaults.setMetadataStrippingEnabled(false);
             defaults.setMaxPreviewSizeBytes(5L * 1024L * 1024L);
             defaults.setDefaultHomePage("upload");
@@ -103,7 +103,9 @@ public class ApplicationSettingsService {
             defaults.setNotificationBatchEnabled(false);
             defaults.setNotificationBatchMinutes(5);
             defaults.setSimplifiedShareLinks(false);
-            defaults.setShareLinksDisabled(false);
+            defaults.setShareLinksEnabled(true);
+            defaults.setUploadEnabled(true);
+            defaults.setUploadAdminOnly(false);
             defaults.setPastebinEnabled(true);
             defaults.setAppName("QuickDrop");
             defaults.setLogoFileName(null);
@@ -142,6 +144,14 @@ public class ApplicationSettingsService {
         }
         if (settings.getDefaultLanguage() == null || settings.getDefaultLanguage().isBlank()) {
             settings.setDefaultLanguage("en");
+            dirty = true;
+        }
+        if (settings.getLogStoragePath() == null || settings.getLogStoragePath().isBlank()) {
+            settings.setLogStoragePath("logs");
+            dirty = true;
+        }
+        if (settings.getFileStoragePath() == null || settings.getFileStoragePath().isBlank()) {
+            settings.setFileStoragePath("files");
             dirty = true;
         }
         if (dirty) {
@@ -196,20 +206,20 @@ public class ApplicationSettingsService {
         entity.setSessionLifetime(settings.getSessionLifeTime());
         entity.setFileListPageEnabled(settings.isFileListPageEnabled());
         entity.setAdminDashboardButtonEnabled(settings.isAdminDashboardButtonEnabled());
-        entity.setDisableUploadPassword(settings.isDisableUploadPassword());
-        if (settings.isDisableUploadPassword()) {
-            entity.setDisableEncryption(true);
-        } else {
-            entity.setDisableEncryption(settings.isEncryptionDisabled());
-        }
-        entity.setDisablePreview(settings.isDisablePreview());
+        boolean uploadPasswordEnabled = settings.isUploadPasswordEnabled();
+        entity.setUploadPasswordEnabled(uploadPasswordEnabled);
+        entity.setEncryptionEnabled(uploadPasswordEnabled && settings.isEncryptionEnabled());
+        entity.setPreviewEnabled(settings.isPreviewEnabled());
         entity.setMetadataStrippingEnabled(settings.isMetadataStrippingEnabled());
         entity.setMaxPreviewSizeBytes(settings.getMaxPreviewSizeBytes());
         entity.setDefaultHomePage(settings.getDefaultHomePage());
         entity.setKeepIndefinitelyAdminOnly(settings.isKeepIndefinitelyAdminOnly());
         entity.setHideFromListAdminOnly(settings.isHideFromListAdminOnly());
-        boolean shareLinksDisabled = settings.isShareLinksDisabled();
-        entity.setShareLinksDisabled(shareLinksDisabled);
+        boolean shareLinksEnabled = settings.isShareLinksEnabled();
+        entity.setShareLinksEnabled(shareLinksEnabled);
+        boolean uploadEnabled = settings.isUploadEnabled();
+        entity.setUploadEnabled(uploadEnabled);
+        entity.setUploadAdminOnly(uploadEnabled && settings.isUploadAdminOnly());
         entity.setDiscordWebhookEnabled(settings.isDiscordWebhookEnabled());
         entity.setDiscordWebhookUrl(settings.getDiscordWebhookUrl());
         entity.setEmailNotificationsEnabled(settings.isEmailNotificationsEnabled());
@@ -231,7 +241,7 @@ public class ApplicationSettingsService {
         } else if (existingBatchMinutes != null) {
             entity.setNotificationBatchMinutes(existingBatchMinutes);
         }
-        entity.setSimplifiedShareLinks(shareLinksDisabled ? false : settings.isSimplifiedShareLinks());
+        entity.setSimplifiedShareLinks(shareLinksEnabled && settings.isSimplifiedShareLinks());
         entity.setPastebinEnabled(settings.isPastebinEnabled());
         String requestedAppName = settings.getAppName();
         entity.setAppName((requestedAppName == null || requestedAppName.isBlank()) ? "QuickDrop" : requestedAppName.trim());
@@ -356,17 +366,17 @@ public class ApplicationSettingsService {
 
     /** @return {@code true} if AES encryption of uploaded files is active */
     public boolean isEncryptionEnabled() {
-        return !self.getApplicationSettings().isDisableEncryption();
+        return self.getApplicationSettings().isEncryptionEnabled();
     }
 
     /** @return {@code true} if per-file upload passwords are allowed */
     public boolean isUploadPasswordEnabled() {
-        return !self.getApplicationSettings().isDisableUploadPassword();
+        return self.getApplicationSettings().isUploadPasswordEnabled();
     }
 
     /** @return {@code true} if in-browser file preview is enabled */
     public boolean isPreviewEnabled() {
-        return !self.getApplicationSettings().isDisablePreview();
+        return self.getApplicationSettings().isPreviewEnabled();
     }
 
     /** @return {@code true} if EXIF/metadata stripping is enabled on image uploads */
@@ -460,12 +470,23 @@ public class ApplicationSettingsService {
      */
     public boolean isSimplifiedShareLinksEnabled() {
         ApplicationSettingsEntity s = self.getApplicationSettings();
-        return s.isSimplifiedShareLinks() && !s.isShareLinksDisabled();
+        return s.isSimplifiedShareLinks() && s.isShareLinksEnabled();
     }
 
-    /** @return {@code true} if share link generation is globally disabled */
-    public boolean isShareLinksDisabled() {
-        return self.getApplicationSettings().isShareLinksDisabled();
+    /** @return {@code true} if share link generation is enabled */
+    public boolean isShareLinksEnabled() {
+        return self.getApplicationSettings().isShareLinksEnabled();
+    }
+
+    /** @return {@code true} if file uploads are enabled */
+    public boolean isUploadEnabled() {
+        return self.getApplicationSettings().isUploadEnabled();
+    }
+
+    /** @return {@code true} if uploads are restricted to admin sessions only */
+    public boolean isUploadAdminOnly() {
+        ApplicationSettingsEntity s = self.getApplicationSettings();
+        return s.isUploadEnabled() && s.isUploadAdminOnly();
     }
 
     /** @return {@code true} if the pastebin feature is enabled */

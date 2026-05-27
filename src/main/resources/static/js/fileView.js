@@ -51,7 +51,7 @@ function updateFileViewBadges(name, checked) {
 function initializeModal() {
   updateShareLink("");
 
-  if (isShareLinksDisabled()) {
+  if (!isShareLinksEnabled()) {
     return;
   }
 
@@ -83,13 +83,13 @@ function initializeModal() {
 function isSimplifiedShareLinksEnabled() {
   const panel = document.getElementById("sharePanel");
   return (
-    !isShareLinksDisabled() && panel?.dataset?.simplifiedShareLinks === "true"
+    isShareLinksEnabled() && panel?.dataset?.simplifiedShareLinks === "true"
   );
 }
 
-function isShareLinksDisabled() {
+function isShareLinksEnabled() {
   const panel = document.getElementById("sharePanel");
-  return !panel || panel.dataset.shareLinksDisabled === "true";
+  return panel?.dataset?.shareLinksEnabled === "true";
 }
 
 function disableShareOptionsForSimplifiedMode() {
@@ -138,7 +138,7 @@ function setupSimplifiedShareLinks() {
 }
 
 function generateShareLink(fileUuid, daysValid, allowedNumberOfDownloads) {
-  if (isShareLinksDisabled()) {
+  if (!isShareLinksEnabled()) {
     return Promise.reject(new Error("Share links are disabled."));
   }
 
@@ -233,7 +233,7 @@ function copyShareLink() {
 }
 
 function createShareLink() {
-  if (isShareLinksDisabled()) {
+  if (!isShareLinksEnabled()) {
     alert(getI18nStr('shareDisabled', 'Share links are disabled by the administrator.'));
     return;
   }

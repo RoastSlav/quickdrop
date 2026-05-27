@@ -813,26 +813,36 @@ html.dark {
     .stat-hero--primary {
         --stat-glow: color-mix(in srgb, var(--c-primary) 30%, transparent);
         --stat-color: var(--c-primary);
+        background: color-mix(in srgb, var(--c-primary) 7%, var(--c-surface));
+        border-top: 3px solid var(--c-primary);
     }
 
     .stat-hero--secondary {
         --stat-glow: color-mix(in srgb, var(--c-secondary) 30%, transparent);
         --stat-color: var(--c-secondary);
+        background: color-mix(in srgb, var(--c-secondary) 7%, var(--c-surface));
+        border-top: 3px solid var(--c-secondary);
     }
 
     .stat-hero--teal {
         --stat-glow: color-mix(in srgb, var(--c-teal) 30%, transparent);
         --stat-color: var(--c-teal);
+        background: color-mix(in srgb, var(--c-teal) 7%, var(--c-surface));
+        border-top: 3px solid var(--c-teal);
     }
 
     .stat-hero--emerald {
         --stat-glow: color-mix(in srgb, var(--c-emerald) 30%, transparent);
         --stat-color: var(--c-emerald);
+        background: color-mix(in srgb, var(--c-emerald) 7%, var(--c-surface));
+        border-top: 3px solid var(--c-emerald);
     }
 
     .stat-hero--rose {
         --stat-glow: color-mix(in srgb, var(--c-rose) 30%, transparent);
         --stat-color: var(--c-rose);
+        background: color-mix(in srgb, var(--c-rose) 7%, var(--c-surface));
+        border-top: 3px solid var(--c-rose);
     }
 
     /* ── Accent stripe on cards ──────────────────────────────────────── */

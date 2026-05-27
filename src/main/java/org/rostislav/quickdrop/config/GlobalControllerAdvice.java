@@ -40,7 +40,8 @@ public class GlobalControllerAdvice {
      *   <li>Feature flags: {@code isFileListPageEnabled}, {@code isAdminDashboardButtonEnabled},
      *       {@code isEncryptionEnabled}, {@code uploadPasswordEnabled}, {@code isPreviewEnabled},
      *       {@code isMetadataStrippingEnabled}, {@code isSimplifiedShareLinksEnabled},
-     *       {@code isShareLinksDisabled}, {@code isPastebinEnabled}</li>
+     *       {@code isShareLinksEnabled}, {@code isUploadEnabled}, {@code isUploadAdminOnly},
+     *       {@code isPastebinEnabled}</li>
      *   <li>Session state: {@code hasAdminSession}, {@code hasAppSession}</li>
      *   <li>Permission flags: {@code canUseKeepIndefinitely}, {@code canHideFromList},
      *       {@code isKeepIndefinitelyAdminOnly}, {@code isHideFromListAdminOnly}</li>
@@ -66,7 +67,9 @@ public class GlobalControllerAdvice {
         model.addAttribute("isPreviewEnabled", applicationSettingsService.isPreviewEnabled());
         model.addAttribute("isMetadataStrippingEnabled", applicationSettingsService.isMetadataStrippingEnabled());
         model.addAttribute("isSimplifiedShareLinksEnabled", applicationSettingsService.isSimplifiedShareLinksEnabled());
-        model.addAttribute("isShareLinksDisabled", applicationSettingsService.isShareLinksDisabled());
+        model.addAttribute("isShareLinksEnabled", applicationSettingsService.isShareLinksEnabled());
+        model.addAttribute("isUploadEnabled", applicationSettingsService.isUploadEnabled());
+        model.addAttribute("isUploadAdminOnly", applicationSettingsService.isUploadAdminOnly());
         model.addAttribute("isPastebinEnabled", applicationSettingsService.isPastebinEnabled());
         model.addAttribute("appName", applicationSettingsService.getAppName());
         model.addAttribute("appLogoPath", applicationSettingsService.getLogoPath());

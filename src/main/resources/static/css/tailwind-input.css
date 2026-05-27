@@ -9,19 +9,22 @@
 
 :root {
     /* ── Surfaces ─────────────────────────────────────────────────────── */
-    --c-bg: #f0f2f0;
-    --c-bg-deep: #e4e7e2;
+    --c-bg: #e5f0f4;
+    --c-bg-deep: #d6e8ee;
     --c-surface: #ffffff;
-    --c-surface-raised: #f7f8f6;
-    --c-surface-subtle: #f0f2ee;
-    --c-surface-elevated: rgba(255, 255, 255, 0.80);
-    --c-surface-glass: rgba(255, 255, 255, 0.55);
+    --c-surface-raised: #eff8fb;
+    --c-surface-subtle: #e5f0f4;
+    --c-surface-elevated: rgba(255, 255, 255, 0.85);
+    --c-surface-glass: rgba(255, 255, 255, 0.60);
     --c-glow: rgba(74, 215, 240, 0.22);
 
     /* ── Borders ──────────────────────────────────────────────────────── */
-    --c-border: #dde2d8;
-    --c-border-strong: #c4cdc0;
-    --c-border-soft: rgba(46, 64, 87, 0.06);
+    --c-border: #bdd4dc;
+    --c-border-strong: #9bbac5;
+    --c-border-soft: rgba(11, 168, 196, 0.08);
+
+    /* ── Orb decoration ─────────────────────────────────────────────── */
+    --orb-opacity: 0.18;
 
     /* ── Text ─────────────────────────────────────────────────────────── */
     --c-text: #1a2332;
@@ -136,6 +139,8 @@ html.dark {
     --c-border: #2E4057;
     --c-border-strong: #3d5470;
     --c-border-soft: rgba(74, 215, 240, 0.10);
+
+    --orb-opacity: 0.5;
 
     --c-text: #e8edf2;
     --c-text-muted: #8a9ba8;
@@ -462,7 +467,7 @@ html.dark {
         position: absolute;
         border-radius: 50%;
         filter: blur(80px);
-        opacity: 0.5;
+        opacity: var(--orb-opacity, 0.5);
         will-change: transform;
     }
 
@@ -691,8 +696,9 @@ html.dark {
         border: 1px solid var(--c-border);
         border-radius: 1.25rem;
         padding: 1.5rem;
-        box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04),
-        0 12px 32px -16px rgba(15, 23, 42, 0.10);
+        box-shadow: 0 1px 3px rgba(15, 23, 42, 0.07),
+        0 4px 12px -4px rgba(15, 23, 42, 0.06),
+        0 16px 40px -16px rgba(15, 23, 42, 0.08);
     }
 
     .card-lg {

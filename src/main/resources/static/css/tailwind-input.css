@@ -396,13 +396,7 @@ html.dark {
 }
 
 @keyframes qd-gradient-shift {
-    0% {
-        background-position: 0% 50%;
-    }
-    50% {
-        background-position: 100% 50%;
-    }
-    100% {
+    0%, 50%, 100% {
         background-position: 0% 50%;
     }
 }
@@ -580,19 +574,18 @@ html.dark {
     }
 
     .btn-gradient {
-        background: var(--g-brand);
-        background-size: 200% 200%;
-        color: #ffffff;
+        background: var(--c-primary);
+        color: var(--c-primary-fg);
         border: none;
-        box-shadow: 0 1px 0 rgba(255, 255, 255, 0.25) inset,
-        0 8px 28px -8px rgba(14, 165, 233, 0.50);
-        animation: qd-gradient-shift 6s ease infinite;
+        box-shadow: 0 1px 0 rgba(255, 255, 255, 0.2) inset,
+        0 8px 24px -6px color-mix(in srgb, var(--c-primary) 60%, transparent);
     }
 
     .btn-gradient:hover {
-        box-shadow: 0 1px 0 rgba(255, 255, 255, 0.25) inset,
-        0 12px 36px -8px rgba(99, 102, 241, 0.55);
-        transform: translateY(-2px);
+        background: var(--c-primary-hover);
+        box-shadow: 0 1px 0 rgba(255, 255, 255, 0.2) inset,
+        0 8px 24px -6px color-mix(in srgb, var(--c-primary) 60%, transparent);
+        transform: translateY(-1px);
     }
 
     .btn-secondary {
@@ -1138,12 +1131,7 @@ html.dark {
     }
 
     .gradient-text {
-        background: var(--g-brand-vivid);
-        background-size: 200% 200%;
-        -webkit-background-clip: text;
-        background-clip: text;
-        color: transparent;
-        animation: qd-gradient-shift 8s ease infinite;
+        color: var(--c-primary);
     }
 
     /* ── Badges ───────────────────────────────────────────────────────── */

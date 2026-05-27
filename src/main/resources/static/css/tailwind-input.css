@@ -469,7 +469,7 @@ html.dark {
     .orb--primary {
         width: clamp(300px, 35vw, 600px);
         height: clamp(300px, 35vw, 600px);
-        background: radial-gradient(circle, var(--c-primary) 0%, transparent 70%);
+        background: color-mix(in srgb, var(--c-primary) 40%, transparent);
         top: -10%;
         left: -5%;
         animation: qd-float 20s ease-in-out infinite;
@@ -478,7 +478,7 @@ html.dark {
     .orb--secondary {
         width: clamp(250px, 30vw, 500px);
         height: clamp(250px, 30vw, 500px);
-        background: radial-gradient(circle, var(--c-secondary) 0%, transparent 70%);
+        background: color-mix(in srgb, var(--c-secondary) 40%, transparent);
         top: 10%;
         right: -10%;
         animation: qd-float-reverse 25s ease-in-out infinite;
@@ -487,7 +487,7 @@ html.dark {
     .orb--teal {
         width: clamp(200px, 25vw, 400px);
         height: clamp(200px, 25vw, 400px);
-        background: radial-gradient(circle, var(--c-teal) 0%, transparent 70%);
+        background: color-mix(in srgb, var(--c-teal) 40%, transparent);
         bottom: -5%;
         left: 30%;
         animation: qd-float 22s ease-in-out infinite 3s;
@@ -500,15 +500,7 @@ html.dark {
     }
 
     .hero-scene::before {
-        content: "";
-        position: absolute;
-        inset: -30% -15% auto -15%;
-        height: 80%;
-        background: var(--g-aurora);
-        z-index: -1;
-        pointer-events: none;
-        filter: blur(40px);
-        opacity: 0.8;
+        display: none;
     }
 
     /* ── Buttons ──────────────────────────────────────────────────────── */
@@ -738,7 +730,7 @@ html.dark {
         inset: -1px;
         border-radius: inherit;
         padding: 1px;
-        background: linear-gradient(135deg, transparent 30%, var(--c-primary) 50%, var(--c-secondary) 70%, transparent 100%);
+        background: var(--c-primary);
         mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
         mask-composite: exclude;
         -webkit-mask-composite: xor;
@@ -748,7 +740,7 @@ html.dark {
     }
 
     .card-glow:hover::before {
-        opacity: 1;
+        opacity: 0.5;
     }
 
     .card-glow:hover {
@@ -803,10 +795,7 @@ html.dark {
         letter-spacing: -0.04em;
         line-height: 1;
         font-feature-settings: "tnum";
-        background: var(--stat-gradient, var(--g-brand));
-        -webkit-background-clip: text;
-        background-clip: text;
-        color: transparent;
+        color: var(--stat-color, var(--c-primary));
         animation: qd-count-up 600ms var(--ease-out-expo) both;
     }
 
@@ -823,27 +812,27 @@ html.dark {
 
     .stat-hero--primary {
         --stat-glow: color-mix(in srgb, var(--c-primary) 30%, transparent);
-        --stat-gradient: var(--g-brand);
+        --stat-color: var(--c-primary);
     }
 
     .stat-hero--secondary {
         --stat-glow: color-mix(in srgb, var(--c-secondary) 30%, transparent);
-        --stat-gradient: linear-gradient(135deg, var(--c-secondary), var(--c-indigo));
+        --stat-color: var(--c-secondary);
     }
 
     .stat-hero--teal {
         --stat-glow: color-mix(in srgb, var(--c-teal) 30%, transparent);
-        --stat-gradient: var(--g-teal-emerald);
+        --stat-color: var(--c-teal);
     }
 
     .stat-hero--emerald {
         --stat-glow: color-mix(in srgb, var(--c-emerald) 30%, transparent);
-        --stat-gradient: var(--g-teal-emerald);
+        --stat-color: var(--c-emerald);
     }
 
     .stat-hero--rose {
         --stat-glow: color-mix(in srgb, var(--c-rose) 30%, transparent);
-        --stat-gradient: var(--g-rose-amber);
+        --stat-color: var(--c-rose);
     }
 
     /* ── Accent stripe on cards ──────────────────────────────────────── */
@@ -859,7 +848,7 @@ html.dark {
         right: 1.5rem;
         height: 3px;
         border-radius: 0 0 9999px 9999px;
-        background: var(--stripe-color, var(--g-brand));
+        background: var(--stripe-color, var(--c-primary));
     }
 
     .accent-stripe--primary {
@@ -887,7 +876,7 @@ html.dark {
     }
 
     .accent-stripe--gradient {
-        --stripe-color: var(--g-brand);
+        --stripe-color: var(--c-primary);
     }
 
     /* ── Form elements ────────────────────────────────────────────────── */
@@ -1781,7 +1770,7 @@ html.dark {
         left: 0;
         right: 0;
         height: 1px;
-        background: linear-gradient(90deg, transparent 5%, color-mix(in srgb, var(--c-primary) 60%, transparent) 30%, color-mix(in srgb, var(--c-teal) 50%, transparent) 70%, transparent 95%);
+        background: color-mix(in srgb, var(--c-primary) 50%, transparent);
         opacity: 0.7;
     }
 
@@ -1871,7 +1860,7 @@ html.dark {
         right: 0.75rem;
         bottom: -0.5rem;
         height: 2px;
-        background: var(--g-brand);
+        background: var(--c-primary);
         border-radius: 9999px;
     }
 

@@ -40,13 +40,29 @@ _SKIP_UNTRANSLATED_RE = re.compile(
     re.VERBOSE,
 )
 
+_LOCALE_INVARIANT = frozenset({
+    "Markdown", "Markdown (.md)", "SQLite", "Pastebin",
+    "Discord Webhook", "Webhook URL", "My Brand", "Logo / favicon",
+})
+
 
 def _is_skippable(value: str) -> bool:
     """Return True for values that are expected to be identical across locales."""
     v = value.strip()
     if len(v) <= 1:
         return True
+    if v in _LOCALE_INVARIANT:
+        return True
     if _SKIP_UNTRANSLATED_RE.match(v):
+        return True
+    # Comma-separated email list (example placeholder)
+    if "@" in v and "," in v:
+        return True
+    # Example hostname like smtp.example.com (no spaces, no @, two dots)
+    if " " not in v and "@" not in v and v.count(".") >= 2:
+        return True
+    # Browser title ending in a known brand/product name
+    if re.match(r'^\{0\}\s*[-–]\s*(Pastebin|QuickDrop|Admin|Password|Error)$', v):
         return True
     return False
 

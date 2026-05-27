@@ -95,7 +95,9 @@ public class SessionService implements HttpSessionListener {
      * @return {@code true} if the request has an active admin session
      */
     public boolean hasValidAdminSession(HttpServletRequest request) {
-        Object token = request.getSession().getAttribute("admin-session-token");
+        HttpSession session = request.getSession(false);
+        if (session == null) return false;
+        Object token = session.getAttribute("admin-session-token");
         return token != null && validateAdminToken(token.toString());
     }
 

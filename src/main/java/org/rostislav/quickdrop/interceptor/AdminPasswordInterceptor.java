@@ -2,6 +2,7 @@ package org.rostislav.quickdrop.interceptor;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import org.rostislav.quickdrop.service.SessionService;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
@@ -35,18 +36,20 @@ public class AdminPasswordInterceptor implements HandlerInterceptor {
         if ("/admin/logout".equals(request.getRequestURI())) {
             return true;
         }
-        Object sessionToken = request.getSession().getAttribute("admin-session-token");
-
+        HttpSession session = request.getSession(false);
+        if (session == null) {
+            response.sendRedirect("/admin/password");
+            return false;
+        }
+        Object sessionToken = session.getAttribute("admin-session-token");
         if (sessionToken == null || sessionToken.toString().isEmpty()) {
             response.sendRedirect("/admin/password");
             return false;
         }
-
         if (!sessionService.validateAdminToken(sessionToken.toString())) {
             response.sendRedirect("/admin/password");
             return false;
         }
-
         return true;
     }
 }

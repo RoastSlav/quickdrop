@@ -1,8 +1,8 @@
 package org.rostislav.quickdrop.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
-import org.rostislav.quickdrop.entity.FileEntity;
 import org.rostislav.quickdrop.entity.ShareTokenEntity;
+import org.rostislav.quickdrop.entity.Upload;
 import org.rostislav.quickdrop.model.FileEntityView;
 import org.rostislav.quickdrop.service.AnalyticsService;
 import org.rostislav.quickdrop.service.FileService;
@@ -82,7 +82,7 @@ public class ShareViewController {
             request.getSession().setAttribute("share-key-" + token, key);
         }
 
-        FileEntity file = shareToken.file;
+        Upload file = shareToken.file;
         if (file == null) {
             return "redirect:/file/list";
         }

@@ -227,7 +227,7 @@
                             </option>
                         </select>
                     </div>
-        </div>
+                </div>
 
                 <!-- Editor controls -->
                 <div class="flex flex-wrap items-center gap-4 text-sm p-3 rounded-xl"
@@ -249,114 +249,117 @@
                             <option value="18px">18</option>
                         </select>
                     </div>
-        </div>
+                </div>
 
                 <!-- Editor -->
-        <div class="editor-wrapper">
-            <div class="custom-editor-toolbar" id="customEditorToolbar">
-                <button aria-label="Bold" data-action="bold" title="Bold" type="button">
-                    <svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
-                         stroke-width="2" viewBox="0 0 24 24">
-                        <path d="M6 4h7a4 4 0 1 1 0 8H6z"/>
-                        <path d="M6 12h8a4 4 0 1 1 0 8H6z"/>
-                    </svg>
-                </button>
-                <button aria-label="Italic" data-action="italic" title="Italic" type="button">
-                    <svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
-                         stroke-width="2" viewBox="0 0 24 24">
-                        <line x1="19" x2="10" y1="4" y2="4"/>
-                        <line x1="14" x2="5" y1="20" y2="20"/>
-                        <line x1="15" x2="9" y1="4" y2="20"/>
-                    </svg>
-                </button>
-                <button aria-label="Heading" data-action="heading" title="Heading" type="button">
-                    <svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
-                         stroke-width="2" viewBox="0 0 24 24">
-                        <path d="M5 4v16"/>
-                        <path d="M19 4v16"/>
-                        <path d="M5 12h14"/>
-                    </svg>
-                </button>
-                <button aria-label="Quote" data-action="quote" title="Quote" type="button">
-                    <svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
-                         stroke-width="2" viewBox="0 0 24 24">
-                        <path d="M8 17H5a2 2 0 0 1-2-2v-3a6 6 0 0 1 6-6h1"/>
-                        <path d="M19 17h-3a2 2 0 0 1-2-2v-3a6 6 0 0 1 6-6h1"/>
-                    </svg>
-                </button>
-                <button aria-label="Bulleted list" data-action="unordered-list" title="Bulleted list" type="button">
-                    <svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
-                         stroke-width="2" viewBox="0 0 24 24">
-                        <line x1="9" x2="20" y1="6" y2="6"/>
-                        <line x1="9" x2="20" y1="12" y2="12"/>
-                        <line x1="9" x2="20" y1="18" y2="18"/>
-                        <circle cx="4" cy="6" r="1"/>
-                        <circle cx="4" cy="12" r="1"/>
-                        <circle cx="4" cy="18" r="1"/>
-                    </svg>
-                </button>
-                <button aria-label="Numbered list" data-action="ordered-list" title="Numbered list" type="button">
-                    <svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
-                         stroke-width="2" viewBox="0 0 24 24">
-                        <line x1="9" x2="20" y1="6" y2="6"/>
-                        <line x1="9" x2="20" y1="12" y2="12"/>
-                        <line x1="9" x2="20" y1="18" y2="18"/>
-                        <path d="M4 7V5l-1 1"/>
-                        <path d="M3 11h2l-2 3h2"/>
-                        <path d="M3 17c0-.7.5-1.2 1.2-1.2H5v2.4"/>
-                    </svg>
-                </button>
-                <button aria-label="Insert link" data-action="link" title="Insert link" type="button">
-                    <svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
-                         stroke-width="2" viewBox="0 0 24 24">
-                        <path d="M10 13a5 5 0 0 1 0-7l1.5-1.5a5 5 0 0 1 7 7L17 13"/>
-                        <path d="M14 11a5 5 0 0 1 0 7L12.5 19.5a5 5 0 0 1-7-7L7 11"/>
-                    </svg>
-                </button>
-                <button aria-label="Insert image" data-action="image" title="Insert image" type="button">
-                    <svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
-                         stroke-width="2" viewBox="0 0 24 24">
-                        <rect height="16" rx="2" width="18" x="3" y="4"/>
-                        <circle cx="8.5" cy="9" r="1.5"/>
-                        <path d="M21 16l-4.5-4.5L7 21"/>
-                    </svg>
-                </button>
-                <button aria-label="Insert table" data-action="table" title="Insert table" type="button">
-                    <svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
-                         stroke-width="2" viewBox="0 0 24 24">
-                        <rect height="16" rx="2" width="18" x="3" y="4"/>
-                        <path d="M3 10h18"/>
-                        <path d="M9 4v16"/>
-                        <path d="M15 4v16"/>
-                    </svg>
-                </button>
-                <button aria-label="Code block" data-action="code" title="Code block" type="button">
-                    <svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
-                         stroke-width="2" viewBox="0 0 24 24">
-                        <polyline points="8 6 2 12 8 18"/>
-                        <polyline points="16 6 22 12 16 18"/>
-                    </svg>
-                </button>
-                <button aria-label="Horizontal rule" data-action="hr" title="Horizontal rule" type="button">
-                    <svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
-                         stroke-width="2" viewBox="0 0 24 24">
-                        <line x1="3" x2="21" y1="12" y2="12"/>
-                    </svg>
-                </button>
-                <button aria-label="Preview" aria-pressed="false" class="preview-tool-button" data-action="preview"
-                        id="previewToolButton" title="Preview" type="button">
-                    <svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
-                         stroke-width="2" viewBox="0 0 24 24">
-                        <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/>
-                        <circle cx="12" cy="12" r="3"/>
-                    </svg>
-                    <span th:text="#{page.paste.preview}">Preview</span>
-                </button>
-            </div>
-            <textarea id="content" name="content" placeholder="Write your text here…"
-                      th:placeholder="#{page.paste.content.placeholder}" th:text="${pasteContent}"></textarea>
-            <div class="manual-preview-pane markdown-content" id="manualPreviewPane"></div>
-        </div>
+                <div class="editor-wrapper">
+                    <div class="custom-editor-toolbar" id="customEditorToolbar">
+                        <button aria-label="Bold" data-action="bold" title="Bold" type="button">
+                            <svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                                 stroke-width="2" viewBox="0 0 24 24">
+                                <path d="M6 4h7a4 4 0 1 1 0 8H6z"/>
+                                <path d="M6 12h8a4 4 0 1 1 0 8H6z"/>
+                            </svg>
+                        </button>
+                        <button aria-label="Italic" data-action="italic" title="Italic" type="button">
+                            <svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                                 stroke-width="2" viewBox="0 0 24 24">
+                                <line x1="19" x2="10" y1="4" y2="4"/>
+                                <line x1="14" x2="5" y1="20" y2="20"/>
+                                <line x1="15" x2="9" y1="4" y2="20"/>
+                            </svg>
+                        </button>
+                        <button aria-label="Heading" data-action="heading" title="Heading" type="button">
+                            <svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                                 stroke-width="2" viewBox="0 0 24 24">
+                                <path d="M5 4v16"/>
+                                <path d="M19 4v16"/>
+                                <path d="M5 12h14"/>
+                            </svg>
+                        </button>
+                        <button aria-label="Quote" data-action="quote" title="Quote" type="button">
+                            <svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                                 stroke-width="2" viewBox="0 0 24 24">
+                                <path d="M8 17H5a2 2 0 0 1-2-2v-3a6 6 0 0 1 6-6h1"/>
+                                <path d="M19 17h-3a2 2 0 0 1-2-2v-3a6 6 0 0 1 6-6h1"/>
+                            </svg>
+                        </button>
+                        <button aria-label="Bulleted list" data-action="unordered-list" title="Bulleted list"
+                                type="button">
+                            <svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                                 stroke-width="2" viewBox="0 0 24 24">
+                                <line x1="9" x2="20" y1="6" y2="6"/>
+                                <line x1="9" x2="20" y1="12" y2="12"/>
+                                <line x1="9" x2="20" y1="18" y2="18"/>
+                                <circle cx="4" cy="6" r="1"/>
+                                <circle cx="4" cy="12" r="1"/>
+                                <circle cx="4" cy="18" r="1"/>
+                            </svg>
+                        </button>
+                        <button aria-label="Numbered list" data-action="ordered-list" title="Numbered list"
+                                type="button">
+                            <svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                                 stroke-width="2" viewBox="0 0 24 24">
+                                <line x1="9" x2="20" y1="6" y2="6"/>
+                                <line x1="9" x2="20" y1="12" y2="12"/>
+                                <line x1="9" x2="20" y1="18" y2="18"/>
+                                <path d="M4 7V5l-1 1"/>
+                                <path d="M3 11h2l-2 3h2"/>
+                                <path d="M3 17c0-.7.5-1.2 1.2-1.2H5v2.4"/>
+                            </svg>
+                        </button>
+                        <button aria-label="Insert link" data-action="link" title="Insert link" type="button">
+                            <svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                                 stroke-width="2" viewBox="0 0 24 24">
+                                <path d="M10 13a5 5 0 0 1 0-7l1.5-1.5a5 5 0 0 1 7 7L17 13"/>
+                                <path d="M14 11a5 5 0 0 1 0 7L12.5 19.5a5 5 0 0 1-7-7L7 11"/>
+                            </svg>
+                        </button>
+                        <button aria-label="Insert image" data-action="image" title="Insert image" type="button">
+                            <svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                                 stroke-width="2" viewBox="0 0 24 24">
+                                <rect height="16" rx="2" width="18" x="3" y="4"/>
+                                <circle cx="8.5" cy="9" r="1.5"/>
+                                <path d="M21 16l-4.5-4.5L7 21"/>
+                            </svg>
+                        </button>
+                        <button aria-label="Insert table" data-action="table" title="Insert table" type="button">
+                            <svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                                 stroke-width="2" viewBox="0 0 24 24">
+                                <rect height="16" rx="2" width="18" x="3" y="4"/>
+                                <path d="M3 10h18"/>
+                                <path d="M9 4v16"/>
+                                <path d="M15 4v16"/>
+                            </svg>
+                        </button>
+                        <button aria-label="Code block" data-action="code" title="Code block" type="button">
+                            <svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                                 stroke-width="2" viewBox="0 0 24 24">
+                                <polyline points="8 6 2 12 8 18"/>
+                                <polyline points="16 6 22 12 16 18"/>
+                            </svg>
+                        </button>
+                        <button aria-label="Horizontal rule" data-action="hr" title="Horizontal rule" type="button">
+                            <svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                                 stroke-width="2" viewBox="0 0 24 24">
+                                <line x1="3" x2="21" y1="12" y2="12"/>
+                            </svg>
+                        </button>
+                        <button aria-label="Preview" aria-pressed="false" class="preview-tool-button"
+                                data-action="preview"
+                                id="previewToolButton" title="Preview" type="button">
+                            <svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                                 stroke-width="2" viewBox="0 0 24 24">
+                                <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/>
+                                <circle cx="12" cy="12" r="3"/>
+                            </svg>
+                            <span th:text="#{page.paste.preview}">Preview</span>
+                        </button>
+                    </div>
+                    <textarea id="content" name="content" placeholder="Write your text here…"
+                              th:placeholder="#{page.paste.content.placeholder}" th:text="${pasteContent}"></textarea>
+                    <div class="manual-preview-pane markdown-content" id="manualPreviewPane"></div>
+                </div>
 
                 <!-- Password -->
                 <div class="form-row" th:if="${uploadPasswordEnabled and !isEditMode}">
@@ -377,7 +380,8 @@
                         <span class="toggle-track"><span class="toggle-thumb"></span></span>
                         <span class="text-sm" th:text="#{form.keepIndefinitely}">Keep indefinitely</span>
                     </label>
-                    <button class="btn btn-gradient btn-lg ml-auto" id="savePasteButton" th:text="${isEditMode} ? #{page.paste.saveChanges} : #{page.paste.save}"
+                    <button class="btn btn-gradient btn-lg ml-auto" id="savePasteButton"
+                            th:text="${isEditMode} ? #{page.paste.saveChanges} : #{page.paste.save}"
                             type="submit">Save Paste
                     </button>
                 </div>

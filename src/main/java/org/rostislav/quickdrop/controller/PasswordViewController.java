@@ -24,7 +24,9 @@ public class PasswordViewController {
         return "app-password";
     }
 
-    /** @return the admin password entry page */
+    /**
+     * @return the admin password entry page
+     */
     @GetMapping("/admin")
     public String adminPasswordPage() {
         return "admin/admin-password";

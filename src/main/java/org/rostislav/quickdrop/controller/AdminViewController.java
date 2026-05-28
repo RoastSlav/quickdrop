@@ -2,11 +2,10 @@ package org.rostislav.quickdrop.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
-import org.rostislav.quickdrop.entity.ApplicationSettingsEntity;
-import org.rostislav.quickdrop.entity.FileHistoryLog;
-import org.rostislav.quickdrop.entity.ShareTokenEntity;
+import org.rostislav.quickdrop.entity.*;
 import org.rostislav.quickdrop.model.*;
 import org.rostislav.quickdrop.service.*;
+import org.rostislav.quickdrop.util.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
@@ -26,12 +25,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
-import org.rostislav.quickdrop.util.FileUtils;
-
-import static org.rostislav.quickdrop.util.FileUtils.bytesToMegabytes;
-import static org.rostislav.quickdrop.util.FileUtils.clampPage;
-import static org.rostislav.quickdrop.util.FileUtils.clampSize;
-import static org.rostislav.quickdrop.util.FileUtils.megabytesToBytes;
+import static org.rostislav.quickdrop.util.FileUtils.*;
 
 /**
  * Handles all admin UI pages and admin-only actions under {@code /admin}.
@@ -57,14 +51,16 @@ public class AdminViewController {
     private final ApplicationSettingsService applicationSettingsService;
     private final AnalyticsService analyticsService;
     private final FileService fileService;
+    private final PasteService pasteService;
     private final SessionService sessionService;
     private final SystemInfoService systemInfoService;
     private final NotificationService notificationService;
 
-    public AdminViewController(ApplicationSettingsService applicationSettingsService, AnalyticsService analyticsService, FileService fileService, SessionService sessionService, SystemInfoService systemInfoService, NotificationService notificationService) {
+    public AdminViewController(ApplicationSettingsService applicationSettingsService, AnalyticsService analyticsService, FileService fileService, PasteService pasteService, SessionService sessionService, SystemInfoService systemInfoService, NotificationService notificationService) {
         this.applicationSettingsService = applicationSettingsService;
         this.analyticsService = analyticsService;
         this.fileService = fileService;
+        this.pasteService = pasteService;
         this.sessionService = sessionService;
         this.systemInfoService = systemInfoService;
         this.notificationService = notificationService;
@@ -82,14 +78,18 @@ public class AdminViewController {
     public String getFilesPage(@RequestParam(name = "page", defaultValue = "0") int page,
                                @RequestParam(name = "size", defaultValue = "20") int size,
                                @RequestParam(name = "query", required = false) String query,
+                               @RequestParam(name = "deleted", defaultValue = "false") boolean showDeleted,
                                Model model) {
         int pageNumber = clampPage(page);
         int pageSize = clampSize(size);
 
-        Page<FileEntityView> filesPage = fileService.getFilesWithDownloadCounts(PageRequest.of(pageNumber, pageSize), query);
+        Page<FileEntityView> filesPage = showDeleted
+                ? fileService.getDeletedFilesWithDownloadCounts(PageRequest.of(pageNumber, pageSize), query)
+                : fileService.getFilesWithDownloadCounts(PageRequest.of(pageNumber, pageSize), query);
         model.addAttribute("filesPage", filesPage);
         model.addAttribute("pageSize", pageSize);
         model.addAttribute("query", query == null ? "" : query);
+        model.addAttribute("showDeleted", showDeleted);
 
         AnalyticsDataView analytics = analyticsService.getAnalytics();
         model.addAttribute("analytics", analytics);
@@ -101,14 +101,18 @@ public class AdminViewController {
     public String getPastesPage(@RequestParam(name = "page", defaultValue = "0") int page,
                                 @RequestParam(name = "size", defaultValue = "20") int size,
                                 @RequestParam(name = "query", required = false) String query,
+                                @RequestParam(name = "deleted", defaultValue = "false") boolean showDeleted,
                                 Model model) {
         int pageNumber = clampPage(page);
         int pageSize = clampSize(size);
 
-        Page<PasteEntityView> pastesPage = fileService.getPaginatedPastes(PageRequest.of(pageNumber, pageSize), query);
+        Page<PasteEntityView> pastesPage = showDeleted
+                ? pasteService.getDeletedPaginatedPastes(PageRequest.of(pageNumber, pageSize), query)
+                : pasteService.getPaginatedPastes(PageRequest.of(pageNumber, pageSize), query);
         model.addAttribute("pastesPage", pastesPage);
         model.addAttribute("pageSize", pageSize);
         model.addAttribute("query", query == null ? "" : query);
+        model.addAttribute("showDeleted", showDeleted);
 
         AnalyticsDataView analytics = analyticsService.getAnalytics();
         model.addAttribute("analytics", analytics);
@@ -118,16 +122,16 @@ public class AdminViewController {
 
     @GetMapping("/pastes/{uuid}/history")
     public String getPasteHistoryPage(@PathVariable String uuid, Model model) {
-        var fileEntity = fileService.getFile(uuid).orElse(null);
-        if (fileEntity == null || !fileEntity.paste) {
+        Upload fileEntity = fileService.getFile(uuid).orElse(null);
+        if (fileEntity == null || !(fileEntity instanceof Paste)) {
             return "redirect:/admin/pastes";
         }
         long totalViews = analyticsService.getTotalViewsByPaste(uuid);
         PasteEntityView pasteView = new PasteEntityView(fileEntity, totalViews);
 
-        List<FileActionLogDTO> actionLogs = analyticsService.getHistoryByFile(uuid)
+        List<ActivityLogEntry> actionLogs = analyticsService.getHistoryByFile(uuid)
                 .stream()
-                .map(FileActionLogDTO::new)
+                .map(ActivityLogEntry::new)
                 .toList();
 
         model.addAttribute("paste", pasteView);
@@ -189,7 +193,7 @@ public class AdminViewController {
             applicationSettingsService.setAdminPassword(adminPassword);
         }
         FileService.RequesterInfo info = FileUtils.getRequesterInfo(request);
-        analyticsService.logAdminEvent(FileHistoryType.ADMIN_SETTINGS_CHANGE, info.ipAddress(), info.userAgent());
+        analyticsService.logEvent(EventType.ADMIN_SETTINGS_CHANGE, info.ipAddress(), info.userAgent());
         return "redirect:settings";
     }
 
@@ -209,7 +213,7 @@ public class AdminViewController {
             applicationSettingsService.setAdminPassword(adminPassword);
         }
         FileService.RequesterInfo info = FileUtils.getRequesterInfo(request);
-        analyticsService.logAdminEvent(FileHistoryType.ADMIN_SETTINGS_CHANGE, info.ipAddress(), info.userAgent());
+        analyticsService.logEvent(EventType.ADMIN_SETTINGS_CHANGE, info.ipAddress(), info.userAgent());
         return ResponseEntity.ok("Settings saved");
     }
 
@@ -239,10 +243,12 @@ public class AdminViewController {
             String adminAccessToken = sessionService.addAdminToken(UUID.randomUUID().toString());
             HttpSession session = request.getSession();
             session.setAttribute("admin-session-token", adminAccessToken);
-            analyticsService.logAdminEvent(FileHistoryType.ADMIN_LOGIN, info.ipAddress(), info.userAgent());
+            session.setAttribute("admin-ip", info.ipAddress());
+            session.setAttribute("admin-ua", info.userAgent());
+            analyticsService.logEvent(EventType.ADMIN_LOGIN, info.ipAddress(), info.userAgent());
             return "redirect:dashboard";
         } else {
-            analyticsService.logAdminEvent(FileHistoryType.ADMIN_LOGIN_FAIL, info.ipAddress(), info.userAgent());
+            analyticsService.logEvent(EventType.ADMIN_LOGIN_FAIL, info.ipAddress(), info.userAgent());
             return "redirect:password";
         }
     }
@@ -255,7 +261,7 @@ public class AdminViewController {
     @PostMapping("/logout")
     public String logout(HttpServletRequest request) {
         FileService.RequesterInfo info = FileUtils.getRequesterInfo(request);
-        analyticsService.logAdminEvent(FileHistoryType.ADMIN_LOGOUT, info.ipAddress(), info.userAgent());
+        analyticsService.logEvent(EventType.ADMIN_LOGOUT, info.ipAddress(), info.userAgent());
         sessionService.invalidateAdminSession(request);
         HttpSession session = request.getSession(false);
         if (session != null) {
@@ -288,8 +294,10 @@ public class AdminViewController {
 
     @PostMapping("/delete/{uuid}")
     public String deleteFile(@PathVariable String uuid,
-                             @RequestParam(defaultValue = "files") String source) {
-        fileService.deleteFileFromDatabaseAndFileSystem(uuid);
+                             @RequestParam(defaultValue = "files") String source,
+                             HttpServletRequest request) {
+        FileService.RequesterInfo info = FileUtils.getRequesterInfo(request);
+        fileService.deleteFileFromDatabaseAndFileSystem(uuid, info.ipAddress(), info.userAgent());
         return "redirect:/admin/" + source;
     }
 
@@ -379,17 +387,19 @@ public class AdminViewController {
     }
 
     /**
-     * Displays the global activity log with optional date-range, event-type, IP, and
-     * user-agent filters.
+     * Displays the global activity log with optional date-range, event-type, source-type,
+     * IP, and user-agent filters.
      *
-     * @param startDate optional lower bound on event timestamp (ISO date-time string)
-     * @param endDate   optional upper bound on event timestamp (ISO date-time string)
-     * @param eventType optional exact event type filter
-     * @param ip        optional IP address substring filter
-     * @param ua        optional user-agent substring filter
-     * @param page      zero-based page index (default 0)
-     * @param size      page size, clamped to [1, 100] (default 30)
-     * @param model     Spring MVC model
+     * @param startDate  optional lower bound on event timestamp (ISO date-time string)
+     * @param endDate    optional upper bound on event timestamp (ISO date-time string)
+     * @param eventType  optional exact event type filter ({@link EventType} name)
+     * @param ip         optional IP address substring filter
+     * @param ua         optional user-agent substring filter
+     * @param sourceType optional source category: {@code "file"}, {@code "paste"}, or
+     *                   {@code "system"}; omit or leave blank for all
+     * @param page       zero-based page index (default 0)
+     * @param size       page size, clamped to [1, 100] (default 30)
+     * @param model      Spring MVC model
      * @return the {@code admin-activity} template name
      */
     @GetMapping("/activity")
@@ -398,6 +408,7 @@ public class AdminViewController {
                                   @RequestParam(required = false) String eventType,
                                   @RequestParam(required = false) String ip,
                                   @RequestParam(required = false) String ua,
+                                  @RequestParam(required = false) String sourceType,
                                   @RequestParam(name = "page", defaultValue = "0") int page,
                                   @RequestParam(name = "size", defaultValue = "30") int size,
                                   Model model) {
@@ -415,28 +426,32 @@ public class AdminViewController {
         } catch (Exception ignored) {
         }
 
-        FileHistoryType typeFilter = null;
+        EventType typeFilter = null;
         if (eventType != null && !eventType.isBlank()) {
             try {
-                typeFilter = FileHistoryType.valueOf(eventType.toUpperCase());
+                typeFilter = EventType.valueOf(eventType.toUpperCase());
             } catch (IllegalArgumentException ignored) {
             }
         }
 
-        String ipFilter = (ip != null && ip.isBlank()) ? null : ip;
-        String uaFilter = (ua != null && ua.isBlank()) ? null : ua;
+        // Normalise blank strings to null so service-layer filters treat them as "no filter".
+        String ipFilter = (ip == null || ip.isBlank()) ? null : ip;
+        String uaFilter = (ua == null || ua.isBlank()) ? null : ua;
+        // Normalisation (lowercase, blank→null) is owned by AnalyticsService; pass raw value.
+        Page<ActivityLog> activityPage = analyticsService.getFilteredActivity(
+                start, end, typeFilter, ipFilter, uaFilter, sourceType, PageRequest.of(pageNumber, pageSize));
 
-        Page<FileHistoryLog> activityPage = analyticsService.getFilteredActivity(
-                start, end, typeFilter, ipFilter, uaFilter, PageRequest.of(pageNumber, pageSize));
-
+        // Resolve the display value after the service has normalised it.
+        String resolvedSourceType = (sourceType == null || sourceType.isBlank()) ? "" : sourceType.toLowerCase();
         model.addAttribute("activityPage", activityPage);
         model.addAttribute("pageSize", pageSize);
-        model.addAttribute("eventTypes", Arrays.asList(FileHistoryType.values()));
+        model.addAttribute("eventTypes", Arrays.asList(EventType.values()));
         model.addAttribute("selectedEventType", eventType == null ? "" : eventType);
         model.addAttribute("startDate", startDate == null ? "" : startDate);
         model.addAttribute("endDate", endDate == null ? "" : endDate);
         model.addAttribute("ip", ip == null ? "" : ip);
         model.addAttribute("ua", ua == null ? "" : ua);
+        model.addAttribute("sourceType", resolvedSourceType);
         return "admin-activity";
     }
 

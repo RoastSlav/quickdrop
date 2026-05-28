@@ -2,9 +2,9 @@ package org.rostislav.quickdrop.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
-import org.rostislav.quickdrop.entity.FileEntity;
 import org.rostislav.quickdrop.entity.ShareTokenEntity;
-import org.rostislav.quickdrop.model.FileUploadRequest;
+import org.rostislav.quickdrop.entity.Upload;
+import org.rostislav.quickdrop.model.UploadRequest;
 import org.rostislav.quickdrop.service.ApplicationSettingsService;
 import org.rostislav.quickdrop.service.AsyncFileMergeService;
 import org.rostislav.quickdrop.service.FileService;
@@ -36,7 +36,7 @@ import static org.springframework.http.ResponseEntity.ok;
  * <ul>
  *   <li>{@code POST /api/file/upload-chunk} — receives a single chunk of a
  *       multi-part chunked upload, delegates to {@link AsyncFileMergeService},
- *       and returns the saved {@link FileEntity} JSON on the last chunk.</li>
+ *       and returns the saved {@link Upload} JSON on the last chunk.</li>
  *   <li>{@code POST /api/file/share/{uuid}} — generates a share token for a file
  *       and returns the share path immediately. For encrypted files the sidecar
  *       re-encryption is performed in the background by {@link org.rostislav.quickdrop.service.ShareEncryptionService};
@@ -135,9 +135,9 @@ public class FileRestController {
                 return ResponseEntity.badRequest().body("{\"error\": \"Invalid folder manifest: must be a JSON array\"}");
             }
 
-            FileUploadRequest fileUploadRequest = new FileUploadRequest(description, keepIndefinitelyValue, effectivePassword, hiddenValue, fileName, totalChunks, fileSize, uploaderIp, uploaderUserAgent, Boolean.TRUE.equals(folderUpload), folderName, safeManifest, false);
-            FileEntity fileEntity = asyncFileMergeService.submitChunk(fileUploadRequest, file, chunkNumber);
-            return ResponseEntity.ok(fileEntity);
+            UploadRequest fileUploadRequest = new UploadRequest(description, keepIndefinitelyValue, effectivePassword, hiddenValue, fileName, totalChunks, fileSize, uploaderIp, uploaderUserAgent, Boolean.TRUE.equals(folderUpload), folderName, safeManifest, false);
+            Upload upload = asyncFileMergeService.submitChunk(fileUploadRequest, file, chunkNumber);
+            return ResponseEntity.ok(upload);
         } catch (IOException e) {
             logger.error("Error processing chunk {} for file {}: {}", chunkNumber, fileName, e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -174,7 +174,7 @@ public class FileRestController {
             expirationDate = null;
             numberOfDownloads = null;
         }
-        FileEntity fileEntity = fileService.getFile(uuid).orElse(null);
+        Upload fileEntity = fileService.getFile(uuid).orElse(null);
         if (fileEntity == null) {
             return ResponseEntity.badRequest().body(Map.of("message", "File not found."));
         }
@@ -245,7 +245,7 @@ public class FileRestController {
             if (!tokenEntity.sidecarReady) {
                 return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build();
             }
-            FileEntity fileEntity = tokenEntity.file;
+            Upload fileEntity = tokenEntity.file;
             StreamingResponseBody responseBody = fileService.streamFileByShareToken(tokenEntity, request);
 
             if (responseBody == null) {

@@ -113,13 +113,22 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
 
         <span hidden id="fileUuid" th:text="${file.uuid}"></span>
-    <span hidden id="isMarkdownPaste" th:text="${isMarkdownPaste}"></span>
+        <span hidden id="isMarkdownPaste" th:text="${isMarkdownPaste}"></span>
 
-        <div th:class="${!isShareLinksEnabled} ? 'flex flex-col gap-6' : 'grid grid-cols-1 xl:grid-cols-4 gap-6 items-start'">
+        <div th:class="${!isShareLinksEnabled or isDeleted} ? 'flex flex-col gap-6' : 'grid grid-cols-1 xl:grid-cols-4 gap-6 items-start'">
 
             <!-- ── Main column ────────────────────────────────────────── -->
-            <section th:class="${!isShareLinksEnabled} ? 'w-full' : 'xl:col-span-3'">
+            <section th:class="${!isShareLinksEnabled or isDeleted} ? 'w-full' : 'xl:col-span-3'">
                 <div class="card-glass card-xl flex flex-col gap-5 animate-in" style="padding: 2rem">
+
+                    <!-- Deleted notice (admin-only view) -->
+                    <div class="card card-lg animate-in"
+                         style="border-left: 4px solid var(--c-danger, var(--c-rose))"
+                         th:if="${isDeleted}">
+                        <p class="text-sm font-semibold" style="color: var(--c-danger, var(--c-rose))"
+                           th:text="#{page.fileView.deletedNotice}">This file has been deleted and is no longer
+                            available for download.</p>
+                    </div>
 
                     <!-- Sticky title bar -->
                     <div class="flex flex-wrap items-center justify-between gap-4 p-4 rounded-xl"
@@ -129,16 +138,23 @@
                                  style="background: var(--c-indigo-muted); color: var(--c-indigo)">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8"
                                      viewBox="0 0 24 24">
-                                    <path d="M17.25 6.75 22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3-4.5 16.5" stroke-linecap="round"
+                                    <path d="M17.25 6.75 22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3-4.5 16.5"
+                                          stroke-linecap="round"
                                           stroke-linejoin="round"/>
                                 </svg>
                             </div>
-                            <h1 class="text-xl font-extrabold tracking-tight break-all"
-                                th:text="${#strings.isEmpty(file.name) ? #messages.msg('page.pasteView.untitled') : file.name}">
-                                Paste</h1>
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <h1 class="text-xl font-extrabold tracking-tight break-all"
+                                    th:text="${#strings.isEmpty(file.name) ? #messages.msg('page.pasteView.untitled') : file.name}">
+                                    Paste</h1>
+                                <span class="badge badge-danger" th:if="${isDeleted}">
+                                    <span th:text="#{badge.deleted}">Deleted</span>
+                                </span>
+                            </div>
                         </div>
-                        <div class="flex flex-wrap gap-2">
-                            <button class="btn btn-primary btn-sm" id="copyTextButton" th:text="#{page.pasteView.copyText}"
+                        <div class="flex flex-wrap gap-2" th:if="${!isDeleted}">
+                            <button class="btn btn-primary btn-sm" id="copyTextButton"
+                                    th:text="#{page.pasteView.copyText}"
                                     type="button">Copy text
                             </button>
                             <a class="btn btn-ghost btn-sm"
@@ -159,7 +175,7 @@
                             <button class="segmented-btn hidden" id="showMarkdownBtn"
                                     th:text="#{page.pasteView.markdown}" type="button">Markdown
                             </button>
-            </div>
+                        </div>
                         <span class="text-xs ml-2" style="color:var(--c-text-faint)" th:if="${isMarkdownPaste}"
                               th:text="#{page.pasteView.renderedHint}">Rendered markdown is enabled for this paste.</span>
                     </div>
@@ -176,12 +192,14 @@
             </section>
 
             <!-- ── Sidebar ────────────────────────────────────────────── -->
-            <aside class="xl:col-span-1" th:if="${isShareLinksEnabled}">
+            <aside class="xl:col-span-1" th:if="${isShareLinksEnabled and !isDeleted}">
                 <div class="card card-lg flex flex-col gap-4 animate-in animate-in-delay-1 accent-stripe accent-stripe--secondary">
                     <h2 class="section-title flex items-center gap-2">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" style="color:var(--c-secondary)"
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8"
+                             style="color:var(--c-secondary)"
                              viewBox="0 0 24 24">
-                            <path d="M7.217 10.907a2.25 2.25 0 1 0 0 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186 9.566-5.314m-9.566 7.5 9.566 5.314m0 0a2.25 2.25 0 1 0 3.935 2.186 2.25 2.25 0 0 0-3.935-2.186Zm0-12.814a2.25 2.25 0 1 0 3.933-2.185 2.25 2.25 0 0 0-3.933 2.185Z" stroke-linecap="round"
+                            <path d="M7.217 10.907a2.25 2.25 0 1 0 0 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186 9.566-5.314m-9.566 7.5 9.566 5.314m0 0a2.25 2.25 0 1 0 3.935 2.186 2.25 2.25 0 0 0-3.935-2.186Zm0-12.814a2.25 2.25 0 1 0 3.933-2.185 2.25 2.25 0 0 0-3.933 2.185Z"
+                                  stroke-linecap="round"
                                   stroke-linejoin="round"/>
                         </svg>
                         <span th:text="#{page.pasteView.share}">Share</span>
@@ -189,11 +207,13 @@
 
                     <div class="flex flex-col gap-2">
                         <label class="sr-only" for="shareLink">Share link</label>
-                        <input class="form-input form-input-mono text-xs w-full" id="shareLink" placeholder="Generate a share link…" readonly
+                        <input class="form-input form-input-mono text-xs w-full" id="shareLink"
+                               placeholder="Generate a share link…" readonly
                                th:placeholder="#{page.fileView.sharePlaceholder}" type="text"
                                value=""/>
                         <div class="flex gap-2">
-                            <button class="btn btn-gradient btn-sm flex-1" id="generateShareButton" th:text="#{page.pasteView.generateLink}"
+                            <button class="btn btn-gradient btn-sm flex-1" id="generateShareButton"
+                                    th:text="#{page.pasteView.generateLink}"
                                     type="button">Generate link
                             </button>
                             <button class="btn btn-ghost btn-sm shrink-0" id="copyShareButton" th:text="#{button.copy}"

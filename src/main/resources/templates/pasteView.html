@@ -223,7 +223,7 @@
                     <div class="flex flex-col gap-2">
                         <label class="sr-only" for="shareLink">Share link</label>
                         <input class="form-input form-input-mono text-xs w-full" id="shareLink"
-                               readonly th:value="${downloadLink}" type="text"/>
+                               readonly th:value="${isPubliclyAccessible} ? ${downloadLink} : ''" type="text"/>
                         <div class="flex gap-2">
                             <button class="btn btn-gradient btn-sm flex-1" id="generateShareButton"
                                     th:classappend="${isPubliclyAccessible} ? ' opacity-50 cursor-not-allowed'"

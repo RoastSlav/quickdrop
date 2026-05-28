@@ -263,6 +263,7 @@ public class FileViewController {
                 model.addAttribute("isMarkdownPaste", false);
                 model.addAttribute("isImmutable", paste.immutable);
                 model.addAttribute("isEditOnly", paste.editOnly);
+                model.addAttribute("isPubliclyAccessible", false);
                 return "pasteView";
             }
 
@@ -280,6 +281,12 @@ public class FileViewController {
             model.addAttribute("isMarkdownPaste", fileEntity.name != null && fileEntity.name.toLowerCase(Locale.ROOT).endsWith(".md"));
             model.addAttribute("isImmutable", paste.immutable);
             model.addAttribute("isEditOnly", paste.editOnly);
+            // A paste is publicly accessible (no credentials needed) when it has no
+            // file-level password (or is edit-only, meaning viewing is always free)
+            // AND the app-wide password is not enabled.
+            boolean noFileAuth = paste.passwordHash == null || paste.passwordHash.isBlank() || paste.editOnly;
+            boolean noAppAuth = !applicationSettingsService.isAppPasswordEnabled();
+            model.addAttribute("isPubliclyAccessible", noFileAuth && noAppAuth);
             return "pasteView";
         }
 

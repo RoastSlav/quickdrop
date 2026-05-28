@@ -20,17 +20,22 @@ import java.time.LocalDateTime;
  * {@link org.rostislav.quickdrop.service.ScheduleService#cleanShareTokens()} job.
  */
 @Entity
+@Table(name = "share_token")
 public class ShareTokenEntity {
     /**
-     * The file this token grants access to.
+     * The upload (file or paste) this token grants access to.
      */
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "file_id", nullable = false)
-    public FileEntity file;
-    /** The URL-safe token string (up to 10 characters, unique). */
+    public Upload file;
+    /**
+     * The URL-safe token string (up to 10 characters, unique).
+     */
     @Column(name = "share_token", nullable = false, unique = true, length = 10)
     public String shareToken;
-    /** Optional expiry date; {@code null} means the token never expires by date. */
+    /**
+     * Optional expiry date; {@code null} means the token never expires by date.
+     */
     @Column(name = "token_expiration_date")
     public LocalDate tokenExpirationDate;
     /**
@@ -71,7 +76,7 @@ public class ShareTokenEntity {
      * @param tokenExpirationDate optional expiry date ({@code null} = no expiry)
      * @param numberOfDownloads   optional download limit ({@code null} = unlimited)
      */
-    public ShareTokenEntity(String token, FileEntity file, LocalDate tokenExpirationDate, Integer numberOfDownloads) {
+    public ShareTokenEntity(String token, Upload file, LocalDate tokenExpirationDate, Integer numberOfDownloads) {
         this.shareToken = token;
         this.file = file;
         this.tokenExpirationDate = tokenExpirationDate;

@@ -6,40 +6,60 @@ package org.rostislav.quickdrop.model;
  * <p>An instance is created in the REST controller for each upload and passed to
  * {@link org.rostislav.quickdrop.service.AsyncFileMergeService#submitChunk}.
  */
-public class FileUploadRequest {
+public class UploadRequest {
     /**
      * Original filename (or paste title with extension).
      */
     public String fileName;
 
-    /** Total number of chunks expected for this upload. */
+    /**
+     * Total number of chunks expected for this upload.
+     */
     public int totalChunks;
 
-    /** Total file size in bytes as declared by the client. */
+    /**
+     * Total file size in bytes as declared by the client.
+     */
     public Long fileSize;
 
-    /** Optional human-readable description provided by the uploader. */
+    /**
+     * Optional human-readable description provided by the uploader.
+     */
     public String description;
 
-    /** Whether the file should be exempt from the scheduled age-based deletion. */
+    /**
+     * Whether the file should be exempt from the scheduled age-based deletion.
+     */
     public boolean keepIndefinitely;
 
-    /** Cleartext access password; {@code null} or blank if no password is set. */
+    /**
+     * Cleartext access password; {@code null} or blank if no password is set.
+     */
     public String password;
 
-    /** Whether the file should be hidden from the public listing. */
+    /**
+     * Whether the file should be hidden from the public listing.
+     */
     public boolean hidden;
 
-    /** Resolved IP address of the uploader (from X-Forwarded-For or RemoteAddr). */
+    /**
+     * Resolved IP address of the uploader (from X-Forwarded-For or RemoteAddr).
+     */
     public String uploaderIp;
 
-    /** User-Agent header value from the upload request. */
+    /**
+     * User-Agent header value from the upload request.
+     */
     public String uploaderUserAgent;
 
-    /** Whether this upload is a folder (ZIP archive with a manifest). */
+    /**
+     * Whether this upload is a folder (ZIP archive with a manifest).
+     */
     public boolean folderUpload;
 
-    /** Display name of the uploaded folder (only set when {@link #folderUpload} is {@code true}). */
+    /**
+     * Display name of the uploaded folder (only set when {@link #folderUpload} is {@code true}).
+     */
     public String folderName;
 
     /**
@@ -48,16 +68,15 @@ public class FileUploadRequest {
      */
     public String folderManifest;
 
-    /** {@code true} when this request represents a text paste rather than a binary file. */
+    /**
+     * {@code true} when this request represents a text paste rather than a binary file.
+     */
     public boolean paste;
 
-    public FileUploadRequest() {
-    }
-
-    public FileUploadRequest(String description, boolean keepIndefinitely, String password, boolean hidden,
-                             String fileName, int totalChunks, Long fileSize,
-                             String uploaderIp, String uploaderUserAgent,
-                             boolean folderUpload, String folderName, String folderManifest, boolean paste) {
+    public UploadRequest(String description, boolean keepIndefinitely, String password, boolean hidden,
+                         String fileName, int totalChunks, Long fileSize,
+                         String uploaderIp, String uploaderUserAgent,
+                         boolean folderUpload, String folderName, String folderManifest, boolean paste) {
         this.description = description;
         this.keepIndefinitely = keepIndefinitely;
         this.password = password;

@@ -14,7 +14,9 @@ import org.springframework.context.annotation.Configuration;
  * <ul>
  *   <li>{@code publicFiles} — paginated public file listings</li>
  *   <li>{@code adminFiles} — paginated admin file listings with download counts</li>
+ *   <li>{@code adminDeletedFiles} — paginated admin deleted-file listings with download counts</li>
  *   <li>{@code adminPastes} — paginated admin paste listings with view counts</li>
+ *   <li>{@code adminDeletedPastes} — paginated admin deleted-paste listings with view counts</li>
  *   <li>{@code analytics} — aggregated dashboard metrics</li>
  *   <li>{@code applicationSettings} — the single {@link org.rostislav.quickdrop.entity.ApplicationSettingsEntity} row</li>
  * </ul>
@@ -32,6 +34,6 @@ public class CacheConfig {
      */
     @Bean
     public CacheManager cacheManager() {
-        return new ConcurrentMapCacheManager("publicFiles", "adminFiles", "adminPastes", "analytics", "applicationSettings");
+        return new ConcurrentMapCacheManager("publicFiles", "adminFiles", "adminDeletedFiles", "adminPastes", "adminDeletedPastes", "analytics", "applicationSettings");
     }
 }

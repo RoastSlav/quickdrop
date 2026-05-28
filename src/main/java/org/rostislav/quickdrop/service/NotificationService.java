@@ -1,8 +1,8 @@
 package org.rostislav.quickdrop.service;
 
 import jakarta.mail.internet.MimeMessage;
-import org.rostislav.quickdrop.entity.FileEntity;
-import org.rostislav.quickdrop.model.FileHistoryType;
+import org.rostislav.quickdrop.entity.Upload;
+import org.rostislav.quickdrop.model.EventType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
@@ -58,7 +58,7 @@ public class NotificationService {
      * @param type the event type to check
      * @return {@code true} if notifications for this event type are enabled
      */
-    private boolean isNotificationEventEnabled(FileHistoryType type) {
+    private boolean isNotificationEventEnabled(EventType type) {
         return switch (type) {
             case UPLOAD -> applicationSettingsService.isNotifyOnUpload();
             case DOWNLOAD -> applicationSettingsService.isNotifyOnDownload();
@@ -69,8 +69,8 @@ public class NotificationService {
             case PASTE_CREATE -> applicationSettingsService.isNotifyOnPasteCreate();
             case PASTE_VIEW -> applicationSettingsService.isNotifyOnPasteView();
             case PASTE_EDIT -> applicationSettingsService.isNotifyOnPasteEdit();
-            case SHARE_EXPIRE, SHARE_REVOKE,
-                    ADMIN_LOGIN, ADMIN_LOGIN_FAIL, ADMIN_LOGOUT, ADMIN_SETTINGS_CHANGE -> false;
+            // SHARE_EXPIRE, SHARE_REVOKE, all ADMIN_* and SYSTEM events are always silent
+            default -> false;
         };
     }
 
@@ -83,7 +83,7 @@ public class NotificationService {
      * @param file the file that triggered the event; ignored if {@code null}
      * @param type the event type (upload, download, deletion, renewal, paste/share events)
      */
-    public void notifyFileAction(FileEntity file, FileHistoryType type) {
+    public void notifyFileAction(Upload file, EventType type) {
         if (file == null) {
             return;
         }
@@ -111,12 +111,14 @@ public class NotificationService {
             case SHARE_DOWNLOAD -> "downloaded via share link";
             case SHARE_EXPIRE -> "share link expired";
             case SHARE_REVOKE -> "share link revoked";
-            case ADMIN_LOGIN, ADMIN_LOGIN_FAIL, ADMIN_LOGOUT, ADMIN_SETTINGS_CHANGE -> "";
+            // ADMIN_* and SYSTEM events are filtered out by isNotificationEventEnabled;
+            // this arm is unreachable in practice.
+            default -> "";
         };
 
         String summary = "File '" + file.name + "' (" + file.uuid + ") was " + event + ".";
         StringBuilder detailsBuilder = new StringBuilder();
-        if (type == FileHistoryType.UPLOAD) {
+        if (type == EventType.UPLOAD) {
             detailsBuilder.append("Size: ").append(file.size).append(" bytes");
         }
         String details = detailsBuilder.toString();
@@ -400,12 +402,16 @@ public class NotificationService {
         return applicationSettingsService.isDiscordWebhookEnabled() && !discordUrl.isBlank();
     }
 
-    /** Returns {@code true} if email notifications are enabled and recipients are configured. */
+    /**
+     * Returns {@code true} if email notifications are enabled and recipients are configured.
+     */
     private boolean shouldSendEmail() {
         return applicationSettingsService.isEmailNotificationsEnabled() && hasEmailRecipients();
     }
 
-    /** Returns {@code true} if batch mode is enabled and at least one channel is active. */
+    /**
+     * Returns {@code true} if batch mode is enabled and at least one channel is active.
+     */
     private boolean shouldUseBatching(boolean sendDiscord, boolean sendEmail) {
         return applicationSettingsService.isNotificationBatchEnabled() && (sendDiscord || sendEmail);
     }

@@ -1,9 +1,9 @@
 package org.rostislav.quickdrop.service;
 
-import org.rostislav.quickdrop.entity.FileHistoryLog;
+import org.rostislav.quickdrop.entity.ActivityLog;
 import org.rostislav.quickdrop.model.AnalyticsDataView;
-import org.rostislav.quickdrop.model.FileHistoryType;
-import org.rostislav.quickdrop.repository.FileHistoryLogRepository;
+import org.rostislav.quickdrop.model.EventType;
+import org.rostislav.quickdrop.repository.ActivityLogRepository;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -12,8 +12,8 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import static org.rostislav.quickdrop.model.FileHistoryType.DOWNLOAD;
-import static org.rostislav.quickdrop.model.FileHistoryType.SHARE_DOWNLOAD;
+import static org.rostislav.quickdrop.model.EventType.DOWNLOAD;
+import static org.rostislav.quickdrop.model.EventType.SHARE_DOWNLOAD;
 
 import static org.rostislav.quickdrop.util.FileUtils.formatFileSize;
 
@@ -28,11 +28,13 @@ import static org.rostislav.quickdrop.util.FileUtils.formatFileSize;
 @Service
 public class AnalyticsService {
     private final FileService fileService;
-    private final FileHistoryLogRepository fileHistoryLogRepository;
+    private final PasteService pasteService;
+    private final ActivityLogRepository activityLogRepository;
 
-    public AnalyticsService(FileService fileService, FileHistoryLogRepository fileHistoryLogRepository) {
+    public AnalyticsService(FileService fileService, PasteService pasteService, ActivityLogRepository activityLogRepository) {
         this.fileService = fileService;
-        this.fileHistoryLogRepository = fileHistoryLogRepository;
+        this.pasteService = pasteService;
+        this.activityLogRepository = activityLogRepository;
     }
 
     /**
@@ -46,7 +48,7 @@ public class AnalyticsService {
      */
     @Cacheable("analytics")
     public AnalyticsDataView getAnalytics() {
-        long totalDownloads = fileHistoryLogRepository.countByEventTypeIn(List.of(DOWNLOAD, SHARE_DOWNLOAD));
+        long totalDownloads = activityLogRepository.countByEventTypeIn(List.of(DOWNLOAD, SHARE_DOWNLOAD));
         long totalSpaceUsed = fileService.calculateTotalSpaceUsed();
         long fileCount = fileService.getFileCount();
 
@@ -55,11 +57,11 @@ public class AnalyticsService {
             averageFileSize = formatFileSize(totalSpaceUsed / fileCount);
         }
 
-        long totalPastes = fileService.getPasteCount();
-        long totalPasteViews = fileHistoryLogRepository.countByEventType(FileHistoryType.PASTE_VIEW);
-        double avgPasteLengthBytes = fileService.getAveragePasteLength();
+        long totalPastes = pasteService.getPasteCount();
+        long totalPasteViews = activityLogRepository.countByEventType(EventType.PASTE_VIEW);
+        double avgPasteLengthBytes = pasteService.getAveragePasteLength();
         String averagePasteLength = avgPasteLengthBytes > 0 ? Math.round(avgPasteLengthBytes) + " B" : "0 B";
-        long markdownPasteCount = fileService.getMarkdownPasteCount();
+        long markdownPasteCount = pasteService.getMarkdownPasteCount();
         long plainTextPasteCount = Math.max(0, totalPastes - markdownPasteCount);
 
         AnalyticsDataView analytics = new AnalyticsDataView();
@@ -83,7 +85,7 @@ public class AnalyticsService {
      * @return combined download count
      */
     public long getTotalDownloadsByFile(String uuid) {
-        return fileHistoryLogRepository.countByFileAndTypeIn(uuid, List.of(DOWNLOAD, SHARE_DOWNLOAD));
+        return activityLogRepository.countByFileAndTypeIn(uuid, List.of(DOWNLOAD, SHARE_DOWNLOAD));
     }
 
     /**
@@ -93,7 +95,7 @@ public class AnalyticsService {
      * @return view count
      */
     public long getTotalViewsByPaste(String uuid) {
-        return fileHistoryLogRepository.countByFileAndType(uuid, FileHistoryType.PASTE_VIEW);
+        return activityLogRepository.countByFileAndType(uuid, EventType.PASTE_VIEW);
     }
 
     /**
@@ -102,37 +104,42 @@ public class AnalyticsService {
      * @param fileUUID UUID of the file
      * @return ordered list of history entries
      */
-    public List<FileHistoryLog> getHistoryByFile(String fileUUID) {
-        return fileHistoryLogRepository.findByFileUuidOrderByEventDateDesc(fileUUID);
+    public List<ActivityLog> getHistoryByFile(String fileUUID) {
+        return activityLogRepository.findByFileUuidOrderByEventDateDesc(fileUUID);
     }
 
     /**
-     * Records an admin-level audit event (login, logout, settings change) that is not
-     * associated with any specific file.
+     * Records an audit event that is not associated with any specific file.
+     * Covers both {@link org.rostislav.quickdrop.model.EventCategory#ADMIN}
+     * events (login, logout, settings change) and
+     * {@link org.rostislav.quickdrop.model.EventCategory#SYSTEM} events
+     * (application startup / shutdown).
      *
-     * @param eventType the admin event category
-     * @param ip        requester IP address
-     * @param ua        requester User-Agent header value
+     * @param eventType the event type to record
+     * @param ip        requester IP address, or {@code null} for system events
+     * @param ua        requester User-Agent header value, or {@code null} for system events
      */
-    public void logAdminEvent(FileHistoryType eventType, String ip, String ua) {
-        fileHistoryLogRepository.save(new FileHistoryLog(eventType, ip, ua));
+    public void logEvent(EventType eventType, String ip, String ua) {
+        activityLogRepository.save(new ActivityLog(eventType, ip, ua));
     }
 
     /**
      * Returns a filtered, paginated slice of the global activity log.
      * Any parameter that is {@code null} is treated as "no filter on this dimension".
      *
-     * @param startDate lower bound on event timestamp (inclusive), or {@code null}
-     * @param endDate   upper bound on event timestamp (inclusive), or {@code null}
-     * @param eventType exact event type filter, or {@code null} to include all types
-     * @param ip        substring filter on IP address, or {@code null}
-     * @param ua        substring filter on user-agent, or {@code null}
-     * @param pageable  pagination and sort configuration
+     * @param startDate  lower bound on event timestamp (inclusive), or {@code null}
+     * @param endDate    upper bound on event timestamp (inclusive), or {@code null}
+     * @param eventType  exact event type filter, or {@code null} to include all types
+     * @param ip         substring filter on IP address, or {@code null}
+     * @param ua         substring filter on user-agent, or {@code null}
+     * @param sourceType one of {@code "file"}, {@code "paste"}, {@code "system"}, or {@code null} for all
+     * @param pageable   pagination and sort configuration
      * @return a page of matching log entries ordered by event date descending
      */
-    public Page<FileHistoryLog> getFilteredActivity(LocalDateTime startDate, LocalDateTime endDate,
-                                                    FileHistoryType eventType, String ip, String ua,
-                                                    Pageable pageable) {
-        return fileHistoryLogRepository.findFiltered(startDate, endDate, eventType, ip, ua, pageable);
+    public Page<ActivityLog> getFilteredActivity(LocalDateTime startDate, LocalDateTime endDate,
+                                                 EventType eventType, String ip, String ua, String sourceType,
+                                                 Pageable pageable) {
+        String sourceTypeFilter = (sourceType == null || sourceType.isBlank()) ? null : sourceType.toLowerCase();
+        return activityLogRepository.findFiltered(startDate, endDate, eventType, ip, ua, sourceTypeFilter, pageable);
     }
 }

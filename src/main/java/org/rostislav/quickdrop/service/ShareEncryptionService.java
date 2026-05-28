@@ -30,12 +30,12 @@ public class ShareEncryptionService {
             new ThreadPoolExecutor.CallerRunsPolicy()
     );
 
-    private final FileEncryptionService fileEncryptionService;
+    private final EncryptionService encryptionService;
     private final ApplicationSettingsService applicationSettingsService;
 
-    public ShareEncryptionService(FileEncryptionService fileEncryptionService,
+    public ShareEncryptionService(EncryptionService encryptionService,
                                   ApplicationSettingsService applicationSettingsService) {
-        this.fileEncryptionService = fileEncryptionService;
+        this.encryptionService = encryptionService;
         this.applicationSettingsService = applicationSettingsService;
     }
 
@@ -61,8 +61,8 @@ public class ShareEncryptionService {
             Path encryptedFilePath = Path.of(applicationSettingsService.getFileStoragePath(), uuid);
             Path sidecarPath = Path.of(applicationSettingsService.getFileStoragePath(), uuid + "-share-" + token);
             try {
-                try (InputStream decIn = fileEncryptionService.getDecryptedInputStream(encryptedFilePath.toFile(), plainPassword);
-                     OutputStream encOut = fileEncryptionService.getEncryptedOutputStream(sidecarPath.toFile(), shareKey)) {
+                try (InputStream decIn = encryptionService.getDecryptedInputStream(encryptedFilePath.toFile(), plainPassword);
+                     OutputStream encOut = encryptionService.getEncryptedOutputStream(sidecarPath.toFile(), shareKey)) {
                     decIn.transferTo(encOut);
                 }
                 logger.info("Background sidecar encryption complete for token: {}", token);

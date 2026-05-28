@@ -361,8 +361,8 @@
                     <div class="manual-preview-pane markdown-content" id="manualPreviewPane"></div>
                 </div>
 
-                <!-- Password -->
-                <div class="form-row" th:if="${uploadPasswordEnabled and !isEditMode}">
+                <!-- Password (create mode only) -->
+                <div class="form-row" id="passwordSection" th:if="${uploadPasswordEnabled and !isEditMode}">
                     <label class="form-label" for="password" th:text="#{page.paste.password.label}">Password
                         (optional)</label>
                     <input class="form-input" id="password" name="password"
@@ -370,6 +370,34 @@
                            th:placeholder="#{page.paste.password.placeholder}" type="password"/>
                     <p class="form-hint" th:text="#{page.paste.password.help}">Leave empty to remove password
                         protection.</p>
+
+                    <!-- Password scope: shown only when password field has text -->
+                    <div class="flex flex-col gap-2 mt-3 p-3 rounded-xl" id="editOnlySection"
+                         style="background:var(--c-surface-raised);border:1px solid var(--c-border);display:none">
+                        <p class="text-sm font-semibold" th:text="#{page.paste.field.editOnly}">Password scope</p>
+                        <label class="form-check">
+                            <input checked id="editOnly_viewAndEdit" name="editOnly" type="radio" value="false"/>
+                            <span class="text-sm" th:text="#{page.paste.editOnly.viewAndEdit}">Password required for viewing and editing</span>
+                        </label>
+                        <label class="form-check">
+                            <input id="editOnly_editOnly" name="editOnly" type="radio" value="true"/>
+                            <span class="text-sm" th:text="#{page.paste.editOnly.editOnly}">Password required for editing only (content is publicly visible)</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Immutable toggle -->
+                <div class="flex items-center gap-3 p-3 rounded-xl"
+                     style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
+                    <label class="toggle-switch">
+                        <input class="sr-only" id="immutableToggle" name="immutable"
+                               th:checked="${isImmutable}" type="checkbox" value="true"/>
+                        <span class="toggle-track"><span class="toggle-thumb"></span></span>
+                    </label>
+                    <div>
+                        <p class="text-sm font-semibold" th:text="#{page.paste.field.immutable}">Lock paste (immutable)</p>
+                        <p class="text-xs" style="color:var(--c-text-muted)" th:text="#{page.paste.field.immutable.help}">Once saved, the paste content can no longer be edited.</p>
+                    </div>
                 </div>
 
                 <!-- Save row: toggle left, button right -->
@@ -514,6 +542,23 @@
         savePasteButton.disabled = true;
         savePasteButton.classList.add("opacity-70", "cursor-not-allowed");
     });
+
+    // Show/hide editOnly scope section based on whether a password has been entered
+    const passwordField = document.getElementById("password");
+    const editOnlySection = document.getElementById("editOnlySection");
+    if (passwordField && editOnlySection) {
+        function syncEditOnlyVisibility() {
+            const hasPassword = passwordField.value.trim().length > 0;
+            editOnlySection.style.display = hasPassword ? "" : "none";
+            if (!hasPassword) {
+                // Reset to default (view+edit) when password is cleared
+                const viewAndEditRadio = document.getElementById("editOnly_viewAndEdit");
+                if (viewAndEditRadio) viewAndEditRadio.checked = true;
+            }
+        }
+        passwordField.addEventListener("input", syncEditOnlyVisibility);
+        syncEditOnlyVisibility();
+    }
 </script>
 <script src="/js/locale-switcher.js"></script>
 </body>

@@ -150,6 +150,12 @@
                                 <span class="badge badge-danger" th:if="${isDeleted}">
                                     <span th:text="#{badge.deleted}">Deleted</span>
                                 </span>
+                                <span class="badge badge-amber" th:if="${isImmutable}">
+                                    <span th:text="#{badge.immutable}">Immutable</span>
+                                </span>
+                                <span class="badge badge-indigo" th:if="${isEditOnly and !isImmutable}">
+                                    <span th:text="#{badge.editOnly}">Edit Protected</span>
+                                </span>
                             </div>
                         </div>
                         <div class="flex flex-wrap gap-2" th:if="${!isDeleted}">
@@ -157,7 +163,7 @@
                                     th:text="#{page.pasteView.copyText}"
                                     type="button">Copy text
                             </button>
-                            <a class="btn btn-ghost btn-sm"
+                            <a class="btn btn-ghost btn-sm" th:if="${!isImmutable}"
                                th:href="@{/file/paste/edit/{uuid}(uuid=${file.uuid})}"
                                th:text="#{button.edit}">Edit</a>
                             <a class="btn btn-gradient btn-sm"

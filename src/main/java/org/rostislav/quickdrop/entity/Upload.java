@@ -104,6 +104,31 @@ public abstract class Upload {
     }
 
     /**
+     * Returns {@code true} if this upload is a permanently immutable paste.
+     *
+     * <p>Exposed as a Java bean getter so Thymeleaf can resolve {@code file.immutable}
+     * on any {@code Upload} subtype without a cast.
+     *
+     * @return {@code false} by default; {@link Paste} overrides to return the stored flag
+     */
+    public boolean isImmutable() {
+        return false;
+    }
+
+    /**
+     * Returns {@code true} if this upload is a paste whose password protects editing only
+     * (the content is viewable without a password).
+     *
+     * <p>Exposed as a Java bean getter so Thymeleaf can resolve {@code file.editOnly}
+     * on any {@code Upload} subtype without a cast.
+     *
+     * @return {@code false} by default; {@link Paste} overrides to return the stored flag
+     */
+    public boolean isEditOnly() {
+        return false;
+    }
+
+    /**
      * Sets {@link #uploadDate} to today before the first database INSERT.
      */
     @PrePersist

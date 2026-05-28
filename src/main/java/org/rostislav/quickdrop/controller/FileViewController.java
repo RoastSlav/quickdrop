@@ -89,6 +89,7 @@ public class FileViewController {
 
         model.addAttribute("maxFileLifeTime", applicationSettingsService.getMaxFileLifeTime());
         model.addAttribute("isEditMode", false);
+        model.addAttribute("isImmutable", false);
         model.addAttribute("pasteTitle", "");
         model.addAttribute("pasteContent", "");
         model.addAttribute("pasteSyntax", "text");
@@ -107,8 +108,18 @@ public class FileViewController {
         if (fileEntity == null) {
             return "redirect:/file/list";
         }
-        if (!(fileEntity instanceof Paste)) {
+        if (!(fileEntity instanceof Paste paste)) {
             return "redirect:/file/" + uuid;
+        }
+
+        // Immutable pastes cannot be edited at all
+        if (paste.immutable) {
+            return "redirect:/file/" + uuid;
+        }
+
+        // Require edit authorization (password check for pastes that have a password)
+        if (!fileService.isAuthorizedToEdit(uuid, request)) {
+            return "redirect:/file/password/" + uuid + "?editMode=true";
         }
 
         String content = pasteService.getPasteContent(uuid, request);
@@ -123,6 +134,7 @@ public class FileViewController {
         model.addAttribute("pasteContent", content);
         model.addAttribute("pasteSyntax", fileEntity.name != null && fileEntity.name.toLowerCase(Locale.ROOT).endsWith(".md") ? "markdown" : "text");
         model.addAttribute("keepIndefinitely", fileEntity.keepIndefinitely);
+        model.addAttribute("isImmutable", false); // edit page only reached when not immutable
         model.addAttribute("pasteFormAction", "/file/paste/edit/" + uuid);
         model.addAttribute("pasteCancelUrl", "/file/" + uuid);
         return "pastebin";
@@ -134,6 +146,8 @@ public class FileViewController {
                               @RequestParam(name = "syntax", defaultValue = "markdown") String syntax,
                               @RequestParam(name = "keepIndefinitely", defaultValue = "false") boolean keepIndefinitely,
                               @RequestParam(name = "password", required = false) String password,
+                              @RequestParam(name = "immutable", defaultValue = "false") boolean immutable,
+                              @RequestParam(name = "editOnly", defaultValue = "false") boolean editOnly,
                               HttpServletRequest request,
                               RedirectAttributes redirectAttributes) {
         if (!applicationSettingsService.isPastebinEnabled() && !sessionService.hasValidAdminSession(request)) {
@@ -145,7 +159,7 @@ public class FileViewController {
         }
 
         try {
-            Upload created = pasteService.createPaste(title, content, syntax, keepIndefinitely, password, request);
+            Upload created = pasteService.createPaste(title, content, syntax, keepIndefinitely, password, immutable, editOnly, request);
             if (created == null) {
                 redirectAttributes.addFlashAttribute("pasteError", "Could not create paste.");
                 return "redirect:/file/paste/new";
@@ -167,17 +181,23 @@ public class FileViewController {
                               @RequestParam(name = "content", required = false) String content,
                               @RequestParam(name = "syntax", defaultValue = "markdown") String syntax,
                               @RequestParam(name = "keepIndefinitely", defaultValue = "false") boolean keepIndefinitely,
+                              @RequestParam(name = "immutable", defaultValue = "false") boolean setImmutable,
                               HttpServletRequest request,
                               RedirectAttributes redirectAttributes) {
         if (!applicationSettingsService.isPastebinEnabled() && !sessionService.hasValidAdminSession(request)) {
             return "redirect:/";
         }
-        if (!fileService.isAuthorizedForFile(uuid, request)) {
-            return "redirect:/file/password/" + uuid;
+
+        Upload upload = fileService.getFile(uuid).orElse(null);
+        if (upload instanceof Paste paste && paste.immutable) {
+            return "redirect:/file/" + uuid;
+        }
+        if (!fileService.isAuthorizedToEdit(uuid, request)) {
+            return "redirect:/file/password/" + uuid + "?editMode=true";
         }
 
         try {
-            Paste updated = pasteService.updatePaste(uuid, title, content, syntax, keepIndefinitely, request);
+            Paste updated = pasteService.updatePaste(uuid, title, content, syntax, keepIndefinitely, setImmutable, request);
             if (updated == null) {
                 redirectAttributes.addFlashAttribute("pasteError", "Could not update paste.");
                 return "redirect:/file/paste/edit/" + uuid;
@@ -234,13 +254,15 @@ public class FileViewController {
         model.addAttribute("isDeleted", fileEntity.deleted);
         model.addAttribute("maxFileLifeTime", applicationSettingsService.getMaxFileLifeTime());
 
-        if (fileEntity instanceof Paste) {
+        if (fileEntity instanceof Paste paste) {
             // Deleted pastes: admin has already been admitted above; the physical file is gone
             // so skip the password/content checks and show the paste view with empty content.
             if (fileEntity.deleted) {
                 populateModelAttributes(fileEntity, model, request);
                 model.addAttribute("pasteContent", "");
                 model.addAttribute("isMarkdownPaste", false);
+                model.addAttribute("isImmutable", paste.immutable);
+                model.addAttribute("isEditOnly", paste.editOnly);
                 return "pasteView";
             }
 
@@ -256,6 +278,8 @@ public class FileViewController {
             populateModelAttributes(fileEntity, model, request);
             model.addAttribute("pasteContent", pasteContent);
             model.addAttribute("isMarkdownPaste", fileEntity.name != null && fileEntity.name.toLowerCase(Locale.ROOT).endsWith(".md"));
+            model.addAttribute("isImmutable", paste.immutable);
+            model.addAttribute("isEditOnly", paste.editOnly);
             return "pasteView";
         }
 
@@ -322,23 +346,30 @@ public class FileViewController {
     @PostMapping("/password")
     public String checkPassword(@RequestParam("uuid") String uuid,
                                 @RequestParam("password") String password,
+                                @RequestParam(name = "editMode", defaultValue = "false") boolean editMode,
                                 HttpServletRequest request,
                                 RedirectAttributes redirectAttributes) {
         if (fileService.checkFilePassword(uuid, password)) {
             String fileSessionToken = sessionService.addFileSessionToken(UUID.randomUUID().toString(), password, uuid);
             request.getSession().setAttribute("file-session-token", fileSessionToken);
             logger.info("Token has been added to the session for file UUID: {}", uuid);
-            return "redirect:/file/" + uuid;
+            // For edit-mode logins redirect directly to the edit page
+            return editMode ? "redirect:/file/paste/edit/" + uuid : "redirect:/file/" + uuid;
         } else {
             logger.info("Incorrect password attempt for file UUID: {}", uuid);
             redirectAttributes.addFlashAttribute("passwordError", true);
-            return "redirect:/file/password/" + uuid;
+            return editMode
+                    ? "redirect:/file/password/" + uuid + "?editMode=true"
+                    : "redirect:/file/password/" + uuid;
         }
     }
 
     @GetMapping("/password/{uuid}")
-    public String passwordPage(@PathVariable String uuid, Model model) {
+    public String passwordPage(@PathVariable String uuid,
+                               @RequestParam(name = "editMode", defaultValue = "false") boolean editMode,
+                               Model model) {
         model.addAttribute("uuid", uuid);
+        model.addAttribute("editMode", editMode);
         fileService.getFile(uuid).ifPresent(f -> model.addAttribute("fileName", f.name));
         return "file-password";
     }

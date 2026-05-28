@@ -145,7 +145,10 @@ public class FileService {
     private Upload populateUpload(UploadRequest request, String uuid) {
         Upload upload;
         if (request.paste) {
-            upload = new Paste();
+            Paste paste = new Paste();
+            paste.editOnly = request.editOnly;
+            paste.immutable = request.immutable;
+            upload = paste;
         } else {
             StoredFile storedFile = new StoredFile();
             storedFile.folderUpload = request.folderUpload;
@@ -435,6 +438,35 @@ public class FileService {
     public boolean isAuthorizedForFile(String uuid, HttpServletRequest request) {
         Upload upload = uploadRepository.findByUUID(uuid).orElse(null);
         if (upload == null) {
+            return false;
+        }
+        // edit-only pastes: viewing is always permitted; edit auth is enforced separately
+        if (upload.isEditOnly()) {
+            return true;
+        }
+        if (upload.passwordHash == null || upload.passwordHash.isBlank()) {
+            return true;
+        }
+        Object sessionToken = request.getSession().getAttribute("file-session-token");
+        return sessionToken != null && sessionService.validateFileSessionToken(sessionToken.toString(), uuid);
+    }
+
+    /**
+     * Returns {@code true} if the current HTTP session is authorised to edit the upload.
+     *
+     * <p>Always returns {@code false} for immutable pastes.
+     * Returns {@code true} when no password hash is set.
+     *
+     * @param uuid    the upload UUID
+     * @param request the HTTP request carrying the session
+     * @return {@code true} if editing is permitted
+     */
+    public boolean isAuthorizedToEdit(String uuid, HttpServletRequest request) {
+        Upload upload = uploadRepository.findByUUID(uuid).orElse(null);
+        if (upload == null) {
+            return false;
+        }
+        if (upload.isImmutable()) {
             return false;
         }
         if (upload.passwordHash == null || upload.passwordHash.isBlank()) {
@@ -871,7 +903,10 @@ public class FileService {
      * @return {@code true} if the file should be AES-encrypted
      */
     public boolean shouldEncrypt(UploadRequest request) {
-        return request.password != null && !request.password.isBlank() && applicationSettingsService.isEncryptionEnabled();
+        // edit-only pastes are stored unencrypted so the content can be served without a password
+        return request.password != null && !request.password.isBlank()
+                && applicationSettingsService.isEncryptionEnabled()
+                && !request.editOnly;
     }
 
     /**

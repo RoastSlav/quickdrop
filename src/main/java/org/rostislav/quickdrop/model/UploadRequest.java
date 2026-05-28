@@ -73,10 +73,32 @@ public class UploadRequest {
      */
     public boolean paste;
 
+    /**
+     * When {@code true} the paste password guards editing only; viewing is public.
+     * Only meaningful when {@link #paste} is {@code true}.
+     * Also suppresses AES encryption regardless of settings.
+     */
+    public boolean editOnly;
+
+    /**
+     * When {@code true} the paste is permanently immutable after the first save.
+     * Only meaningful when {@link #paste} is {@code true}.
+     */
+    public boolean immutable;
+
     public UploadRequest(String description, boolean keepIndefinitely, String password, boolean hidden,
                          String fileName, int totalChunks, Long fileSize,
                          String uploaderIp, String uploaderUserAgent,
                          boolean folderUpload, String folderName, String folderManifest, boolean paste) {
+        this(description, keepIndefinitely, password, hidden, fileName, totalChunks, fileSize,
+                uploaderIp, uploaderUserAgent, folderUpload, folderName, folderManifest, paste, false, false);
+    }
+
+    public UploadRequest(String description, boolean keepIndefinitely, String password, boolean hidden,
+                         String fileName, int totalChunks, Long fileSize,
+                         String uploaderIp, String uploaderUserAgent,
+                         boolean folderUpload, String folderName, String folderManifest, boolean paste,
+                         boolean editOnly, boolean immutable) {
         this.description = description;
         this.keepIndefinitely = keepIndefinitely;
         this.password = password;
@@ -90,5 +112,7 @@ public class UploadRequest {
         this.folderName = folderName;
         this.folderManifest = folderManifest;
         this.paste = paste;
+        this.editOnly = editOnly;
+        this.immutable = immutable;
     }
 }

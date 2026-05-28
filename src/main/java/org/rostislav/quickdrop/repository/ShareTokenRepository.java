@@ -1,7 +1,7 @@
 package org.rostislav.quickdrop.repository;
 
-import org.rostislav.quickdrop.entity.FileEntity;
 import org.rostislav.quickdrop.entity.ShareTokenEntity;
+import org.rostislav.quickdrop.entity.Upload;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -17,7 +17,7 @@ import java.util.Optional;
 /**
  * Repository for {@link ShareTokenEntity}.
  *
- * <p>Provides token lookup, existence checks, and a bulk-delete for file cleanup.
+ * <p>Provides token lookup, existence checks, and a bulk-delete for upload cleanup.
  * Expired or exhausted tokens are collected by
  * {@link #getShareTokenEntitiesForDeletion(LocalDate)} and removed by the nightly sweep
  * in {@link org.rostislav.quickdrop.service.ScheduleService#cleanShareTokens()}.
@@ -44,11 +44,11 @@ public interface ShareTokenRepository extends JpaRepository<ShareTokenEntity, Lo
     boolean existsByShareToken(String shareToken);
 
     /**
-     * Removes all share tokens associated with a given file.
+     * Removes all share tokens associated with a given upload.
      *
-     * @param fileEntity the file whose tokens should be removed
+     * @param upload the upload whose tokens should be removed
      */
-    void deleteAllByFile(FileEntity fileEntity);
+    void deleteAllByFile(Upload upload);
 
     /**
      * Returns all tokens that are no longer valid — either their expiry date has
@@ -85,34 +85,37 @@ public interface ShareTokenRepository extends JpaRepository<ShareTokenEntity, Lo
     void deleteByIdTransactional(@Param("id") Long id);
 
     /**
-     * Finds the first unlimited token (no expiry, no download cap) for a given file.
+     * Finds the first unlimited token (no expiry, no download cap) for a given upload.
      * Used to reuse an existing unlimited token instead of creating a new one.
      *
-     * @param file the file to look up the token for
+     * @param upload the upload to look up the token for
      * @return the existing unlimited token, or empty if none exists
      */
-    Optional<ShareTokenEntity> findFirstByFileAndTokenExpirationDateIsNullAndNumberOfAllowedDownloadsIsNull(FileEntity file);
+    Optional<ShareTokenEntity> findFirstByFileAndTokenExpirationDateIsNullAndNumberOfAllowedDownloadsIsNull(Upload upload);
 
     /**
-     * Returns all share tokens for the given file. Used when deleting a file to clean
+     * Returns all share tokens for the given upload. Used when deleting an upload to clean
      * up all associated sidecars before removing token rows.
      *
-     * @param file the file whose tokens should be returned
-     * @return all tokens associated with the file
+     * @param upload the upload whose tokens should be returned
+     * @return all tokens associated with the upload
      */
-    List<ShareTokenEntity> findAllByFile(FileEntity file);
+    List<ShareTokenEntity> findAllByFile(Upload upload);
 
     /**
-     * Returns {@code true} if the file has at least one share token that has neither
+     * Returns {@code true} if the upload has at least one share token that has neither
      * expired nor exhausted its download allowance. Used by the maintenance job to
      * decide whether a legacy {@code {uuid}-decrypted} sidecar should be preserved.
      *
-     * @param file  the file to check
-     * @param today today's date, used as the expiry cutoff (pass {@code LocalDate.now()})
+     * @param upload the upload to check
+     * @param today  today's date, used as the expiry cutoff (pass {@code LocalDate.now()})
      * @return {@code true} if an active share token exists
      */
-    @Query("SELECT CASE WHEN COUNT(s) > 0 THEN true ELSE false END FROM ShareTokenEntity s WHERE s.file = :file AND (s.tokenExpirationDate IS NULL OR s.tokenExpirationDate >= :today) AND (s.numberOfAllowedDownloads IS NULL OR s.numberOfAllowedDownloads > 0)")
-    boolean existsValidTokenForFile(@Param("file") FileEntity file, @Param("today") LocalDate today);
+    @Query("SELECT CASE WHEN COUNT(s) > 0 THEN true ELSE false END FROM ShareTokenEntity s " +
+            "WHERE s.file = :upload " +
+            "AND (s.tokenExpirationDate IS NULL OR s.tokenExpirationDate >= :today) " +
+            "AND (s.numberOfAllowedDownloads IS NULL OR s.numberOfAllowedDownloads > 0)")
+    boolean existsValidTokenForFile(@Param("upload") Upload upload, @Param("today") LocalDate today);
 
     /**
      * Returns a filtered, sorted, paginated page of currently-active share tokens.
@@ -122,14 +125,14 @@ public interface ShareTokenRepository extends JpaRepository<ShareTokenEntity, Lo
      * <p>Any filter parameter that represents "no constraint" should be passed as
      * {@code null} / {@code false}:
      * <ul>
-     *   <li>{@code isPaste = null} — include both files and pastes</li>
+     *   <li>{@code isPaste = null} — include tokens for both files and pastes</li>
      *   <li>{@code noExpiry = false} — include tokens with and without an expiry date</li>
      *   <li>{@code unlimited = false} — include tokens with and without a download cap</li>
      *   <li>{@code query = null} — no name/token substring filter</li>
      * </ul>
      *
      * <p>The data query uses {@code JOIN FETCH s.file} to load the associated
-     * {@link org.rostislav.quickdrop.entity.FileEntity} in a single SQL join, avoiding
+     * {@link org.rostislav.quickdrop.entity.Upload} in a single SQL join, avoiding
      * the N+1 select problem when the caller iterates over results. The separate
      * {@code countQuery} omits the fetch join so Spring Data can apply SQL-level
      * pagination correctly.
@@ -143,7 +146,7 @@ public interface ShareTokenRepository extends JpaRepository<ShareTokenEntity, Lo
      *                  {@code null} = both
      * @param noExpiry  when {@code true} restrict to tokens with no expiry date
      * @param unlimited when {@code true} restrict to tokens with no download cap
-     * @param query     optional case-insensitive substring matched against file name
+     * @param query     optional case-insensitive substring matched against upload name
      *                  and token string; pass {@code null} to skip
      * @param pageable  pagination and sort configuration
      * @return page of matching active tokens
@@ -151,14 +154,14 @@ public interface ShareTokenRepository extends JpaRepository<ShareTokenEntity, Lo
     @Query(value = "SELECT s FROM ShareTokenEntity s JOIN FETCH s.file WHERE " +
             "(s.tokenExpirationDate IS NULL OR s.tokenExpirationDate >= :today) AND " +
             "(s.numberOfAllowedDownloads IS NULL OR s.numberOfAllowedDownloads > 0) AND " +
-            "(:isPaste IS NULL OR s.file.paste = :isPaste) AND " +
+            "(:isPaste IS NULL OR (:isPaste = true AND TYPE(s.file) = Paste) OR (:isPaste = false AND TYPE(s.file) = StoredFile)) AND " +
             "(:noExpiry = false OR s.tokenExpirationDate IS NULL) AND " +
             "(:unlimited = false OR s.numberOfAllowedDownloads IS NULL) AND " +
             "(:query IS NULL OR LOWER(s.file.name) LIKE LOWER(CONCAT('%', :query, '%')) OR LOWER(s.shareToken) LIKE LOWER(CONCAT('%', :query, '%')))",
             countQuery = "SELECT COUNT(s) FROM ShareTokenEntity s WHERE " +
                     "(s.tokenExpirationDate IS NULL OR s.tokenExpirationDate >= :today) AND " +
                     "(s.numberOfAllowedDownloads IS NULL OR s.numberOfAllowedDownloads > 0) AND " +
-                    "(:isPaste IS NULL OR s.file.paste = :isPaste) AND " +
+                    "(:isPaste IS NULL OR (:isPaste = true AND TYPE(s.file) = Paste) OR (:isPaste = false AND TYPE(s.file) = StoredFile)) AND " +
                     "(:noExpiry = false OR s.tokenExpirationDate IS NULL) AND " +
                     "(:unlimited = false OR s.numberOfAllowedDownloads IS NULL) AND " +
                     "(:query IS NULL OR LOWER(s.file.name) LIKE LOWER(CONCAT('%', :query, '%')) OR LOWER(s.shareToken) LIKE LOWER(CONCAT('%', :query, '%')))")

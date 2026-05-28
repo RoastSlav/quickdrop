@@ -13,28 +13,44 @@ public class AnalyticsDataView {
      */
     private long totalDownloads;
 
-    /** Human-readable total storage consumed by all files (excludes pastes). */
+    /**
+     * Human-readable total storage consumed by all files (excludes pastes).
+     */
     private String totalSpaceUsed;
 
-    /** Human-readable average file size across non-paste uploads. */
+    /**
+     * Human-readable average file size across non-paste uploads.
+     */
     private String averageFileSize;
 
-    /** Number of non-paste file entries in the database. */
+    /**
+     * Number of non-paste file entries in the database.
+     */
     private long totalFileCount;
 
-    /** Number of paste entries in the database. */
+    /**
+     * Number of paste entries in the database.
+     */
     private long totalPastes;
 
-    /** Total number of PASTE_VIEW events recorded. */
+    /**
+     * Total number of PASTE_VIEW events recorded.
+     */
     private long totalPasteViews;
 
-    /** Human-readable average byte length of paste content. */
+    /**
+     * Human-readable average byte length of paste content.
+     */
     private String averagePasteLength;
 
-    /** Number of paste entries whose name ends with {@code .md}. */
+    /**
+     * Number of paste entries whose name ends with {@code .md}.
+     */
     private long markdownPasteCount;
 
-    /** Number of paste entries that are plain text (totalPastes − markdownPasteCount). */
+    /**
+     * Number of paste entries that are plain text (totalPastes − markdownPasteCount).
+     */
     private long plainTextPasteCount;
 
     public long getTotalDownloads() {

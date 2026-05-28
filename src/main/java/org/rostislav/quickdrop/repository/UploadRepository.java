@@ -1,0 +1,62 @@
+package org.rostislav.quickdrop.repository;
+
+import org.rostislav.quickdrop.entity.Upload;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Optional;
+
+/**
+ * Repository for the {@link Upload} base entity, providing operations shared by
+ * both {@link org.rostislav.quickdrop.entity.StoredFile} and
+ * {@link org.rostislav.quickdrop.entity.Paste} subtypes.
+ *
+ * <p>Subtype-specific queries live in {@link FileRepository} and
+ * {@link PasteRepository} respectively.
+ */
+public interface UploadRepository extends JpaRepository<Upload, Long> {
+
+    /**
+     * Looks up any upload (file or paste) by its UUID path segment.
+     * Returns soft-deleted records so admin controllers can still find them.
+     *
+     * @param uuid the upload's unique identifier
+     * @return the matching entity, or empty if not found
+     */
+    @Query("SELECT u FROM Upload u WHERE u.uuid = :uuid")
+    Optional<Upload> findByUUID(@Param("uuid") String uuid);
+
+    /**
+     * Returns a paginated list of all non-deleted uploads (files and pastes) for
+     * the orphan-scan job.  Soft-deleted uploads are intentionally excluded because
+     * they legitimately have no file on disk.
+     *
+     * @param pageable pagination parameters
+     * @return page of non-deleted uploads
+     */
+    @Query("SELECT u FROM Upload u WHERE u.deleted = false")
+    Page<Upload> findAllNotDeleted(Pageable pageable);
+
+    /**
+     * Returns the total storage consumed by all live (non-deleted) uploads in bytes.
+     *
+     * @return sum of all upload sizes, or {@code null} if the table is empty
+     */
+    @Query("SELECT SUM(u.size) FROM Upload u WHERE u.deleted = false")
+    Long totalSizeOfAllUploads();
+
+    /**
+     * Returns all non-pinned, non-deleted uploads whose upload date is strictly
+     * before {@code thresholdDate}, eligible for scheduled deletion.
+     *
+     * @param thresholdDate uploads older than this date are returned
+     * @return list of uploads that should be deleted
+     */
+    @Query("SELECT u FROM Upload u WHERE u.keepIndefinitely = false AND u.deleted = false AND u.uploadDate < :thresholdDate")
+    List<Upload> getUploadsForDeletion(@Param("thresholdDate") LocalDate thresholdDate);
+}

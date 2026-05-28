@@ -15,14 +15,15 @@ public class ChunkInfo {
      */
     public int chunkNumber;
 
-    /** Temporary file on disk containing this chunk's raw bytes. */
+    /**
+     * Temporary file on disk containing this chunk's raw bytes.
+     */
     public File chunkFile;
 
-    /** {@code true} when this is the final chunk of the upload. */
+    /**
+     * {@code true} when this is the final chunk of the upload.
+     */
     public boolean isLastChunk;
-
-    public ChunkInfo() {
-    }
 
     /**
      * @param chunkNumber zero-based index of this chunk

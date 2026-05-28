@@ -1,12 +1,13 @@
 package org.rostislav.quickdrop.model;
 
-import org.rostislav.quickdrop.entity.FileEntity;
+import org.rostislav.quickdrop.entity.Upload;
 
 import java.time.LocalDate;
 import java.util.Locale;
 
 /**
- * Read-only projection of a paste {@link FileEntity} used in paste-listing views.
+ * Read-only projection of a {@link org.rostislav.quickdrop.entity.Paste} used in
+ * paste-listing views.
  *
  * <p>Whether the paste is Markdown is determined by checking whether the stored
  * filename ends with {@code .md}. The {@code totalViews} count is injected from
@@ -42,21 +43,28 @@ public class PasteEntityView {
      */
     public long totalViews;
 
+    /**
+     * {@code true} when the paste has been soft-deleted.
+     */
+    public boolean deleted;
+
     public PasteEntityView() {
     }
 
     /**
-     * @param fileEntity the source paste entity
+     * @param upload     the source entity (a {@link org.rostislav.quickdrop.entity.Paste}
+     *                   or any other {@link Upload} subtype)
      * @param totalViews pre-aggregated view count (from the repository JOIN)
      */
-    public PasteEntityView(FileEntity fileEntity, long totalViews) {
-        this.uuid = fileEntity.uuid;
-        this.name = fileEntity.name;
-        this.uploadDate = fileEntity.uploadDate;
-        this.isMarkdown = fileEntity.name != null && fileEntity.name.toLowerCase(Locale.ROOT).endsWith(".md");
-        this.rawSize = fileEntity.size;
-        this.size = fileEntity.size + " B";
-        this.passwordProtected = fileEntity.passwordHash != null;
+    public PasteEntityView(Upload upload, long totalViews) {
+        this.uuid = upload.uuid;
+        this.name = upload.name;
+        this.uploadDate = upload.uploadDate;
+        this.isMarkdown = upload.name != null && upload.name.toLowerCase(Locale.ROOT).endsWith(".md");
+        this.rawSize = upload.size;
+        this.size = upload.size + " B";
+        this.passwordProtected = upload.passwordHash != null;
         this.totalViews = totalViews;
+        this.deleted = upload.deleted;
     }
 }

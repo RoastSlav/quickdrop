@@ -4,9 +4,12 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import jakarta.servlet.http.HttpSessionEvent;
 import jakarta.servlet.http.HttpSessionListener;
+import org.rostislav.quickdrop.model.EventType;
 import org.rostislav.quickdrop.model.FileSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
@@ -32,7 +35,20 @@ public class SessionService implements HttpSessionListener {
     private final Map<String, FileSession> fileSessions = new ConcurrentHashMap<>();
 
     /**
+     * Lazily injected to avoid a startup-time circular dependency with the servlet listener
+     * registration. {@code AnalyticsService} is only needed at runtime when a session expires.
+     */
+    @Autowired
+    @Lazy
+    private AnalyticsService analyticsService;
+
+    /**
      * Removes admin and file session tokens when their HTTP session is invalidated or expires.
+     *
+     * <p>When the admin token is still present at destruction time the session expired due to
+     * inactivity (the explicit logout path removes the attribute before calling
+     * {@code session.invalidate()}). In that case an {@link EventType#ADMIN_SESSION_EXPIRE}
+     * event is written to the activity log using the IP and user-agent stored at login time.
      *
      * @param se the session event
      */
@@ -43,6 +59,14 @@ public class SessionService implements HttpSessionListener {
         if (adminToken != null) {
             adminSessionTokens.remove(adminToken.toString());
             logger.info("Session destroyed, admin session token invalidated: {}", adminToken);
+            // Token still present → session timed out, not an explicit logout.
+            String ip = (String) session.getAttribute("admin-ip");
+            String ua = (String) session.getAttribute("admin-ua");
+            try {
+                analyticsService.logEvent(EventType.ADMIN_SESSION_EXPIRE, ip, ua);
+            } catch (Exception e) {
+                logger.error("Failed to log admin session expiry event", e);
+            }
         }
 
         Object fileSessionToken = session.getAttribute("file-session-token");

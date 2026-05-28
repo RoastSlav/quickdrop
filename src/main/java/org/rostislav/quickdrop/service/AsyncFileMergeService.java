@@ -1,9 +1,9 @@
 package org.rostislav.quickdrop.service;
 
-import org.rostislav.quickdrop.entity.FileEntity;
+import org.rostislav.quickdrop.entity.Upload;
 import org.rostislav.quickdrop.model.ChunkInfo;
-import org.rostislav.quickdrop.model.FileUploadRequest;
-import org.rostislav.quickdrop.repository.FileRepository;
+import org.rostislav.quickdrop.model.UploadRequest;
+import org.rostislav.quickdrop.repository.UploadRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -22,10 +22,11 @@ import java.util.concurrent.*;
  *
  * <p>Each unique file upload (keyed by filename) gets its own {@link MergeTask} running
  * on the shared thread pool. Chunks are enqueued as they arrive via
- * {@link #submitChunk(FileUploadRequest, MultipartFile, int)} and processed in order
+ * {@link #submitChunk(UploadRequest, MultipartFile, int)} and processed in order
  * by the task's {@link BlockingQueue}. When the caller submits the last chunk it
  * blocks on the {@link CompletableFuture} until the merge and database save complete,
- * then returns the saved {@link FileEntity}.
+ * then returns the saved {@link Upload} (a {@link org.rostislav.quickdrop.entity.StoredFile}
+ * or {@link org.rostislav.quickdrop.entity.Paste} instance).
  *
  * <p>The thread pool uses {@link ThreadPoolExecutor.CallerRunsPolicy}.
  * A background TTL sweeper runs every {@value #TASK_TTL_MINUTES} minutes to evict
@@ -50,18 +51,18 @@ public class AsyncFileMergeService {
         return t;
     });
     private final ApplicationSettingsService applicationSettingsService;
-    private final FileEncryptionService fileEncryptionService;
+    private final EncryptionService encryptionService;
     private final FileService fileService;
-    private final FileRepository fileRepository;
+    private final UploadRepository uploadRepository;
     private final File tempDir = new File(System.getProperty("java.io.tmpdir"));
 
     public AsyncFileMergeService(ApplicationSettingsService applicationSettingsService,
-                                 FileEncryptionService fileEncryptionService,
-                                 FileService fileService, FileRepository fileRepository) {
+                                 EncryptionService encryptionService,
+                                 FileService fileService, UploadRepository uploadRepository) {
         this.applicationSettingsService = applicationSettingsService;
-        this.fileEncryptionService = fileEncryptionService;
+        this.encryptionService = encryptionService;
         this.fileService = fileService;
-        this.fileRepository = fileRepository;
+        this.uploadRepository = uploadRepository;
         ttlSweeper.scheduleAtFixedRate(this::evictStaleTasks, TASK_TTL_MINUTES, TASK_TTL_MINUTES, TimeUnit.MINUTES);
     }
 
@@ -71,16 +72,16 @@ public class AsyncFileMergeService {
      * <p>A {@link MergeTask} is created for the upload on the first chunk and reused for
      * subsequent chunks. When the last chunk (index {@code totalChunks - 1}) is submitted
      * the caller blocks until the merge thread finishes writing and saving the file, and
-     * the resulting {@link FileEntity} is returned. For non-final chunks {@code null} is
+     * the resulting {@link Upload} is returned. For non-final chunks {@code null} is
      * returned immediately.
      *
      * @param request        metadata for the upload (filename, total chunk count, password, etc.)
      * @param multipartChunk the chunk bytes received from the HTTP request
      * @param chunkNumber    zero-based chunk index
-     * @return the saved {@link FileEntity} after the last chunk, or {@code null} for intermediate chunks
+     * @return the saved {@link Upload} after the last chunk, or {@code null} for intermediate chunks
      * @throws IOException if saving the chunk to disk or waiting on the merge future fails
      */
-    public FileEntity submitChunk(FileUploadRequest request, MultipartFile multipartChunk, int chunkNumber) throws IOException {
+    public Upload submitChunk(UploadRequest request, MultipartFile multipartChunk, int chunkNumber) throws IOException {
         File savedChunk = new File(tempDir, request.fileName + "_chunk_" + chunkNumber);
         multipartChunk.transferTo(savedChunk);
         logger.info("Chunk {} for file {} saved to {}", chunkNumber, request.fileName, savedChunk.getAbsolutePath());
@@ -126,7 +127,7 @@ public class AsyncFileMergeService {
      *
      * @param request the upload request whose chunks should be removed
      */
-    private void cleanUpChunks(FileUploadRequest request) {
+    private void cleanUpChunks(UploadRequest request) {
         for (int i = 0; i < request.totalChunks; i++) {
             File chunkFile = new File(tempDir, request.fileName + "_chunk_" + i);
             if (chunkFile.exists() && !chunkFile.delete()) {
@@ -139,28 +140,28 @@ public class AsyncFileMergeService {
     /**
      * Worker that reads {@link ChunkInfo} items from a blocking queue and streams
      * them sequentially into the final output file, encrypting if configured.
-     * Completes {@link #mergeCompletionFuture} with the saved {@link FileEntity}.
+     * Completes {@link #mergeCompletionFuture} with the saved {@link Upload}.
      */
     private class MergeTask implements Runnable {
         final Instant createdAt = Instant.now();
         private final BlockingQueue<ChunkInfo> queue = new LinkedBlockingQueue<>();
-        private final CompletableFuture<FileEntity> mergeCompletionFuture = new CompletableFuture<>();
-        private final FileUploadRequest request;
+        private final CompletableFuture<Upload> mergeCompletionFuture = new CompletableFuture<>();
+        private final UploadRequest request;
         private int processedChunks = 0;
         private String uuid;
 
-        MergeTask(FileUploadRequest request) {
+        MergeTask(UploadRequest request) {
             this.request = request;
             do {
                 uuid = UUID.randomUUID().toString();
-            } while (fileRepository.findByUUID(uuid).isPresent());
+            } while (uploadRepository.findByUUID(uuid).isPresent());
         }
 
         public void enqueueChunk(ChunkInfo chunkInfo) {
             queue.add(chunkInfo);
         }
 
-        public CompletableFuture<FileEntity> getMergeCompletionFuture() {
+        public CompletableFuture<Upload> getMergeCompletionFuture() {
             return mergeCompletionFuture;
         }
 
@@ -169,7 +170,7 @@ public class AsyncFileMergeService {
             File finalFile = Paths.get(applicationSettingsService.getFileStoragePath(), uuid).toFile();
 
             try (OutputStream finalOut = fileService.shouldEncrypt(request) ?
-                    fileEncryptionService.getEncryptedOutputStream(finalFile, request.password) :
+                    encryptionService.getEncryptedOutputStream(finalFile, request.password) :
                     new BufferedOutputStream(new FileOutputStream(finalFile, true))) {
 
                 while (processedChunks < request.totalChunks) {
@@ -190,13 +191,13 @@ public class AsyncFileMergeService {
                 }
                 logger.info("All {} chunks merged for file {}", request.totalChunks, request.fileName);
 
-                FileEntity fileEntity = fileService.saveFile(finalFile, request, uuid);
-                if (fileEntity != null) {
-                    logger.info("File {} saved successfully with UUID {}", request.fileName, fileEntity.uuid);
+                Upload upload = fileService.saveFile(finalFile, request, uuid);
+                if (upload != null) {
+                    logger.info("File {} saved successfully with UUID {}", request.fileName, upload.uuid);
                 } else {
                     logger.error("Saving file {} failed", request.fileName);
                 }
-                mergeCompletionFuture.complete(fileEntity);
+                mergeCompletionFuture.complete(upload);
             } catch (Exception e) {
                 logger.error("Error merging chunks for file {}: {}", request.fileName, e.getMessage());
                 mergeCompletionFuture.completeExceptionally(e);

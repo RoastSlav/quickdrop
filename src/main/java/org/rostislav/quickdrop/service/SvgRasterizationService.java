@@ -49,7 +49,9 @@ public class SvgRasterizationService {
         }
     }
 
-    /** {@link PNGTranscoder} with script execution, external resources, and canvas size restricted. */
+    /**
+     * {@link PNGTranscoder} with script execution, external resources, and canvas size restricted.
+     */
     private static final class SafePngTranscoder extends PNGTranscoder {
         /**
          * Returns a {@link BufferedImage} for the given dimensions, or throws

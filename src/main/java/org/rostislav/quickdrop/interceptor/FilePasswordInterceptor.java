@@ -2,7 +2,7 @@ package org.rostislav.quickdrop.interceptor;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.rostislav.quickdrop.entity.FileEntity;
+import org.rostislav.quickdrop.entity.Upload;
 import org.rostislav.quickdrop.service.FileService;
 import org.rostislav.quickdrop.service.SessionService;
 import org.springframework.stereotype.Component;
@@ -59,16 +59,16 @@ public class FilePasswordInterceptor implements HandlerInterceptor {
             return false;
         }
 
-        FileEntity fileEntity = fileService.getFile(uuid).orElse(null);
-        if (fileEntity == null) {
+        Upload upload = fileService.getFile(uuid).orElse(null);
+        if (upload == null) {
             response.sendError(HttpServletResponse.SC_NOT_FOUND, "File not found.");
             return false;
         }
 
-        request.setAttribute("fileEntity", fileEntity);
+        request.setAttribute("fileEntity", upload);
 
         String sessionToken = (String) request.getSession().getAttribute("file-session-token");
-        if (fileEntity.passwordHash != null &&
+        if (upload.passwordHash != null &&
                 (sessionToken == null || !sessionService.validateFileSessionToken(sessionToken, uuid))) {
 
             response.sendRedirect("/file/password/" + uuid);

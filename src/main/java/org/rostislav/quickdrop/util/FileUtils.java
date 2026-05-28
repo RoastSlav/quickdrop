@@ -1,9 +1,11 @@
 package org.rostislav.quickdrop.util;
 
 import jakarta.servlet.http.HttpServletRequest;
-import org.rostislav.quickdrop.entity.FileEntity;
 import org.rostislav.quickdrop.entity.ShareTokenEntity;
+import org.rostislav.quickdrop.entity.Upload;
 import org.rostislav.quickdrop.service.FileService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
@@ -21,8 +23,6 @@ import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 
-import static org.rostislav.quickdrop.service.FileService.logger;
-
 /**
  * Static utility methods for file handling, preview type detection, share token
  * validation, streaming, and formatting.
@@ -30,6 +30,7 @@ import static org.rostislav.quickdrop.service.FileService.logger;
  * <p>Non-instantiable utility class following the static-factory pattern.
  */
 public class FileUtils {
+    private static final Logger logger = LoggerFactory.getLogger(FileUtils.class);
 
     /**
      * Extensions treated as plain-text and eligible for the in-browser text preview.
@@ -55,12 +56,16 @@ public class FileUtils {
         // Prevent instantiation
     }
 
-    /** Returns {@code page} clamped to a minimum of {@code 0}. */
+    /**
+     * Returns {@code page} clamped to a minimum of {@code 0}.
+     */
     public static int clampPage(int page) {
         return Math.max(page, 0);
     }
 
-    /** Returns {@code size} clamped to the range {@code [1, 100]}. */
+    /**
+     * Returns {@code size} clamped to the range {@code [1, 100]}.
+     */
     public static int clampSize(int size) {
         return Math.min(Math.max(size, 1), 100);
     }
@@ -69,17 +74,25 @@ public class FileUtils {
      * Wraps an {@link InputStream} in a {@link StreamingResponseBody} that copies
      * all bytes to the response output stream in 8 KB chunks.
      *
-     * @param inputStream source stream
+     * <p>The source {@code inputStream} is always closed when streaming finishes
+     * (whether it completes normally or throws), so the caller must not close it
+     * afterwards.  This is especially important on Windows, where an unclosed
+     * {@code FileInputStream} holds an OS-level file lock that prevents other
+     * operations (e.g. overwriting the same file) from succeeding.
+     *
+     * @param inputStream source stream; ownership is transferred to the returned body
      * @return a streaming response body
      */
     public static StreamingResponseBody getStreamingResponseBody(InputStream inputStream) {
         return outputStream -> {
-            byte[] buffer = new byte[8192];
-            int bytesRead;
-            while ((bytesRead = inputStream.read(buffer)) != -1) {
-                outputStream.write(buffer, 0, bytesRead);
+            try (inputStream) {
+                byte[] buffer = new byte[8192];
+                int bytesRead;
+                while ((bytesRead = inputStream.read(buffer)) != -1) {
+                    outputStream.write(buffer, 0, bytesRead);
+                }
+                outputStream.flush();
             }
-            outputStream.flush();
         };
     }
 
@@ -136,7 +149,7 @@ public class FileUtils {
      * @param fileEntity the file whose download link should be generated
      * @return absolute URL string (e.g. {@code https://example.com/file/abc-123})
      */
-    public static String getDownloadLink(HttpServletRequest request, FileEntity fileEntity) {
+    public static String getDownloadLink(HttpServletRequest request, Upload fileEntity) {
         String scheme = request.getHeader("X-Forwarded-Proto");
         if (scheme == null) {
             scheme = request.getScheme();
@@ -177,7 +190,7 @@ public class FileUtils {
         return megabytes * 1024 * 1024;
     }
 
-    private static String lowerName(FileEntity fileEntity) {
+    private static String lowerName(Upload fileEntity) {
         return fileEntity == null || fileEntity.name == null ? "" : fileEntity.name.toLowerCase(Locale.ROOT);
     }
 
@@ -200,32 +213,42 @@ public class FileUtils {
         return "";
     }
 
-    /** Returns {@code true} when the file's extension indicates plain-text content. */
-    public static boolean isPreviewableText(FileEntity fileEntity) {
+    /**
+     * Returns {@code true} when the file's extension indicates plain-text content.
+     */
+    public static boolean isPreviewableText(Upload fileEntity) {
         String lower = lowerName(fileEntity);
         return TEXT_EXTENSIONS.stream().anyMatch(lower::endsWith);
     }
 
-    /** Returns {@code true} when the file's extension indicates an image format. */
-    public static boolean isPreviewableImage(FileEntity fileEntity) {
+    /**
+     * Returns {@code true} when the file's extension indicates an image format.
+     */
+    public static boolean isPreviewableImage(Upload fileEntity) {
         String lower = lowerName(fileEntity);
         return IMAGE_EXTENSIONS.stream().anyMatch(lower::endsWith);
     }
 
-    /** Returns {@code true} when the file's extension indicates a PDF document. */
-    public static boolean isPreviewablePdf(FileEntity fileEntity) {
+    /**
+     * Returns {@code true} when the file's extension indicates a PDF document.
+     */
+    public static boolean isPreviewablePdf(Upload fileEntity) {
         String lower = lowerName(fileEntity);
         return PDF_EXTENSIONS.stream().anyMatch(lower::endsWith);
     }
 
-    /** Returns {@code true} when the file's extension indicates JSON content. */
-    public static boolean isPreviewableJson(FileEntity fileEntity) {
+    /**
+     * Returns {@code true} when the file's extension indicates JSON content.
+     */
+    public static boolean isPreviewableJson(Upload fileEntity) {
         String lower = lowerName(fileEntity);
         return JSON_EXTENSIONS.stream().anyMatch(lower::endsWith);
     }
 
-    /** Returns {@code true} when the file's extension indicates CSV or TSV content. */
-    public static boolean isPreviewableCsvOrTsv(FileEntity fileEntity) {
+    /**
+     * Returns {@code true} when the file's extension indicates CSV or TSV content.
+     */
+    public static boolean isPreviewableCsvOrTsv(Upload fileEntity) {
         String lower = lowerName(fileEntity);
         return CSV_TSV_EXTENSIONS.stream().anyMatch(lower::endsWith);
     }
@@ -270,7 +293,7 @@ public class FileUtils {
      * @param fileEntity the file to generate a token for
      * @return a 5-character base-62 token string
      */
-    public static String generateHashedToken(FileEntity fileEntity) {
+    public static String generateHashedToken(Upload fileEntity) {
         String seed = String.join(":",
                 fileEntity.uuid,
                 String.valueOf(fileEntity.size),
@@ -294,7 +317,7 @@ public class FileUtils {
      * @param bytes the bytes to encode
      * @return base-62 string representation
      */
-    public static String toBase62(byte[] bytes) {
+    private static String toBase62(byte[] bytes) {
         final String alphabet = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
         BigInteger value = new BigInteger(1, bytes);
         if (value.equals(BigInteger.ZERO)) {
@@ -333,13 +356,12 @@ public class FileUtils {
     /**
      * Streams a file to the output stream.
      *
-     * @param filePathToStream  path of the file to read
-     * @param decryptedFilePath unused
-     * @param uuid              file UUID (used in log messages only)
-     * @param outputStream      destination output stream
+     * @param filePathToStream path of the file to read
+     * @param uuid             file UUID (used in log messages only)
+     * @param outputStream     destination output stream
      * @throws IOException if streaming fails
      */
-    public static void streamFile(Path filePathToStream, Path decryptedFilePath, String uuid, OutputStream outputStream) throws IOException {
+    public static void streamFile(Path filePathToStream, String uuid, OutputStream outputStream) throws IOException {
         try (InputStream in = Files.newInputStream(filePathToStream)) {
             byte[] buffer = new byte[8192];
             int bytesRead;

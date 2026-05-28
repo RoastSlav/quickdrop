@@ -299,167 +299,233 @@ public class ApplicationSettingsService {
         applicationSettingsRepository.save(entity);
     }
 
-    /** @return maximum allowed file upload size in bytes */
+    /**
+     * @return maximum allowed file upload size in bytes
+     */
     public long getMaxFileSize() {
         return self.getApplicationSettings().getMaxFileSize();
     }
 
-    /** @return {@link #getMaxFileSize()} formatted as a human-readable string (e.g. "1 GB") */
+    /**
+     * @return {@link #getMaxFileSize()} formatted as a human-readable string (e.g. "1 GB")
+     */
     public String getFormattedMaxFileSize() {
         return formatFileSize(getMaxFileSize());
     }
 
-    /** @return maximum file retention period in days before scheduled deletion */
+    /**
+     * @return maximum file retention period in days before scheduled deletion
+     */
     public long getMaxFileLifeTime() {
         return self.getApplicationSettings().getMaxFileLifeTime();
     }
 
-    /** @return filesystem path where uploaded files are stored */
+    /**
+     * @return filesystem path where uploaded files are stored
+     */
     public String getFileStoragePath() {
         return self.getApplicationSettings().getFileStoragePath();
     }
 
-    /** @return filesystem path where application logs are stored */
+    /**
+     * @return filesystem path where application logs are stored
+     */
     public String getLogStoragePath() {
         return self.getApplicationSettings().getLogStoragePath();
     }
 
-    /** @return Spring-compatible 6-field cron expression for the scheduled file deletion job */
+    /**
+     * @return Spring-compatible 6-field cron expression for the scheduled file deletion job
+     */
     public String getFileDeletionCron() {
         return self.getApplicationSettings().getFileDeletionCron();
     }
 
-    /** @return {@code true} if an application-level access password is required */
+    /**
+     * @return {@code true} if an application-level access password is required
+     */
     public boolean isAppPasswordEnabled() {
         return self.getApplicationSettings().isAppPasswordEnabled();
     }
 
-    /** @return BCrypt hash of the application access password */
+    /**
+     * @return BCrypt hash of the application access password
+     */
     public String getAppPasswordHash() {
         return self.getApplicationSettings().getAppPasswordHash();
     }
 
-    /** @return BCrypt hash of the admin password */
+    /**
+     * @return BCrypt hash of the admin password
+     */
     public String getAdminPasswordHash() {
         return self.getApplicationSettings().getAdminPasswordHash();
     }
 
-    /** @return {@code true} if the public file list page is enabled */
+    /**
+     * @return {@code true} if the public file list page is enabled
+     */
     public boolean isFileListPageEnabled() {
         return self.getApplicationSettings().isFileListPageEnabled();
     }
 
-    /** @return {@code true} if an admin password has been set (hash is non-empty) */
+    /**
+     * @return {@code true} if an admin password has been set (hash is non-empty)
+     */
     public boolean isAdminPasswordSet() {
         return !self.getApplicationSettings().getAdminPasswordHash().isEmpty();
     }
 
-    /** @return HTTP session lifetime in minutes */
+    /**
+     * @return HTTP session lifetime in minutes
+     */
     public long getSessionLifetime() {
         return self.getApplicationSettings().getSessionLifetime();
     }
 
-    /** @return {@code true} if the admin dashboard button is visible on the public UI */
+    /**
+     * @return {@code true} if the admin dashboard button is visible on the public UI
+     */
     public boolean isAdminDashboardButtonEnabled() {
         return self.getApplicationSettings().isAdminDashboardButtonEnabled();
     }
 
-    /** @return {@code true} if AES encryption of uploaded files is active */
+    /**
+     * @return {@code true} if AES encryption of uploaded files is active
+     */
     public boolean isEncryptionEnabled() {
         return self.getApplicationSettings().isEncryptionEnabled();
     }
 
-    /** @return {@code true} if per-file upload passwords are allowed */
+    /**
+     * @return {@code true} if per-file upload passwords are allowed
+     */
     public boolean isUploadPasswordEnabled() {
         return self.getApplicationSettings().isUploadPasswordEnabled();
     }
 
-    /** @return {@code true} if in-browser file preview is enabled */
+    /**
+     * @return {@code true} if in-browser file preview is enabled
+     */
     public boolean isPreviewEnabled() {
         return self.getApplicationSettings().isPreviewEnabled();
     }
 
-    /** @return {@code true} if EXIF/metadata stripping is enabled on image uploads */
+    /**
+     * @return {@code true} if EXIF/metadata stripping is enabled on image uploads
+     */
     public boolean isMetadataStrippingEnabled() {
         return self.getApplicationSettings().isMetadataStrippingEnabled();
     }
 
-    /** @return maximum file size in bytes eligible for browser preview */
+    /**
+     * @return maximum file size in bytes eligible for browser preview
+     */
     public long getMaxPreviewSizeBytes() {
         return self.getApplicationSettings().getMaxPreviewSizeBytes();
     }
 
-    /** @return identifier of the page shown at {@code /} (e.g. {@code "upload"} or {@code "list"}) */
+    /**
+     * @return identifier of the page shown at {@code /} (e.g. {@code "upload"} or {@code "list"})
+     */
     public String getDefaultHomePage() {
         return self.getApplicationSettings().getDefaultHomePage();
     }
 
-    /** @return {@code true} if only admins can mark files as "keep indefinitely" */
+    /**
+     * @return {@code true} if only admins can mark files as "keep indefinitely"
+     */
     public boolean isKeepIndefinitelyAdminOnly() {
         return self.getApplicationSettings().isKeepIndefinitelyAdminOnly();
     }
 
-    /** @return {@code true} if only admins can hide files from the public list */
+    /**
+     * @return {@code true} if only admins can hide files from the public list
+     */
     public boolean isHideFromListAdminOnly() {
         return self.getApplicationSettings().isHideFromListAdminOnly();
     }
 
-    /** @return {@code true} if Discord webhook notifications are enabled */
+    /**
+     * @return {@code true} if Discord webhook notifications are enabled
+     */
     public boolean isDiscordWebhookEnabled() {
         return self.getApplicationSettings().isDiscordWebhookEnabled();
     }
 
-    /** @return configured Discord webhook URL */
+    /**
+     * @return configured Discord webhook URL
+     */
     public String getDiscordWebhookUrl() {
         return self.getApplicationSettings().getDiscordWebhookUrl();
     }
 
-    /** @return {@code true} if email notifications are enabled */
+    /**
+     * @return {@code true} if email notifications are enabled
+     */
     public boolean isEmailNotificationsEnabled() {
         return self.getApplicationSettings().isEmailNotificationsEnabled();
     }
 
-    /** @return the "From" address used for outgoing email notifications */
+    /**
+     * @return the "From" address used for outgoing email notifications
+     */
     public String getEmailFrom() {
         return self.getApplicationSettings().getEmailFrom();
     }
 
-    /** @return comma-separated list of email notification recipients */
+    /**
+     * @return comma-separated list of email notification recipients
+     */
     public String getEmailTo() {
         return self.getApplicationSettings().getEmailTo();
     }
 
-    /** @return SMTP host for outgoing mail */
+    /**
+     * @return SMTP host for outgoing mail
+     */
     public String getSmtpHost() {
         return self.getApplicationSettings().getSmtpHost();
     }
 
-    /** @return SMTP port for outgoing mail */
+    /**
+     * @return SMTP port for outgoing mail
+     */
     public Integer getSmtpPort() {
         return self.getApplicationSettings().getSmtpPort();
     }
 
-    /** @return SMTP authentication username */
+    /**
+     * @return SMTP authentication username
+     */
     public String getSmtpUsername() {
         return self.getApplicationSettings().getSmtpUsername();
     }
 
-    /** @return SMTP authentication password */
+    /**
+     * @return SMTP authentication password
+     */
     public String getSmtpPassword() {
         return self.getApplicationSettings().getSmtpPassword();
     }
 
-    /** @return {@code true} if STARTTLS should be used for SMTP */
+    /**
+     * @return {@code true} if STARTTLS should be used for SMTP
+     */
     public boolean isSmtpUseTls() {
         return self.getApplicationSettings().isSmtpUseTls();
     }
 
-    /** @return {@code true} if SSL/TLS wrapping should be used for SMTP */
+    /**
+     * @return {@code true} if SSL/TLS wrapping should be used for SMTP
+     */
     public boolean isSmtpUseSsl() {
         return self.getApplicationSettings().isSmtpUseSsl();
     }
 
-    /** @return {@code true} if notification batching is enabled */
+    /**
+     * @return {@code true} if notification batching is enabled
+     */
     public boolean isNotificationBatchEnabled() {
         return self.getApplicationSettings().isNotificationBatchEnabled();
     }
@@ -473,28 +539,38 @@ public class ApplicationSettingsService {
         return s.isSimplifiedShareLinks() && s.isShareLinksEnabled();
     }
 
-    /** @return {@code true} if share link generation is enabled */
+    /**
+     * @return {@code true} if share link generation is enabled
+     */
     public boolean isShareLinksEnabled() {
         return self.getApplicationSettings().isShareLinksEnabled();
     }
 
-    /** @return {@code true} if file uploads are enabled */
+    /**
+     * @return {@code true} if file uploads are enabled
+     */
     public boolean isUploadEnabled() {
         return self.getApplicationSettings().isUploadEnabled();
     }
 
-    /** @return {@code true} if uploads are restricted to admin sessions only */
+    /**
+     * @return {@code true} if uploads are restricted to admin sessions only
+     */
     public boolean isUploadAdminOnly() {
         ApplicationSettingsEntity s = self.getApplicationSettings();
         return s.isUploadEnabled() && s.isUploadAdminOnly();
     }
 
-    /** @return {@code true} if the pastebin feature is enabled */
+    /**
+     * @return {@code true} if the pastebin feature is enabled
+     */
     public boolean isPastebinEnabled() {
         return self.getApplicationSettings().isPastebinEnabled();
     }
 
-    /** @return notification batch flush interval in minutes */
+    /**
+     * @return notification batch flush interval in minutes
+     */
     public Integer getNotificationBatchMinutes() {
         return self.getApplicationSettings().getNotificationBatchMinutes();
     }

@@ -1,13 +1,13 @@
 package org.rostislav.quickdrop.service;
 
 import jakarta.transaction.Transactional;
-import org.rostislav.quickdrop.entity.FileEntity;
-import org.rostislav.quickdrop.entity.FileHistoryLog;
+import org.rostislav.quickdrop.entity.ActivityLog;
 import org.rostislav.quickdrop.entity.ShareTokenEntity;
-import org.rostislav.quickdrop.model.FileHistoryType;
-import org.rostislav.quickdrop.repository.FileHistoryLogRepository;
-import org.rostislav.quickdrop.repository.FileRepository;
+import org.rostislav.quickdrop.entity.Upload;
+import org.rostislav.quickdrop.model.EventType;
+import org.rostislav.quickdrop.repository.ActivityLogRepository;
 import org.rostislav.quickdrop.repository.ShareTokenRepository;
+import org.rostislav.quickdrop.repository.UploadRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
@@ -36,8 +36,8 @@ import java.util.concurrent.ScheduledFuture;
  *       restart via {@link #updateSchedule(String, long)}.</li>
  *   <li><strong>Fixed maintenance jobs</strong> — run on hardcoded cron expressions:
  *     <ul>
- *       <li>03:00 daily — {@link #cleanDatabaseFromDeletedFiles()}: removes database
- *           rows for files that no longer exist on disk (e.g. manually deleted).</li>
+ *       <li>03:00 daily — {@link #cleanDatabaseFromDeletedFiles()}: soft-deletes records
+ *           for uploads whose physical file no longer exists on disk (e.g. manually removed).</li>
  *       <li>03:30 daily — {@link #cleanShareTokens()}: purges expired or exhausted
  *           share tokens.</li>
  *     </ul>
@@ -47,10 +47,10 @@ import java.util.concurrent.ScheduledFuture;
 @Service
 public class ScheduleService {
     private static final Logger logger = LoggerFactory.getLogger(ScheduleService.class);
-    private final FileRepository fileRepository;
+    private final UploadRepository uploadRepository;
     private final FileService fileService;
     private final ThreadPoolTaskScheduler taskScheduler = new ThreadPoolTaskScheduler();
-    private final FileHistoryLogRepository fileHistoryLogRepository;
+    private final ActivityLogRepository activityLogRepository;
     private final ShareTokenRepository shareTokenRepository;
     private final ApplicationSettingsService applicationSettingsService;
     private ScheduledFuture<?> scheduledTask;
@@ -65,12 +65,12 @@ public class ScheduleService {
      */
     private volatile long currentMaxFileLifeTime = -1;
 
-    public ScheduleService(FileRepository fileRepository, FileService fileService, FileHistoryLogRepository fileHistoryLogRepository, ShareTokenRepository shareTokenRepository, ApplicationSettingsService applicationSettingsService) {
-        this.fileRepository = fileRepository;
+    public ScheduleService(UploadRepository uploadRepository, FileService fileService, ActivityLogRepository activityLogRepository, ShareTokenRepository shareTokenRepository, ApplicationSettingsService applicationSettingsService) {
+        this.uploadRepository = uploadRepository;
         this.fileService = fileService;
         taskScheduler.setPoolSize(1);
         taskScheduler.initialize();
-        this.fileHistoryLogRepository = fileHistoryLogRepository;
+        this.activityLogRepository = activityLogRepository;
         this.shareTokenRepository = shareTokenRepository;
         this.applicationSettingsService = applicationSettingsService;
     }
@@ -82,10 +82,9 @@ public class ScheduleService {
      * no-op. If a task is already scheduled, it is cancelled (without interrupting
      * a running execution) before the new task is registered.
      *
-     * @param cronExpression Spring-compatible 6-field cron expression
+     * @param cronExpression  Spring-compatible 6-field cron expression
      * @param maxFileLifeTime maximum file age in days; files older than this are deleted
      */
-    @Transactional
     public void updateSchedule(String cronExpression, long maxFileLifeTime) {
         if (cronExpression == null || cronExpression.isBlank()) {
             logger.warn("No cron expression provided; cleanup scheduling skipped");
@@ -113,19 +112,19 @@ public class ScheduleService {
     }
 
     /**
-     * Deletes files that have exceeded the configured maximum lifetime.
+     * Deletes uploads (files and pastes) that have exceeded the configured maximum lifetime.
      *
-     * <p>Only files with {@code keepIndefinitely = false} and an {@code uploadDate}
-     * strictly before {@code today - maxFileLifeTime} are eligible. Files not removed
-     * from the filesystem are not removed from the database.
+     * <p>Only uploads with {@code keepIndefinitely = false} and an {@code uploadDate}
+     * strictly before {@code today - maxFileLifeTime} are eligible. Uploads whose
+     * physical file cannot be removed from the filesystem are not soft-deleted.
      *
-     * @param maxFileLifeTime maximum file age in days
+     * @param maxFileLifeTime maximum upload age in days
      */
     @Transactional
     public void deleteOldFiles(long maxFileLifeTime) {
         logger.info("Deleting old files (max life: {} days)", maxFileLifeTime);
         LocalDate thresholdDate = LocalDate.now().minusDays(maxFileLifeTime);
-        List<FileEntity> filesForDeletion = fileRepository.getFilesForDeletion(thresholdDate);
+        List<Upload> filesForDeletion = uploadRepository.getUploadsForDeletion(thresholdDate);
 
         if (filesForDeletion.isEmpty()) {
             logger.info("No files eligible for deletion (threshold date: {})", thresholdDate);
@@ -133,7 +132,7 @@ public class ScheduleService {
         }
 
         List<Long> deletedIds = new ArrayList<>();
-        for (FileEntity file : filesForDeletion) {
+        for (Upload file : filesForDeletion) {
             logger.info("Attempting filesystem delete for file: {}", file);
             boolean deleted = fileService.deleteFileFromFileSystem(file.uuid);
             if (deleted) {
@@ -144,18 +143,24 @@ public class ScheduleService {
         }
 
         if (!deletedIds.isEmpty()) {
-            deletedIds.forEach(fileHistoryLogRepository::deleteByFileId);
-            fileRepository.deleteAllById(deletedIds);
-            logger.info("Deleted {} files (threshold date: {})", deletedIds.size(), thresholdDate);
+            // Soft-delete through FileService so history logs and entity records are retained.
+            filesForDeletion.stream()
+                    .filter(f -> deletedIds.contains(f.id))
+                    .forEach(f -> fileService.removeFileFromDatabase(f.uuid, null, null));
+            logger.info("Soft-deleted {} files (threshold date: {})", deletedIds.size(), thresholdDate);
         } else {
-            logger.warn("No database deletions performed; all filesystem deletions failed or nothing matched");
+            logger.warn("No database soft-deletions performed; all filesystem deletions failed or nothing matched");
         }
     }
 
     /**
-     * Removes database rows for files whose physical file no longer exists on disk,
-     * then removes {@code {uuid}-decrypted} sidecar files whose share tokens have
-     * all expired or been exhausted.
+     * Soft-deletes records for uploads whose physical file no longer exists on disk
+     * (e.g. the file was removed manually from the filesystem), then removes any
+     * {@code {uuid}-decrypted} sidecar files whose share tokens have all expired or
+     * been exhausted.
+     *
+     * <p>Only non-deleted records are scanned; uploads that were already soft-deleted
+     * legitimately have no file on disk and are skipped.
      *
      * <p>Runs daily at 03:00.
      */
@@ -167,10 +172,11 @@ public class ScheduleService {
         List<String> uuidsToRemove = new ArrayList<>();
         int page = 0;
         final int BATCH_SIZE = 100;
-        Page<FileEntity> batch;
+        Page<Upload> batch;
         do {
-            batch = fileRepository.findAll(PageRequest.of(page++, BATCH_SIZE));
-            for (FileEntity file : batch) {
+            // Only scan non-deleted files; soft-deleted files legitimately have no file on disk.
+            batch = uploadRepository.findAllNotDeleted(PageRequest.of(page++, BATCH_SIZE));
+            for (Upload file : batch) {
                 if (!fileService.fileExistsInFileSystem(file.uuid)) {
                     uuidsToRemove.add(file.uuid);
                 }
@@ -184,7 +190,7 @@ public class ScheduleService {
             paths.filter(p -> p.getFileName().toString().endsWith("-decrypted"))
                     .forEach(p -> {
                         String uuid = p.getFileName().toString().replace("-decrypted", "");
-                        fileRepository.findByUUID(uuid).ifPresentOrElse(
+                        uploadRepository.findByUUID(uuid).ifPresentOrElse(
                                 file -> {
                                     if (!shareTokenRepository.existsValidTokenForFile(file, LocalDate.now())) {
                                         tryDelete(p);
@@ -221,7 +227,7 @@ public class ScheduleService {
             toDelete.forEach(token -> {
                 fileService.deleteShareSidecar(token);
                 if (token.file != null) {
-                    fileHistoryLogRepository.save(new FileHistoryLog(token.file, FileHistoryType.SHARE_EXPIRE, null, null));
+                    activityLogRepository.save(new ActivityLog(token.file, EventType.SHARE_EXPIRE, null, null));
                 }
             });
             shareTokenRepository.deleteAll(toDelete);

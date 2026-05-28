@@ -152,7 +152,10 @@ public class PasteService {
      * @param content          paste body text
      * @param syntax           syntax hint: {@code "markdown"} or any other value for plain text
      * @param keepIndefinitely whether the paste should be exempt from scheduled deletion
-     * @param password         optional access password
+     * @param password         optional access password (cleared when upload passwords are disabled)
+     * @param immutable        whether the paste should be permanently immutable after creation
+     * @param editOnly         when {@code true} the password guards editing only; viewing is public
+     *                         (also suppresses AES encryption so content can be served without a key)
      * @param request          the HTTP request (provides requester metadata and admin session)
      * @return the saved {@link Upload} (a {@link Paste} instance), or {@code null} on failure
      * @throws IOException if writing the paste to disk fails
@@ -163,8 +166,14 @@ public class PasteService {
                               String syntax,
                               boolean keepIndefinitely,
                               String password,
+                              boolean immutable,
+                              boolean editOnly,
                               HttpServletRequest request) throws IOException {
         PasteUploadOptions options = resolvePasteUploadOptions(keepIndefinitely, password, request);
+
+        // editOnly is only relevant when a password is actually set; if passwords are disabled
+        // or no password was provided, the flag has no effect and we normalise it to false.
+        boolean effectiveEditOnly = editOnly && options.password() != null && !options.password().isBlank();
 
         String fileName = sanitizePasteFileName(title, syntax);
         byte[] contentBytes = (content == null ? "" : content).getBytes(StandardCharsets.UTF_8);
@@ -184,7 +193,9 @@ public class PasteService {
                 false,
                 null,
                 null,
-                true
+                true,
+                effectiveEditOnly,
+                immutable
         );
 
         org.rostislav.quickdrop.model.InMemoryMultipartFile inMemoryFile =
@@ -202,16 +213,18 @@ public class PasteService {
     /**
      * Overwrites the content of an existing paste.
      *
-     * <p>Returns {@code null} if the UUID does not refer to a paste.
-     * Throws {@link IllegalArgumentException} if the paste is encrypted but no valid session exists.
+     * <p>Returns {@code null} if the UUID does not refer to a paste or if the paste is
+     * already immutable. Throws {@link IllegalArgumentException} if the paste is encrypted
+     * but no valid session exists.
      *
      * @param uuid             the paste UUID
      * @param title            new paste title (used to derive the filename)
      * @param content          new paste body text
      * @param syntax           syntax hint for filename extension
      * @param keepIndefinitely whether the paste should be exempt from scheduled deletion
+     * @param setImmutable     when {@code true} the paste is locked permanently after this edit
      * @param request          the HTTP request (provides session token and admin check)
-     * @return the updated {@link Paste}, or {@code null} if the UUID is not a paste
+     * @return the updated {@link Paste}, or {@code null} if the UUID is not a paste or is immutable
      * @throws IOException              if writing the new content fails
      * @throws IllegalArgumentException if the paste is encrypted but no valid session exists
      */
@@ -221,6 +234,7 @@ public class PasteService {
                              String content,
                              String syntax,
                              boolean keepIndefinitely,
+                             boolean setImmutable,
                              HttpServletRequest request) throws IOException {
         Optional<Paste> byUuid = pasteRepository.findByUUID(uuid);
         if (byUuid.isEmpty()) {
@@ -228,6 +242,11 @@ public class PasteService {
         }
 
         Paste paste = byUuid.get();
+        if (paste.immutable) {
+            logger.warn("Attempted to edit immutable paste: {}", uuid);
+            return null;
+        }
+
         PasteUploadOptions options = resolvePasteUploadOptions(keepIndefinitely, null, request);
         byte[] contentBytes = (content == null ? "" : content).getBytes(StandardCharsets.UTF_8);
         validatePasteSize(contentBytes);
@@ -250,6 +269,9 @@ public class PasteService {
         paste.keepIndefinitely = options.keepIndefinitely();
         paste.hidden = true;
         paste.uploadDate = LocalDate.now();
+        if (setImmutable) {
+            paste.immutable = true; // ratchet: can set but never unset via this path
+        }
 
         pasteRepository.save(paste);
 

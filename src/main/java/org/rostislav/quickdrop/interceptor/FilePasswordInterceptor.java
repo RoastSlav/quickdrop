@@ -67,6 +67,11 @@ public class FilePasswordInterceptor implements HandlerInterceptor {
 
         request.setAttribute("fileEntity", upload);
 
+        // edit-only pastes: content is publicly viewable; edit auth is enforced in controllers
+        if (upload.isEditOnly()) {
+            return true;
+        }
+
         String sessionToken = (String) request.getSession().getAttribute("file-session-token");
         if (upload.passwordHash != null &&
                 (sessionToken == null || !sessionService.validateFileSessionToken(sessionToken, uuid))) {

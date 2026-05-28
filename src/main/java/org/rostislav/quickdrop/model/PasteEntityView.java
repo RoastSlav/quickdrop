@@ -48,6 +48,16 @@ public class PasteEntityView {
      */
     public boolean deleted;
 
+    /**
+     * {@code true} when the paste is permanently immutable (cannot be edited).
+     */
+    public boolean immutable;
+
+    /**
+     * {@code true} when the paste password guards editing only (viewing is public).
+     */
+    public boolean editOnly;
+
     public PasteEntityView() {
     }
 
@@ -66,5 +76,7 @@ public class PasteEntityView {
         this.passwordProtected = upload.passwordHash != null;
         this.totalViews = totalViews;
         this.deleted = upload.deleted;
+        this.immutable = upload.isImmutable();
+        this.editOnly = upload.isEditOnly();
     }
 }

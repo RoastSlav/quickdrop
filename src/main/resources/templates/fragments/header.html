@@ -73,7 +73,8 @@
                 <button @click="langOpen = !langOpen" aria-label="Select language" class="lang-btn" type="button">
                     <svg aria-hidden="true" class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="1.8"
                          viewBox="0 0 24 24">
-                        <path d="M12 21a9.004 9.004 0 0 0 8.716-6.747M12 21a9.004 9.004 0 0 1-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 0 1 7.843 4.582M12 3a8.997 8.997 0 0 0-7.843 4.582m15.686 0A11.953 11.953 0 0 1 12 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0 1 21 12c0 .778-.099 1.533-.284 2.253M3 12c0 .778.099 1.533.284 2.253" stroke-linecap="round"
+                        <path d="M12 21a9.004 9.004 0 0 0 8.716-6.747M12 21a9.004 9.004 0 0 1-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 0 1 7.843 4.582M12 3a8.997 8.997 0 0 0-7.843 4.582m15.686 0A11.953 11.953 0 0 1 12 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0 1 21 12c0 .778-.099 1.533-.284 2.253M3 12c0 .778.099 1.533.284 2.253"
+                              stroke-linecap="round"
                               stroke-linejoin="round"/>
                     </svg>
                     <span th:text="${#strings.toUpperCase(currentLang)}">EN</span>
@@ -84,13 +85,15 @@
                     </svg>
                 </button>
                 <div class="lang-dropdown" x-cloak x-show="langOpen"
-                     x-transition:enter="transition ease-out duration-150" x-transition:enter-end="opacity-100 scale-100"
+                     x-transition:enter="transition ease-out duration-150"
+                     x-transition:enter-end="opacity-100 scale-100"
                      x-transition:enter-start="opacity-0 scale-95" x-transition:leave="transition ease-in duration-100"
                      x-transition:leave-end="opacity-0 scale-95" x-transition:leave-start="opacity-100 scale-100">
                     <a class="lang-option locale-switch-link" data-lang="en"
                        href="#" th:classappend="${currentLang == 'en'} ? ' is-active'">English <span class="lang-code">EN</span></a>
                     <a class="lang-option locale-switch-link" data-lang="bg"
-                       href="#" th:classappend="${currentLang == 'bg'} ? ' is-active'">Български <span class="lang-code">BG</span></a>
+                       href="#" th:classappend="${currentLang == 'bg'} ? ' is-active'">Български <span
+                            class="lang-code">BG</span></a>
                     <a class="lang-option locale-switch-link" data-lang="de"
                        href="#" th:classappend="${currentLang == 'de'} ? ' is-active'">Deutsch <span class="lang-code">DE</span></a>
                     <a class="lang-option locale-switch-link" data-lang="es"
@@ -100,9 +103,11 @@
                     <a class="lang-option locale-switch-link" data-lang="it"
                        href="#" th:classappend="${currentLang == 'it'} ? ' is-active'">Italiano <span class="lang-code">IT</span></a>
                     <a class="lang-option locale-switch-link" data-lang="ja"
-                       href="#" th:classappend="${currentLang == 'ja'} ? ' is-active'">日本語 <span class="lang-code">JA</span></a>
+                       href="#" th:classappend="${currentLang == 'ja'} ? ' is-active'">日本語 <span
+                            class="lang-code">JA</span></a>
                     <a class="lang-option locale-switch-link" data-lang="zh"
-                       href="#" th:classappend="${currentLang == 'zh'} ? ' is-active'">中文 <span class="lang-code">ZH</span></a>
+                       href="#" th:classappend="${currentLang == 'zh'} ? ' is-active'">中文 <span
+                            class="lang-code">ZH</span></a>
                 </div>
             </div>
 
@@ -110,23 +115,25 @@
                 <svg aria-hidden="true" class="hidden w-5 h-5" fill="none" id="themeIconSun" stroke="currentColor"
                      stroke-width="1.6"
                      viewBox="0 0 24 24">
-                    <path d="M12 3v2.25m6.364.386-1.591 1.591M21 12h-2.25m-.386 6.364-1.591-1.591M12 18.75V21m-4.773-4.227-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z" stroke-linecap="round"
+                    <path d="M12 3v2.25m6.364.386-1.591 1.591M21 12h-2.25m-.386 6.364-1.591-1.591M12 18.75V21m-4.773-4.227-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z"
+                          stroke-linecap="round"
                           stroke-linejoin="round"/>
                 </svg>
                 <svg aria-hidden="true" class="w-5 h-5" fill="none" id="themeIconMoon" stroke="currentColor"
                      stroke-width="1.6"
                      viewBox="0 0 24 24">
-                    <path d="M21.752 15.002A9.72 9.72 0 0 1 18 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 0 0 3 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 0 0 9.002-5.998Z" stroke-linecap="round"
+                    <path d="M21.752 15.002A9.72 9.72 0 0 1 18 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 0 0 3 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 0 0 9.002-5.998Z"
+                          stroke-linecap="round"
                           stroke-linejoin="round"/>
                 </svg>
             </button>
 
             <button
                     :aria-expanded="open ? 'true' : 'false'"
-                    type="button"
                     @click="open = !open"
                     class="nav-icon-btn md:hidden"
                     th:aria-label="#{nav.toggleNavigation}"
+                    type="button"
             >
                 <svg aria-hidden="true" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.6"
                      viewBox="0 0 24 24"

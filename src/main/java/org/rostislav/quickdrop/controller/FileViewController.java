@@ -1,13 +1,12 @@
 package org.rostislav.quickdrop.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
-import org.rostislav.quickdrop.entity.FileEntity;
-import org.rostislav.quickdrop.model.FileActionLogDTO;
+import org.rostislav.quickdrop.entity.Paste;
+import org.rostislav.quickdrop.entity.Upload;
+import org.rostislav.quickdrop.model.ActivityLogEntry;
 import org.rostislav.quickdrop.model.FileEntityView;
-import org.rostislav.quickdrop.service.AnalyticsService;
-import org.rostislav.quickdrop.service.ApplicationSettingsService;
-import org.rostislav.quickdrop.service.FileService;
-import org.rostislav.quickdrop.service.SessionService;
+import org.rostislav.quickdrop.service.*;
+import org.rostislav.quickdrop.util.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
@@ -54,12 +53,14 @@ import static org.rostislav.quickdrop.util.FileUtils.*;
 public class FileViewController {
     private static final Logger logger = LoggerFactory.getLogger(FileViewController.class);
     private final FileService fileService;
+    private final PasteService pasteService;
     private final ApplicationSettingsService applicationSettingsService;
     private final AnalyticsService analyticsService;
     private final SessionService sessionService;
 
-    public FileViewController(FileService fileService, ApplicationSettingsService applicationSettingsService, AnalyticsService analyticsService, SessionService sessionService) {
+    public FileViewController(FileService fileService, PasteService pasteService, ApplicationSettingsService applicationSettingsService, AnalyticsService analyticsService, SessionService sessionService) {
         this.fileService = fileService;
+        this.pasteService = pasteService;
         this.applicationSettingsService = applicationSettingsService;
         this.analyticsService = analyticsService;
         this.sessionService = sessionService;
@@ -102,15 +103,15 @@ public class FileViewController {
             return "redirect:/";
         }
 
-        FileEntity fileEntity = fileService.getFile(uuid).orElse(null);
+        Upload fileEntity = fileService.getFile(uuid).orElse(null);
         if (fileEntity == null) {
             return "redirect:/file/list";
         }
-        if (!fileEntity.paste) {
+        if (!(fileEntity instanceof Paste)) {
             return "redirect:/file/" + uuid;
         }
 
-        String content = fileService.getPasteContent(uuid, request);
+        String content = pasteService.getPasteContent(uuid, request);
         if (content == null) {
             return "redirect:/file/" + uuid;
         }
@@ -144,7 +145,7 @@ public class FileViewController {
         }
 
         try {
-            FileEntity created = fileService.createPaste(title, content, syntax, keepIndefinitely, password, request);
+            Upload created = pasteService.createPaste(title, content, syntax, keepIndefinitely, password, request);
             if (created == null) {
                 redirectAttributes.addFlashAttribute("pasteError", "Could not create paste.");
                 return "redirect:/file/paste/new";
@@ -176,7 +177,7 @@ public class FileViewController {
         }
 
         try {
-            FileEntity updated = fileService.updatePaste(uuid, title, content, syntax, keepIndefinitely, request);
+            Paste updated = pasteService.updatePaste(uuid, title, content, syntax, keepIndefinitely, request);
             if (updated == null) {
                 redirectAttributes.addFlashAttribute("pasteError", "Could not update paste.");
                 return "redirect:/file/paste/edit/" + uuid;
@@ -216,7 +217,7 @@ public class FileViewController {
 
     @GetMapping("/{uuid}")
     public String filePage(@PathVariable String uuid, Model model, HttpServletRequest request) {
-        FileEntity fileEntity = (FileEntity) request.getAttribute("fileEntity");
+        Upload fileEntity = (Upload) request.getAttribute("fileEntity");
         if (fileEntity == null) {
             fileEntity = fileService.getFile(uuid).orElse(null);
         }
@@ -225,18 +226,33 @@ public class FileViewController {
             return "redirect:/file/list";
         }
 
+        // Soft-deleted files are only accessible to admins.
+        if (fileEntity.deleted && !sessionService.hasValidAdminSession(request)) {
+            return "redirect:/file/list";
+        }
+
+        model.addAttribute("isDeleted", fileEntity.deleted);
         model.addAttribute("maxFileLifeTime", applicationSettingsService.getMaxFileLifeTime());
 
-        if (fileEntity.paste) {
+        if (fileEntity instanceof Paste) {
+            // Deleted pastes: admin has already been admitted above; the physical file is gone
+            // so skip the password/content checks and show the paste view with empty content.
+            if (fileEntity.deleted) {
+                populateModelAttributes(fileEntity, model, request);
+                model.addAttribute("pasteContent", "");
+                model.addAttribute("isMarkdownPaste", false);
+                return "pasteView";
+            }
+
             if (!fileService.isAuthorizedForFile(uuid, request)) {
                 return "redirect:/file/password/" + uuid;
             }
-            String pasteContent = fileService.getPasteContent(uuid, request);
+            String pasteContent = pasteService.getPasteContent(uuid, request);
             if (pasteContent == null) {
                 return "redirect:/file/password/" + uuid;
             }
 
-            fileService.logPasteView(uuid, request);
+            pasteService.logPasteView(uuid, request);
             populateModelAttributes(fileEntity, model, request);
             model.addAttribute("pasteContent", pasteContent);
             model.addAttribute("isMarkdownPaste", fileEntity.name != null && fileEntity.name.toLowerCase(Locale.ROOT).endsWith(".md"));
@@ -287,13 +303,13 @@ public class FileViewController {
 
     @GetMapping("/history/{uuid}")
     public String viewFileHistory(@PathVariable String uuid, Model model) {
-        FileEntity fileEntity = fileService.getFile(uuid).orElse(null);
+        Upload fileEntity = fileService.getFile(uuid).orElse(null);
         long totalDownloads = analyticsService.getTotalDownloadsByFile(uuid);
         FileEntityView fileEntityView = new FileEntityView(fileEntity, totalDownloads);
 
-        List<FileActionLogDTO> actionLogs = analyticsService.getHistoryByFile(uuid)
+        List<ActivityLogEntry> actionLogs = analyticsService.getHistoryByFile(uuid)
                 .stream()
-                .map(FileActionLogDTO::new)
+                .map(ActivityLogEntry::new)
                 .toList();
 
         model.addAttribute("file", fileEntityView);
@@ -334,6 +350,8 @@ public class FileViewController {
 
     @PostMapping("/extend/{uuid}")
     public String extendFile(@PathVariable String uuid, HttpServletRequest request) {
+        Upload file = fileService.getFile(uuid).orElse(null);
+        if (file == null || file.deleted) return "redirect:/file/" + uuid;
         fileService.extendFile(uuid, request);
         return "redirect:/file/" + uuid;
     }
@@ -343,7 +361,8 @@ public class FileViewController {
         if (!isAuthorizedToDelete(uuid, request)) {
             return "redirect:/file/" + uuid;
         }
-        if (fileService.deleteFileFromDatabaseAndFileSystem(uuid)) {
+        FileService.RequesterInfo info = FileUtils.getRequesterInfo(request);
+        if (fileService.deleteFileFromDatabaseAndFileSystem(uuid, info.ipAddress(), info.userAgent())) {
             return "redirect:/file/list";
         } else {
             return "redirect:/file/" + uuid;
@@ -354,7 +373,7 @@ public class FileViewController {
         if (sessionService.hasValidAdminSession(request)) {
             return true;
         }
-        FileEntity fileEntity = (FileEntity) request.getAttribute("fileEntity");
+        Upload fileEntity = (Upload) request.getAttribute("fileEntity");
         if (fileEntity == null) {
             fileEntity = fileService.getFile(uuid).orElse(null);
         }
@@ -380,7 +399,9 @@ public class FileViewController {
     public String updateKeepIndefinitely(@PathVariable String uuid,
                                          @RequestParam(required = false, defaultValue = "false") boolean keepIndefinitely,
                                          HttpServletRequest request) {
-        FileEntity fileEntity = fileService.updateKeepIndefinitely(uuid, keepIndefinitely, request);
+        Upload f = fileService.getFile(uuid).orElse(null);
+        if (f != null && f.deleted) return "redirect:/file/" + uuid;
+        Upload fileEntity = fileService.updateKeepIndefinitely(uuid, keepIndefinitely, request);
         if (fileEntity != null) {
             logger.info("Updated keep indefinitely for file UUID: {} to {}", uuid, keepIndefinitely);
             return "redirect:/file/" + fileEntity.uuid;
@@ -391,7 +412,9 @@ public class FileViewController {
 
     @PostMapping("/toggle-hidden/{uuid}")
     public String toggleHidden(@PathVariable String uuid, HttpServletRequest request) {
-        FileEntity fileEntity = fileService.toggleHidden(uuid, request);
+        Upload f = fileService.getFile(uuid).orElse(null);
+        if (f != null && f.deleted) return "redirect:/file/" + uuid;
+        Upload fileEntity = fileService.toggleHidden(uuid, request);
         if (fileEntity != null) {
             logger.info("Updated hidden for file UUID: {} to {}", uuid, fileEntity.hidden);
             return "redirect:/file/" + fileEntity.uuid;
@@ -399,7 +422,7 @@ public class FileViewController {
         return "redirect:/file/list";
     }
 
-    private void populateModelAttributes(FileEntity fileEntity, Model model, HttpServletRequest request) {
+    private void populateModelAttributes(Upload fileEntity, Model model, HttpServletRequest request) {
         model.addAttribute("file", fileEntity);
         model.addAttribute("fileSize", formatFileSize(fileEntity.size));
         model.addAttribute("downloadLink", getDownloadLink(request, fileEntity));

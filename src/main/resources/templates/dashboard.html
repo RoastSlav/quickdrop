@@ -1,18 +1,18 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
-  <meta charset="UTF-8"/>
-  <title th:text="#{page.dashboard.title.browser(${appName})}">Dashboard — QuickDrop</title>
-  <meta content="width=device-width, initial-scale=1" name="viewport"/>
-  <link href="https://fonts.googleapis.com" rel="preconnect"/>
-  <link crossorigin href="https://fonts.gstatic.com" rel="preconnect"/>
-  <link href="/css/tailwind.css" rel="stylesheet"/>
-  <link href="/css/custom.css" rel="stylesheet"/>
-  <link href="/images/favicon.png" rel="icon" th:href="${appLogoPath}" type="image/png"/>
-  <script src="/js/tailwindTheme.js"></script>
-  <script src="/js/toast.js"></script>
-  <script src="/js/counter.js"></script>
-  <th:block th:replace="~{fragments/header :: scripts}"></th:block>
+    <meta charset="UTF-8"/>
+    <title th:text="#{page.dashboard.title.browser(${appName})}">Dashboard — QuickDrop</title>
+    <meta content="width=device-width, initial-scale=1" name="viewport"/>
+    <link href="https://fonts.googleapis.com" rel="preconnect"/>
+    <link crossorigin href="https://fonts.gstatic.com" rel="preconnect"/>
+    <link href="/css/tailwind.css" rel="stylesheet"/>
+    <link href="/css/custom.css" rel="stylesheet"/>
+    <link href="/images/favicon.png" rel="icon" th:href="${appLogoPath}" type="image/png"/>
+    <script src="/js/tailwindTheme.js"></script>
+    <script src="/js/toast.js"></script>
+    <script src="/js/counter.js"></script>
+    <th:block th:replace="~{fragments/header :: scripts}"></th:block>
 </head>
 <body>
 
@@ -20,205 +20,207 @@
 
 <!-- Floating orbs -->
 <div aria-hidden="true" class="orb-field">
-  <div class="orb orb--primary"></div>
-  <div class="orb orb--secondary"></div>
-  <div class="orb orb--teal"></div>
+    <div class="orb orb--primary"></div>
+    <div class="orb orb--secondary"></div>
+    <div class="orb orb--teal"></div>
 </div>
 
 <main class="flex-1 hero-scene" id="main-content">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
 
-      <!-- Hero header -->
-    <div class="flex flex-wrap items-center justify-between gap-4 mb-10 animate-in">
-      <h1 class="page-title-xl">
-        <span class="gradient-text" th:text="#{page.dashboard.title}">Admin</span>
-      </h1>
-      <a class="btn btn-ghost" href="/admin/settings">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
-          <path d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 0 1 1.37.49l1.296 2.247a1.125 1.125 0 0 1-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 0 1 0 .255c-.008.378.137.75.43.991l1.004.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 0 1-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 0 1-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 0 1-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 0 1-1.369-.49l-1.297-2.247a1.125 1.125 0 0 1 .26-1.431l1.004-.827c.292-.241.437-.613.43-.992a6.932 6.932 0 0 1 0-.255c.007-.378-.138-.75-.43-.991l-1.004-.828a1.125 1.125 0 0 1-.26-1.43l1.297-2.247a1.125 1.125 0 0 1 1.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.28Z" stroke-linecap="round"
-                stroke-linejoin="round"/>
-          <path d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-        <span th:text="#{nav.settings}">Settings</span>
-      </a>
-    </div>
+        <!-- Hero header -->
+        <div class="flex flex-wrap items-center justify-between gap-4 mb-10 animate-in">
+            <h1 class="page-title-xl">
+                <span class="gradient-text" th:text="#{page.dashboard.title}">Admin</span>
+            </h1>
+            <a class="btn btn-ghost" href="/admin/settings">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                    <path d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 0 1 1.37.49l1.296 2.247a1.125 1.125 0 0 1-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 0 1 0 .255c-.008.378.137.75.43.991l1.004.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 0 1-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 0 1-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 0 1-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 0 1-1.369-.49l-1.297-2.247a1.125 1.125 0 0 1 .26-1.431l1.004-.827c.292-.241.437-.613.43-.992a6.932 6.932 0 0 1 0-.255c.007-.378-.138-.75-.43-.991l-1.004-.828a1.125 1.125 0 0 1-.26-1.43l1.297-2.247a1.125 1.125 0 0 1 1.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.28Z"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"/>
+                    <path d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span th:text="#{nav.settings}">Settings</span>
+            </a>
+        </div>
 
-      <!-- File stats row -->
-      <p class="text-xs font-black uppercase tracking-widest mb-3 animate-in" style="color:var(--c-primary)"
-         th:text="#{page.dashboard.section.files}">Files</p>
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 lg:gap-5 mb-4 animate-in animate-in-delay-1">
-          <div class="stat-hero stat-hero--primary">
-              <span class="stat-hero-label" th:text="#{page.dashboard.totalFiles}">Total Files</span>
-              <span class="stat-hero-value" th:attr="data-counter-target=${analytics.totalFileCount}"
-                    th:text="${analytics.totalFileCount}">0</span>
-          </div>
-          <div class="stat-hero stat-hero--secondary">
-        <span class="stat-hero-label" th:text="#{page.dashboard.totalDownloads}">Total Downloads</span>
-        <span class="stat-hero-value" th:attr="data-counter-target=${analytics.totalDownloads}"
-              th:text="${analytics.totalDownloads}">0</span>
-              <span class="stat-hero-sub" th:text="#{page.dashboard.excludingDeleted}">Excluding deleted</span>
-      </div>
-          <div class="stat-hero stat-hero--teal">
-              <span class="stat-hero-label" th:text="#{page.dashboard.totalSpaceUsed}">Space Used</span>
-        <span class="stat-hero-value" th:text="${analytics.totalSpaceUsed}">0 MB</span>
-              <span class="stat-hero-sub" th:text="#{page.dashboard.onDisk}">on disk</span>
-      </div>
-          <div class="stat-hero">
-              <span class="stat-hero-label" th:text="#{page.dashboard.averageFileSize}">Avg. File Size</span>
-              <span class="stat-hero-value" th:text="${analytics.averageFileSize}">0 B</span>
-              <span class="stat-hero-sub" th:text="#{page.dashboard.perFile}">per file</span>
-      </div>
-    </div>
+        <!-- File stats row -->
+        <p class="text-xs font-black uppercase tracking-widest mb-3 animate-in" style="color:var(--c-primary)"
+           th:text="#{page.dashboard.section.files}">Files</p>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 lg:gap-5 mb-4 animate-in animate-in-delay-1">
+            <div class="stat-hero stat-hero--primary">
+                <span class="stat-hero-label" th:text="#{page.dashboard.totalFiles}">Total Files</span>
+                <span class="stat-hero-value" th:attr="data-counter-target=${analytics.totalFileCount}"
+                      th:text="${analytics.totalFileCount}">0</span>
+            </div>
+            <div class="stat-hero stat-hero--secondary">
+                <span class="stat-hero-label" th:text="#{page.dashboard.totalDownloads}">Total Downloads</span>
+                <span class="stat-hero-value" th:attr="data-counter-target=${analytics.totalDownloads}"
+                      th:text="${analytics.totalDownloads}">0</span>
+                <span class="stat-hero-sub" th:text="#{page.dashboard.excludingDeleted}">Excluding deleted</span>
+            </div>
+            <div class="stat-hero stat-hero--teal">
+                <span class="stat-hero-label" th:text="#{page.dashboard.totalSpaceUsed}">Space Used</span>
+                <span class="stat-hero-value" th:text="${analytics.totalSpaceUsed}">0 MB</span>
+                <span class="stat-hero-sub" th:text="#{page.dashboard.onDisk}">on disk</span>
+            </div>
+            <div class="stat-hero">
+                <span class="stat-hero-label" th:text="#{page.dashboard.averageFileSize}">Avg. File Size</span>
+                <span class="stat-hero-value" th:text="${analytics.averageFileSize}">0 B</span>
+                <span class="stat-hero-sub" th:text="#{page.dashboard.perFile}">per file</span>
+            </div>
+        </div>
 
-      <!-- Paste stats row -->
-      <p class="text-xs font-black uppercase tracking-widest mb-3 mt-8 animate-in animate-in-delay-2"
-         style="color:var(--c-secondary)" th:text="#{page.dashboard.section.pastes}">Pastes</p>
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 lg:gap-5 mb-10 animate-in animate-in-delay-2">
-          <div class="stat-hero stat-hero--primary" style="background:var(--c-surface-raised)">
-              <span class="stat-hero-label" th:text="#{page.dashboard.totalPastes}">Total Pastes</span>
-              <span class="stat-hero-value" th:attr="data-counter-target=${analytics.totalPastes}"
-                    th:text="${analytics.totalPastes}">0</span>
-          </div>
-          <div class="stat-hero stat-hero--secondary" style="background:var(--c-surface-raised)">
-              <span class="stat-hero-label" th:text="#{page.dashboard.totalPasteViews}">Total Views</span>
-              <span class="stat-hero-value" th:attr="data-counter-target=${analytics.totalPasteViews}"
-                    th:text="${analytics.totalPasteViews}">0</span>
-          </div>
-          <div class="stat-hero stat-hero--teal" style="background:var(--c-surface-raised)">
-              <span class="stat-hero-label" th:text="#{page.dashboard.averagePasteLength}">Avg. Length</span>
-              <span class="stat-hero-value" th:text="${analytics.averagePasteLength}">0 B</span>
-          </div>
-          <div class="stat-hero" style="background:var(--c-surface-raised)">
-              <span class="stat-hero-label" th:text="#{page.dashboard.pasteTypes}">Types</span>
-              <span class="stat-hero-value text-lg"
-                    th:text="${analytics.markdownPasteCount} + ' / ' + ${analytics.plainTextPasteCount}">0 / 0</span>
-              <span class="stat-hero-sub" th:text="#{page.dashboard.mdVsText}">Markdown / Plain</span>
-          </div>
-      </div>
+        <!-- Paste stats row -->
+        <p class="text-xs font-black uppercase tracking-widest mb-3 mt-8 animate-in animate-in-delay-2"
+           style="color:var(--c-secondary)" th:text="#{page.dashboard.section.pastes}">Pastes</p>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 lg:gap-5 mb-10 animate-in animate-in-delay-2">
+            <div class="stat-hero stat-hero--primary" style="background:var(--c-surface-raised)">
+                <span class="stat-hero-label" th:text="#{page.dashboard.totalPastes}">Total Pastes</span>
+                <span class="stat-hero-value" th:attr="data-counter-target=${analytics.totalPastes}"
+                      th:text="${analytics.totalPastes}">0</span>
+            </div>
+            <div class="stat-hero stat-hero--secondary" style="background:var(--c-surface-raised)">
+                <span class="stat-hero-label" th:text="#{page.dashboard.totalPasteViews}">Total Views</span>
+                <span class="stat-hero-value" th:attr="data-counter-target=${analytics.totalPasteViews}"
+                      th:text="${analytics.totalPasteViews}">0</span>
+            </div>
+            <div class="stat-hero stat-hero--teal" style="background:var(--c-surface-raised)">
+                <span class="stat-hero-label" th:text="#{page.dashboard.averagePasteLength}">Avg. Length</span>
+                <span class="stat-hero-value" th:text="${analytics.averagePasteLength}">0 B</span>
+            </div>
+            <div class="stat-hero" style="background:var(--c-surface-raised)">
+                <span class="stat-hero-label" th:text="#{page.dashboard.pasteTypes}">Types</span>
+                <span class="stat-hero-value text-lg"
+                      th:text="${analytics.markdownPasteCount} + ' / ' + ${analytics.plainTextPasteCount}">0 / 0</span>
+                <span class="stat-hero-sub" th:text="#{page.dashboard.mdVsText}">Markdown / Plain</span>
+            </div>
+        </div>
 
-      <!-- Navigation cards -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 animate-in animate-in-delay-3">
+        <!-- Navigation cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 animate-in animate-in-delay-3">
 
-          <!-- Files card -->
-          <a class="card card-lg flex flex-col gap-4 transition-all duration-200 hover:shadow-xl hover:-translate-y-0.5 accent-stripe accent-stripe--primary group"
-             href="/admin/files" style="text-decoration:none">
-              <div class="flex items-center gap-4">
-                  <div class="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
-                       style="background:var(--c-primary-muted);color:var(--c-primary)">
-                      <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
-                          <path d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z"
-                                stroke-linecap="round"
-                                stroke-linejoin="round"/>
-                      </svg>
-                  </div>
-                  <div class="flex-1 min-w-0">
-                      <h2 class="text-lg font-extrabold tracking-tight" th:text="#{page.dashboard.manageFiles}">Manage
-                          Files</h2>
-                      <p class="text-sm mt-0.5" style="color:var(--c-text-muted)"
-                         th:text="#{page.dashboard.manageFilesDesc}">View and manage uploaded files</p>
-                  </div>
-                  <svg class="w-5 h-5 flex-shrink-0 transition-transform group-hover:translate-x-1" fill="none"
-                       stroke="currentColor" stroke-width="2" style="color:var(--c-text-faint)" viewBox="0 0 24 24">
-                      <path d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
-              </div>
-              <div class="flex gap-3 flex-wrap">
+            <!-- Files card -->
+            <a class="card card-lg flex flex-col gap-4 transition-all duration-200 hover:shadow-xl hover:-translate-y-0.5 accent-stripe accent-stripe--primary group"
+               href="/admin/files" style="text-decoration:none">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
+                         style="background:var(--c-primary-muted);color:var(--c-primary)">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                            <path d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z"
+                                  stroke-linecap="round"
+                                  stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <h2 class="text-lg font-extrabold tracking-tight" th:text="#{page.dashboard.manageFiles}">Manage
+                            Files</h2>
+                        <p class="text-sm mt-0.5" style="color:var(--c-text-muted)"
+                           th:text="#{page.dashboard.manageFilesDesc}">View and manage uploaded files</p>
+                    </div>
+                    <svg class="w-5 h-5 flex-shrink-0 transition-transform group-hover:translate-x-1" fill="none"
+                         stroke="currentColor" stroke-width="2" style="color:var(--c-text-faint)" viewBox="0 0 24 24">
+                        <path d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+                <div class="flex gap-3 flex-wrap">
           <span class="badge badge-primary font-mono">
             <span th:text="${analytics.totalFileCount}">0</span>
             <span th:text="' ' + #{page.dashboard.files}">files</span>
           </span>
-                  <span class="badge badge-neutral font-mono">
+                    <span class="badge badge-neutral font-mono">
             <span th:text="${analytics.totalDownloads}">0</span>
             <span th:text="' ' + #{page.dashboard.downloads}">downloads</span>
           </span>
-              </div>
-          </a>
+                </div>
+            </a>
 
-          <!-- Pastes card -->
-          <a class="card card-lg flex flex-col gap-4 transition-all duration-200 hover:shadow-xl hover:-translate-y-0.5 accent-stripe accent-stripe--secondary group"
-             href="/admin/pastes" style="text-decoration:none">
-              <div class="flex items-center gap-4">
-                  <div class="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
-                       style="background:var(--c-secondary-muted,var(--c-indigo-muted));color:var(--c-secondary,var(--c-indigo))">
-                      <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
-                          <path d="M17.25 6.75 22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3-4.5 16.5"
-                                stroke-linecap="round"
-                                stroke-linejoin="round"/>
-                      </svg>
-                  </div>
-                  <div class="flex-1 min-w-0">
-                      <h2 class="text-lg font-extrabold tracking-tight" th:text="#{page.dashboard.managePastes}">Manage
-                          Pastes</h2>
-                      <p class="text-sm mt-0.5" style="color:var(--c-text-muted)"
-                         th:text="#{page.dashboard.managePastesDesc}">View and manage text pastes</p>
-          </div>
-                  <svg class="w-5 h-5 flex-shrink-0 transition-transform group-hover:translate-x-1" fill="none"
-                       stroke="currentColor" stroke-width="2" style="color:var(--c-text-faint)" viewBox="0 0 24 24">
-                      <path d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
-        </div>
-              <div class="flex gap-3 flex-wrap">
+            <!-- Pastes card -->
+            <a class="card card-lg flex flex-col gap-4 transition-all duration-200 hover:shadow-xl hover:-translate-y-0.5 accent-stripe accent-stripe--secondary group"
+               href="/admin/pastes" style="text-decoration:none">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
+                         style="background:var(--c-secondary-muted,var(--c-indigo-muted));color:var(--c-secondary,var(--c-indigo))">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                            <path d="M17.25 6.75 22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3-4.5 16.5"
+                                  stroke-linecap="round"
+                                  stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <h2 class="text-lg font-extrabold tracking-tight" th:text="#{page.dashboard.managePastes}">
+                            Manage
+                            Pastes</h2>
+                        <p class="text-sm mt-0.5" style="color:var(--c-text-muted)"
+                           th:text="#{page.dashboard.managePastesDesc}">View and manage text pastes</p>
+                    </div>
+                    <svg class="w-5 h-5 flex-shrink-0 transition-transform group-hover:translate-x-1" fill="none"
+                         stroke="currentColor" stroke-width="2" style="color:var(--c-text-faint)" viewBox="0 0 24 24">
+                        <path d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+                <div class="flex gap-3 flex-wrap">
           <span class="badge font-mono" style="background:var(--c-indigo-muted);color:var(--c-indigo)">
             <span th:text="${analytics.totalPastes}">0</span>
             <span th:text="' ' + #{page.dashboard.pastes}">pastes</span>
           </span>
-                  <span class="badge badge-neutral font-mono">
+                    <span class="badge badge-neutral font-mono">
             <span th:text="${analytics.totalPasteViews}">0</span>
             <span th:text="' ' + #{page.dashboard.views}">views</span>
           </span>
-              </div>
-          </a>
+                </div>
+            </a>
 
-          <!-- Share Links card -->
-          <a class="card card-lg flex flex-col gap-4 transition-all duration-200 hover:shadow-xl hover:-translate-y-0.5 accent-stripe accent-stripe--teal group"
-             href="/admin/share-links" style="text-decoration:none">
-              <div class="flex items-center gap-4">
-                  <div class="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
-                       style="background:var(--c-teal-muted);color:var(--c-teal)">
-                      <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
-                          <path d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244"
-                                stroke-linecap="round" stroke-linejoin="round"/>
-                      </svg>
-                  </div>
-                  <div class="flex-1 min-w-0">
-                      <h2 class="text-lg font-extrabold tracking-tight" th:text="#{page.dashboard.manageShareLinks}">
-                          Share Links</h2>
-                      <p class="text-sm mt-0.5" style="color:var(--c-text-muted)"
-                         th:text="#{page.dashboard.manageShareLinksDesc}">View and revoke active share tokens</p>
-                  </div>
-                  <svg class="w-5 h-5 flex-shrink-0 transition-transform group-hover:translate-x-1" fill="none"
-                       stroke="currentColor" stroke-width="2" style="color:var(--c-text-faint)" viewBox="0 0 24 24">
-                      <path d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
-              </div>
-          </a>
+            <!-- Share Links card -->
+            <a class="card card-lg flex flex-col gap-4 transition-all duration-200 hover:shadow-xl hover:-translate-y-0.5 accent-stripe accent-stripe--teal group"
+               href="/admin/share-links" style="text-decoration:none">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
+                         style="background:var(--c-teal-muted);color:var(--c-teal)">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                            <path d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244"
+                                  stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <h2 class="text-lg font-extrabold tracking-tight" th:text="#{page.dashboard.manageShareLinks}">
+                            Share Links</h2>
+                        <p class="text-sm mt-0.5" style="color:var(--c-text-muted)"
+                           th:text="#{page.dashboard.manageShareLinksDesc}">View and revoke active share tokens</p>
+                    </div>
+                    <svg class="w-5 h-5 flex-shrink-0 transition-transform group-hover:translate-x-1" fill="none"
+                         stroke="currentColor" stroke-width="2" style="color:var(--c-text-faint)" viewBox="0 0 24 24">
+                        <path d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+            </a>
 
-          <!-- Activity card -->
-          <a class="card card-lg flex flex-col gap-4 transition-all duration-200 hover:shadow-xl hover:-translate-y-0.5 accent-stripe accent-stripe--rose group"
-             href="/admin/activity" style="text-decoration:none">
-              <div class="flex items-center gap-4">
-                  <div class="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
-                       style="background:var(--c-rose-muted);color:var(--c-rose)">
-                      <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
-                          <path d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 0 1 0 3.75H5.625a1.875 1.875 0 0 1 0-3.75Z"
-                                stroke-linecap="round" stroke-linejoin="round"/>
-                      </svg>
-                  </div>
-                  <div class="flex-1 min-w-0">
-                      <h2 class="text-lg font-extrabold tracking-tight" th:text="#{page.dashboard.activity}">
-                          Activity</h2>
-                      <p class="text-sm mt-0.5" style="color:var(--c-text-muted)"
-                         th:text="#{page.dashboard.activityDesc}">Global event log with filters</p>
-                  </div>
-                  <svg class="w-5 h-5 flex-shrink-0 transition-transform group-hover:translate-x-1" fill="none"
-                       stroke="currentColor" stroke-width="2" style="color:var(--c-text-faint)" viewBox="0 0 24 24">
-                      <path d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
-              </div>
-          </a>
+            <!-- Activity card -->
+            <a class="card card-lg flex flex-col gap-4 transition-all duration-200 hover:shadow-xl hover:-translate-y-0.5 accent-stripe accent-stripe--rose group"
+               href="/admin/activity" style="text-decoration:none">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
+                         style="background:var(--c-rose-muted);color:var(--c-rose)">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                            <path d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 0 1 0 3.75H5.625a1.875 1.875 0 0 1 0-3.75Z"
+                                  stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <h2 class="text-lg font-extrabold tracking-tight" th:text="#{page.dashboard.activity}">
+                            Activity</h2>
+                        <p class="text-sm mt-0.5" style="color:var(--c-text-muted)"
+                           th:text="#{page.dashboard.activityDesc}">Global event log with filters</p>
+                    </div>
+                    <svg class="w-5 h-5 flex-shrink-0 transition-transform group-hover:translate-x-1" fill="none"
+                         stroke="currentColor" stroke-width="2" style="color:var(--c-text-faint)" viewBox="0 0 24 24">
+                        <path d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+            </a>
 
-      </div>
-  </div>
+        </div>
+    </div>
 </main>
 
 <script src="/js/locale-switcher.js"></script>

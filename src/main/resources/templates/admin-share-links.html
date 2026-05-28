@@ -116,19 +116,22 @@
                                      style="border:1px solid var(--c-border)">
                                     <button class="btn btn-sm rounded-none border-0 px-4"
                                             data-type-val=""
-                                            th:classappend="${type == '' or type == null} ? 'btn-primary' : 'btn-ghost'" th:text="#{page.adminShareLinks.filter.all}"
+                                            th:classappend="${type == '' or type == null} ? 'btn-primary' : 'btn-ghost'"
+                                            th:text="#{page.adminShareLinks.filter.all}"
                                             type="button">All
                                     </button>
                                     <button class="btn btn-sm rounded-none border-0 border-l px-4"
                                             data-type-val="file"
                                             style="border-color:var(--c-border)"
-                                            th:classappend="${type == 'file'} ? 'btn-primary' : 'btn-ghost'" th:text="#{page.adminShareLinks.filter.files}"
+                                            th:classappend="${type == 'file'} ? 'btn-primary' : 'btn-ghost'"
+                                            th:text="#{page.adminShareLinks.filter.files}"
                                             type="button">Files
                                     </button>
                                     <button class="btn btn-sm rounded-none border-0 border-l px-4"
                                             data-type-val="paste"
                                             style="border-color:var(--c-border)"
-                                            th:classappend="${type == 'paste'} ? 'btn-primary' : 'btn-ghost'" th:text="#{page.adminShareLinks.filter.pastes}"
+                                            th:classappend="${type == 'paste'} ? 'btn-primary' : 'btn-ghost'"
+                                            th:text="#{page.adminShareLinks.filter.pastes}"
                                             type="button">Pastes
                                     </button>
                                 </div>
@@ -157,16 +160,20 @@
                                   th:text="#{page.adminShareLinks.sort.label}">Sort</span>
                                 <select class="form-input" id="sortBySelect"
                                         style="width:auto;padding:0.3125rem 0.5rem">
-                                    <option th:selected="${sortBy == 'created'}" th:text="#{page.adminShareLinks.sort.created}"
+                                    <option th:selected="${sortBy == 'created'}"
+                                            th:text="#{page.adminShareLinks.sort.created}"
                                             value="created">Created
                                     </option>
-                                    <option th:selected="${sortBy == 'name'}" th:text="#{page.adminShareLinks.sort.name}"
+                                    <option th:selected="${sortBy == 'name'}"
+                                            th:text="#{page.adminShareLinks.sort.name}"
                                             value="name">Name
                                     </option>
-                                    <option th:selected="${sortBy == 'expiry'}" th:text="#{page.adminShareLinks.sort.expiry}"
+                                    <option th:selected="${sortBy == 'expiry'}"
+                                            th:text="#{page.adminShareLinks.sort.expiry}"
                                             value="expiry">Expiry
                                     </option>
-                                    <option th:selected="${sortBy == 'downloads'}" th:text="#{page.adminShareLinks.sort.downloads}"
+                                    <option th:selected="${sortBy == 'downloads'}"
+                                            th:text="#{page.adminShareLinks.sort.downloads}"
                                             value="downloads">Downloads
                                     </option>
                                 </select>
@@ -255,7 +262,8 @@
                                         <path d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
                                               stroke-linecap="round" stroke-linejoin="round"/>
                                     </svg>
-                                    <span class="hidden sm:inline" th:text="#{page.adminShareLinks.fileHistory}">History</span>
+                                    <span class="hidden sm:inline"
+                                          th:text="#{page.adminShareLinks.fileHistory}">History</span>
                                 </a>
                                 <!-- Revoke button -->
                                 <form method="post" th:action="@{/admin/share-links/revoke/{id}(id=${token.id})}">
@@ -282,13 +290,13 @@
                         <nav aria-label="#{pagination.navigation}" class="flex items-center gap-2"
                              th:if="${tokensPage.totalPages > 1}">
                             <a class="pagination-btn"
-                               th:classappend="${tokensPage.first} ? ' pagination-btn-disabled'"
                                th:attr="aria-disabled=${tokensPage.first},tabindex=${tokensPage.first ? '-1' : null}"
+                               th:classappend="${tokensPage.first} ? ' pagination-btn-disabled'"
                                th:href="@{/admin/share-links(page=${tokensPage.first ? tokensPage.number : tokensPage.number - 1}, size=${pageSize}, query=${query}, type=${type}, noExpiry=${noExpiry}, unlimited=${unlimited}, sortBy=${sortBy}, sortDir=${sortDir})}"
                                th:text="#{pagination.previous}">Previous</a>
                             <a class="pagination-btn"
-                               th:classappend="${tokensPage.last} ? ' pagination-btn-disabled'"
                                th:attr="aria-disabled=${tokensPage.last},tabindex=${tokensPage.last ? '-1' : null}"
+                               th:classappend="${tokensPage.last} ? ' pagination-btn-disabled'"
                                th:href="@{/admin/share-links(page=${tokensPage.last ? tokensPage.number : tokensPage.number + 1}, size=${pageSize}, query=${query}, type=${type}, noExpiry=${noExpiry}, unlimited=${unlimited}, sortBy=${sortBy}, sortDir=${sortDir})}"
                                th:text="#{pagination.next}">Next</a>
                         </nav>

@@ -37,3 +37,9 @@ build/
 .qodo
 
 /node_modules
+
+### Runtime / local files ###
+*.db
+*.log
+.claude/
+RELEASE_NOTES_*.md

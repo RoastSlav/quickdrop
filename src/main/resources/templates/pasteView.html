@@ -199,7 +199,9 @@
 
             <!-- ── Sidebar ────────────────────────────────────────────── -->
             <aside class="xl:col-span-1" th:if="${isShareLinksEnabled and !isDeleted}">
-                <div class="card card-lg flex flex-col gap-4 animate-in animate-in-delay-1 accent-stripe accent-stripe--secondary">
+                <div class="card card-lg flex flex-col gap-4 animate-in animate-in-delay-1 accent-stripe accent-stripe--secondary"
+                     id="sharePanel"
+                     th:attr="data-simplified-share-links=${isSimplifiedShareLinksEnabled},data-share-links-enabled=${isShareLinksEnabled}">
                     <h2 class="section-title flex items-center gap-2">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8"
                              style="color:var(--c-secondary)"
@@ -214,28 +216,66 @@
                     <!-- Public paste: direct link is all that's needed -->
                     <p class="text-sm" style="color: var(--c-text-muted)"
                        th:if="${isPubliclyAccessible}"
-                       th:text="#{page.pasteView.sharePublicNotice}">This paste is publicly accessible — no share link needed.</p>
+                       th:text="#{page.pasteView.sharePublicNotice}">This paste is publicly accessible.</p>
                     <!-- Password-protected paste: share links bypass the password -->
                     <p class="text-sm" style="color: var(--c-text-muted)"
                        th:if="${!isPubliclyAccessible}"
                        th:text="#{page.fileView.shareBypassNotice}">Share links bypass file and app passwords.</p>
 
-                    <div class="flex flex-col gap-2">
-                        <label class="sr-only" for="shareLink">Share link</label>
-                        <input class="form-input form-input-mono text-xs w-full" id="shareLink"
-                               readonly th:value="${isPubliclyAccessible} ? ${downloadLink} : ''" type="text"/>
+                    <!-- Hint texts for protected pastes -->
+                    <p class="text-xs" style="color: var(--c-warning-text)"
+                       th:if="${!isPubliclyAccessible and !isSimplifiedShareLinksEnabled}"
+                       th:text="#{page.fileView.shareAdvancedHint}">Add an expiration date and/or download limit.</p>
+                    <p class="text-xs" style="color: var(--c-warning-text)"
+                       th:if="${!isPubliclyAccessible and isSimplifiedShareLinksEnabled}"
+                       th:text="#{page.fileView.shareSimplifiedHint}">Simplified share links are enabled.</p>
+
+                    <!-- Public paste: pre-filled URL, disabled buttons -->
+                    <div class="flex flex-col gap-2" th:if="${isPubliclyAccessible}">
+                        <label class="sr-only" for="shareLinkPublic">Share link</label>
+                        <input class="form-input form-input-mono text-xs w-full" id="shareLinkPublic"
+                               readonly th:value="${downloadLink}" type="text"/>
                         <div class="flex gap-2">
-                            <button class="btn btn-gradient btn-sm flex-1" id="generateShareButton"
-                                    th:classappend="${isPubliclyAccessible} ? ' opacity-50 cursor-not-allowed'"
-                                    th:disabled="${isPubliclyAccessible}"
-                                    th:text="#{page.pasteView.generateLink}"
-                                    type="button">Generate link
+                            <button class="btn btn-gradient btn-sm flex-1 opacity-50 cursor-not-allowed"
+                                    disabled th:text="#{page.pasteView.generateLink}" type="button">Generate link
                             </button>
+                            <button class="btn btn-ghost btn-sm shrink-0 opacity-50 cursor-not-allowed"
+                                    disabled th:text="#{button.copy}" type="button">Copy
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Protected paste: auto-generate (simplified) or manual -->
+                    <div class="flex flex-col gap-3" th:if="${!isPubliclyAccessible}">
+
+                        <!-- Simplified mode: spinner + label (auto-generates on load) -->
+                        <div class="flex justify-end items-center gap-2" th:if="${isSimplifiedShareLinksEnabled}">
+                            <div class="hidden animate-spin rounded-full h-4 w-4 border-2"
+                                 id="spinnerShareAuto"
+                                 style="border-color: var(--c-primary); border-top-color: transparent"></div>
+                            <span class="text-sm font-mono" style="color: var(--c-text-muted)"
+                                  th:text="#{page.fileView.autoShareLink}">Automatic share link</span>
+                        </div>
+
+                        <!-- Non-simplified mode: Generate button -->
+                        <div class="flex justify-end items-center gap-2" th:if="${!isSimplifiedShareLinksEnabled}">
+                            <div class="hidden animate-spin rounded-full h-4 w-4 border-2"
+                                 id="spinnerShare"
+                                 style="border-color: var(--c-primary); border-top-color: transparent"></div>
+                            <button class="btn btn-gradient btn-sm" id="generateShareButton"
+                                    th:text="#{page.pasteView.generateLink}" type="button">Generate link
+                            </button>
+                        </div>
+
+                        <hr class="divider divider-soft hidden" id="shareDivider" style="margin:0"/>
+
+                        <!-- Copy row — hidden until a link is generated -->
+                        <div class="hidden flex gap-2" id="shareCopyRow">
+                            <label class="sr-only" for="shareLink">Share link</label>
+                            <input class="form-input form-input-mono flex-1 min-w-0 text-xs" id="shareLink"
+                                   readonly type="text"/>
                             <button class="btn btn-ghost btn-sm shrink-0" id="copyShareButton"
-                                    th:classappend="${isPubliclyAccessible} ? ' opacity-50 cursor-not-allowed'"
-                                    th:disabled="${isPubliclyAccessible}"
-                                    th:text="#{button.copy}"
-                                    type="button">Copy
+                                    th:text="#{button.copy}" type="button">Copy
                             </button>
                         </div>
                     </div>
@@ -289,7 +329,7 @@
     const copySuccessText = /*[[#{notification.copied}]]*/ 'Copied';
     const copyFailedText = /*[[#{notification.failed}]]*/ 'Failed';
     const copyButtonText = /*[[#{page.pasteView.copyText}]]*/ 'Copy text';
-    const copyShareButtonText = document.getElementById('copyShareButton')?.textContent?.trim() || /*[[#{button.copy}]]*/ 'Copy';
+    const copyShareButtonText = /*[[#{button.copy}]]*/ 'Copy';
     const generateLinkFailedText = /*[[#{page.pasteView.generateLinkFailed}]]*/ 'Unable to generate share link';
 
     copyTextButton.addEventListener('click', async () => {
@@ -308,36 +348,68 @@
         }
     });
 
-    const generateShareButton = document.getElementById('generateShareButton');
-    const copyShareButton = document.getElementById('copyShareButton');
-    const shareLinkInput = document.getElementById('shareLink');
     const fileUuid = document.getElementById('fileUuid')?.textContent?.trim();
     const csrfToken = document.querySelector('meta[name="_csrf"]')?.content || '';
 
+    function isSimplifiedShareLinksEnabled() {
+        const panel = document.getElementById('sharePanel');
+        return panel?.dataset?.simplifiedShareLinks === 'true'
+            && panel?.dataset?.shareLinksEnabled === 'true';
+    }
+
+    async function generatePasteShareLink() {
+        const response = await fetch(`/api/file/share/${fileUuid}`, {
+            method: 'POST', credentials: 'same-origin',
+            headers: {'Content-Type': 'application/json', 'X-XSRF-TOKEN': csrfToken, Accept: 'application/json'}
+        });
+        let data = {};
+        try {
+            data = await response.json();
+        } catch (_) {
+        }
+        if (!response.ok) throw new Error(data?.message || generateLinkFailedText);
+        const sharePath = data.sharePath || (data.token ? `/share/${data.token}` : '');
+        return sharePath ? new URL(sharePath, window.location.origin).toString() : '';
+    }
+
+    function revealShareLink(url) {
+        const shareLinkInput = document.getElementById('shareLink');
+        const copyRow = document.getElementById('shareCopyRow');
+        const divider = document.getElementById('shareDivider');
+        if (shareLinkInput) shareLinkInput.value = url;
+        if (copyRow) copyRow.classList.remove('hidden');
+        if (divider) divider.classList.remove('hidden');
+    }
+
+    const generateShareButton = document.getElementById('generateShareButton');
     if (generateShareButton && fileUuid) {
         generateShareButton.addEventListener('click', async () => {
+            const spinner = document.getElementById('spinnerShare');
+            if (spinner) {
+                spinner.classList.remove('hidden');
+                spinner.style.display = 'inline-block';
+            }
+            generateShareButton.disabled = true;
             try {
-                const response = await fetch(`/api/file/share/${fileUuid}`, {
-                    method: 'POST', credentials: 'same-origin',
-                    headers: {'Content-Type': 'application/json', 'X-XSRF-TOKEN': csrfToken, Accept: 'application/json'}
-                });
-                const data = await response.json();
-                if (response.ok) {
-                    const sharePath = data.sharePath || (data.token ? `/share/${data.token}` : '');
-                    shareLinkInput.value = sharePath ? new URL(sharePath, window.location.origin).toString() : '';
-                    if (typeof window.toast === 'function') window.toast('Share link generated', 'success');
-                } else {
-                    shareLinkInput.value = data?.message || generateLinkFailedText;
-                }
+                const url = await generatePasteShareLink();
+                revealShareLink(url);
             } catch (_) {
-                shareLinkInput.value = generateLinkFailedText;
+                revealShareLink(generateLinkFailedText);
+            } finally {
+                if (spinner) {
+                    spinner.classList.add('hidden');
+                    spinner.style.display = 'none';
+                }
+                generateShareButton.disabled = false;
             }
         });
     }
 
+    const copyShareButton = document.getElementById('copyShareButton');
     if (copyShareButton) {
         copyShareButton.addEventListener('click', async () => {
-            if (!shareLinkInput.value) return;
+            const shareLinkInput = document.getElementById('shareLink');
+            if (!shareLinkInput?.value) return;
             try {
                 await navigator.clipboard.writeText(shareLinkInput.value);
                 copyShareButton.textContent = copySuccessText;
@@ -352,6 +424,24 @@
                 }, 1200);
             }
         });
+    }
+
+    // Auto-generate share link when simplified mode is enabled
+    if (fileUuid && isSimplifiedShareLinksEnabled()) {
+        const spinner = document.getElementById('spinnerShareAuto');
+        if (spinner) {
+            spinner.classList.remove('hidden');
+            spinner.style.display = 'inline-block';
+        }
+        generatePasteShareLink()
+            .then(url => revealShareLink(url))
+            .catch(err => console.error('Failed to auto-generate share link', err))
+            .finally(() => {
+                if (spinner) {
+                    spinner.classList.add('hidden');
+                    spinner.style.display = 'none';
+                }
+            });
     }
 
     if (isMarkdownPaste && markdownRuntimeAvailable) showMarkdown(); else showRaw();

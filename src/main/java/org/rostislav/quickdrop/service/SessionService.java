@@ -9,6 +9,7 @@ import org.rostislav.quickdrop.model.FileSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
@@ -42,6 +43,9 @@ public class SessionService implements HttpSessionListener {
     @Lazy
     private AnalyticsService analyticsService;
 
+    @Autowired
+    private ConfigurableApplicationContext applicationContext;
+
     /**
      * Removes admin and file session tokens when their HTTP session is invalidated or expires.
      *
@@ -62,10 +66,12 @@ public class SessionService implements HttpSessionListener {
             // Token still present → session timed out, not an explicit logout.
             String ip = (String) session.getAttribute("admin-ip");
             String ua = (String) session.getAttribute("admin-ua");
-            try {
-                analyticsService.logEvent(EventType.ADMIN_SESSION_EXPIRE, ip, ua);
-            } catch (Exception e) {
-                logger.error("Failed to log admin session expiry event", e);
+            if (applicationContext.isActive()) {
+                try {
+                    analyticsService.logEvent(EventType.ADMIN_SESSION_EXPIRE, ip, ua);
+                } catch (Exception e) {
+                    logger.warn("Failed to log admin session expiry event", e);
+                }
             }
         }
 

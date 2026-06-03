@@ -48,7 +48,9 @@ import java.util.concurrent.ScheduledFuture;
 public class ScheduleService {
     private static final Logger logger = LoggerFactory.getLogger(ScheduleService.class);
     private final UploadRepository uploadRepository;
-    private final FileService fileService;
+    private final FileLifecycleService fileLifecycleService;
+    private final FileQueryService fileQueryService;
+    private final FileDownloadService fileDownloadService;
     private final ThreadPoolTaskScheduler taskScheduler = new ThreadPoolTaskScheduler();
     private final ActivityLogRepository activityLogRepository;
     private final ShareTokenRepository shareTokenRepository;
@@ -65,9 +67,17 @@ public class ScheduleService {
      */
     private volatile long currentMaxFileLifeTime = -1;
 
-    public ScheduleService(UploadRepository uploadRepository, FileService fileService, ActivityLogRepository activityLogRepository, ShareTokenRepository shareTokenRepository, ApplicationSettingsService applicationSettingsService) {
+    public ScheduleService(UploadRepository uploadRepository,
+                           FileLifecycleService fileLifecycleService,
+                           FileQueryService fileQueryService,
+                           FileDownloadService fileDownloadService,
+                           ActivityLogRepository activityLogRepository,
+                           ShareTokenRepository shareTokenRepository,
+                           ApplicationSettingsService applicationSettingsService) {
         this.uploadRepository = uploadRepository;
-        this.fileService = fileService;
+        this.fileLifecycleService = fileLifecycleService;
+        this.fileQueryService = fileQueryService;
+        this.fileDownloadService = fileDownloadService;
         taskScheduler.setPoolSize(1);
         taskScheduler.initialize();
         this.activityLogRepository = activityLogRepository;
@@ -134,7 +144,7 @@ public class ScheduleService {
         List<Long> deletedIds = new ArrayList<>();
         for (Upload file : filesForDeletion) {
             logger.info("Attempting filesystem delete for file: {}", file);
-            boolean deleted = fileService.deleteFileFromFileSystem(file.uuid);
+            boolean deleted = fileLifecycleService.deleteFileFromFileSystem(file.uuid);
             if (deleted) {
                 deletedIds.add(file.id);
             } else {
@@ -146,7 +156,7 @@ public class ScheduleService {
             // Soft-delete through FileService so history logs and entity records are retained.
             filesForDeletion.stream()
                     .filter(f -> deletedIds.contains(f.id))
-                    .forEach(f -> fileService.removeFileFromDatabase(f.uuid, null, null));
+                    .forEach(f -> fileLifecycleService.removeFileFromDatabase(f.uuid, null, null));
             logger.info("Soft-deleted {} files (threshold date: {})", deletedIds.size(), thresholdDate);
         } else {
             logger.warn("No database soft-deletions performed; all filesystem deletions failed or nothing matched");
@@ -177,12 +187,12 @@ public class ScheduleService {
             // Only scan non-deleted files; soft-deleted files legitimately have no file on disk.
             batch = uploadRepository.findAllNotDeleted(PageRequest.of(page++, BATCH_SIZE));
             for (Upload file : batch) {
-                if (!fileService.fileExistsInFileSystem(file.uuid)) {
+                if (!fileQueryService.fileExistsInFileSystem(file.uuid)) {
                     uuidsToRemove.add(file.uuid);
                 }
             }
         } while (batch.hasNext());
-        uuidsToRemove.forEach(uuid -> fileService.removeFileFromDatabase(uuid));
+        uuidsToRemove.forEach(uuid -> fileLifecycleService.removeFileFromDatabase(uuid));
 
         // Remove legacy plaintext {uuid}-decrypted sidecars that have no active share tokens
         Path storageDir = Path.of(applicationSettingsService.getFileStoragePath());
@@ -225,7 +235,7 @@ public class ScheduleService {
         List<ShareTokenEntity> toDelete = shareTokenRepository.getShareTokenEntitiesForDeletion(LocalDate.now());
         if (!toDelete.isEmpty()) {
             toDelete.forEach(token -> {
-                fileService.deleteShareSidecar(token);
+                fileDownloadService.deleteShareSidecar(token);
                 if (token.file != null) {
                     activityLogRepository.save(new ActivityLog(token.file, EventType.SHARE_EXPIRE, null, null));
                 }

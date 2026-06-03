@@ -50,16 +50,25 @@ public class AdminViewController {
     private static final Logger logger = LoggerFactory.getLogger(AdminViewController.class);
     private final ApplicationSettingsService applicationSettingsService;
     private final AnalyticsService analyticsService;
-    private final FileService fileService;
+    private final FileQueryService fileQueryService;
+    private final FileLifecycleService fileLifecycleService;
     private final PasteService pasteService;
     private final SessionService sessionService;
     private final SystemInfoService systemInfoService;
     private final NotificationService notificationService;
 
-    public AdminViewController(ApplicationSettingsService applicationSettingsService, AnalyticsService analyticsService, FileService fileService, PasteService pasteService, SessionService sessionService, SystemInfoService systemInfoService, NotificationService notificationService) {
+    public AdminViewController(ApplicationSettingsService applicationSettingsService,
+                               AnalyticsService analyticsService,
+                               FileQueryService fileQueryService,
+                               FileLifecycleService fileLifecycleService,
+                               PasteService pasteService,
+                               SessionService sessionService,
+                               SystemInfoService systemInfoService,
+                               NotificationService notificationService) {
         this.applicationSettingsService = applicationSettingsService;
         this.analyticsService = analyticsService;
-        this.fileService = fileService;
+        this.fileQueryService = fileQueryService;
+        this.fileLifecycleService = fileLifecycleService;
         this.pasteService = pasteService;
         this.sessionService = sessionService;
         this.systemInfoService = systemInfoService;
@@ -84,8 +93,8 @@ public class AdminViewController {
         int pageSize = clampSize(size);
 
         Page<FileEntityView> filesPage = showDeleted
-                ? fileService.getDeletedFilesWithDownloadCounts(PageRequest.of(pageNumber, pageSize), query)
-                : fileService.getFilesWithDownloadCounts(PageRequest.of(pageNumber, pageSize), query);
+                ? fileQueryService.getDeletedFilesWithDownloadCounts(PageRequest.of(pageNumber, pageSize), query)
+                : fileQueryService.getFilesWithDownloadCounts(PageRequest.of(pageNumber, pageSize), query);
         model.addAttribute("filesPage", filesPage);
         model.addAttribute("pageSize", pageSize);
         model.addAttribute("query", query == null ? "" : query);
@@ -122,7 +131,7 @@ public class AdminViewController {
 
     @GetMapping("/pastes/{uuid}/history")
     public String getPasteHistoryPage(@PathVariable String uuid, Model model) {
-        Upload fileEntity = fileService.getFile(uuid).orElse(null);
+        Upload fileEntity = fileQueryService.getFile(uuid).orElse(null);
         if (fileEntity == null || !(fileEntity instanceof Paste)) {
             return "redirect:/admin/pastes";
         }
@@ -192,7 +201,7 @@ public class AdminViewController {
         if (adminPassword != null && !adminPassword.isBlank()) {
             applicationSettingsService.setAdminPassword(adminPassword);
         }
-        FileService.RequesterInfo info = FileUtils.getRequesterInfo(request);
+        RequesterInfo info = FileUtils.getRequesterInfo(request);
         analyticsService.logEvent(EventType.ADMIN_SETTINGS_CHANGE, info.ipAddress(), info.userAgent());
         return "redirect:settings";
     }
@@ -212,7 +221,7 @@ public class AdminViewController {
         if (adminPassword != null && !adminPassword.isBlank()) {
             applicationSettingsService.setAdminPassword(adminPassword);
         }
-        FileService.RequesterInfo info = FileUtils.getRequesterInfo(request);
+        RequesterInfo info = FileUtils.getRequesterInfo(request);
         analyticsService.logEvent(EventType.ADMIN_SETTINGS_CHANGE, info.ipAddress(), info.userAgent());
         return ResponseEntity.ok("Settings saved");
     }
@@ -237,7 +246,7 @@ public class AdminViewController {
     @PostMapping("/password")
     public String checkAdminPassword(@RequestParam String password, HttpServletRequest request) {
         String adminPasswordHash = applicationSettingsService.getAdminPasswordHash();
-        FileService.RequesterInfo info = FileUtils.getRequesterInfo(request);
+        RequesterInfo info = FileUtils.getRequesterInfo(request);
 
         if (BCrypt.checkpw(password, adminPasswordHash)) {
             String adminAccessToken = sessionService.addAdminToken(UUID.randomUUID().toString());
@@ -260,7 +269,7 @@ public class AdminViewController {
 
     @PostMapping("/logout")
     public String logout(HttpServletRequest request) {
-        FileService.RequesterInfo info = FileUtils.getRequesterInfo(request);
+        RequesterInfo info = FileUtils.getRequesterInfo(request);
         analyticsService.logEvent(EventType.ADMIN_LOGOUT, info.ipAddress(), info.userAgent());
         sessionService.invalidateAdminSession(request);
         HttpSession session = request.getSession(false);
@@ -280,7 +289,7 @@ public class AdminViewController {
                                          @RequestParam(required = false, defaultValue = "false") boolean keepIndefinitely,
                                          @RequestParam(defaultValue = "files") String source,
                                          HttpServletRequest request) {
-        fileService.updateKeepIndefinitely(uuid, keepIndefinitely, request);
+        fileLifecycleService.updateKeepIndefinitely(uuid, keepIndefinitely, request);
         return "redirect:/admin/" + source;
     }
 
@@ -288,7 +297,7 @@ public class AdminViewController {
     public String toggleHidden(@PathVariable String uuid,
                                @RequestParam(defaultValue = "files") String source,
                                HttpServletRequest request) {
-        fileService.toggleHidden(uuid, request);
+        fileLifecycleService.toggleHidden(uuid, request);
         return "redirect:/admin/" + source;
     }
 
@@ -296,8 +305,8 @@ public class AdminViewController {
     public String deleteFile(@PathVariable String uuid,
                              @RequestParam(defaultValue = "files") String source,
                              HttpServletRequest request) {
-        FileService.RequesterInfo info = FileUtils.getRequesterInfo(request);
-        fileService.deleteFileFromDatabaseAndFileSystem(uuid, info.ipAddress(), info.userAgent());
+        RequesterInfo info = FileUtils.getRequesterInfo(request);
+        fileLifecycleService.deleteFileFromDatabaseAndFileSystem(uuid, info.ipAddress(), info.userAgent());
         return "redirect:/admin/" + source;
     }
 
@@ -337,7 +346,7 @@ public class AdminViewController {
 
         Sort sort = buildShareSort(sortBy, sortDir);
 
-        Page<ShareTokenEntity> tokensPage = fileService.getFilteredShareTokens(
+        Page<ShareTokenEntity> tokensPage = fileQueryService.getFilteredShareTokens(
                 LocalDate.now(), isPaste, noExpiry, unlimited,
                 (query == null || query.isBlank()) ? null : query,
                 PageRequest.of(pageNumber, pageSize, sort));
@@ -382,7 +391,7 @@ public class AdminViewController {
      */
     @PostMapping("/share-links/revoke/{id}")
     public String revokeShareToken(@PathVariable Long id, HttpServletRequest request) {
-        fileService.revokeShareToken(id, request);
+        fileLifecycleService.revokeShareToken(id, request);
         return "redirect:/admin/share-links";
     }
 

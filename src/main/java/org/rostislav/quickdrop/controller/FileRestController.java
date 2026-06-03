@@ -4,10 +4,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import org.rostislav.quickdrop.entity.ShareTokenEntity;
 import org.rostislav.quickdrop.entity.Upload;
+import org.rostislav.quickdrop.model.ShareTokenResult;
 import org.rostislav.quickdrop.model.UploadRequest;
 import org.rostislav.quickdrop.service.ApplicationSettingsService;
 import org.rostislav.quickdrop.service.AsyncFileMergeService;
-import org.rostislav.quickdrop.service.FileService;
+import org.rostislav.quickdrop.service.FileDownloadService;
+import org.rostislav.quickdrop.service.FileLifecycleService;
+import org.rostislav.quickdrop.service.FileQueryService;
 import org.rostislav.quickdrop.service.SessionService;
 import org.rostislav.quickdrop.util.FileUtils;
 import org.slf4j.Logger;
@@ -56,13 +59,22 @@ import static org.springframework.http.ResponseEntity.ok;
 public class FileRestController {
     private static final Logger logger = LoggerFactory.getLogger(FileRestController.class);
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-    private final FileService fileService;
+    private final FileQueryService fileQueryService;
+    private final FileLifecycleService fileLifecycleService;
+    private final FileDownloadService fileDownloadService;
     private final SessionService sessionService;
     private final AsyncFileMergeService asyncFileMergeService;
     private final ApplicationSettingsService applicationSettingsService;
 
-    public FileRestController(FileService fileService, SessionService sessionService, AsyncFileMergeService asyncFileMergeService, ApplicationSettingsService applicationSettingsService) {
-        this.fileService = fileService;
+    public FileRestController(FileQueryService fileQueryService,
+                              FileLifecycleService fileLifecycleService,
+                              FileDownloadService fileDownloadService,
+                              SessionService sessionService,
+                              AsyncFileMergeService asyncFileMergeService,
+                              ApplicationSettingsService applicationSettingsService) {
+        this.fileQueryService = fileQueryService;
+        this.fileLifecycleService = fileLifecycleService;
+        this.fileDownloadService = fileDownloadService;
         this.sessionService = sessionService;
         this.asyncFileMergeService = asyncFileMergeService;
         this.applicationSettingsService = applicationSettingsService;
@@ -174,7 +186,7 @@ public class FileRestController {
             expirationDate = null;
             numberOfDownloads = null;
         }
-        Upload fileEntity = fileService.getFile(uuid).orElse(null);
+        Upload fileEntity = fileQueryService.getFile(uuid).orElse(null);
         if (fileEntity == null) {
             return ResponseEntity.badRequest().body(Map.of("message", "File not found."));
         }
@@ -193,7 +205,7 @@ public class FileRestController {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
                         .body(Map.of("message", "Invalid file session."));
             }
-            FileService.ShareTokenResult result = fileService.generateShareToken(uuid, expirationDate, sessionToken, numberOfDownloads);
+            ShareTokenResult result = fileLifecycleService.generateShareToken(uuid, expirationDate, sessionToken, numberOfDownloads);
             tokenString = result.token().shareToken;
             sharePath = FileUtils.getSharePath(tokenString);
             if (result.shareKey() != null) {
@@ -204,11 +216,11 @@ public class FileRestController {
                 preparingMessage = true;
             }
         } else {
-            ShareTokenEntity token = fileService.generateShareToken(uuid, expirationDate, numberOfDownloads);
+            ShareTokenEntity token = fileLifecycleService.generateShareToken(uuid, expirationDate, numberOfDownloads);
             tokenString = token.shareToken;
             sharePath = FileUtils.getSharePath(tokenString);
         }
-        fileService.logShareCreate(fileEntity, request);
+        fileLifecycleService.logShareCreate(fileEntity, request);
         return ok(Map.of(
                 "token", tokenString,
                 "sharePath", sharePath,
@@ -234,7 +246,7 @@ public class FileRestController {
     @GetMapping("/download/{token}")
     public ResponseEntity<StreamingResponseBody> downloadFile(@PathVariable String token, HttpServletRequest request) {
         try {
-            Optional<ShareTokenEntity> shareTokenEntity = fileService.getShareTokenEntityByToken(token);
+            Optional<ShareTokenEntity> shareTokenEntity = fileQueryService.getShareTokenEntityByToken(token);
             if (shareTokenEntity.isEmpty() || !validateShareToken(shareTokenEntity.get())) {
                 return ResponseEntity.status(HttpStatus.FOUND)
                         .location(URI.create("/share/" + token))
@@ -246,7 +258,7 @@ public class FileRestController {
                 return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build();
             }
             Upload fileEntity = tokenEntity.file;
-            StreamingResponseBody responseBody = fileService.streamFileByShareToken(tokenEntity, request);
+            StreamingResponseBody responseBody = fileDownloadService.streamFileByShareToken(tokenEntity, request);
 
             if (responseBody == null) {
                 return ResponseEntity.status(HttpStatus.FOUND)

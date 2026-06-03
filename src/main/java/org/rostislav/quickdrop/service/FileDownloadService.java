@@ -26,6 +26,13 @@ import java.util.Locale;
 
 import static org.rostislav.quickdrop.util.FileUtils.*;
 
+/**
+ * Streams file content to the browser — direct downloads, in-browser previews, and
+ * share-token downloads.
+ *
+ * <p>Handles both plaintext and AES-encrypted files, SVG rasterization for preview,
+ * and share-token lifecycle (download counter decrement, expiry, sidecar cleanup).
+ */
 @Service
 public class FileDownloadService {
     private static final Logger logger = LoggerFactory.getLogger(FileDownloadService.class);
@@ -57,6 +64,12 @@ public class FileDownloadService {
         this.fileQueryService = fileQueryService;
     }
 
+    /**
+     * Streams the file identified by {@code uuid} as a browser download attachment.
+     *
+     * <p>For encrypted files the password is retrieved from the caller's file-session token.
+     * Returns 404 for unknown or soft-deleted files; 500 if decryption fails.
+     */
     public ResponseEntity<StreamingResponseBody> downloadFile(String uuid, HttpServletRequest request) {
         Upload fileEntity = uploadRepository.findByUUID(uuid).orElse(null);
         if (fileEntity == null) {
@@ -91,6 +104,16 @@ public class FileDownloadService {
         return createFileDownloadResponse(inputStream, fileEntity, request);
     }
 
+    /**
+     * Streams the file identified by {@code uuid} for in-browser preview.
+     *
+     * <p>SVG files are rasterized to PNG before streaming. Returns 428 (Precondition Required)
+     * when the file exceeds the configured preview size limit unless {@code manualOverride}
+     * is {@code true}. Strict security headers are applied to prevent the browser from
+     * executing embedded scripts in the streamed content.
+     *
+     * @param manualOverride when {@code true}, bypasses the file-size preview limit
+     */
     public ResponseEntity<StreamingResponseBody> previewFile(String uuid, HttpServletRequest request, boolean manualOverride) {
         Upload fileEntity = uploadRepository.findByUUID(uuid).orElse(null);
         if (fileEntity == null) {
@@ -159,6 +182,17 @@ public class FileDownloadService {
                 .body(body);
     }
 
+    /**
+     * Returns a {@link StreamingResponseBody} that streams the file for the given share token,
+     * then decrements its download counter (or deletes it when exhausted).
+     *
+     * <p>For password-encrypted shares the re-encrypted sidecar is read using the per-share
+     * key from the HTTP session. If the sidecar is missing, the broken token is deleted and
+     * {@code null} is returned. Evicts {@code adminFiles} and {@code analytics} caches so
+     * dashboards reflect the updated download count.
+     *
+     * @return the streaming body, or {@code null} if the token is invalid or the sidecar is missing
+     */
     @CacheEvict(value = {"adminFiles", "analytics"}, allEntries = true)
     public StreamingResponseBody streamFileByShareToken(ShareTokenEntity shareTokenEntity, HttpServletRequest request) {
         if (!validateShareToken(shareTokenEntity)) {
@@ -213,6 +247,12 @@ public class FileDownloadService {
         }
     }
 
+    /**
+     * Deletes the re-encrypted sidecar file for {@code token}, if one exists.
+     *
+     * <p>No-op for tokens without a {@code shareKeyHash} — unencrypted shares have no sidecar.
+     * Called on token expiry, revocation, or download exhaustion.
+     */
     public void deleteShareSidecar(ShareTokenEntity token) {
         if (token.shareKeyHash == null || token.file == null) return;
         Path sidecar = Path.of(applicationSettingsService.getFileStoragePath(),

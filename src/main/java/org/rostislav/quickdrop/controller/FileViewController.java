@@ -20,7 +20,6 @@ import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBo
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.web.util.UriUtils;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
@@ -28,22 +27,9 @@ import java.util.UUID;
 import static org.rostislav.quickdrop.util.FileUtils.*;
 
 /**
- * Serves all user-facing file and paste views under {@code /file}.
+ * Serves all user-facing file views under {@code /file}.
  *
- * <p>Handles the full lifecycle of files and pastes from the browser:
- * <ul>
- *   <li>Upload page ({@code GET /file/upload})</li>
- *   <li>New/edit paste pages and form submissions ({@code /file/paste/**})</li>
- *   <li>Public file list with search and pagination ({@code GET /file/list})</li>
- *   <li>File detail page with preview type detection ({@code GET /file/{uuid}})</li>
- *   <li>In-browser file preview streaming ({@code GET /file/preview/{uuid}})</li>
- *   <li>Download event logging ({@code POST /file/download/log/{uuid}})</li>
- *   <li>File history ({@code GET /file/history/{uuid}})</li>
- *   <li>Password check and password entry page ({@code /file/password/**})</li>
- *   <li>File download ({@code GET /file/download/{uuid}})</li>
- *   <li>Extend, delete, hide, and keep-indefinitely mutations</li>
- *   <li>Search redirect ({@code GET /file/search})</li>
- * </ul>
+ * <p>Paste CRUD routes ({@code /file/paste/**}) are handled by {@link PasteViewController}.
  *
  * <p>Delete is permitted only for admin sessions or for sessions that hold a
  * valid file-level session token (password-protected files). Hide and
@@ -92,138 +78,6 @@ public class FileViewController {
         return "upload";
     }
 
-    @GetMapping("/paste/new")
-    public String showPastePage(Model model, HttpServletRequest request) {
-        if (!applicationSettingsService.isPastebinEnabled() && !sessionService.hasValidAdminSession(request)) {
-            return "redirect:/";
-        }
-
-        model.addAttribute("maxFileLifeTime", applicationSettingsService.getMaxFileLifeTime());
-        model.addAttribute("isEditMode", false);
-        model.addAttribute("isImmutable", false);
-        model.addAttribute("pasteTitle", "");
-        model.addAttribute("pasteContent", "");
-        model.addAttribute("pasteSyntax", "text");
-        model.addAttribute("pasteFormAction", "/file/paste");
-        model.addAttribute("pasteCancelUrl", "/file/upload");
-        return "pastebin";
-    }
-
-    @GetMapping("/paste/edit/{uuid}")
-    public String showPasteEditPage(@PathVariable String uuid, Model model, HttpServletRequest request) {
-        if (!applicationSettingsService.isPastebinEnabled() && !sessionService.hasValidAdminSession(request)) {
-            return "redirect:/";
-        }
-
-        Upload fileEntity = fileQueryService.getFile(uuid).orElse(null);
-        if (fileEntity == null) {
-            return "redirect:/file/list";
-        }
-        if (!(fileEntity instanceof Paste paste)) {
-            return "redirect:/file/" + uuid;
-        }
-
-        // Immutable pastes cannot be edited at all
-        if (paste.immutable) {
-            return "redirect:/file/" + uuid;
-        }
-
-        // Require edit authorization (password check for pastes that have a password)
-        if (!fileQueryService.isAuthorizedToEdit(uuid, request)) {
-            return "redirect:/file/password/" + uuid + "?editMode=true";
-        }
-
-        String content = pasteService.getPasteContent(uuid, request);
-        if (content == null) {
-            return "redirect:/file/" + uuid;
-        }
-
-        model.addAttribute("maxFileLifeTime", applicationSettingsService.getMaxFileLifeTime());
-        model.addAttribute("isEditMode", true);
-        model.addAttribute("pasteUuid", uuid);
-        model.addAttribute("pasteTitle", fileEntity.name == null ? "" : fileEntity.name.replaceFirst("(?i)\\.(txt|md)$", ""));
-        model.addAttribute("pasteContent", content);
-        model.addAttribute("pasteSyntax", fileEntity.name != null && fileEntity.name.toLowerCase(Locale.ROOT).endsWith(".md") ? "markdown" : "text");
-        model.addAttribute("keepIndefinitely", fileEntity.keepIndefinitely);
-        model.addAttribute("isImmutable", false); // edit page only reached when not immutable
-        model.addAttribute("pasteFormAction", "/file/paste/edit/" + uuid);
-        model.addAttribute("pasteCancelUrl", "/file/" + uuid);
-        return "pastebin";
-    }
-
-    @PostMapping("/paste")
-    public String createPaste(@RequestParam(name = "title", required = false) String title,
-                              @RequestParam(name = "content", required = false) String content,
-                              @RequestParam(name = "syntax", defaultValue = "markdown") String syntax,
-                              @RequestParam(name = "keepIndefinitely", defaultValue = "false") boolean keepIndefinitely,
-                              @RequestParam(name = "password", required = false) String password,
-                              @RequestParam(name = "immutable", defaultValue = "false") boolean immutable,
-                              @RequestParam(name = "editOnly", defaultValue = "false") boolean editOnly,
-                              HttpServletRequest request,
-                              RedirectAttributes redirectAttributes) {
-        if (!applicationSettingsService.isPastebinEnabled() && !sessionService.hasValidAdminSession(request)) {
-            return "redirect:/";
-        }
-        if (!applicationSettingsService.isUploadPasswordEnabled() && password != null && !password.isBlank()) {
-            redirectAttributes.addFlashAttribute("pasteError", "Upload passwords are disabled.");
-            return "redirect:/file/paste/new";
-        }
-
-        try {
-            Upload created = pasteService.createPaste(title, content, syntax, keepIndefinitely, password, immutable, editOnly, request);
-            if (created == null) {
-                redirectAttributes.addFlashAttribute("pasteError", "Could not create paste.");
-                return "redirect:/file/paste/new";
-            }
-            return "redirect:/file/" + created.uuid;
-        } catch (IllegalArgumentException e) {
-            redirectAttributes.addFlashAttribute("pasteError", e.getMessage());
-            return "redirect:/file/paste/new";
-        } catch (IOException e) {
-            logger.error("Failed to create paste: {}", e.getMessage());
-            redirectAttributes.addFlashAttribute("pasteError", "Could not create paste.");
-            return "redirect:/file/paste/new";
-        }
-    }
-
-    @PostMapping("/paste/edit/{uuid}")
-    public String updatePaste(@PathVariable String uuid,
-                              @RequestParam(name = "title", required = false) String title,
-                              @RequestParam(name = "content", required = false) String content,
-                              @RequestParam(name = "syntax", defaultValue = "markdown") String syntax,
-                              @RequestParam(name = "keepIndefinitely", defaultValue = "false") boolean keepIndefinitely,
-                              @RequestParam(name = "immutable", defaultValue = "false") boolean setImmutable,
-                              HttpServletRequest request,
-                              RedirectAttributes redirectAttributes) {
-        if (!applicationSettingsService.isPastebinEnabled() && !sessionService.hasValidAdminSession(request)) {
-            return "redirect:/";
-        }
-
-        Upload upload = fileQueryService.getFile(uuid).orElse(null);
-        if (upload instanceof Paste paste && paste.immutable) {
-            return "redirect:/file/" + uuid;
-        }
-        if (!fileQueryService.isAuthorizedToEdit(uuid, request)) {
-            return "redirect:/file/password/" + uuid + "?editMode=true";
-        }
-
-        try {
-            Paste updated = pasteService.updatePaste(uuid, title, content, syntax, keepIndefinitely, setImmutable, request);
-            if (updated == null) {
-                redirectAttributes.addFlashAttribute("pasteError", "Could not update paste.");
-                return "redirect:/file/paste/edit/" + uuid;
-            }
-            return "redirect:/file/" + updated.uuid;
-        } catch (IllegalArgumentException e) {
-            redirectAttributes.addFlashAttribute("pasteError", e.getMessage());
-            return "redirect:/file/paste/edit/" + uuid;
-        } catch (IOException e) {
-            logger.error("Failed to update paste {}: {}", uuid, e.getMessage());
-            redirectAttributes.addFlashAttribute("pasteError", "Could not update paste.");
-            return "redirect:/file/paste/edit/" + uuid;
-        }
-    }
-
     @GetMapping("/list")
     public String listFiles(@RequestParam(name = "page", defaultValue = "0") int page,
                             @RequestParam(name = "size", defaultValue = "20") int size,
@@ -246,6 +100,18 @@ public class FileViewController {
         return "listFiles";
     }
 
+    /**
+     * Renders the detail page for a file or paste.
+     *
+     * <p>Pastes and files share this route ({@code /file/{uuid}}) so they get the same
+     * URL scheme. The method dispatches to either the {@code pasteView} or {@code fileView}
+     * template based on the entity type. Soft-deleted records are only accessible to admin
+     * sessions; deleted pastes render with empty content rather than attempting a file read.
+     *
+     * <p>The {@code fileEntity} request attribute is pre-populated by
+     * {@link org.rostislav.quickdrop.interceptor.FilePasswordInterceptor} when the file
+     * requires a password and the user has already authenticated.
+     */
     @GetMapping("/{uuid}")
     public String filePage(@PathVariable String uuid, Model model, HttpServletRequest request) {
         Upload fileEntity = (Upload) request.getAttribute("fileEntity");
@@ -361,6 +227,13 @@ public class FileViewController {
     }
 
 
+    /**
+     * Validates the submitted password and, on success, binds a file-session token to the
+     * HTTP session so subsequent requests can access the file without re-entering the password.
+     *
+     * <p>In edit mode ({@code editMode=true}) a successful login redirects directly to the
+     * paste edit page rather than the file detail page.
+     */
     @PostMapping("/password")
     public String checkPassword(@RequestParam("uuid") String uuid,
                                 @RequestParam("password") String password,

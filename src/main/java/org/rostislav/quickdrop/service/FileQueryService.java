@@ -23,6 +23,17 @@ import java.util.Optional;
 
 import static org.rostislav.quickdrop.util.DataValidator.safeNumber;
 
+/**
+ * Read-only query service for files, pastes, and share tokens.
+ *
+ * <p>All methods are non-mutating — no database writes, no cache evictions. This
+ * service populates the {@code publicFiles}, {@code adminFiles}, and
+ * {@code adminDeletedFiles} caches via {@link org.springframework.cache.annotation.Cacheable}.
+ *
+ * <p>Authorization helpers ({@link #isAuthorizedForFile}, {@link #isAuthorizedToEdit})
+ * centralise session-token validation so controllers and interceptors don't duplicate
+ * the logic.
+ */
 @Service
 public class FileQueryService {
     private final UploadRepository uploadRepository;
@@ -46,10 +57,19 @@ public class FileQueryService {
         this.sessionService = sessionService;
     }
 
+    /**
+     * Returns the upload (file or paste) with the given UUID, or empty if not found.
+     */
     public Optional<Upload> getFile(String uuid) {
         return uploadRepository.findByUUID(uuid);
     }
 
+    /**
+     * Returns {@code true} if the current request may view the file identified by {@code uuid}.
+     *
+     * <p>Edit-only files are always viewable — the restriction is on editing, not reading.
+     * Password-protected files require a valid file-session token in the HTTP session.
+     */
     public boolean isAuthorizedForFile(String uuid, HttpServletRequest request) {
         Upload upload = uploadRepository.findByUUID(uuid).orElse(null);
         if (upload == null) {
@@ -65,6 +85,12 @@ public class FileQueryService {
         return sessionToken != null && sessionService.validateFileSessionToken(sessionToken.toString(), uuid);
     }
 
+    /**
+     * Returns {@code true} if the current request may edit the file identified by {@code uuid}.
+     *
+     * <p>Immutable files always return {@code false} regardless of session state. For
+     * password-protected files a valid file-session token must be present in the HTTP session.
+     */
     public boolean isAuthorizedToEdit(String uuid, HttpServletRequest request) {
         Upload upload = uploadRepository.findByUUID(uuid).orElse(null);
         if (upload == null) {
@@ -128,6 +154,15 @@ public class FileQueryService {
         return shareTokenRepository.findByShareToken(token);
     }
 
+    /**
+     * Returns a filtered, paginated view of share tokens.
+     *
+     * @param today     reference date for expiry checks; pass {@link LocalDate#now()}
+     * @param isPaste   when non-null, limits to tokens for pastes ({@code true}) or files ({@code false})
+     * @param noExpiry  when {@code true}, includes only tokens with no expiration date
+     * @param unlimited when {@code true}, includes only tokens with an unlimited download allowance
+     * @param query     optional name/UUID fragment; {@code null} returns all matching records
+     */
     public Page<ShareTokenEntity> getFilteredShareTokens(LocalDate today, Boolean isPaste, boolean noExpiry,
                                                          boolean unlimited, String query, Pageable pageable) {
         return shareTokenRepository.findFiltered(today, isPaste, noExpiry, unlimited, query, pageable);
@@ -137,12 +172,25 @@ public class FileQueryService {
         return Files.exists(Path.of(applicationSettingsService.getFileStoragePath(), uuid));
     }
 
+    /**
+     * Returns {@code true} when the upload should be stored AES-encrypted on disk.
+     *
+     * <p>Edit-only pastes are never encrypted even when a password is provided — the server
+     * must be able to read and serve their content without a per-request password.
+     */
     public boolean shouldEncrypt(UploadRequest request) {
         return request.password != null && !request.password.isBlank()
                 && applicationSettingsService.isEncryptionEnabled()
                 && !request.editOnly;
     }
 
+    /**
+     * Retrieves the plaintext password bound to the caller's file-session token, or
+     * {@code null} if no valid token is present in the HTTP session.
+     *
+     * <p>Package-private — used by {@link FileDownloadService} to decrypt AES-encrypted
+     * files without exposing the session-token internals beyond this package.
+     */
     String getFilePasswordFromSessionToken(HttpServletRequest request) {
         Object sessionToken = request.getSession().getAttribute("file-session-token");
         if (sessionToken == null) {

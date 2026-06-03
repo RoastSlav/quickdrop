@@ -27,6 +27,15 @@ import static org.rostislav.quickdrop.util.DataValidator.validateObjects;
 import static org.rostislav.quickdrop.util.FileUtils.generateHashedToken;
 import static org.rostislav.quickdrop.util.FileUtils.getRequesterInfo;
 
+/**
+ * Write service for file and paste lifecycle — creation, soft-deletion, field updates,
+ * and share-token management.
+ *
+ * <p>Most mutating methods carry {@link CacheEvict} annotations to keep the read-side
+ * caches (populated by {@link FileQueryService}) consistent after writes.
+ * Audit events ({@link org.rostislav.quickdrop.entity.ActivityLog}) and notifications
+ * are fired for every significant state change.
+ */
 @Service
 public class FileLifecycleService {
     private static final Logger logger = LoggerFactory.getLogger(FileLifecycleService.class);
@@ -61,6 +70,14 @@ public class FileLifecycleService {
         this.shareEncryptionService = shareEncryptionService;
     }
 
+    /**
+     * Deletes the file at the storage path identified by {@code uuid}.
+     *
+     * <p>A missing file is treated as a successful deletion (idempotent) so callers do
+     * not need to check existence beforehand.
+     *
+     * @return {@code true} if the file was deleted or was already absent; {@code false} on I/O error
+     */
     public boolean deleteFileFromFileSystem(String uuid) {
         Path path = Path.of(applicationSettingsService.getFileStoragePath(), uuid);
         try {
@@ -77,6 +94,14 @@ public class FileLifecycleService {
         return true;
     }
 
+    /**
+     * Deletes the file from both the filesystem and the database (soft-delete) in one call.
+     *
+     * <p>The filesystem deletion is attempted first; if it fails, the database record is left
+     * intact and {@code false} is returned so the caller can surface the error to the user.
+     *
+     * @return {@code true} if both the filesystem and database operations succeeded
+     */
     @Transactional
     @CacheEvict(value = {"publicFiles", "adminFiles", "adminDeletedFiles", "adminPastes", "adminDeletedPastes", "analytics"}, allEntries = true)
     public boolean deleteFileFromDatabaseAndFileSystem(String uuid, String ipAddress, String userAgent) {
@@ -95,12 +120,28 @@ public class FileLifecycleService {
         return true;
     }
 
+    /**
+     * Soft-deletes the upload identified by {@code uuid} without recording requester info
+     * in the audit log. Used by scheduled cleanup jobs where no HTTP context is available.
+     *
+     * @see #removeFileFromDatabase(String, String, String)
+     */
     @Transactional
     @CacheEvict(value = {"publicFiles", "adminFiles", "adminDeletedFiles", "adminPastes", "adminDeletedPastes", "analytics"}, allEntries = true)
     public boolean removeFileFromDatabase(String uuid) {
         return removeFileFromDatabase(uuid, null, null);
     }
 
+    /**
+     * Soft-deletes the upload identified by {@code uuid}, writes a deletion audit log entry,
+     * fires a deletion notification, and purges all share tokens (plus any sidecars) for the file.
+     *
+     * <p>If the record is already soft-deleted this is a no-op that returns {@code true}.
+     *
+     * @param ipAddress requester IP for the audit log; may be {@code null}
+     * @param userAgent requester User-Agent for the audit log; may be {@code null}
+     * @return {@code true} if the file was found (and soft-deleted or already deleted)
+     */
     @Transactional
     @CacheEvict(value = {"publicFiles", "adminFiles", "adminDeletedFiles", "adminPastes", "adminDeletedPastes", "analytics"}, allEntries = true)
     public boolean removeFileFromDatabase(String uuid, String ipAddress, String userAgent) {
@@ -168,6 +209,16 @@ public class FileLifecycleService {
         return upload;
     }
 
+    /**
+     * Sets the {@code keepIndefinitely} flag for the file identified by {@code uuid}.
+     *
+     * <p>When {@code keepIndefinitely} is {@code false}, the upload date is reset to today
+     * via {@link #extendFile} so the file begins a fresh retention window rather than
+     * expiring immediately if it was already old.
+     *
+     * <p>Blocked when the setting is admin-only and the request lacks a valid admin session;
+     * in that case the unchanged upload is returned.
+     */
     @CacheEvict(value = {"publicFiles", "adminFiles", "adminDeletedFiles", "adminPastes", "adminDeletedPastes", "analytics"}, allEntries = true)
     public Upload updateKeepIndefinitely(String uuid, boolean keepIndefinitely, HttpServletRequest request) {
         Optional<Upload> referenceById = uploadRepository.findByUUID(uuid);
@@ -192,10 +243,17 @@ public class FileLifecycleService {
         return upload;
     }
 
+    /**
+     * Records a {@link EventType#SHARE_CREATE} event for audit and notification purposes.
+     */
     public void logShareCreate(Upload upload, HttpServletRequest request) {
         logHistory(upload, request, EventType.SHARE_CREATE);
     }
 
+    /**
+     * Revokes the share token with the given ID: deletes its sidecar file (if present),
+     * fires a {@link EventType#SHARE_REVOKE} audit event, and removes the token record.
+     */
     public void revokeShareToken(Long tokenId, HttpServletRequest request) {
         shareTokenRepository.findById(tokenId).ifPresent(token -> {
             fileDownloadService.deleteShareSidecar(token);
@@ -227,6 +285,15 @@ public class FileLifecycleService {
         return saved;
     }
 
+    /**
+     * Creates (or returns an existing) share token for the file identified by {@code uuid}.
+     *
+     * <p>When both {@code tokenExpirationDate} and {@code numberOfDownloads} are {@code null},
+     * an existing unlimited token for the file is reused (with a refreshed {@code createdAt})
+     * rather than minting a new one, to avoid link proliferation.
+     *
+     * @throws IllegalArgumentException if no file with the given UUID exists
+     */
     public ShareTokenEntity generateShareToken(String uuid, LocalDate tokenExpirationDate, Integer numberOfDownloads) {
         Optional<Upload> optionalUpload = uploadRepository.findByUUID(uuid);
         if (optionalUpload.isEmpty()) {
@@ -249,6 +316,20 @@ public class FileLifecycleService {
         return shareToken;
     }
 
+    /**
+     * Creates a share token for an AES-encrypted file, then kicks off background
+     * re-encryption of a sidecar copy keyed with a fresh per-share key.
+     *
+     * <p>The plaintext password is read from the HTTP session on the request thread
+     * <em>before</em> the background task starts — the session must not be accessed from
+     * another thread. The token's {@code sidecarReady} flag is {@code false} until the
+     * background task completes; the caller should surface this to the UI for large files.
+     *
+     * @param sessionToken the file-session token used to retrieve the encryption password
+     * @return a {@link ShareTokenResult} containing the new token and the per-share key;
+     *         the key must be embedded in the share URL so the recipient can decrypt the sidecar
+     * @throws IllegalArgumentException if no file with the given UUID exists
+     */
     public ShareTokenResult generateShareToken(String uuid, LocalDate tokenExpirationDate, String sessionToken, Integer numberOfDownloads) {
         Optional<Upload> optionalUpload = uploadRepository.findByUUID(uuid);
         if (optionalUpload.isEmpty()) {

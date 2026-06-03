@@ -6,12 +6,7 @@ import org.rostislav.quickdrop.entity.ShareTokenEntity;
 import org.rostislav.quickdrop.entity.Upload;
 import org.rostislav.quickdrop.model.ShareTokenResult;
 import org.rostislav.quickdrop.model.UploadRequest;
-import org.rostislav.quickdrop.service.ApplicationSettingsService;
-import org.rostislav.quickdrop.service.AsyncFileMergeService;
-import org.rostislav.quickdrop.service.FileDownloadService;
-import org.rostislav.quickdrop.service.FileLifecycleService;
-import org.rostislav.quickdrop.service.FileQueryService;
-import org.rostislav.quickdrop.service.SessionService;
+import org.rostislav.quickdrop.service.*;
 import org.rostislav.quickdrop.util.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,7 +46,7 @@ import static org.springframework.http.ResponseEntity.ok;
  *       {@code /share/{token}} when the token is invalid, exhausted, or the sidecar
  *       file is missing; the missing-sidecar path also deletes the broken token so the
  *       share page renders the invalid view on arrival. The download counter is
- *       decremented atomically by {@link FileService#streamFileByShareToken}.</li>
+ *       decremented atomically by {@link FileDownloadService#streamFileByShareToken}.</li>
  * </ul>
  */
 @RestController

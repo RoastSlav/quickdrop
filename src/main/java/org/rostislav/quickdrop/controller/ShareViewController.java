@@ -5,7 +5,7 @@ import org.rostislav.quickdrop.entity.ShareTokenEntity;
 import org.rostislav.quickdrop.entity.Upload;
 import org.rostislav.quickdrop.model.FileEntityView;
 import org.rostislav.quickdrop.service.AnalyticsService;
-import org.rostislav.quickdrop.service.FileService;
+import org.rostislav.quickdrop.service.FileQueryService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -38,12 +38,12 @@ import static org.rostislav.quickdrop.util.FileUtils.validateShareToken;
 @RequestMapping("/share")
 public class ShareViewController {
     private static final Logger logger = LoggerFactory.getLogger(ShareViewController.class);
-    private final FileService fileService;
+    private final FileQueryService fileQueryService;
     private final AnalyticsService analyticsService;
     private final PasswordEncoder passwordEncoder;
 
-    public ShareViewController(FileService fileService, AnalyticsService analyticsService, PasswordEncoder passwordEncoder) {
-        this.fileService = fileService;
+    public ShareViewController(FileQueryService fileQueryService, AnalyticsService analyticsService, PasswordEncoder passwordEncoder) {
+        this.fileQueryService = fileQueryService;
         this.analyticsService = analyticsService;
         this.passwordEncoder = passwordEncoder;
     }
@@ -67,7 +67,7 @@ public class ShareViewController {
                                  @RequestParam(required = false) String key,
                                  HttpServletRequest request,
                                  Model model) {
-        Optional<ShareTokenEntity> tokenEntity = fileService.getShareTokenEntityByToken(token);
+        Optional<ShareTokenEntity> tokenEntity = fileQueryService.getShareTokenEntityByToken(token);
 
         if (tokenEntity.isEmpty() || !validateShareToken(tokenEntity.get())) {
             return "invalid-share-link";

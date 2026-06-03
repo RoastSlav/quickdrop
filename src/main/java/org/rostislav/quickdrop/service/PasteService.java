@@ -30,7 +30,7 @@ import java.time.LocalDate;
 import java.util.Locale;
 import java.util.Optional;
 
-import static org.rostislav.quickdrop.service.FileService.RequesterInfo;
+import org.rostislav.quickdrop.model.RequesterInfo;
 import static org.rostislav.quickdrop.util.FileUtils.getRequesterInfo;
 
 /**

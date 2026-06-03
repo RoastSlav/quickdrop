@@ -3,7 +3,7 @@ package org.rostislav.quickdrop.interceptor;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.rostislav.quickdrop.entity.Upload;
-import org.rostislav.quickdrop.service.FileService;
+import org.rostislav.quickdrop.service.FileQueryService;
 import org.rostislav.quickdrop.service.SessionService;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
@@ -24,11 +24,11 @@ import java.util.Map;
 @Component
 public class FilePasswordInterceptor implements HandlerInterceptor {
 
-    private final FileService fileService;
+    private final FileQueryService fileQueryService;
     private final SessionService sessionService;
 
-    public FilePasswordInterceptor(FileService fileService, SessionService sessionService) {
-        this.fileService = fileService;
+    public FilePasswordInterceptor(FileQueryService fileQueryService, SessionService sessionService) {
+        this.fileQueryService = fileQueryService;
         this.sessionService = sessionService;
     }
 
@@ -59,7 +59,7 @@ public class FilePasswordInterceptor implements HandlerInterceptor {
             return false;
         }
 
-        Upload upload = fileService.getFile(uuid).orElse(null);
+        Upload upload = fileQueryService.getFile(uuid).orElse(null);
         if (upload == null) {
             response.sendError(HttpServletResponse.SC_NOT_FOUND, "File not found.");
             return false;

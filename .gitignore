@@ -43,3 +43,6 @@ build/
 *.log
 .claude/
 RELEASE_NOTES_*.md
+
+### Graphify ###
+graphify-out/

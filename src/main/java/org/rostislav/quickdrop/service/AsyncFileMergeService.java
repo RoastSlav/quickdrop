@@ -52,16 +52,20 @@ public class AsyncFileMergeService {
     });
     private final ApplicationSettingsService applicationSettingsService;
     private final EncryptionService encryptionService;
-    private final FileService fileService;
+    private final FileQueryService fileQueryService;
+    private final FileLifecycleService fileLifecycleService;
     private final UploadRepository uploadRepository;
     private final File tempDir = new File(System.getProperty("java.io.tmpdir"));
 
     public AsyncFileMergeService(ApplicationSettingsService applicationSettingsService,
                                  EncryptionService encryptionService,
-                                 FileService fileService, UploadRepository uploadRepository) {
+                                 FileQueryService fileQueryService,
+                                 FileLifecycleService fileLifecycleService,
+                                 UploadRepository uploadRepository) {
         this.applicationSettingsService = applicationSettingsService;
         this.encryptionService = encryptionService;
-        this.fileService = fileService;
+        this.fileQueryService = fileQueryService;
+        this.fileLifecycleService = fileLifecycleService;
         this.uploadRepository = uploadRepository;
         ttlSweeper.scheduleAtFixedRate(this::evictStaleTasks, TASK_TTL_MINUTES, TASK_TTL_MINUTES, TimeUnit.MINUTES);
     }
@@ -169,7 +173,7 @@ public class AsyncFileMergeService {
         public void run() {
             File finalFile = Paths.get(applicationSettingsService.getFileStoragePath(), uuid).toFile();
 
-            try (OutputStream finalOut = fileService.shouldEncrypt(request) ?
+            try (OutputStream finalOut = fileQueryService.shouldEncrypt(request) ?
                     encryptionService.getEncryptedOutputStream(finalFile, request.password) :
                     new BufferedOutputStream(new FileOutputStream(finalFile, true))) {
 
@@ -191,7 +195,7 @@ public class AsyncFileMergeService {
                 }
                 logger.info("All {} chunks merged for file {}", request.totalChunks, request.fileName);
 
-                Upload upload = fileService.saveFile(finalFile, request, uuid);
+                Upload upload = fileLifecycleService.saveFile(finalFile, request, uuid);
                 if (upload != null) {
                     logger.info("File {} saved successfully with UUID {}", request.fileName, upload.uuid);
                 } else {

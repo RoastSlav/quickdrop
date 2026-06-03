@@ -27,12 +27,12 @@ import static org.rostislav.quickdrop.util.FileUtils.formatFileSize;
  */
 @Service
 public class AnalyticsService {
-    private final FileService fileService;
+    private final FileQueryService fileQueryService;
     private final PasteService pasteService;
     private final ActivityLogRepository activityLogRepository;
 
-    public AnalyticsService(FileService fileService, PasteService pasteService, ActivityLogRepository activityLogRepository) {
-        this.fileService = fileService;
+    public AnalyticsService(FileQueryService fileQueryService, PasteService pasteService, ActivityLogRepository activityLogRepository) {
+        this.fileQueryService = fileQueryService;
         this.pasteService = pasteService;
         this.activityLogRepository = activityLogRepository;
     }
@@ -49,8 +49,8 @@ public class AnalyticsService {
     @Cacheable("analytics")
     public AnalyticsDataView getAnalytics() {
         long totalDownloads = activityLogRepository.countByEventTypeIn(List.of(DOWNLOAD, SHARE_DOWNLOAD));
-        long totalSpaceUsed = fileService.calculateTotalSpaceUsed();
-        long fileCount = fileService.getFileCount();
+        long totalSpaceUsed = fileQueryService.calculateTotalSpaceUsed();
+        long fileCount = fileQueryService.getFileCount();
 
         String averageFileSize = "0 B";
         if (fileCount > 0) {

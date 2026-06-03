@@ -3,7 +3,7 @@ package org.rostislav.quickdrop.util;
 import jakarta.servlet.http.HttpServletRequest;
 import org.rostislav.quickdrop.entity.ShareTokenEntity;
 import org.rostislav.quickdrop.entity.Upload;
-import org.rostislav.quickdrop.service.FileService;
+import org.rostislav.quickdrop.model.RequesterInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
@@ -104,7 +104,7 @@ public class FileUtils {
      * @param request the current HTTP request
      * @return a record containing the resolved IP and User-Agent string
      */
-    public static FileService.RequesterInfo getRequesterInfo(HttpServletRequest request) {
+    public static RequesterInfo getRequesterInfo(HttpServletRequest request) {
         String forwardedFor = request.getHeader("X-Forwarded-For");
         String realIp = request.getHeader("X-Real-IP");
         String ipAddress;
@@ -118,7 +118,7 @@ public class FileUtils {
         }
 
         String userAgent = request.getHeader(HttpHeaders.USER_AGENT);
-        return new FileService.RequesterInfo(ipAddress, userAgent);
+        return new RequesterInfo(ipAddress, userAgent);
     }
 
     /**

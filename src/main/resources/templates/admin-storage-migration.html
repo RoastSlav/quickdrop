@@ -103,7 +103,7 @@
                 Configure S3 credentials in Settings before migrating.
             </div>
 
-            <form action="/admin/storage-migration/start" method="post" th:if="${s3Configured}">
+            <form action="/admin/storage-migration/start" id="migrationForm" method="post" th:if="${s3Configured}">
                 <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden"/>
 
                 <div class="flex flex-col sm:flex-row gap-4 items-start sm:items-end">
@@ -115,11 +115,27 @@
                         </select>
                     </div>
                     <button class="btn btn-gradient"
+                            id="startBtn"
                             th:disabled="${state.status.name() == 'RUNNING'}"
-                            type="submit">
+                            onclick="startMigration()"
+                            type="button">
                         <span th:if="${state.status.name() == 'RUNNING'}">Migration running…</span>
                         <span th:unless="${state.status.name() == 'RUNNING'}">Start Migration</span>
                     </button>
+                </div>
+
+                <!-- Confirmation step — shown after preflight -->
+                <div class="hidden mt-4 p-4 rounded-xl" id="confirmPanel"
+                     style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
+                    <p class="text-sm font-semibold mb-1" id="confirmSummary"></p>
+                    <p class="text-xs text-muted mb-3">The source will not be deleted. Switch the active backend in
+                        Settings after verifying.</p>
+                    <div class="flex gap-2">
+                        <button class="btn btn-gradient btn-sm" onclick="submitMigration()" type="button">Confirm —
+                            Start
+                        </button>
+                        <button class="btn btn-ghost btn-sm" onclick="cancelConfirm()" type="button">Cancel</button>
+                    </div>
                 </div>
             </form>
 
@@ -147,6 +163,35 @@
             })
             .catch(() => setTimeout(poll, 5000));
     })();
+
+    function startMigration() {
+        const direction = document.getElementById('directionSelect').value;
+        const label = direction === 'LOCAL_TO_S3' ? 'Local → S3' : 'S3 → Local';
+
+        fetch('/admin/api/migration-preflight?direction=' + direction)
+            .then(r => r.json())
+            .then(data => {
+                const summary = document.getElementById('confirmSummary');
+                const count = data.count != null ? data.count : '?';
+                summary.textContent = 'Copy ' + count + ' file(s) from ' + label + '. This cannot be undone mid-run.';
+                document.getElementById('confirmPanel').classList.remove('hidden');
+                document.getElementById('startBtn').disabled = true;
+            })
+            .catch(() => {
+                // Preflight unavailable — fall back to a simple confirm
+                const ok = window.confirm('Start migration ' + label + '? The source will not be deleted. Proceed?');
+                if (ok) document.getElementById('migrationForm').submit();
+            });
+    }
+
+    function submitMigration() {
+        document.getElementById('migrationForm').submit();
+    }
+
+    function cancelConfirm() {
+        document.getElementById('confirmPanel').classList.add('hidden');
+        document.getElementById('startBtn').disabled = false;
+    }
 
     function testS3Connection() {
         const btn = document.getElementById('testS3Btn');

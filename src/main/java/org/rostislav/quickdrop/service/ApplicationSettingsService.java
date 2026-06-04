@@ -218,7 +218,7 @@ public class ApplicationSettingsService {
         entity.setPreviewEnabled(settings.isPreviewEnabled());
         entity.setMetadataStrippingEnabled(settings.isMetadataStrippingEnabled());
         entity.setMaxPreviewSizeBytes(settings.getMaxPreviewSizeBytes());
-        entity.setDefaultHomePage(settings.getDefaultHomePage());
+        entity.setDefaultHomePage(coerceDefaultHomePage(settings));
         entity.setKeepIndefinitelyAdminOnly(settings.isKeepIndefinitelyAdminOnly());
         entity.setHideFromListAdminOnly(settings.isHideFromListAdminOnly());
         boolean shareLinksEnabled = settings.isShareLinksEnabled();
@@ -301,7 +301,13 @@ public class ApplicationSettingsService {
         if (appPassword != null && !appPassword.isEmpty()) {
             entity.setAppPasswordEnabled(settings.isAppPasswordEnabled());
             entity.setAppPasswordHash(BCrypt.hashpw(appPassword, BCrypt.gensalt()));
-        } else if (!settings.isAppPasswordEnabled()) {
+        } else if (settings.isAppPasswordEnabled()) {
+            // Enable only if a hash already exists — never enable with no password set
+            if (entity.getAppPasswordHash() == null || entity.getAppPasswordHash().isBlank()) {
+                throw new IllegalArgumentException("App password is required when enabling password protection");
+            }
+            entity.setAppPasswordEnabled(true);
+        } else {
             entity.setAppPasswordEnabled(false);
         }
 
@@ -311,6 +317,38 @@ public class ApplicationSettingsService {
             s3StorageService.refreshClient();
         }
         contextRefresher.refresh();
+    }
+
+    /**
+     * Coerces the requested {@code defaultHomePage} value so that it always points at a
+     * feature that is actually reachable by public visitors.
+     *
+     * <p>If the requested page is disabled or (for uploads) restricted to admins only,
+     * the method falls through to the next available page in priority order:
+     * upload → list → paste → none.
+     *
+     * @param settings the incoming view-model carrying the requested home page and feature flags
+     * @return a valid home-page identifier ({@code "upload"}, {@code "list"}, {@code "paste"},
+     * or {@code "none"})
+     */
+    private String coerceDefaultHomePage(ApplicationSettingsViewModel settings) {
+        String page = settings.getDefaultHomePage();
+        if (page == null) return "upload";
+        boolean uploadPublic = settings.isUploadEnabled() && !settings.isUploadAdminOnly();
+        boolean listEnabled = settings.isFileListPageEnabled();
+        boolean pasteEnabled = settings.isPastebinEnabled();
+        switch (page.toLowerCase()) {
+            case "upload":
+                if (!uploadPublic) page = listEnabled ? "list" : pasteEnabled ? "paste" : "none";
+                break;
+            case "list":
+                if (!listEnabled) page = uploadPublic ? "upload" : pasteEnabled ? "paste" : "none";
+                break;
+            case "paste":
+                if (!pasteEnabled) page = uploadPublic ? "upload" : listEnabled ? "list" : "none";
+                break;
+        }
+        return page;
     }
 
     /**

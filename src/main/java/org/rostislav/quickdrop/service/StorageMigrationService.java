@@ -1,6 +1,5 @@
 package org.rostislav.quickdrop.service;
 
-import org.rostislav.quickdrop.entity.Upload;
 import org.rostislav.quickdrop.repository.ShareTokenRepository;
 import org.rostislav.quickdrop.repository.UploadRepository;
 import org.rostislav.quickdrop.storage.LocalStorageService;
@@ -73,6 +72,19 @@ public class StorageMigrationService {
         this.shareTokenRepository = shareTokenRepository;
         this.localStorage = localStorage;
         this.s3Storage = s3Storage;
+    }
+
+    /**
+     * Returns the number of objects that would be attempted in a migration run.
+     *
+     * <p>The count is derived entirely from the database (non-deleted upload UUIDs plus
+     * share sidecar keys) and performs no storage I/O, making it safe to call as a
+     * lightweight pre-flight check.
+     *
+     * @return total number of keys that would be queued for copying
+     */
+    public int countObjects() {
+        return buildKeyList().size();
     }
 
     /** Returns the current migration state snapshot. */

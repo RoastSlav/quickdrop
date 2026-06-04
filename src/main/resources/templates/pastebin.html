@@ -400,6 +400,16 @@
                     </div>
                 </div>
 
+                <!-- S3 down banner -->
+                <div class="alert alert-danger flex items-center gap-3" role="alert" th:if="${s3Down}">
+                    <svg aria-hidden="true" class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor"
+                         stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z"
+                              stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <span th:text="#{alert.s3Down}">S3 storage is unreachable. Uploads are disabled until the connection is restored.</span>
+                </div>
+
                 <!-- Save row: toggle left, button right -->
                 <div class="flex items-center gap-4 pt-2">
                     <label class="toggle-switch" th:if="${canUseKeepIndefinitely}">
@@ -409,6 +419,7 @@
                         <span class="text-sm" th:text="#{form.keepIndefinitely}">Keep indefinitely</span>
                     </label>
                     <button class="btn btn-gradient btn-lg ml-auto" id="savePasteButton"
+                            th:disabled="${s3Down}"
                             th:text="${isEditMode} ? #{page.paste.saveChanges} : #{page.paste.save}"
                             type="submit">Save Paste
                     </button>

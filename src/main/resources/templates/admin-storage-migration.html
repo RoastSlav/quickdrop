@@ -58,6 +58,10 @@
                 </button>
                 <span class="text-sm" id="testS3Result"></span>
             </div>
+            <p class="text-xs mt-2" id="testRequiredHint" style="color:var(--c-amber)"
+               th:if="${s3Configured and state.status.name() != 'RUNNING'}">
+                Test the connection before starting a migration.
+            </p>
         </div>
 
         <!-- Progress card (shown when migration has run) -->
@@ -119,6 +123,7 @@
                             id="startBtn"
                             th:disabled="${state.status.name() == 'RUNNING'}"
                             onclick="startMigration()"
+                            title="Test the S3 connection above before starting"
                             type="button">
                         <span th:if="${state.status.name() == 'RUNNING'}">Migration running…</span>
                         <span th:unless="${state.status.name() == 'RUNNING'}">Start Migration</span>
@@ -149,23 +154,91 @@
     </div>
 </main>
 
-<script>
-    // Auto-poll while running
-    (function poll() {
+<script th:inline="javascript">
+    // Server-rendered initial status — used to decide whether to start polling.
+    const initialStatus = /*[[${state.status.name()}]]*/ 'IDLE';
+    const isRunning = initialStatus === 'RUNNING';
+
+    // S3 test must pass before migration can start.
+    let s3TestPassed = false;
+
+    // Disable Start button unless migration is already running (which means a prior
+    // test must have passed) or the test passes in this page session.
+    (function initStartBtn() {
+        const btn = document.getElementById('startBtn');
+        if (btn && !isRunning) btn.disabled = true;
+    })();
+
+    // ── Polling ────────────────────────────────────────────────────────────────
+    // Only poll when page loads in RUNNING or IDLE state.
+    // Terminal states (COMPLETED, COMPLETED_WITH_ERRORS, FAILED) are already shown
+    // server-side; reloading on terminal state caused an infinite flash loop.
+    (function startPoll() {
+        if (initialStatus !== 'RUNNING' && initialStatus !== 'IDLE') return;
+        doPoll();
+    })();
+
+    function doPoll() {
         fetch('/admin/api/migration-status')
             .then(r => r.json())
             .then(data => {
                 if (data.status === 'RUNNING') {
-                    setTimeout(poll, 2000);
+                    setTimeout(doPoll, 2000);
                 } else if (data.status !== 'IDLE') {
-                    // Reload to show final state
+                    // Reached a terminal state — reload once to render the final
+                    // server-side view, then stop (initialStatus will be terminal
+                    // after the reload and the poll won't restart).
                     location.reload();
                 }
             })
-            .catch(() => setTimeout(poll, 5000));
-    })();
+            .catch(() => setTimeout(doPoll, 5000));
+    }
 
+    // ── Test S3 connection ─────────────────────────────────────────────────────
+    function testS3Connection() {
+        const btn = document.getElementById('testS3Btn');
+        const result = document.getElementById('testS3Result');
+        const hint = document.getElementById('testRequiredHint');
+        btn.disabled = true;
+        result.textContent = 'Testing…';
+        result.style.color = 'var(--c-text-muted)';
+        fetch('/admin/api/test-s3')
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    result.textContent = '✓ ' + data.message;
+                    result.style.color = 'var(--c-teal)';
+                    s3TestPassed = true;
+                    const startBtn = document.getElementById('startBtn');
+                    if (startBtn) startBtn.disabled = false;
+                    if (hint) hint.style.display = 'none';
+                } else {
+                    result.textContent = '✗ ' + data.message;
+                    result.style.color = 'var(--c-danger)';
+                    s3TestPassed = false;
+                }
+            })
+            .catch(() => {
+                result.textContent = '✗ Request failed';
+                result.style.color = 'var(--c-danger)';
+                s3TestPassed = false;
+            })
+            .finally(() => {
+                btn.disabled = false;
+            });
+    }
+
+    // ── Start migration (with preflight) ──────────────────────────────────────
     function startMigration() {
+        if (!s3TestPassed) {
+            const result = document.getElementById('testS3Result');
+            if (result && !result.textContent) {
+                result.textContent = 'Run the connection test first.';
+                result.style.color = 'var(--c-amber)';
+            }
+            return;
+        }
+
         const direction = document.getElementById('directionSelect').value;
         const label = direction === 'LOCAL_TO_S3' ? 'Local → S3' : 'S3 → Local';
 
@@ -191,28 +264,11 @@
 
     function cancelConfirm() {
         document.getElementById('confirmPanel').classList.add('hidden');
-        document.getElementById('startBtn').disabled = false;
-    }
-
-    function testS3Connection() {
-        const btn = document.getElementById('testS3Btn');
-        const result = document.getElementById('testS3Result');
-        btn.disabled = true;
-        result.textContent = 'Testing…';
-        result.className = 'text-sm text-muted';
-        fetch('/admin/api/test-s3')
-            .then(r => r.json())
-            .then(data => {
-                result.textContent = data.success ? '✓ ' + data.message : '✗ ' + data.message;
-                result.className = 'text-sm ' + (data.success ? 'text-teal-400' : 'text-red-400');
-            })
-            .catch(() => {
-                result.textContent = '✗ Request failed';
-                result.className = 'text-sm text-red-400';
-            })
-            .finally(() => {
-                btn.disabled = false;
-            });
+        // Re-enable only if the test has passed
+        if (s3TestPassed) {
+            const btn = document.getElementById('startBtn');
+            if (btn) btn.disabled = false;
+        }
     }
 </script>
 </body>

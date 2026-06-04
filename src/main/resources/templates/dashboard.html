@@ -97,6 +97,23 @@
             </div>
         </div>
 
+        <!-- S3 down banner -->
+        <div class="alert alert-danger flex items-center gap-3 mb-6 animate-in animate-in-delay-2" role="alert"
+             th:if="${s3Down}">
+            <svg aria-hidden="true" class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor"
+                 stroke-width="2" viewBox="0 0 24 24">
+                <path d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z"
+                      stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <div>
+                <p class="font-semibold">S3 storage unreachable</p>
+                <p class="text-sm mt-0.5" th:text="#{alert.s3Down}">S3 storage is unreachable. Uploads are disabled
+                    until the connection is restored.</p>
+            </div>
+            <a class="btn btn-sm ml-auto" href="/admin/settings#panel-storage"
+               style="color:inherit;border:1px solid currentColor;flex-shrink:0">Check Settings</a>
+        </div>
+
         <!-- Navigation cards -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 animate-in animate-in-delay-3">
 
@@ -187,28 +204,6 @@
                             Share Links</h2>
                         <p class="text-sm mt-0.5" style="color:var(--c-text-muted)"
                            th:text="#{page.dashboard.manageShareLinksDesc}">View and revoke active share tokens</p>
-                    </div>
-                    <svg class="w-5 h-5 flex-shrink-0 transition-transform group-hover:translate-x-1" fill="none"
-                         stroke="currentColor" stroke-width="2" style="color:var(--c-text-faint)" viewBox="0 0 24 24">
-                        <path d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
-                </div>
-            </a>
-
-            <!-- Storage Migration card -->
-            <a class="card card-lg flex flex-col gap-4 transition-all duration-200 hover:shadow-xl hover:-translate-y-0.5 accent-stripe accent-stripe--teal group"
-               href="/admin/storage-migration" style="text-decoration:none">
-                <div class="flex items-center gap-4">
-                    <div class="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
-                         style="background:var(--c-teal-muted);color:var(--c-teal)">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
-                            <path d="M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375m16.5 0v3.75m-16.5-3.75v3.75m16.5 0v3.75C20.25 16.153 16.556 18 12 18s-8.25-1.847-8.25-4.125v-3.75m16.5 0c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125"
-                                  stroke-linecap="round" stroke-linejoin="round"/>
-                        </svg>
-                    </div>
-                    <div class="flex-1 min-w-0">
-                        <h2 class="text-lg font-extrabold tracking-tight">Storage Migration</h2>
-                        <p class="text-sm mt-0.5" style="color:var(--c-text-muted)">Copy files between Local and S3 backends</p>
                     </div>
                     <svg class="w-5 h-5 flex-shrink-0 transition-transform group-hover:translate-x-1" fill="none"
                          stroke="currentColor" stroke-width="2" style="color:var(--c-text-faint)" viewBox="0 0 24 24">

@@ -40,7 +40,8 @@
             <h1 class="page-title-xl">
                 <span class="gradient-text">Storage Migration</span>
             </h1>
-            <p class="text-muted mt-2">Copy all files between Local and S3 backends. The source is not modified — switch the active backend in Settings after verifying.</p>
+            <p class="text-muted mt-2">Copy all files between any two storage backends. The source is not modified —
+                switch the active backend in Settings after verifying.</p>
         </div>
 
         <!-- Current state card -->
@@ -48,19 +49,18 @@
             <div class="flex items-center gap-3 mb-4">
                 <span class="text-sm font-medium text-muted">Active backend:</span>
                 <span class="badge badge-teal" th:text="${currentBackend}">LOCAL</span>
-                <span th:if="${!s3Configured}" class="badge badge-amber">S3 not configured</span>
             </div>
 
-            <!-- Test S3 connection -->
+            <!-- Test source connection -->
             <div class="flex items-center gap-3">
-                <button class="btn btn-ghost btn-sm" id="testS3Btn" onclick="testS3Connection()" th:disabled="${!s3Configured}" type="button">
-                    Test S3 Connection
+                <button class="btn btn-ghost btn-sm" id="testSourceBtn" onclick="testSourceConnection()" type="button">
+                    Test Source Connection
                 </button>
-                <span class="text-sm" id="testS3Result"></span>
+                <span class="text-sm" id="testSourceResult"></span>
             </div>
             <p class="text-xs mt-2" id="testRequiredHint" style="color:var(--c-amber)"
-               th:if="${s3Configured and state.status.name() != 'RUNNING'}">
-                Test the connection before starting a migration.
+               th:if="${state.status.name() != 'RUNNING'}">
+                Test the source connection before starting a migration.
             </p>
         </div>
 
@@ -74,7 +74,7 @@
                       th:classappend="${state.status.name() == 'RUNNING' ? ' badge-teal' : state.status.name() == 'COMPLETED' ? ' badge-teal' : ' badge-amber'}"
                       th:text="${state.status}">RUNNING</span>
                 <span class="text-sm text-muted" th:if="${state.direction != null}"
-                      th:text="${state.direction.name() == 'LOCAL_TO_S3' ? 'Local → S3' : 'S3 → Local'}"></span>
+                      th:text="${state.direction.source().name() + ' → ' + state.direction.dest().name()}"></span>
             </div>
 
             <div class="mb-2 text-sm text-muted">
@@ -104,26 +104,36 @@
         <div class="card p-6 animate-in animate-in-delay-3">
             <h2 class="font-semibold mb-4">Start Migration</h2>
 
-            <div th:if="${!s3Configured}" class="alert alert-warning mb-4">
-                Configure S3 credentials in Settings before migrating.
-            </div>
-
-            <form action="/admin/storage-migration/start" id="migrationForm" method="post" th:if="${s3Configured}">
+            <form action="/admin/storage-migration/start" id="migrationForm" method="post">
                 <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden"/>
 
-                <div class="flex flex-col sm:flex-row gap-4 items-start sm:items-end">
+                <div class="flex flex-col sm:flex-row gap-4 items-start sm:items-end mb-4">
                     <div class="flex flex-col gap-2 flex-1">
-                        <label class="text-sm font-medium" for="directionSelect">Direction</label>
-                        <select class="input-field" id="directionSelect" name="direction">
-                            <option value="LOCAL_TO_S3">Local → S3</option>
-                            <option value="S3_TO_LOCAL">S3 → Local</option>
+                        <label class="text-sm font-medium" for="sourceSelect">Source</label>
+                        <select class="input-field" id="sourceSelect" name="source">
+                            <option value="LOCAL">Local filesystem</option>
+                            <option value="S3">S3 / S3-compatible</option>
+                            <option value="AZURE">Azure Blob</option>
+                            <option value="SFTP">SFTP</option>
+                            <option value="WEBDAV">WebDAV</option>
+                        </select>
+                    </div>
+                    <span class="text-muted font-bold mt-6">→</span>
+                    <div class="flex flex-col gap-2 flex-1">
+                        <label class="text-sm font-medium" for="destSelect">Destination</label>
+                        <select class="input-field" id="destSelect" name="dest">
+                            <option value="LOCAL">Local filesystem</option>
+                            <option value="S3">S3 / S3-compatible</option>
+                            <option value="AZURE">Azure Blob</option>
+                            <option value="SFTP">SFTP</option>
+                            <option value="WEBDAV">WebDAV</option>
                         </select>
                     </div>
                     <button class="btn btn-gradient"
                             id="startBtn"
                             th:disabled="${state.status.name() == 'RUNNING'}"
                             onclick="startMigration()"
-                            title="Test the S3 connection above before starting"
+                            title="Test the source connection above before starting"
                             type="button">
                         <span th:if="${state.status.name() == 'RUNNING'}">Migration running…</span>
                         <span th:unless="${state.status.name() == 'RUNNING'}">Start Migration</span>
@@ -159,8 +169,8 @@
     const initialStatus = /*[[${state.status.name()}]]*/ 'IDLE';
     const isRunning = initialStatus === 'RUNNING';
 
-    // S3 test must pass before migration can start.
-    let s3TestPassed = false;
+    // Source connection test must pass before migration can start.
+    let sourceTestPassed = false;
 
     // Disable Start button unless migration is already running (which means a prior
     // test must have passed) or the test passes in this page session.
@@ -194,34 +204,35 @@
             .catch(() => setTimeout(doPoll, 5000));
     }
 
-    // ── Test S3 connection ─────────────────────────────────────────────────────
-    function testS3Connection() {
-        const btn = document.getElementById('testS3Btn');
-        const result = document.getElementById('testS3Result');
+    // ── Test source connection ─────────────────────────────────────────────────
+    function testSourceConnection() {
+        const source = document.getElementById('sourceSelect').value;
+        const btn = document.getElementById('testSourceBtn');
+        const result = document.getElementById('testSourceResult');
         const hint = document.getElementById('testRequiredHint');
         btn.disabled = true;
         result.textContent = 'Testing…';
         result.style.color = 'var(--c-text-muted)';
-        fetch('/admin/api/test-s3')
+        fetch('/admin/api/test-backend?backend=' + source)
             .then(r => r.json())
             .then(data => {
                 if (data.success) {
                     result.textContent = '✓ ' + data.message;
                     result.style.color = 'var(--c-teal)';
-                    s3TestPassed = true;
+                    sourceTestPassed = true;
                     const startBtn = document.getElementById('startBtn');
                     if (startBtn) startBtn.disabled = false;
                     if (hint) hint.style.display = 'none';
                 } else {
                     result.textContent = '✗ ' + data.message;
                     result.style.color = 'var(--c-danger)';
-                    s3TestPassed = false;
+                    sourceTestPassed = false;
                 }
             })
             .catch(() => {
                 result.textContent = '✗ Request failed';
                 result.style.color = 'var(--c-danger)';
-                s3TestPassed = false;
+                sourceTestPassed = false;
             })
             .finally(() => {
                 btn.disabled = false;
@@ -230,8 +241,8 @@
 
     // ── Start migration (with preflight) ──────────────────────────────────────
     function startMigration() {
-        if (!s3TestPassed) {
-            const result = document.getElementById('testS3Result');
+        if (!sourceTestPassed) {
+            const result = document.getElementById('testSourceResult');
             if (result && !result.textContent) {
                 result.textContent = 'Run the connection test first.';
                 result.style.color = 'var(--c-amber)';
@@ -239,10 +250,11 @@
             return;
         }
 
-        const direction = document.getElementById('directionSelect').value;
-        const label = direction === 'LOCAL_TO_S3' ? 'Local → S3' : 'S3 → Local';
+        const source = document.getElementById('sourceSelect').value;
+        const dest = document.getElementById('destSelect').value;
+        const label = source + ' → ' + dest;
 
-        fetch('/admin/api/migration-preflight?direction=' + direction)
+        fetch('/admin/api/migration-preflight')
             .then(r => r.json())
             .then(data => {
                 const summary = document.getElementById('confirmSummary');
@@ -265,7 +277,7 @@
     function cancelConfirm() {
         document.getElementById('confirmPanel').classList.add('hidden');
         // Re-enable only if the test has passed
-        if (s3TestPassed) {
+        if (sourceTestPassed) {
             const btn = document.getElementById('startBtn');
             if (btn) btn.disabled = false;
         }

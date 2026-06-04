@@ -139,6 +139,24 @@
             <artifactId>batik-transcoder</artifactId>
             <version>1.18</version>
         </dependency>
+        <!-- Azure Blob Storage -->
+        <dependency>
+            <groupId>com.azure</groupId>
+            <artifactId>azure-storage-blob</artifactId>
+            <version>12.28.1</version>
+        </dependency>
+        <!-- SFTP via JSch maintained fork -->
+        <dependency>
+            <groupId>com.github.mwiede</groupId>
+            <artifactId>jsch</artifactId>
+            <version>0.2.21</version>
+        </dependency>
+        <!-- WebDAV via Sardine -->
+        <dependency>
+            <groupId>com.github.lookfirst</groupId>
+            <artifactId>sardine</artifactId>
+            <version>5.12</version>
+        </dependency>
     </dependencies>
 
     <build>

@@ -30,4 +30,36 @@ public class StorageConfiguration {
                 settings.getS3KeyPrefix()
         ));
     }
+
+    @Bean
+    public AzureBlobStorageService azureBlobStorageService(ApplicationSettingsService settings) {
+        return new AzureBlobStorageService(() -> new AzureBlobStorageService.AzureConfig(
+                settings.getAzureConnectionString(),
+                settings.getAzureContainerName(),
+                settings.getAzureKeyPrefix()
+        ));
+    }
+
+    @Bean
+    public SftpStorageService sftpStorageService(ApplicationSettingsService settings) {
+        return new SftpStorageService(() -> new SftpStorageService.SftpConfig(
+                settings.getSftpHost(),
+                settings.getSftpPort(),
+                settings.getSftpUsername(),
+                settings.getSftpPassword(),
+                settings.getSftpPrivateKey(),
+                settings.getSftpBasePath(),
+                settings.getSftpKnownHosts()
+        ));
+    }
+
+    @Bean
+    public WebDavStorageService webDavStorageService(ApplicationSettingsService settings) {
+        return new WebDavStorageService(() -> new WebDavStorageService.WebDavConfig(
+                settings.getWebDavUrl(),
+                settings.getWebDavUsername(),
+                settings.getWebDavPassword(),
+                settings.getWebDavKeyPrefix()
+        ));
+    }
 }

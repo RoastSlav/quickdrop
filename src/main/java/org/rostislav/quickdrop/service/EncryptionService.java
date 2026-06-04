@@ -59,6 +59,31 @@ public class EncryptionService {
     }
 
     /**
+     * Returns an {@link InputStream} that transparently decrypts an AES/CBC-encrypted stream.
+     * The salt and IV are read from the first 32 bytes of {@code source}.
+     * The caller is responsible for closing the returned stream.
+     *
+     * @param source   the encrypted input stream (must be positioned at the start of the header)
+     * @param password the cleartext password used at encryption time
+     * @return a decrypting input stream positioned after the header
+     * @throws Exception if the cipher cannot be initialised
+     */
+    public InputStream getDecryptedInputStream(InputStream source, String password) throws Exception {
+        try {
+            byte[] salt = source.readNBytes(16);
+            byte[] iv = source.readNBytes(16);
+            IvParameterSpec ivSpec = new IvParameterSpec(iv);
+            SecretKey secretKey = generateKeyFromPassword(password, salt);
+            Cipher cipher = Cipher.getInstance(ALGORITHM);
+            cipher.init(Cipher.DECRYPT_MODE, secretKey, ivSpec);
+            return new CipherInputStream(source, cipher);
+        } catch (Exception e) {
+            source.close();
+            throw e;
+        }
+    }
+
+    /**
      * Returns an {@link InputStream} that transparently decrypts an AES/CBC-encrypted file.
      * The caller is responsible for closing the returned stream.
      *
@@ -79,6 +104,34 @@ public class EncryptionService {
             return new CipherInputStream(fis, cipher);
         } catch (Exception e) {
             fis.close();
+            throw e;
+        }
+    }
+
+    /**
+     * Returns an {@link OutputStream} that transparently encrypts data written to it,
+     * writing the salt + IV header followed by AES ciphertext into {@code target}.
+     * The caller is responsible for closing the returned stream; closing it also closes
+     * {@code target}.
+     *
+     * @param target   the destination stream to write encrypted bytes into
+     * @param password the cleartext password to encrypt with
+     * @return an encrypting output stream wrapping {@code target}
+     * @throws Exception if the cipher cannot be initialised
+     */
+    public OutputStream getEncryptedOutputStream(OutputStream target, String password) throws Exception {
+        try {
+            byte[] salt = generateRandomBytes();
+            byte[] iv = generateRandomBytes();
+            target.write(salt);
+            target.write(iv);
+            SecretKey secretKey = generateKeyFromPassword(password, salt);
+            IvParameterSpec ivSpec = new IvParameterSpec(iv);
+            Cipher cipher = Cipher.getInstance(ALGORITHM);
+            cipher.init(Cipher.ENCRYPT_MODE, secretKey, ivSpec);
+            return new CipherOutputStream(target, cipher);
+        } catch (Exception e) {
+            target.close();
             throw e;
         }
     }

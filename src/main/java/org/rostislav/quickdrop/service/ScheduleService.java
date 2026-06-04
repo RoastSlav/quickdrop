@@ -8,6 +8,7 @@ import org.rostislav.quickdrop.model.EventType;
 import org.rostislav.quickdrop.repository.ActivityLogRepository;
 import org.rostislav.quickdrop.repository.ShareTokenRepository;
 import org.rostislav.quickdrop.repository.UploadRepository;
+import org.rostislav.quickdrop.storage.StorageService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
@@ -17,9 +18,6 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.scheduling.support.CronTrigger;
 import org.springframework.stereotype.Service;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -55,6 +53,7 @@ public class ScheduleService {
     private final ActivityLogRepository activityLogRepository;
     private final ShareTokenRepository shareTokenRepository;
     private final ApplicationSettingsService applicationSettingsService;
+    private final StorageService storageService;
     private ScheduledFuture<?> scheduledTask;
 
     /**
@@ -73,7 +72,8 @@ public class ScheduleService {
                            FileDownloadService fileDownloadService,
                            ActivityLogRepository activityLogRepository,
                            ShareTokenRepository shareTokenRepository,
-                           ApplicationSettingsService applicationSettingsService) {
+                           ApplicationSettingsService applicationSettingsService,
+                           StorageService storageService) {
         this.uploadRepository = uploadRepository;
         this.fileLifecycleService = fileLifecycleService;
         this.fileQueryService = fileQueryService;
@@ -83,6 +83,7 @@ public class ScheduleService {
         this.activityLogRepository = activityLogRepository;
         this.shareTokenRepository = shareTokenRepository;
         this.applicationSettingsService = applicationSettingsService;
+        this.storageService = storageService;
     }
 
     /**
@@ -195,32 +196,21 @@ public class ScheduleService {
         uuidsToRemove.forEach(uuid -> fileLifecycleService.removeFileFromDatabase(uuid));
 
         // Remove legacy plaintext {uuid}-decrypted sidecars that have no active share tokens
-        Path storageDir = Path.of(applicationSettingsService.getFileStoragePath());
-        try (var paths = Files.list(storageDir)) {
-            paths.filter(p -> p.getFileName().toString().endsWith("-decrypted"))
-                    .forEach(p -> {
-                        String uuid = p.getFileName().toString().replace("-decrypted", "");
-                        uploadRepository.findByUUID(uuid).ifPresentOrElse(
-                                file -> {
-                                    if (!shareTokenRepository.existsValidTokenForFile(file, LocalDate.now())) {
-                                        tryDelete(p);
-                                    }
-                                },
-                                () -> tryDelete(p)
-                        );
-                    });
-        } catch (IOException e) {
-            logger.error("Error scanning storage directory for legacy sidecars: {}", e.getMessage());
-        }
-    }
-
-    private void tryDelete(Path path) {
-        try {
-            Files.deleteIfExists(path);
-            logger.info("Deleted legacy decrypted sidecar: {}", path);
-        } catch (IOException e) {
-            logger.warn("Failed to delete legacy sidecar: {}", path);
-        }
+        storageService.listKeySuffix("-decrypted").forEach(key -> {
+            String uuid = key.replace("-decrypted", "");
+            uploadRepository.findByUUID(uuid).ifPresentOrElse(
+                    file -> {
+                        if (!shareTokenRepository.existsValidTokenForFile(file, LocalDate.now())) {
+                            storageService.delete(key);
+                            logger.info("Deleted legacy decrypted sidecar: {}", key);
+                        }
+                    },
+                    () -> {
+                        storageService.delete(key);
+                        logger.info("Deleted orphaned legacy sidecar: {}", key);
+                    }
+            );
+        });
     }
 
     /**

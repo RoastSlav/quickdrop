@@ -109,6 +109,17 @@
                         <span th:text="#{page.settings.notifications.title}">Notifications</span>
                     </button>
 
+                    <!-- Storage -->
+                    <button class="sn-btn flex-shrink-0" data-panel="storage" onclick="switchPanel('storage')"
+                            type="button">
+                        <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.8"
+                             style="color:var(--c-teal)" viewBox="0 0 24 24">
+                            <path d="M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375m16.5 0v3.75m-16.5-3.75v3.75m16.5 0v3.75C20.25 16.153 16.556 18 12 18s-8.25-1.847-8.25-4.125v-3.75m16.5 0c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125"
+                                  stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <span>Storage</span>
+                    </button>
+
                     <span class="sn-divider"
                           style="display:none;height:1px;margin:0.25rem 0.25rem;background:var(--c-border)"></span>
 
@@ -897,6 +908,97 @@
                         </div>
                     </div>
 
+                <!-- ═══════════════════════════════════════════════════════════
+                     Panel: Storage (S3 / local backend)
+                ═══════════════════════════════════════════════════════════ -->
+                <div class="settings-panel hidden" id="panel-storage">
+                    <div class="card card-lg">
+                        <div class="panel-header" style="border-bottom:1px solid var(--c-border);padding-bottom:1rem">
+                            <div class="panel-header-icon" style="background:var(--c-teal-muted);color:var(--c-teal)">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                                    <path d="M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375m16.5 0v3.75m-16.5-3.75v3.75m16.5 0v3.75C20.25 16.153 16.556 18 12 18s-8.25-1.847-8.25-4.125v-3.75m16.5 0c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            </div>
+                            <h2 class="text-base font-extrabold tracking-tight">Storage Backend</h2>
+                        </div>
+                        <div class="flex flex-col gap-6 mt-6">
+
+                            <!-- Backend selector -->
+                            <div class="form-row">
+                                <label class="form-label" for="storageBackend">Active Backend</label>
+                                <select class="form-input" id="storageBackend" th:field="*{storageBackend}"
+                                        onchange="document.getElementById('s3Fields').classList.toggle('hidden', this.value !== 'S3')">
+                                    <option value="LOCAL">Local filesystem</option>
+                                    <option value="S3">S3 / S3-compatible</option>
+                                </select>
+                                <p class="form-hint">Switch only after completing a migration. Files on the old backend remain untouched.</p>
+                            </div>
+
+                            <!-- S3 fields -->
+                            <div id="s3Fields" th:classappend="${settings.storageBackend?.name() != 'S3' ? ' hidden' : ''}">
+                                <div class="rounded-2xl p-4 flex flex-col gap-4" style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
+
+                                    <div class="form-row">
+                                        <label class="form-label" for="s3Endpoint">Endpoint URL <span class="form-hint">(leave blank for AWS)</span></label>
+                                        <input class="form-input" id="s3Endpoint" placeholder="https://s3.example.com" th:field="*{s3Endpoint}" type="url"/>
+                                    </div>
+
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div class="form-row">
+                                            <label class="form-label" for="s3Bucket">Bucket</label>
+                                            <input class="form-input" id="s3Bucket" placeholder="my-bucket" th:field="*{s3Bucket}" type="text"/>
+                                        </div>
+                                        <div class="form-row">
+                                            <label class="form-label" for="s3Region">Region</label>
+                                            <input class="form-input" id="s3Region" placeholder="us-east-1" th:field="*{s3Region}" type="text"/>
+                                        </div>
+                                    </div>
+
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div class="form-row">
+                                            <label class="form-label" for="s3AccessKey">Access Key ID</label>
+                                            <input class="form-input" id="s3AccessKey" placeholder="AKIAIOSFODNN7EXAMPLE" th:field="*{s3AccessKey}" type="text"/>
+                                        </div>
+                                        <div class="form-row">
+                                            <label class="form-label" for="s3SecretKey">Secret Access Key</label>
+                                            <input class="form-input" autocomplete="new-password" id="s3SecretKey" placeholder="Leave blank to keep existing" th:field="*{s3SecretKey}" type="password"/>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-row">
+                                        <label class="form-label" for="s3KeyPrefix">Key Prefix <span class="form-hint">(optional, e.g. quickdrop/)</span></label>
+                                        <input class="form-input" id="s3KeyPrefix" placeholder="" th:field="*{s3KeyPrefix}" type="text"/>
+                                    </div>
+
+                                    <div class="flex items-start gap-3">
+                                        <input id="s3PathStyle" style="margin-top:3px;accent-color:var(--c-teal)" th:field="*{s3PathStyle}" type="checkbox"/>
+                                        <div>
+                                            <p class="text-sm font-semibold">Force path-style URLs</p>
+                                            <p class="form-hint">Required for MinIO and some other S3-compatible providers.</p>
+                                        </div>
+                                    </div>
+
+                                    <!-- Test connection -->
+                                    <div class="flex items-center gap-3 pt-1">
+                                        <button class="btn btn-secondary btn-sm" id="testS3Btn" onclick="testS3()" type="button">Test Connection</button>
+                                        <span class="text-xs" id="s3TestResult"></span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Migration link -->
+                            <div class="rounded-2xl p-4 flex items-center justify-between" style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
+                                <div>
+                                    <p class="text-sm font-semibold">Storage Migration</p>
+                                    <p class="form-hint">Copy existing files between backends before switching.</p>
+                                </div>
+                                <a class="btn btn-ghost btn-sm flex-shrink-0" href="/admin/storage-migration">Open Migration Tool →</a>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+
                 </form>
 
                 <!-- ═══════════════════════════════════════════════════════════
@@ -1020,7 +1122,7 @@
     document.addEventListener('DOMContentLoaded', function () {
         var params = new URLSearchParams(window.location.search);
         var errorParam = params.get('error') || '';
-        var validPanels = ['appearance', 'features', 'files', 'security', 'notifications', 'about'];
+        var validPanels = ['appearance', 'features', 'files', 'security', 'notifications', 'storage', 'about'];
         var stored = sessionStorage.getItem('settingsPanel');
         var initial = errorParam.includes('invalidCron')
             ? 'files'
@@ -1040,6 +1142,24 @@
             });
         }
     });
+    function testS3() {
+        var btn = document.getElementById('testS3Btn');
+        var result = document.getElementById('s3TestResult');
+        if (btn) btn.disabled = true;
+        if (result) { result.textContent = 'Testing…'; result.className = 'text-xs text-muted'; }
+        fetch('/admin/api/test-s3')
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (result) {
+                    result.textContent = data.success ? '✓ ' + data.message : '✗ ' + data.message;
+                    result.className = 'text-xs ' + (data.success ? 'text-teal-400' : 'text-red-400');
+                }
+            })
+            .catch(function() {
+                if (result) { result.textContent = '✗ Request failed'; result.className = 'text-xs text-red-400'; }
+            })
+            .finally(function() { if (btn) btn.disabled = false; });
+    }
     /*]]>*/
 </script>
 

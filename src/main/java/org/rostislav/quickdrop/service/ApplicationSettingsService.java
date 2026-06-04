@@ -4,6 +4,8 @@ import jakarta.annotation.PostConstruct;
 import org.rostislav.quickdrop.entity.ApplicationSettingsEntity;
 import org.rostislav.quickdrop.model.ApplicationSettingsViewModel;
 import org.rostislav.quickdrop.repository.ApplicationSettingsRepository;
+import org.rostislav.quickdrop.storage.S3StorageService;
+import org.rostislav.quickdrop.storage.StorageBackend;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -55,6 +57,10 @@ public class ApplicationSettingsService {
     @Lazy
     @Autowired
     private ScheduleService scheduleService;
+
+    @Lazy
+    @Autowired
+    private S3StorageService s3StorageService;
 
     public ApplicationSettingsService(ApplicationSettingsRepository applicationSettingsRepository,
                                       @Qualifier("configDataContextRefresher") ContextRefresher contextRefresher) {
@@ -256,6 +262,23 @@ public class ApplicationSettingsService {
         entity.setNotifyOnPasteView(settings.isNotifyOnPasteView());
         entity.setNotifyOnPasteEdit(settings.isNotifyOnPasteEdit());
 
+        // S3 / storage backend settings
+        if (settings.getStorageBackend() != null) {
+            entity.setStorageBackend(settings.getStorageBackend());
+        }
+        entity.setS3Endpoint(settings.getS3Endpoint());
+        entity.setS3Bucket(settings.getS3Bucket());
+        if (settings.getS3Region() != null && !settings.getS3Region().isBlank()) {
+            entity.setS3Region(settings.getS3Region());
+        }
+        entity.setS3AccessKey(settings.getS3AccessKey());
+        // Only overwrite the secret key when a new non-blank value is provided
+        if (settings.getS3SecretKey() != null && !settings.getS3SecretKey().isBlank()) {
+            entity.setS3SecretKey(settings.getS3SecretKey());
+        }
+        entity.setS3PathStyle(settings.isS3PathStyle());
+        entity.setS3KeyPrefix(settings.getS3KeyPrefix() != null ? settings.getS3KeyPrefix() : "");
+
         if (clearLogo) {
             entity.setLogoFileName(null);
         } else if (logoFile != null && !logoFile.isEmpty()) {
@@ -284,7 +307,20 @@ public class ApplicationSettingsService {
 
         applicationSettingsRepository.save(entity);
         scheduleService.updateSchedule(entity.getFileDeletionCron(), entity.getMaxFileLifeTime());
+        if (entity.getStorageBackend() == StorageBackend.S3) {
+            s3StorageService.refreshClient();
+        }
         contextRefresher.refresh();
+    }
+
+    /**
+     * Tests the current S3 connection settings by calling HeadBucket.
+     *
+     * @return {@code null} on success; an error message on failure
+     */
+    public String testS3Connection() {
+        s3StorageService.refreshClient();
+        return s3StorageService.testConnection();
     }
 
     /**
@@ -657,6 +693,39 @@ public class ApplicationSettingsService {
      */
     public boolean isNotifyOnPasteEdit() {
         return self.getApplicationSettings().isNotifyOnPasteEdit();
+    }
+
+    /** @return the active storage backend (LOCAL or S3) */
+    public StorageBackend getStorageBackend() {
+        StorageBackend backend = self.getApplicationSettings().getStorageBackend();
+        return backend != null ? backend : StorageBackend.LOCAL;
+    }
+
+    /** @return S3-compatible endpoint override URL, or {@code null} for standard AWS */
+    public String getS3Endpoint() { return self.getApplicationSettings().getS3Endpoint(); }
+
+    /** @return S3 bucket name */
+    public String getS3Bucket() { return self.getApplicationSettings().getS3Bucket(); }
+
+    /** @return AWS region (defaults to {@code us-east-1}) */
+    public String getS3Region() {
+        String r = self.getApplicationSettings().getS3Region();
+        return (r == null || r.isBlank()) ? "us-east-1" : r;
+    }
+
+    /** @return S3 access key ID */
+    public String getS3AccessKey() { return self.getApplicationSettings().getS3AccessKey(); }
+
+    /** @return S3 secret access key */
+    public String getS3SecretKey() { return self.getApplicationSettings().getS3SecretKey(); }
+
+    /** @return {@code true} if path-style S3 URLs should be used */
+    public boolean isS3PathStyle() { return self.getApplicationSettings().isS3PathStyle(); }
+
+    /** @return optional object key prefix (e.g. {@code "quickdrop/"}) */
+    public String getS3KeyPrefix() {
+        String p = self.getApplicationSettings().getS3KeyPrefix();
+        return p != null ? p : "";
     }
 
     /**

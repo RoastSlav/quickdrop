@@ -4,13 +4,13 @@ import org.rostislav.quickdrop.entity.Upload;
 import org.rostislav.quickdrop.model.ChunkInfo;
 import org.rostislav.quickdrop.model.UploadRequest;
 import org.rostislav.quickdrop.repository.UploadRepository;
+import org.rostislav.quickdrop.storage.StorageService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.*;
-import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.Iterator;
 import java.util.Map;
@@ -55,18 +55,21 @@ public class AsyncFileMergeService {
     private final FileQueryService fileQueryService;
     private final FileLifecycleService fileLifecycleService;
     private final UploadRepository uploadRepository;
+    private final StorageService storageService;
     private final File tempDir = new File(System.getProperty("java.io.tmpdir"));
 
     public AsyncFileMergeService(ApplicationSettingsService applicationSettingsService,
                                  EncryptionService encryptionService,
                                  FileQueryService fileQueryService,
                                  FileLifecycleService fileLifecycleService,
-                                 UploadRepository uploadRepository) {
+                                 UploadRepository uploadRepository,
+                                 StorageService storageService) {
         this.applicationSettingsService = applicationSettingsService;
         this.encryptionService = encryptionService;
         this.fileQueryService = fileQueryService;
         this.fileLifecycleService = fileLifecycleService;
         this.uploadRepository = uploadRepository;
+        this.storageService = storageService;
         ttlSweeper.scheduleAtFixedRate(this::evictStaleTasks, TASK_TTL_MINUTES, TASK_TTL_MINUTES, TimeUnit.MINUTES);
     }
 
@@ -171,31 +174,32 @@ public class AsyncFileMergeService {
 
         @Override
         public void run() {
-            File finalFile = Paths.get(applicationSettingsService.getFileStoragePath(), uuid).toFile();
+            boolean shouldEncrypt = fileQueryService.shouldEncrypt(request);
+            try {
+                OutputStream baseOut = storageService.getOutputStream(uuid);
+                OutputStream finalOut = shouldEncrypt
+                        ? encryptionService.getEncryptedOutputStream(baseOut, request.password)
+                        : new BufferedOutputStream(baseOut);
 
-            try (OutputStream finalOut = fileQueryService.shouldEncrypt(request) ?
-                    encryptionService.getEncryptedOutputStream(finalFile, request.password) :
-                    new BufferedOutputStream(new FileOutputStream(finalFile, true))) {
-
-                while (processedChunks < request.totalChunks) {
-                    ChunkInfo info = queue.take();
-                    try (InputStream in = new BufferedInputStream(new FileInputStream(info.chunkFile))) {
-                        in.transferTo(finalOut);
-                    }
-
-                    if (!info.chunkFile.delete()) {
-                        logger.warn("Failed to delete chunk file: {}", info.chunkFile.getAbsolutePath());
-                    }
-
-                    processedChunks++;
-                    logger.info("Merged chunk {} for file {}", info.chunkNumber, request.fileName);
-                    if (info.isLastChunk) {
-                        break;
+                try (finalOut) {
+                    while (processedChunks < request.totalChunks) {
+                        ChunkInfo info = queue.take();
+                        try (InputStream in = new BufferedInputStream(new FileInputStream(info.chunkFile))) {
+                            in.transferTo(finalOut);
+                        }
+                        if (!info.chunkFile.delete()) {
+                            logger.warn("Failed to delete chunk file: {}", info.chunkFile.getAbsolutePath());
+                        }
+                        processedChunks++;
+                        logger.info("Merged chunk {} for file {}", info.chunkNumber, request.fileName);
+                        if (info.isLastChunk) {
+                            break;
+                        }
                     }
                 }
                 logger.info("All {} chunks merged for file {}", request.totalChunks, request.fileName);
 
-                Upload upload = fileLifecycleService.saveFile(finalFile, request, uuid);
+                Upload upload = fileLifecycleService.saveFile(request, uuid);
                 if (upload != null) {
                     logger.info("File {} saved successfully with UUID {}", request.fileName, upload.uuid);
                 } else {

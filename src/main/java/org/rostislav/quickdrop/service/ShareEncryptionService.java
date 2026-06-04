@@ -1,14 +1,13 @@
 package org.rostislav.quickdrop.service;
 
 import org.rostislav.quickdrop.repository.ShareTokenRepository;
+import org.rostislav.quickdrop.storage.StorageService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -31,12 +30,12 @@ public class ShareEncryptionService {
     );
 
     private final EncryptionService encryptionService;
-    private final ApplicationSettingsService applicationSettingsService;
+    private final StorageService storageService;
 
     public ShareEncryptionService(EncryptionService encryptionService,
-                                  ApplicationSettingsService applicationSettingsService) {
+                                  StorageService storageService) {
         this.encryptionService = encryptionService;
-        this.applicationSettingsService = applicationSettingsService;
+        this.storageService = storageService;
     }
 
     /**
@@ -57,22 +56,20 @@ public class ShareEncryptionService {
     public void encryptSidecarAsync(String uuid, String token, String shareKey,
                                     String plainPassword, Long tokenId,
                                     ShareTokenRepository repo) {
+        String sidecarKey = uuid + "-share-" + token;
         executor.submit(() -> {
-            Path encryptedFilePath = Path.of(applicationSettingsService.getFileStoragePath(), uuid);
-            Path sidecarPath = Path.of(applicationSettingsService.getFileStoragePath(), uuid + "-share-" + token);
             try {
-                try (InputStream decIn = encryptionService.getDecryptedInputStream(encryptedFilePath.toFile(), plainPassword);
-                     OutputStream encOut = encryptionService.getEncryptedOutputStream(sidecarPath.toFile(), shareKey)) {
+                try (InputStream rawIn = storageService.getInputStream(uuid);
+                     InputStream decIn = encryptionService.getDecryptedInputStream(rawIn, plainPassword);
+                     OutputStream sidecarOut = storageService.getOutputStream(sidecarKey);
+                     OutputStream encOut = encryptionService.getEncryptedOutputStream(sidecarOut, shareKey)) {
                     decIn.transferTo(encOut);
                 }
                 logger.info("Background sidecar encryption complete for token: {}", token);
                 repo.markSidecarReady(tokenId);
             } catch (Exception e) {
                 logger.error("Background sidecar encryption failed for token {}: {}", token, e.getMessage());
-                try {
-                    Files.deleteIfExists(sidecarPath);
-                } catch (Exception ignored) {
-                }
+                storageService.delete(sidecarKey);
                 repo.deleteByIdTransactional(tokenId);
             }
         });

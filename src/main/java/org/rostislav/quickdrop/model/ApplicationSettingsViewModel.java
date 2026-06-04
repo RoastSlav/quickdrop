@@ -3,6 +3,7 @@ package org.rostislav.quickdrop.model;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import org.rostislav.quickdrop.entity.ApplicationSettingsEntity;
+import org.rostislav.quickdrop.storage.StorageBackend;
 
 /**
  * Form-backing model for the admin settings page.
@@ -74,6 +75,14 @@ public class ApplicationSettingsViewModel {
     private boolean notifyOnPasteCreate;
     private boolean notifyOnPasteView;
     private boolean notifyOnPasteEdit;
+    private StorageBackend storageBackend;
+    private String s3Endpoint;
+    private String s3Bucket;
+    private String s3Region;
+    private String s3AccessKey;
+    private String s3SecretKey;
+    private boolean s3PathStyle;
+    private String s3KeyPrefix;
 
     public ApplicationSettingsViewModel() {
     }
@@ -127,6 +136,14 @@ public class ApplicationSettingsViewModel {
         this.notifyOnPasteCreate = settings.isNotifyOnPasteCreate();
         this.notifyOnPasteView = settings.isNotifyOnPasteView();
         this.notifyOnPasteEdit = settings.isNotifyOnPasteEdit();
+        this.storageBackend = settings.getStorageBackend();
+        this.s3Endpoint = settings.getS3Endpoint();
+        this.s3Bucket = settings.getS3Bucket();
+        this.s3Region = settings.getS3Region();
+        this.s3AccessKey = settings.getS3AccessKey();
+        this.s3SecretKey = settings.getS3SecretKey();
+        this.s3PathStyle = settings.isS3PathStyle();
+        this.s3KeyPrefix = settings.getS3KeyPrefix();
     }
 
     public Long getId() {
@@ -520,4 +537,21 @@ public class ApplicationSettingsViewModel {
     public void setNotifyOnPasteEdit(boolean v) {
         this.notifyOnPasteEdit = v;
     }
+
+    public StorageBackend getStorageBackend() { return storageBackend; }
+    public void setStorageBackend(StorageBackend storageBackend) { this.storageBackend = storageBackend; }
+    public String getS3Endpoint() { return s3Endpoint; }
+    public void setS3Endpoint(String s3Endpoint) { this.s3Endpoint = s3Endpoint; }
+    public String getS3Bucket() { return s3Bucket; }
+    public void setS3Bucket(String s3Bucket) { this.s3Bucket = s3Bucket; }
+    public String getS3Region() { return s3Region; }
+    public void setS3Region(String s3Region) { this.s3Region = s3Region; }
+    public String getS3AccessKey() { return s3AccessKey; }
+    public void setS3AccessKey(String s3AccessKey) { this.s3AccessKey = s3AccessKey; }
+    public String getS3SecretKey() { return s3SecretKey; }
+    public void setS3SecretKey(String s3SecretKey) { this.s3SecretKey = s3SecretKey; }
+    public boolean isS3PathStyle() { return s3PathStyle; }
+    public void setS3PathStyle(boolean s3PathStyle) { this.s3PathStyle = s3PathStyle; }
+    public String getS3KeyPrefix() { return s3KeyPrefix; }
+    public void setS3KeyPrefix(String s3KeyPrefix) { this.s3KeyPrefix = s3KeyPrefix; }
 }

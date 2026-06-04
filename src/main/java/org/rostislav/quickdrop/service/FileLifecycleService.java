@@ -16,9 +16,8 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.io.File;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import org.rostislav.quickdrop.storage.StorageService;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Optional;
@@ -49,6 +48,7 @@ public class FileLifecycleService {
     private final FileDownloadService fileDownloadService;
     private final PasswordEncoder passwordEncoder;
     private final ShareEncryptionService shareEncryptionService;
+    private final StorageService storageService;
 
     public FileLifecycleService(UploadRepository uploadRepository,
                                 ActivityLogRepository activityLogRepository,
@@ -58,7 +58,8 @@ public class FileLifecycleService {
                                 SessionService sessionService,
                                 FileDownloadService fileDownloadService,
                                 PasswordEncoder passwordEncoder,
-                                ShareEncryptionService shareEncryptionService) {
+                                ShareEncryptionService shareEncryptionService,
+                                StorageService storageService) {
         this.uploadRepository = uploadRepository;
         this.activityLogRepository = activityLogRepository;
         this.notificationService = notificationService;
@@ -68,6 +69,7 @@ public class FileLifecycleService {
         this.fileDownloadService = fileDownloadService;
         this.passwordEncoder = passwordEncoder;
         this.shareEncryptionService = shareEncryptionService;
+        this.storageService = storageService;
     }
 
     /**
@@ -79,19 +81,7 @@ public class FileLifecycleService {
      * @return {@code true} if the file was deleted or was already absent; {@code false} on I/O error
      */
     public boolean deleteFileFromFileSystem(String uuid) {
-        Path path = Path.of(applicationSettingsService.getFileStoragePath(), uuid);
-        try {
-            boolean existed = Files.deleteIfExists(path);
-            if (existed) {
-                logger.info("File deleted: {}", path);
-            } else {
-                logger.warn("File already absent from filesystem, treating as deleted: {}", path);
-            }
-        } catch (Exception e) {
-            logger.error("Failed to delete file from filesystem: {}", path, e);
-            return false;
-        }
-        return true;
+        return storageService.delete(uuid);
     }
 
     /**
@@ -272,11 +262,11 @@ public class FileLifecycleService {
     }
 
     @CacheEvict(value = {"publicFiles", "adminFiles", "adminDeletedFiles", "adminPastes", "adminDeletedPastes", "analytics"}, allEntries = true)
-    public Upload saveFile(File file, UploadRequest uploadRequest, String uuid) {
-        if (!validateObjects(file, uploadRequest)) {
+    public Upload saveFile(UploadRequest uploadRequest, String uuid) {
+        if (!validateObjects(uploadRequest)) {
             return null;
         }
-        logger.info("Saving file: {}", file.getName());
+        logger.info("Saving file: {}", uploadRequest.fileName);
         Upload upload = populateUpload(uploadRequest, uuid);
         logger.info("Upload inserted into database: {}", upload);
         Upload saved = uploadRepository.save(upload);

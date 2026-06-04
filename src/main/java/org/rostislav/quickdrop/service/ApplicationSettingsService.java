@@ -201,7 +201,7 @@ public class ApplicationSettingsService {
      * @param logoFile    optional new logo image to store
      * @param clearLogo   if {@code true}, removes the current custom logo
      */
-    @CacheEvict(value = "applicationSettings", allEntries = true)
+    @CacheEvict(value = "applicationSettings", allEntries = true, beforeInvocation = true)
     public void updateApplicationSettings(ApplicationSettingsViewModel settings, String appPassword, MultipartFile logoFile, boolean clearLogo) {
         ApplicationSettingsEntity entity = applicationSettingsRepository.findById(1L).orElseThrow();
         entity.setMaxFileSize(settings.getMaxFileSize());

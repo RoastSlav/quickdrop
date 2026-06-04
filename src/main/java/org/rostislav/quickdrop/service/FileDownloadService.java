@@ -17,11 +17,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
+import org.rostislav.quickdrop.storage.StorageService;
+
 import java.io.*;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.Locale;
 
 import static org.rostislav.quickdrop.util.FileUtils.*;
@@ -45,6 +45,7 @@ public class FileDownloadService {
     private final ActivityLogRepository activityLogRepository;
     private final NotificationService notificationService;
     private final FileQueryService fileQueryService;
+    private final StorageService storageService;
 
     public FileDownloadService(UploadRepository uploadRepository,
                                ApplicationSettingsService applicationSettingsService,
@@ -53,7 +54,8 @@ public class FileDownloadService {
                                ShareTokenRepository shareTokenRepository,
                                ActivityLogRepository activityLogRepository,
                                NotificationService notificationService,
-                               FileQueryService fileQueryService) {
+                               FileQueryService fileQueryService,
+                               StorageService storageService) {
         this.uploadRepository = uploadRepository;
         this.applicationSettingsService = applicationSettingsService;
         this.encryptionService = encryptionService;
@@ -62,6 +64,7 @@ public class FileDownloadService {
         this.activityLogRepository = activityLogRepository;
         this.notificationService = notificationService;
         this.fileQueryService = fileQueryService;
+        this.storageService = storageService;
     }
 
     /**
@@ -81,24 +84,21 @@ public class FileDownloadService {
             return ResponseEntity.notFound().build();
         }
 
-        Path filePath = Path.of(applicationSettingsService.getFileStoragePath(), fileEntity.uuid);
         String password = fileQueryService.getFilePasswordFromSessionToken(request);
 
         InputStream inputStream;
-        if (fileEntity.encrypted) {
-            try {
-                inputStream = encryptionService.getDecryptedInputStream(filePath.toFile(), password);
-            } catch (Exception e) {
-                logger.error("Error decrypting file: {}", e.getMessage());
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        try {
+            InputStream raw = storageService.getInputStream(fileEntity.uuid);
+            if (fileEntity.encrypted) {
+                inputStream = encryptionService.getDecryptedInputStream(raw, password);
+            } else {
+                inputStream = raw;
             }
-        } else {
-            try {
-                inputStream = new FileInputStream(filePath.toFile());
-            } catch (FileNotFoundException e) {
-                logger.error("File not found: {}", filePath);
-                return ResponseEntity.notFound().build();
-            }
+        } catch (Exception e) {
+            logger.error("Error opening file {}: {}", fileEntity.uuid, e.getMessage());
+            return ResponseEntity.status(fileEntity.encrypted
+                    ? HttpStatus.INTERNAL_SERVER_ERROR
+                    : HttpStatus.NOT_FOUND).build();
         }
 
         return createFileDownloadResponse(inputStream, fileEntity, request);
@@ -138,15 +138,15 @@ public class FileDownloadService {
             return ResponseEntity.status(HttpStatus.PRECONDITION_REQUIRED).build();
         }
 
-        Path filePath = Path.of(applicationSettingsService.getFileStoragePath(), fileEntity.uuid);
         String password = fileQueryService.getFilePasswordFromSessionToken(request);
 
         InputStream inputStream;
         try {
+            InputStream raw = storageService.getInputStream(fileEntity.uuid);
             if (fileEntity.encrypted) {
-                inputStream = encryptionService.getDecryptedInputStream(filePath.toFile(), password);
+                inputStream = encryptionService.getDecryptedInputStream(raw, password);
             } else {
-                inputStream = new FileInputStream(filePath.toFile());
+                inputStream = raw;
             }
         } catch (Exception e) {
             logger.error("Error preparing preview for file {}: {}", uuid, e.getMessage());
@@ -200,11 +200,10 @@ public class FileDownloadService {
         }
 
         Upload upload = shareTokenEntity.file;
-        String storagePath = applicationSettingsService.getFileStoragePath();
 
         if (shareTokenEntity.shareKeyHash != null) {
-            Path sidecarPath = Path.of(storagePath, upload.uuid + "-share-" + shareTokenEntity.shareToken);
-            if (!Files.exists(sidecarPath)) {
+            String sidecarKey = upload.uuid + "-share-" + shareTokenEntity.shareToken;
+            if (!storageService.exists(sidecarKey)) {
                 logger.warn("Sidecar missing for token {}, deleting broken token", shareTokenEntity.shareToken);
                 shareTokenRepository.deleteByIdTransactional(shareTokenEntity.getId());
                 return null;
@@ -215,7 +214,8 @@ public class FileDownloadService {
                 try {
                     InputStream decIn;
                     try {
-                        decIn = encryptionService.getDecryptedInputStream(sidecarPath.toFile(), shareKey);
+                        InputStream raw = storageService.getInputStream(sidecarKey);
+                        decIn = encryptionService.getDecryptedInputStream(raw, shareKey);
                     } catch (Exception e) {
                         throw new IOException("Failed to decrypt share sidecar", e);
                     }
@@ -233,13 +233,17 @@ public class FileDownloadService {
             };
         } else {
             logHistory(upload, request, EventType.SHARE_DOWNLOAD);
-            Path decryptedFilePath = Path.of(storagePath, upload.uuid + "-decrypted");
-            Path filePathToStream = Files.exists(decryptedFilePath)
-                    ? decryptedFilePath
-                    : Path.of(storagePath, upload.uuid);
+            // Legacy "-decrypted" sidecar (local storage only); fall back to the main file
+            String legacyKey = upload.uuid + "-decrypted";
+            String streamKey = storageService.exists(legacyKey) ? legacyKey : upload.uuid;
             return outputStream -> {
-                try {
-                    streamFile(filePathToStream, upload.uuid, outputStream);
+                try (InputStream in = storageService.getInputStream(streamKey)) {
+                    byte[] buffer = new byte[8192];
+                    int bytesRead;
+                    while ((bytesRead = in.read(buffer)) != -1) {
+                        outputStream.write(buffer, 0, bytesRead);
+                    }
+                    outputStream.flush();
                 } finally {
                     updateShareTokenAfterDownload(shareTokenEntity, upload);
                 }
@@ -255,13 +259,11 @@ public class FileDownloadService {
      */
     public void deleteShareSidecar(ShareTokenEntity token) {
         if (token.shareKeyHash == null || token.file == null) return;
-        Path sidecar = Path.of(applicationSettingsService.getFileStoragePath(),
-                token.file.uuid + "-share-" + token.shareToken);
-        try {
-            Files.deleteIfExists(sidecar);
-            logger.info("Deleted share sidecar: {}", sidecar);
-        } catch (IOException e) {
-            logger.warn("Failed to delete share sidecar: {}", sidecar);
+        String sidecarKey = token.file.uuid + "-share-" + token.shareToken;
+        if (!storageService.delete(sidecarKey)) {
+            logger.warn("Failed to delete share sidecar: {}", sidecarKey);
+        } else {
+            logger.info("Deleted share sidecar: {}", sidecarKey);
         }
     }
 

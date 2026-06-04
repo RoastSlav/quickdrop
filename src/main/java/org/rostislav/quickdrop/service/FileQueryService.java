@@ -16,8 +16,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
+import org.rostislav.quickdrop.storage.StorageService;
+
 import java.time.LocalDate;
 import java.util.Optional;
 
@@ -42,19 +42,22 @@ public class FileQueryService {
     private final PasswordEncoder passwordEncoder;
     private final ApplicationSettingsService applicationSettingsService;
     private final SessionService sessionService;
+    private final StorageService storageService;
 
     public FileQueryService(UploadRepository uploadRepository,
                             FileRepository fileRepository,
                             ShareTokenRepository shareTokenRepository,
                             PasswordEncoder passwordEncoder,
                             ApplicationSettingsService applicationSettingsService,
-                            SessionService sessionService) {
+                            SessionService sessionService,
+                            StorageService storageService) {
         this.uploadRepository = uploadRepository;
         this.fileRepository = fileRepository;
         this.shareTokenRepository = shareTokenRepository;
         this.passwordEncoder = passwordEncoder;
         this.applicationSettingsService = applicationSettingsService;
         this.sessionService = sessionService;
+        this.storageService = storageService;
     }
 
     /**
@@ -169,7 +172,7 @@ public class FileQueryService {
     }
 
     public boolean fileExistsInFileSystem(String uuid) {
-        return Files.exists(Path.of(applicationSettingsService.getFileStoragePath(), uuid));
+        return storageService.exists(uuid);
     }
 
     /**

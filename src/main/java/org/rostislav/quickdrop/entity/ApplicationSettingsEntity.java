@@ -2,6 +2,7 @@ package org.rostislav.quickdrop.entity;
 
 import jakarta.persistence.*;
 import org.rostislav.quickdrop.model.ApplicationSettingsViewModel;
+import org.rostislav.quickdrop.storage.StorageBackend;
 
 /**
  * Persistent store for all application-wide configuration.
@@ -255,6 +256,38 @@ public class ApplicationSettingsEntity {
      */
     private boolean notifyOnPasteEdit = true;
 
+    /** Active file storage backend (LOCAL or S3). */
+    @Enumerated(EnumType.STRING)
+    private StorageBackend storageBackend = StorageBackend.LOCAL;
+
+    /** Custom endpoint URL for S3-compatible stores (e.g. MinIO, Cloudflare R2). {@code null} uses the standard AWS endpoint. */
+    @Column(name = "s3_endpoint")
+    private String s3Endpoint;
+
+    /** S3 bucket name. */
+    @Column(name = "s3_bucket")
+    private String s3Bucket;
+
+    /** AWS region (default {@code us-east-1}). */
+    @Column(name = "s3_region")
+    private String s3Region = "us-east-1";
+
+    /** S3 access key ID. */
+    @Column(name = "s3_access_key")
+    private String s3AccessKey;
+
+    /** S3 secret access key. */
+    @Column(name = "s3_secret_key")
+    private String s3SecretKey;
+
+    /** When {@code true}, path-style S3 URLs are used (required for MinIO and some other providers). */
+    @Column(name = "s3_path_style")
+    private boolean s3PathStyle;
+
+    /** Optional key prefix applied to all stored objects (e.g. {@code quickdrop/}). */
+    @Column(name = "s3_key_prefix")
+    private String s3KeyPrefix = "";
+
     public ApplicationSettingsEntity() {
     }
 
@@ -312,6 +345,14 @@ public class ApplicationSettingsEntity {
         this.notifyOnPasteCreate = settings.isNotifyOnPasteCreate();
         this.notifyOnPasteView = settings.isNotifyOnPasteView();
         this.notifyOnPasteEdit = settings.isNotifyOnPasteEdit();
+        this.storageBackend = settings.getStorageBackend() != null ? settings.getStorageBackend() : StorageBackend.LOCAL;
+        this.s3Endpoint = settings.getS3Endpoint();
+        this.s3Bucket = settings.getS3Bucket();
+        this.s3Region = settings.getS3Region() != null ? settings.getS3Region() : "us-east-1";
+        this.s3AccessKey = settings.getS3AccessKey();
+        this.s3SecretKey = settings.getS3SecretKey();
+        this.s3PathStyle = settings.isS3PathStyle();
+        this.s3KeyPrefix = settings.getS3KeyPrefix() != null ? settings.getS3KeyPrefix() : "";
     }
 
     public String getAppName() {
@@ -713,4 +754,21 @@ public class ApplicationSettingsEntity {
     public void setNotifyOnPasteEdit(boolean notifyOnPasteEdit) {
         this.notifyOnPasteEdit = notifyOnPasteEdit;
     }
+
+    public StorageBackend getStorageBackend() { return storageBackend; }
+    public void setStorageBackend(StorageBackend storageBackend) { this.storageBackend = storageBackend; }
+    public String getS3Endpoint() { return s3Endpoint; }
+    public void setS3Endpoint(String s3Endpoint) { this.s3Endpoint = s3Endpoint; }
+    public String getS3Bucket() { return s3Bucket; }
+    public void setS3Bucket(String s3Bucket) { this.s3Bucket = s3Bucket; }
+    public String getS3Region() { return s3Region; }
+    public void setS3Region(String s3Region) { this.s3Region = s3Region; }
+    public String getS3AccessKey() { return s3AccessKey; }
+    public void setS3AccessKey(String s3AccessKey) { this.s3AccessKey = s3AccessKey; }
+    public String getS3SecretKey() { return s3SecretKey; }
+    public void setS3SecretKey(String s3SecretKey) { this.s3SecretKey = s3SecretKey; }
+    public boolean isS3PathStyle() { return s3PathStyle; }
+    public void setS3PathStyle(boolean s3PathStyle) { this.s3PathStyle = s3PathStyle; }
+    public String getS3KeyPrefix() { return s3KeyPrefix; }
+    public void setS3KeyPrefix(String s3KeyPrefix) { this.s3KeyPrefix = s3KeyPrefix; }
 }

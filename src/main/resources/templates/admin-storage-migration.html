@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title th:text="${appName} + ' — Storage Migration'">Storage Migration</title>
+    <meta content="width=device-width, initial-scale=1" name="viewport"/>
+    <link href="https://fonts.googleapis.com" rel="preconnect"/>
+    <link crossorigin href="https://fonts.gstatic.com" rel="preconnect"/>
+    <link href="/css/tailwind.css" rel="stylesheet"/>
+    <link href="/css/custom.css" rel="stylesheet"/>
+    <link href="/images/favicon.png" rel="icon" th:href="${appLogoPath}" type="image/png"/>
+    <script src="/js/tailwindTheme.js"></script>
+    <th:block th:replace="~{fragments/header :: scripts}"></th:block>
+</head>
+<body>
+
+<div th:replace="~{fragments/header :: header(false)}"></div>
+
+<div aria-hidden="true" class="orb-field">
+    <div class="orb orb--primary"></div>
+    <div class="orb orb--secondary"></div>
+    <div class="orb orb--teal"></div>
+</div>
+
+<main class="flex-1 hero-scene" id="main-content">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
+
+        <!-- Back -->
+        <div class="mb-6 animate-in">
+            <a class="btn btn-ghost btn-sm inline-flex items-center gap-1.5" href="/admin/dashboard">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Admin
+            </a>
+        </div>
+
+        <!-- Title -->
+        <div class="mb-8 animate-in">
+            <h1 class="page-title-xl">
+                <span class="gradient-text">Storage Migration</span>
+            </h1>
+            <p class="text-muted mt-2">Copy all files between Local and S3 backends. The source is not modified — switch the active backend in Settings after verifying.</p>
+        </div>
+
+        <!-- Current state card -->
+        <div class="card p-6 mb-6 animate-in animate-in-delay-1">
+            <div class="flex items-center gap-3 mb-4">
+                <span class="text-sm font-medium text-muted">Active backend:</span>
+                <span class="badge badge-teal" th:text="${currentBackend}">LOCAL</span>
+                <span th:if="${!s3Configured}" class="badge badge-amber">S3 not configured</span>
+            </div>
+
+            <!-- Test S3 connection -->
+            <div class="flex items-center gap-3">
+                <button class="btn btn-ghost btn-sm" id="testS3Btn" onclick="testS3Connection()" th:disabled="${!s3Configured}" type="button">
+                    Test S3 Connection
+                </button>
+                <span class="text-sm" id="testS3Result"></span>
+            </div>
+        </div>
+
+        <!-- Progress card (shown when migration has run) -->
+        <div class="card p-6 mb-6 animate-in animate-in-delay-2" id="progressCard" th:if="${state.status.name() != 'IDLE'}">
+            <h2 class="font-semibold mb-4">Migration Progress</h2>
+
+            <div class="flex items-center gap-4 mb-4">
+                <span class="badge"
+                      th:classappend="${state.status.name() == 'RUNNING' ? ' badge-teal' : state.status.name() == 'COMPLETED' ? ' badge-green' : ' badge-amber'}"
+                      th:text="${state.status}">RUNNING</span>
+                <span class="text-sm text-muted" th:if="${state.direction != null}"
+                      th:text="${state.direction.name() == 'LOCAL_TO_S3' ? 'Local → S3' : 'S3 → Local'}"></span>
+            </div>
+
+            <div class="mb-2 text-sm text-muted">
+                <span th:text="${state.migrated}">0</span> /
+                <span th:text="${state.total}">0</span> objects
+                <span th:if="${state.failed > 0}" class="text-red-400 ml-2">
+                    (<span th:text="${state.failed}">0</span> failed)
+                </span>
+            </div>
+
+            <!-- Progress bar -->
+            <div class="w-full bg-white/10 rounded-full h-2 mb-4" th:if="${state.total > 0}">
+                <div class="bg-teal-400 h-2 rounded-full transition-all"
+                     th:style="'width:' + (${state.migrated} * 100 / ${state.total}) + '%'"></div>
+            </div>
+
+            <!-- Error list -->
+            <div th:if="${!#lists.isEmpty(state.errors)}">
+                <p class="text-sm font-medium text-red-400 mb-2">Errors:</p>
+                <ul class="text-xs text-muted space-y-1 max-h-40 overflow-y-auto">
+                    <li th:each="err : ${state.errors}" th:text="${err}"></li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Start migration form -->
+        <div class="card p-6 animate-in animate-in-delay-3">
+            <h2 class="font-semibold mb-4">Start Migration</h2>
+
+            <div th:if="${!s3Configured}" class="alert alert-warning mb-4">
+                Configure S3 credentials in Settings before migrating.
+            </div>
+
+            <form action="/admin/storage-migration/start" method="post" th:if="${s3Configured}">
+                <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden"/>
+
+                <div class="flex flex-col sm:flex-row gap-4 items-start sm:items-end">
+                    <div class="flex flex-col gap-2 flex-1">
+                        <label class="text-sm font-medium" for="directionSelect">Direction</label>
+                        <select class="input-field" id="directionSelect" name="direction">
+                            <option value="LOCAL_TO_S3">Local → S3</option>
+                            <option value="S3_TO_LOCAL">S3 → Local</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-gradient"
+                            th:disabled="${state.status.name() == 'RUNNING'}"
+                            type="submit">
+                        <span th:if="${state.status.name() == 'RUNNING'}">Migration running…</span>
+                        <span th:unless="${state.status.name() == 'RUNNING'}">Start Migration</span>
+                    </button>
+                </div>
+            </form>
+
+            <p class="text-xs text-muted mt-4">
+                Migration copies files without deleting the source. After completion, go to
+                <a class="text-teal-400 hover:underline" href="/admin/dashboard">Settings</a>
+                and switch the active backend.
+            </p>
+        </div>
+    </div>
+</main>
+
+<script>
+    // Auto-poll while running
+    (function poll() {
+        fetch('/admin/api/migration-status')
+            .then(r => r.json())
+            .then(data => {
+                if (data.status === 'RUNNING') {
+                    setTimeout(poll, 2000);
+                } else if (data.status !== 'IDLE') {
+                    // Reload to show final state
+                    location.reload();
+                }
+            })
+            .catch(() => setTimeout(poll, 5000));
+    })();
+
+    function testS3Connection() {
+        const btn = document.getElementById('testS3Btn');
+        const result = document.getElementById('testS3Result');
+        btn.disabled = true;
+        result.textContent = 'Testing…';
+        result.className = 'text-sm text-muted';
+        fetch('/admin/api/test-s3')
+            .then(r => r.json())
+            .then(data => {
+                result.textContent = data.success ? '✓ ' + data.message : '✗ ' + data.message;
+                result.className = 'text-sm ' + (data.success ? 'text-teal-400' : 'text-red-400');
+            })
+            .catch(() => {
+                result.textContent = '✗ Request failed';
+                result.className = 'text-sm text-red-400';
+            })
+            .finally(() => {
+                btn.disabled = false;
+            });
+    }
+</script>
+</body>
+</html>

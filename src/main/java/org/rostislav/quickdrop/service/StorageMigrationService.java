@@ -140,11 +140,9 @@ public class StorageMigrationService {
                 .filter(u -> !u.deleted)
                 .map(u -> u.uuid)
                 .forEach(keys::add);
-        // Encrypted share sidecars
-        shareTokenRepository.findAll().stream()
-                .filter(t -> t.shareKeyHash != null && t.file != null)
-                .map(t -> t.file.uuid + "-share-" + t.shareToken)
-                .forEach(keys::add);
+        // Encrypted share sidecars — use a native JOIN query so orphaned tokens
+        // (share_token rows whose upload was deleted) are skipped safely.
+        keys.addAll(shareTokenRepository.findShareSidecarKeys());
         return keys;
     }
 

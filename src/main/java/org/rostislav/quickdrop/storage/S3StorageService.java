@@ -10,7 +10,9 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.S3ClientBuilder;
 import software.amazon.awssdk.services.s3.model.*;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -180,7 +182,8 @@ public class S3StorageService implements StorageService {
     }
 
     /**
-     * Tests the S3 connection by calling HeadBucket.
+     * Tests the S3 connection by rebuilding the client and calling HeadBucket.
+     * Intended for the admin "Test Connection" flow where credentials may have just changed.
      *
      * @return {@code null} on success; an error message string on failure
      */
@@ -191,6 +194,22 @@ public class S3StorageService implements StorageService {
             return null;
         } catch (Exception e) {
             return e.getMessage();
+        }
+    }
+
+    /**
+     * Probes the bucket using the existing client without rebuilding it.
+     * Intended for the periodic background health check — faster and non-disruptive.
+     *
+     * @return {@code true} if the bucket is reachable; {@code false} on any error
+     */
+    public boolean isReachable() {
+        try {
+            getClient().headBucket(HeadBucketRequest.builder().bucket(bucket()).build());
+            return true;
+        } catch (Exception e) {
+            logger.debug("S3 health probe failed: {}", e.getMessage());
+            return false;
         }
     }
 

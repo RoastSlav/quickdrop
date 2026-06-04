@@ -38,7 +38,7 @@ public class IndexViewController {
             return "redirect:/file/list";
         }
         // "upload" or fallback — only redirect there if uploads are enabled
-        if (applicationSettingsService.isUploadEnabled()) {
+        if (applicationSettingsService.isUploadEnabled() && !applicationSettingsService.isUploadAdminOnly()) {
             return "redirect:/file/upload";
         }
         // Uploads disabled: cascade to other enabled features

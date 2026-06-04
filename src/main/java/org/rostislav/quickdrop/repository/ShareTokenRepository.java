@@ -151,6 +151,20 @@ public interface ShareTokenRepository extends JpaRepository<ShareTokenEntity, Lo
      * @param pageable  pagination and sort configuration
      * @return page of matching active tokens
      */
+    /**
+     * Returns the storage keys for all encrypted share sidecars, built as
+     * {@code {uuid}-share-{shareToken}}. Uses a native SQL INNER JOIN so that
+     * any share tokens referencing a no-longer-existing upload are silently skipped,
+     * preventing {@code EntityNotFoundException} during storage migration.
+     *
+     * @return list of sidecar storage keys for tokens that have a {@code shareKeyHash}
+     */
+    @Query(value = "SELECT u.uuid || '-share-' || st.share_token " +
+            "FROM share_token st INNER JOIN upload u ON st.file_id = u.id " +
+            "WHERE st.share_key_hash IS NOT NULL",
+            nativeQuery = true)
+    List<String> findShareSidecarKeys();
+
     @Query(value = "SELECT s FROM ShareTokenEntity s JOIN FETCH s.file WHERE " +
             "(s.tokenExpirationDate IS NULL OR s.tokenExpirationDate >= :today) AND " +
             "(s.numberOfAllowedDownloads IS NULL OR s.numberOfAllowedDownloads > 0) AND " +

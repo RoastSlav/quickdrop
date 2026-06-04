@@ -288,6 +288,54 @@ public class ApplicationSettingsEntity {
     @Column(name = "s3_key_prefix")
     private String s3KeyPrefix = "";
 
+    // ── Azure Blob Storage ────────────────────────────────────────────────────
+
+    @Column(name = "azure_connection_string")
+    private String azureConnectionString;
+
+    @Column(name = "azure_container_name")
+    private String azureContainerName;
+
+    @Column(name = "azure_key_prefix")
+    private String azureKeyPrefix = "";
+
+    // ── SFTP ──────────────────────────────────────────────────────────────────
+
+    @Column(name = "sftp_host")
+    private String sftpHost;
+
+    @Column(name = "sftp_port")
+    private Integer sftpPort = 22;
+
+    @Column(name = "sftp_username")
+    private String sftpUsername;
+
+    @Column(name = "sftp_password")
+    private String sftpPassword;
+
+    @Column(name = "sftp_private_key", columnDefinition = "TEXT")
+    private String sftpPrivateKey;
+
+    @Column(name = "sftp_base_path")
+    private String sftpBasePath = "/";
+
+    @Column(name = "sftp_known_hosts")
+    private String sftpKnownHosts;
+
+    // ── WebDAV ────────────────────────────────────────────────────────────────
+
+    @Column(name = "webdav_url")
+    private String webDavUrl;
+
+    @Column(name = "webdav_username")
+    private String webDavUsername;
+
+    @Column(name = "webdav_password")
+    private String webDavPassword;
+
+    @Column(name = "webdav_key_prefix")
+    private String webDavKeyPrefix = "";
+
     public ApplicationSettingsEntity() {
     }
 
@@ -353,6 +401,23 @@ public class ApplicationSettingsEntity {
         this.s3SecretKey = settings.getS3SecretKey();
         this.s3PathStyle = settings.isS3PathStyle();
         this.s3KeyPrefix = settings.getS3KeyPrefix() != null ? settings.getS3KeyPrefix() : "";
+        // Azure
+        this.azureConnectionString = settings.getAzureConnectionString();
+        this.azureContainerName = settings.getAzureContainerName();
+        this.azureKeyPrefix = settings.getAzureKeyPrefix() != null ? settings.getAzureKeyPrefix() : "";
+        // SFTP
+        this.sftpHost = settings.getSftpHost();
+        this.sftpPort = settings.getSftpPort() != null ? settings.getSftpPort() : 22;
+        this.sftpUsername = settings.getSftpUsername();
+        this.sftpPassword = settings.getSftpPassword();
+        this.sftpPrivateKey = settings.getSftpPrivateKey();
+        this.sftpBasePath = settings.getSftpBasePath() != null ? settings.getSftpBasePath() : "/";
+        this.sftpKnownHosts = settings.getSftpKnownHosts();
+        // WebDAV
+        this.webDavUrl = settings.getWebDavUrl();
+        this.webDavUsername = settings.getWebDavUsername();
+        this.webDavPassword = settings.getWebDavPassword();
+        this.webDavKeyPrefix = settings.getWebDavKeyPrefix() != null ? settings.getWebDavKeyPrefix() : "";
     }
 
     public String getAppName() {
@@ -771,4 +836,119 @@ public class ApplicationSettingsEntity {
     public void setS3PathStyle(boolean s3PathStyle) { this.s3PathStyle = s3PathStyle; }
     public String getS3KeyPrefix() { return s3KeyPrefix; }
     public void setS3KeyPrefix(String s3KeyPrefix) { this.s3KeyPrefix = s3KeyPrefix; }
+
+    // Azure getters/setters
+    public String getAzureConnectionString() {
+        return azureConnectionString;
+    }
+
+    public void setAzureConnectionString(String azureConnectionString) {
+        this.azureConnectionString = azureConnectionString;
+    }
+
+    public String getAzureContainerName() {
+        return azureContainerName;
+    }
+
+    public void setAzureContainerName(String azureContainerName) {
+        this.azureContainerName = azureContainerName;
+    }
+
+    public String getAzureKeyPrefix() {
+        return azureKeyPrefix;
+    }
+
+    public void setAzureKeyPrefix(String azureKeyPrefix) {
+        this.azureKeyPrefix = azureKeyPrefix;
+    }
+
+    // SFTP getters/setters
+    public String getSftpHost() {
+        return sftpHost;
+    }
+
+    public void setSftpHost(String sftpHost) {
+        this.sftpHost = sftpHost;
+    }
+
+    public Integer getSftpPort() {
+        return sftpPort;
+    }
+
+    public void setSftpPort(Integer sftpPort) {
+        this.sftpPort = sftpPort;
+    }
+
+    public String getSftpUsername() {
+        return sftpUsername;
+    }
+
+    public void setSftpUsername(String sftpUsername) {
+        this.sftpUsername = sftpUsername;
+    }
+
+    public String getSftpPassword() {
+        return sftpPassword;
+    }
+
+    public void setSftpPassword(String sftpPassword) {
+        this.sftpPassword = sftpPassword;
+    }
+
+    public String getSftpPrivateKey() {
+        return sftpPrivateKey;
+    }
+
+    public void setSftpPrivateKey(String sftpPrivateKey) {
+        this.sftpPrivateKey = sftpPrivateKey;
+    }
+
+    public String getSftpBasePath() {
+        return sftpBasePath;
+    }
+
+    public void setSftpBasePath(String sftpBasePath) {
+        this.sftpBasePath = sftpBasePath;
+    }
+
+    public String getSftpKnownHosts() {
+        return sftpKnownHosts;
+    }
+
+    public void setSftpKnownHosts(String sftpKnownHosts) {
+        this.sftpKnownHosts = sftpKnownHosts;
+    }
+
+    // WebDAV getters/setters
+    public String getWebDavUrl() {
+        return webDavUrl;
+    }
+
+    public void setWebDavUrl(String webDavUrl) {
+        this.webDavUrl = webDavUrl;
+    }
+
+    public String getWebDavUsername() {
+        return webDavUsername;
+    }
+
+    public void setWebDavUsername(String webDavUsername) {
+        this.webDavUsername = webDavUsername;
+    }
+
+    public String getWebDavPassword() {
+        return webDavPassword;
+    }
+
+    public void setWebDavPassword(String webDavPassword) {
+        this.webDavPassword = webDavPassword;
+    }
+
+    public String getWebDavKeyPrefix() {
+        return webDavKeyPrefix;
+    }
+
+    public void setWebDavKeyPrefix(String webDavKeyPrefix) {
+        this.webDavKeyPrefix = webDavKeyPrefix;
+    }
 }

@@ -2,9 +2,7 @@ package org.rostislav.quickdrop.service;
 
 import org.rostislav.quickdrop.repository.ShareTokenRepository;
 import org.rostislav.quickdrop.repository.UploadRepository;
-import org.rostislav.quickdrop.storage.LocalStorageService;
-import org.rostislav.quickdrop.storage.S3StorageService;
-import org.rostislav.quickdrop.storage.StorageService;
+import org.rostislav.quickdrop.storage.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -13,27 +11,28 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Copies files between the local filesystem and S3 (in either direction).
+ * Copies files between any two configured storage backends.
  *
  * <p>Migration runs in a single background thread. Progress is tracked via atomic
  * counters readable at any time via {@link #getState()}. The source backend is not
  * modified — the operator verifies the migrated data before switching the active backend.
  *
- * <p>Both {@link LocalStorageService} and {@link S3StorageService} are injected
- * directly so the migration can read from one and write to the other regardless of
- * which backend is currently selected in settings.
+ * <p>All backend services are injected directly so the migration can read from one
+ * and write to the other regardless of which backend is currently selected in settings.
  */
 @Service
 public class StorageMigrationService {
     private static final Logger logger = LoggerFactory.getLogger(StorageMigrationService.class);
 
-    public enum MigrationDirection {LOCAL_TO_S3, S3_TO_LOCAL}
+    private final Map<StorageBackend, StorageService> serviceMap;
 
     public enum MigrationStatus {IDLE, RUNNING, COMPLETED, COMPLETED_WITH_ERRORS, FAILED}
 
@@ -48,8 +47,23 @@ public class StorageMigrationService {
 
     private final UploadRepository uploadRepository;
     private final ShareTokenRepository shareTokenRepository;
-    private final LocalStorageService localStorage;
-    private final S3StorageService s3Storage;
+    public StorageMigrationService(UploadRepository uploadRepository,
+                                   ShareTokenRepository shareTokenRepository,
+                                   LocalStorageService localStorage,
+                                   S3StorageService s3Storage,
+                                   AzureBlobStorageService azureStorage,
+                                   SftpStorageService sftpStorage,
+                                   WebDavStorageService webDavStorage) {
+        this.uploadRepository = uploadRepository;
+        this.shareTokenRepository = shareTokenRepository;
+        Map<StorageBackend, StorageService> map = new EnumMap<>(StorageBackend.class);
+        map.put(StorageBackend.LOCAL, localStorage);
+        map.put(StorageBackend.S3, s3Storage);
+        map.put(StorageBackend.AZURE, azureStorage);
+        map.put(StorageBackend.SFTP, sftpStorage);
+        map.put(StorageBackend.WEBDAV, webDavStorage);
+        this.serviceMap = map;
+    }
 
     private volatile MigrationStatus status = MigrationStatus.IDLE;
     private volatile MigrationDirection direction;
@@ -64,14 +78,44 @@ public class StorageMigrationService {
         return t;
     });
 
-    public StorageMigrationService(UploadRepository uploadRepository,
-                                   ShareTokenRepository shareTokenRepository,
-                                   LocalStorageService localStorage,
-                                   S3StorageService s3Storage) {
-        this.uploadRepository = uploadRepository;
-        this.shareTokenRepository = shareTokenRepository;
-        this.localStorage = localStorage;
-        this.s3Storage = s3Storage;
+    private StorageService storageServiceFor(StorageBackend backend) {
+        StorageService svc = serviceMap.get(backend);
+        if (svc == null) throw new IllegalArgumentException("No storage service for backend: " + backend);
+        return svc;
+    }
+
+    private void runMigration(MigrationDirection dir) {
+        StorageService source = storageServiceFor(dir.source());
+        StorageService dest = storageServiceFor(dir.dest());
+
+        try {
+            List<String> allKeys = buildKeyList();
+            total.set(allKeys.size());
+            logger.info("Storage migration {} → {}: {} objects to copy", dir.source(), dir.dest(), allKeys.size());
+
+            for (String key : allKeys) {
+                if (!source.exists(key)) {
+                    logger.debug("Key {} does not exist on source, skipping", key);
+                    total.decrementAndGet();
+                    continue;
+                }
+                try {
+                    copyKey(key, source, dest);
+                    migrated.incrementAndGet();
+                } catch (Exception e) {
+                    failed.incrementAndGet();
+                    errors.add(key + ": " + e.getMessage());
+                    logger.error("Migration failed for key {}: {}", key, e.getMessage());
+                }
+            }
+
+            status = failed.get() == 0 ? MigrationStatus.COMPLETED : MigrationStatus.COMPLETED_WITH_ERRORS;
+            logger.info("Storage migration complete — migrated: {}, failed: {}", migrated.get(), failed.get());
+        } catch (Exception e) {
+            status = MigrationStatus.FAILED;
+            errors.add("Fatal: " + e.getMessage());
+            logger.error("Storage migration aborted: {}", e.getMessage(), e);
+        }
     }
 
     /**
@@ -111,38 +155,11 @@ public class StorageMigrationService {
         executor.submit(() -> runMigration(dir));
     }
 
-    private void runMigration(MigrationDirection dir) {
-        StorageService source = dir == MigrationDirection.LOCAL_TO_S3 ? localStorage : s3Storage;
-        StorageService dest = dir == MigrationDirection.LOCAL_TO_S3 ? s3Storage : localStorage;
-
-        try {
-            List<String> allKeys = buildKeyList();
-            total.set(allKeys.size());
-            logger.info("Storage migration {}: {} objects to copy", dir, allKeys.size());
-
-            for (String key : allKeys) {
-                if (!source.exists(key)) {
-                    logger.debug("Key {} does not exist on source, skipping", key);
-                    total.decrementAndGet();
-                    continue;
-                }
-                try {
-                    copyKey(key, source, dest);
-                    migrated.incrementAndGet();
-                } catch (Exception e) {
-                    failed.incrementAndGet();
-                    errors.add(key + ": " + e.getMessage());
-                    logger.error("Migration failed for key {}: {}", key, e.getMessage());
-                }
-            }
-
-            status = failed.get() == 0 ? MigrationStatus.COMPLETED : MigrationStatus.COMPLETED_WITH_ERRORS;
-            logger.info("Storage migration complete — migrated: {}, failed: {}", migrated.get(), failed.get());
-        } catch (Exception e) {
-            status = MigrationStatus.FAILED;
-            errors.add("Fatal: " + e.getMessage());
-            logger.error("Storage migration aborted: {}", e.getMessage(), e);
-        }
+    /**
+     * Describes a migration operation as a source/destination pair of backends.
+     * Replaces the old {@code enum MigrationDirection {LOCAL_TO_S3, S3_TO_LOCAL}}.
+     */
+    public record MigrationDirection(StorageBackend source, StorageBackend dest) {
     }
 
     private List<String> buildKeyList() {

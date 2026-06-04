@@ -939,9 +939,12 @@
                             <div class="form-row">
                                 <label class="form-label" for="storageBackend">Active Backend</label>
                                 <select class="form-input" id="storageBackend" th:field="*{storageBackend}"
-                                        onchange="document.getElementById('s3Fields').classList.toggle('hidden', this.value !== 'S3')">
+                                        onchange="onBackendChange(this.value)">
                                     <option value="LOCAL">Local filesystem</option>
                                     <option value="S3">S3 / S3-compatible</option>
+                                    <option value="AZURE">Azure Blob Storage</option>
+                                    <option value="SFTP">SFTP</option>
+                                    <option value="WEBDAV">WebDAV (Nextcloud, ownCloud…)</option>
                                 </select>
                                 <p class="form-hint">Switch only after completing a migration. Files on the old backend remain untouched.</p>
                             </div>
@@ -993,8 +996,147 @@
 
                                     <!-- Test connection -->
                                     <div class="flex items-center gap-3 pt-1">
-                                        <button class="btn btn-secondary btn-sm" id="testS3Btn" onclick="testS3()" type="button">Test Connection</button>
+                                        <button class="btn btn-secondary btn-sm" id="testS3Btn"
+                                                onclick="testBackend('S3', 's3TestResult', this)" type="button">Test
+                                            Connection
+                                        </button>
                                         <span class="text-xs" id="s3TestResult"></span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Azure Blob Storage fields -->
+                            <div id="azureFields"
+                                 th:classappend="${settings.storageBackend?.name() != 'AZURE' ? ' hidden' : ''}">
+                                <div class="rounded-2xl p-4 flex flex-col gap-4"
+                                     style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
+                                    <div class="form-row">
+                                        <label class="form-label" for="azureConnectionString">Connection String</label>
+                                        <input autocomplete="new-password" class="form-input"
+                                               id="azureConnectionString"
+                                               placeholder="DefaultEndpointsProtocol=https;AccountName=…" th:field="*{azureConnectionString}"
+                                               type="password"/>
+                                    </div>
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div class="form-row">
+                                            <label class="form-label" for="azureContainerName">Container Name</label>
+                                            <input class="form-input" id="azureContainerName" placeholder="my-container"
+                                                   th:field="*{azureContainerName}" type="text"/>
+                                        </div>
+                                        <div class="form-row">
+                                            <label class="form-label" for="azureKeyPrefix">Key Prefix <span
+                                                    class="form-hint">(optional)</span></label>
+                                            <input class="form-input" id="azureKeyPrefix" placeholder=""
+                                                   th:field="*{azureKeyPrefix}" type="text"/>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center gap-3 pt-1">
+                                        <button class="btn btn-secondary btn-sm"
+                                                onclick="testBackend('AZURE', 'azureTestResult', this)" type="button">
+                                            Test Connection
+                                        </button>
+                                        <span class="text-xs" id="azureTestResult"></span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- SFTP fields -->
+                            <div id="sftpFields"
+                                 th:classappend="${settings.storageBackend?.name() != 'SFTP' ? ' hidden' : ''}">
+                                <div class="rounded-2xl p-4 flex flex-col gap-4"
+                                     style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div class="form-row">
+                                            <label class="form-label" for="sftpHost">Host</label>
+                                            <input class="form-input" id="sftpHost" placeholder="sftp.example.com"
+                                                   th:field="*{sftpHost}" type="text"/>
+                                        </div>
+                                        <div class="form-row">
+                                            <label class="form-label" for="sftpPort">Port</label>
+                                            <input class="form-input" id="sftpPort" max="65535"
+                                                   min="1" placeholder="22" th:field="*{sftpPort}" type="number"/>
+                                        </div>
+                                    </div>
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div class="form-row">
+                                            <label class="form-label" for="sftpUsername">Username</label>
+                                            <input class="form-input" id="sftpUsername" placeholder="user"
+                                                   th:field="*{sftpUsername}" type="text"/>
+                                        </div>
+                                        <div class="form-row">
+                                            <label class="form-label" for="sftpPassword">Password <span
+                                                    class="form-hint">(leave blank to keep)</span></label>
+                                            <input autocomplete="new-password" class="form-input" id="sftpPassword"
+                                                   placeholder="" th:field="*{sftpPassword}"
+                                                   type="password"/>
+                                        </div>
+                                    </div>
+                                    <div class="form-row">
+                                        <label class="form-label" for="sftpBasePath">Base Path</label>
+                                        <input class="form-input" id="sftpBasePath" placeholder="/uploads"
+                                               th:field="*{sftpBasePath}" type="text"/>
+                                    </div>
+                                    <div class="form-row">
+                                        <label class="form-label" for="sftpPrivateKey">Private Key <span
+                                                class="form-hint">(PEM, optional, leave blank to keep)</span></label>
+                                        <textarea class="form-input font-mono text-xs" id="sftpPrivateKey"
+                                                  placeholder="-----BEGIN OPENSSH PRIVATE KEY-----" rows="4"
+                                                  th:field="*{sftpPrivateKey}"></textarea>
+                                    </div>
+                                    <div class="form-row">
+                                        <label class="form-label" for="sftpKnownHosts">Known Hosts <span
+                                                class="form-hint">(optional — leave blank to accept all hosts)</span></label>
+                                        <textarea class="form-input font-mono text-xs" id="sftpKnownHosts"
+                                                  placeholder="sftp.example.com ssh-rsa AAAA…" rows="3"
+                                                  th:field="*{sftpKnownHosts}"></textarea>
+                                    </div>
+                                    <div class="flex items-center gap-3 pt-1">
+                                        <button class="btn btn-secondary btn-sm"
+                                                onclick="testBackend('SFTP', 'sftpTestResult', this)" type="button">Test
+                                            Connection
+                                        </button>
+                                        <span class="text-xs" id="sftpTestResult"></span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- WebDAV fields -->
+                            <div id="webdavFields"
+                                 th:classappend="${settings.storageBackend?.name() != 'WEBDAV' ? ' hidden' : ''}">
+                                <div class="rounded-2xl p-4 flex flex-col gap-4"
+                                     style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
+                                    <div class="form-row">
+                                        <label class="form-label" for="webDavUrl">WebDAV URL</label>
+                                        <input class="form-input" id="webDavUrl"
+                                               placeholder="https://nextcloud.example.com/remote.php/dav/files/user/"
+                                               th:field="*{webDavUrl}" type="url"/>
+                                    </div>
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div class="form-row">
+                                            <label class="form-label" for="webDavUsername">Username</label>
+                                            <input class="form-input" id="webDavUsername" placeholder="user"
+                                                   th:field="*{webDavUsername}" type="text"/>
+                                        </div>
+                                        <div class="form-row">
+                                            <label class="form-label" for="webDavPassword">Password <span
+                                                    class="form-hint">(leave blank to keep)</span></label>
+                                            <input autocomplete="new-password" class="form-input" id="webDavPassword"
+                                                   placeholder="" th:field="*{webDavPassword}"
+                                                   type="password"/>
+                                        </div>
+                                    </div>
+                                    <div class="form-row">
+                                        <label class="form-label" for="webDavKeyPrefix">Key Prefix <span
+                                                class="form-hint">(optional)</span></label>
+                                        <input class="form-input" id="webDavKeyPrefix" placeholder=""
+                                               th:field="*{webDavKeyPrefix}" type="text"/>
+                                    </div>
+                                    <div class="flex items-center gap-3 pt-1">
+                                        <button class="btn btn-secondary btn-sm"
+                                                onclick="testBackend('WEBDAV', 'webdavTestResult', this)" type="button">
+                                            Test Connection
+                                        </button>
+                                        <span class="text-xs" id="webdavTestResult"></span>
                                     </div>
                                 </div>
                             </div>
@@ -1155,12 +1297,19 @@
             });
         }
     });
-    function testS3() {
-        var btn = document.getElementById('testS3Btn');
-        var result = document.getElementById('s3TestResult');
+
+    function onBackendChange(value) {
+        document.getElementById('s3Fields').classList.toggle('hidden', value !== 'S3');
+        document.getElementById('azureFields').classList.toggle('hidden', value !== 'AZURE');
+        document.getElementById('sftpFields').classList.toggle('hidden', value !== 'SFTP');
+        document.getElementById('webdavFields').classList.toggle('hidden', value !== 'WEBDAV');
+    }
+
+    function testBackend(backend, resultId, btn) {
+        var result = document.getElementById(resultId);
         if (btn) btn.disabled = true;
         if (result) { result.textContent = 'Testing…'; result.className = 'text-xs text-muted'; }
-        fetch('/admin/api/test-s3')
+        fetch('/admin/api/test-backend?backend=' + backend)
             .then(function(r) { return r.json(); })
             .then(function(data) {
                 if (result) {
@@ -1173,6 +1322,7 @@
             })
             .finally(function() { if (btn) btn.disabled = false; });
     }
+
     /*]]>*/
 </script>
 

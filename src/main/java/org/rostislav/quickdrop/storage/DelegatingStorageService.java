@@ -10,10 +10,9 @@ import java.io.OutputStream;
 import java.util.List;
 
 /**
- * Primary {@link StorageService} bean that routes all calls to either
- * {@link LocalStorageService} or {@link S3StorageService} based on the admin-configured
- * backend. The routing decision is made per-call so that switching backends in the
- * settings page takes effect immediately without a restart.
+ * Primary {@link StorageService} bean that routes all calls to the appropriate backend
+ * based on the admin-configured backend. The routing decision is made per-call so that
+ * switching backends in the settings page takes effect immediately without a restart.
  */
 @Primary
 @Service
@@ -21,18 +20,33 @@ public class DelegatingStorageService implements StorageService {
 
     private final LocalStorageService localStorage;
     private final S3StorageService s3Storage;
+    private final AzureBlobStorageService azureStorage;
+    private final SftpStorageService sftpStorage;
+    private final WebDavStorageService webDavStorage;
     private final ApplicationSettingsService settings;
 
     public DelegatingStorageService(LocalStorageService localStorage,
                                     S3StorageService s3Storage,
+                                    AzureBlobStorageService azureStorage,
+                                    SftpStorageService sftpStorage,
+                                    WebDavStorageService webDavStorage,
                                     ApplicationSettingsService settings) {
         this.localStorage = localStorage;
         this.s3Storage = s3Storage;
+        this.azureStorage = azureStorage;
+        this.sftpStorage = sftpStorage;
+        this.webDavStorage = webDavStorage;
         this.settings = settings;
     }
 
     private StorageService active() {
-        return settings.getStorageBackend() == StorageBackend.S3 ? s3Storage : localStorage;
+        return switch (settings.getStorageBackend()) {
+            case S3 -> s3Storage;
+            case AZURE -> azureStorage;
+            case SFTP -> sftpStorage;
+            case WEBDAV -> webDavStorage;
+            default -> localStorage;
+        };
     }
 
     @Override
@@ -63,5 +77,10 @@ public class DelegatingStorageService implements StorageService {
     @Override
     public StorageBackend getBackend() {
         return active().getBackend();
+    }
+
+    @Override
+    public boolean isReachable() {
+        return active().isReachable();
     }
 }

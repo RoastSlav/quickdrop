@@ -4,8 +4,7 @@ import jakarta.annotation.PostConstruct;
 import org.rostislav.quickdrop.entity.ApplicationSettingsEntity;
 import org.rostislav.quickdrop.model.ApplicationSettingsViewModel;
 import org.rostislav.quickdrop.repository.ApplicationSettingsRepository;
-import org.rostislav.quickdrop.storage.S3StorageService;
-import org.rostislav.quickdrop.storage.StorageBackend;
+import org.rostislav.quickdrop.storage.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -61,6 +60,18 @@ public class ApplicationSettingsService {
     @Lazy
     @Autowired
     private S3StorageService s3StorageService;
+
+    @Lazy
+    @Autowired
+    private AzureBlobStorageService azureStorageService;
+
+    @Lazy
+    @Autowired
+    private SftpStorageService sftpStorageService;
+
+    @Lazy
+    @Autowired
+    private WebDavStorageService webDavStorageService;
 
     public ApplicationSettingsService(ApplicationSettingsRepository applicationSettingsRepository,
                                       @Qualifier("configDataContextRefresher") ContextRefresher contextRefresher) {
@@ -279,6 +290,34 @@ public class ApplicationSettingsService {
         entity.setS3PathStyle(settings.isS3PathStyle());
         entity.setS3KeyPrefix(settings.getS3KeyPrefix() != null ? settings.getS3KeyPrefix() : "");
 
+        // Azure Blob Storage settings
+        entity.setAzureConnectionString(settings.getAzureConnectionString());
+        entity.setAzureContainerName(settings.getAzureContainerName());
+        entity.setAzureKeyPrefix(settings.getAzureKeyPrefix() != null ? settings.getAzureKeyPrefix() : "");
+
+        // SFTP settings
+        entity.setSftpHost(settings.getSftpHost());
+        if (settings.getSftpPort() != null) {
+            entity.setSftpPort(settings.getSftpPort());
+        }
+        entity.setSftpUsername(settings.getSftpUsername());
+        if (settings.getSftpPassword() != null && !settings.getSftpPassword().isBlank()) {
+            entity.setSftpPassword(settings.getSftpPassword());
+        }
+        if (settings.getSftpPrivateKey() != null && !settings.getSftpPrivateKey().isBlank()) {
+            entity.setSftpPrivateKey(settings.getSftpPrivateKey());
+        }
+        entity.setSftpBasePath(settings.getSftpBasePath() != null ? settings.getSftpBasePath() : "/");
+        entity.setSftpKnownHosts(settings.getSftpKnownHosts());
+
+        // WebDAV settings
+        entity.setWebDavUrl(settings.getWebDavUrl());
+        entity.setWebDavUsername(settings.getWebDavUsername());
+        if (settings.getWebDavPassword() != null && !settings.getWebDavPassword().isBlank()) {
+            entity.setWebDavPassword(settings.getWebDavPassword());
+        }
+        entity.setWebDavKeyPrefix(settings.getWebDavKeyPrefix() != null ? settings.getWebDavKeyPrefix() : "");
+
         if (clearLogo) {
             entity.setLogoFileName(null);
         } else if (logoFile != null && !logoFile.isEmpty()) {
@@ -315,6 +354,10 @@ public class ApplicationSettingsService {
         scheduleService.updateSchedule(entity.getFileDeletionCron(), entity.getMaxFileLifeTime());
         if (entity.getStorageBackend() == StorageBackend.S3) {
             s3StorageService.refreshClient();
+        } else if (entity.getStorageBackend() == StorageBackend.AZURE) {
+            azureStorageService.refreshClient();
+        } else if (entity.getStorageBackend() == StorageBackend.WEBDAV) {
+            webDavStorageService.refreshClient();
         }
         contextRefresher.refresh();
     }
@@ -359,6 +402,25 @@ public class ApplicationSettingsService {
     public String testS3Connection() {
         s3StorageService.refreshClient();
         return s3StorageService.testConnection();
+    }
+
+    /**
+     * Tests the connection for the specified backend.
+     *
+     * @param backend the backend to test
+     * @return {@code null} on success; an error message on failure
+     */
+    public String testBackendConnection(StorageBackend backend) {
+        return switch (backend) {
+            case S3 -> testS3Connection();
+            case AZURE -> {
+                azureStorageService.refreshClient();
+                yield azureStorageService.testConnection();
+            }
+            case SFTP -> sftpStorageService.testConnection();
+            case WEBDAV -> webDavStorageService.testConnection();
+            default -> null;
+        };
     }
 
     /**
@@ -763,6 +825,114 @@ public class ApplicationSettingsService {
     /** @return optional object key prefix (e.g. {@code "quickdrop/"}) */
     public String getS3KeyPrefix() {
         String p = self.getApplicationSettings().getS3KeyPrefix();
+        return p != null ? p : "";
+    }
+
+    // ── Azure Blob Storage getters ─────────────────────────────────────────────
+
+    /**
+     * @return Azure Blob Storage connection string
+     */
+    public String getAzureConnectionString() {
+        return self.getApplicationSettings().getAzureConnectionString();
+    }
+
+    /**
+     * @return Azure Blob Storage container name
+     */
+    public String getAzureContainerName() {
+        return self.getApplicationSettings().getAzureContainerName();
+    }
+
+    /**
+     * @return optional Azure blob key prefix
+     */
+    public String getAzureKeyPrefix() {
+        String p = self.getApplicationSettings().getAzureKeyPrefix();
+        return p != null ? p : "";
+    }
+
+    // ── SFTP getters ───────────────────────────────────────────────────────────
+
+    /**
+     * @return SFTP server hostname
+     */
+    public String getSftpHost() {
+        return self.getApplicationSettings().getSftpHost();
+    }
+
+    /**
+     * @return SFTP server port (default 22)
+     */
+    public int getSftpPort() {
+        Integer p = self.getApplicationSettings().getSftpPort();
+        return p != null ? p : 22;
+    }
+
+    /**
+     * @return SFTP username
+     */
+    public String getSftpUsername() {
+        return self.getApplicationSettings().getSftpUsername();
+    }
+
+    /**
+     * @return SFTP password
+     */
+    public String getSftpPassword() {
+        return self.getApplicationSettings().getSftpPassword();
+    }
+
+    /**
+     * @return SFTP private key (PEM text)
+     */
+    public String getSftpPrivateKey() {
+        return self.getApplicationSettings().getSftpPrivateKey();
+    }
+
+    /**
+     * @return SFTP base path on the remote server
+     */
+    public String getSftpBasePath() {
+        String p = self.getApplicationSettings().getSftpBasePath();
+        return p != null ? p : "/";
+    }
+
+    /**
+     * @return SFTP known_hosts content
+     */
+    public String getSftpKnownHosts() {
+        return self.getApplicationSettings().getSftpKnownHosts();
+    }
+
+    // ── WebDAV getters ─────────────────────────────────────────────────────────
+
+    /**
+     * @return WebDAV server URL
+     */
+    public String getWebDavUrl() {
+        return self.getApplicationSettings().getWebDavUrl();
+    }
+
+    /**
+     * @return WebDAV username
+     */
+    public String getWebDavUsername() {
+        return self.getApplicationSettings().getWebDavUsername();
+    }
+
+    /**
+     * @return WebDAV password
+     */
+    public String getWebDavPassword() {
+        return self.getApplicationSettings().getWebDavPassword();
+    }
+
+    /**
+     * @return optional WebDAV key prefix
+     */
+    public String getWebDavKeyPrefix() {
+        String p = self.getApplicationSettings().getWebDavKeyPrefix();
         return p != null ? p : "";
     }
 

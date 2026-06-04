@@ -2,8 +2,8 @@ package org.rostislav.quickdrop.config;
 
 import jakarta.servlet.http.HttpServletRequest;
 import org.rostislav.quickdrop.service.ApplicationSettingsService;
-import org.rostislav.quickdrop.service.S3HealthService;
 import org.rostislav.quickdrop.service.SessionService;
+import org.rostislav.quickdrop.service.StorageHealthService;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -27,14 +27,14 @@ public class GlobalControllerAdvice {
 
     private final ApplicationSettingsService applicationSettingsService;
     private final SessionService sessionService;
-    private final S3HealthService s3HealthService;
+    private final StorageHealthService storageHealthService;
 
     public GlobalControllerAdvice(ApplicationSettingsService applicationSettingsService,
                                   SessionService sessionService,
-                                  S3HealthService s3HealthService) {
+                                  StorageHealthService storageHealthService) {
         this.applicationSettingsService = applicationSettingsService;
         this.sessionService = sessionService;
-        this.s3HealthService = s3HealthService;
+        this.storageHealthService = storageHealthService;
     }
 
     /**
@@ -52,8 +52,8 @@ public class GlobalControllerAdvice {
      *       {@code isKeepIndefinitelyAdminOnly}, {@code isHideFromListAdminOnly}</li>
      *   <li>Branding: {@code appName}, {@code appLogoPath}</li>
      *   <li>Locale: {@code currentLang} (BCP-47 language tag, defaults to "en")</li>
-     *   <li>Storage health: {@code s3Down} ({@code true} when S3 is the active backend
-     *       and the last health probe failed)</li>
+     *   <li>Storage health: {@code s3Down} ({@code true} when the active storage backend
+     *       is unreachable according to the last health probe)</li>
      * </ul>
      *
      * @param model   the Spring MVC model
@@ -91,6 +91,6 @@ public class GlobalControllerAdvice {
                 ? "en"
                 : activeLocale.getLanguage();
         model.addAttribute("currentLang", currentLang);
-        model.addAttribute("s3Down", s3HealthService.isS3Down());
+        model.addAttribute("s3Down", storageHealthService.isStorageDown());
     }
 }

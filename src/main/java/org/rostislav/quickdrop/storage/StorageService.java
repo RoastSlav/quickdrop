@@ -54,4 +54,17 @@ public interface StorageService {
 
     /** Returns the active storage backend type. */
     StorageBackend getBackend();
+
+    /**
+     * Probes the backend to determine if it is currently reachable.
+     *
+     * <p>The default implementation returns {@code true}, so backends that do not
+     * perform network I/O (e.g. {@link LocalStorageService}) are always considered healthy.
+     * Backends backed by remote services should override this method.
+     *
+     * @return {@code true} if the backend is reachable; {@code false} on any connectivity error
+     */
+    default boolean isReachable() {
+        return true;
+    }
 }

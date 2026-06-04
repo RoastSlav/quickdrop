@@ -122,10 +122,12 @@
                         <input name="uuid" th:value="${uuid}" type="hidden"/>
 
                         <!-- Dropzone -->
-                        <div class="dropzone" id="dropZone">
+                        <div aria-label="File drop area — use the buttons below to select a file" class="dropzone"
+                             id="dropZone" role="region">
                             <div class="dropzone-body">
                                 <div class="dropzone-icon">
-                                    <svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="1.6"
+                                    <svg aria-hidden="true" class="w-7 h-7" fill="none" stroke="currentColor"
+                                         stroke-width="1.6"
                                          viewBox="0 0 24 24">
                                         <path d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 7.5m0 0L7.5 12m4.5-4.5v12"
                                               stroke-linecap="round"
@@ -187,7 +189,9 @@
                                 th:attr="x-data='{ open: ' + (${uploadPasswordEnabled} ? 'true' : 'false') + ' }'"
                         >
                             <button
+                                    :aria-expanded="open ? 'true' : 'false'"
                                     @click="open = !open"
+                                    aria-controls="securityRetentionPanel"
                                     class="flex items-center justify-between w-full text-left"
                                     type="button"
                             >
@@ -203,7 +207,8 @@
                         th:attr="data-text-open=#{page.upload.security.isOpen},data-text-configure=#{page.upload.security.configure}"
                         x-text="open ? $el.dataset.textOpen : $el.dataset.textConfigure"></span>
                 </span>
-                                <svg :class="{ 'rotate-180': open }" class="w-4 h-4 transition-transform duration-300"
+                                <svg :class="{ 'rotate-180': open }" aria-hidden="true"
+                                     class="w-4 h-4 transition-transform duration-300"
                                      fill="none"
                                      stroke="currentColor" stroke-width="2" style="color:var(--c-text-muted)"
                                      viewBox="0 0 24 24">
@@ -212,7 +217,8 @@
                                 </svg>
                             </button>
 
-                            <div class="mt-4 flex flex-col gap-4" x-cloak x-collapse x-show="open">
+                            <div class="mt-4 flex flex-col gap-4" id="securityRetentionPanel" x-cloak x-collapse
+                                 x-show="open">
 
                                 <div class="flex flex-wrap gap-x-8 gap-y-4">
 

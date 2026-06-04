@@ -59,6 +59,8 @@
         </div>
 
         <!-- ── Dynamic content (replaced on search / paginate) ──────────── -->
+        <!-- aria-live wrapper persists across AJAX replacements; SR announces new result counts -->
+        <div aria-live="polite" aria-relevant="additions text">
         <div id="listDynamicContent">
 
             <!-- Subtitle: count + keyboard hint -->
@@ -204,6 +206,7 @@
             </div>
 
         </div><!-- /listDynamicContent -->
+        </div><!-- /aria-live wrapper -->
 
     </div>
 </main>

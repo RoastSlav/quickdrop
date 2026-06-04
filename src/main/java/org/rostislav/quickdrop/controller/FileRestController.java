@@ -113,6 +113,12 @@ public class FileRestController {
                     .body(Map.of("error", "Uploads are restricted to administrators."));
         }
 
+        // Reject zero-byte uploads early: S3 multipart upload requires at least one byte,
+        // and there is no value in storing an empty file regardless of backend.
+        if (file.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Empty files cannot be uploaded."));
+        }
+
         if (chunkNumber == 0) {
             logger.info("Upload started for file: {}", fileName);
         }

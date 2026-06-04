@@ -5,7 +5,6 @@ import org.rostislav.quickdrop.service.ApplicationSettingsService;
 import org.rostislav.quickdrop.service.SessionService;
 import org.rostislav.quickdrop.service.StorageMigrationService;
 import org.rostislav.quickdrop.service.StorageMigrationService.MigrationDirection;
-import org.rostislav.quickdrop.storage.StorageBackend;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
@@ -86,6 +85,23 @@ public class StorageMigrationController {
                 "failed", state.failed(),
                 "errors", state.errors()
         ));
+    }
+
+    /**
+     * Returns a lightweight pre-flight summary for the migration UI.
+     *
+     * <p>Queries the database for the number of objects that would be copied, so the
+     * admin can confirm the scope before starting. No storage I/O is performed.
+     *
+     * @return {@code {"count": N}} where N is the number of files that would be migrated
+     */
+    @GetMapping("/api/migration-preflight")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> migrationPreflight(HttpServletRequest request) {
+        if (!sessionService.hasValidAdminSession(request)) {
+            return ResponseEntity.status(403).build();
+        }
+        return ResponseEntity.ok(Map.of("count", migrationService.countObjects()));
     }
 
     @GetMapping("/api/test-s3")

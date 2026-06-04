@@ -74,17 +74,20 @@ function syncUploadEnabled() {
 
 function syncDefaultHomePageOptions() {
     const uploadEnabled = Boolean(document.getElementById("uploadEnabled")?.checked);
+    const uploadAdminOnly = Boolean(document.getElementById("uploadAdminOnly")?.checked);
     const listEnabled = Boolean(document.getElementById("fileListPageEnabled")?.checked);
     const pasteEnabled = Boolean(document.getElementById("pastebinEnabled")?.checked);
+
+    // Upload is only a valid public home page if it's enabled AND not admin-only
+    const uploadPubliclyAccessible = uploadEnabled && !uploadAdminOnly;
 
     const select = document.getElementById("defaultHomePage");
     if (!select) return;
 
-    const currentVal = select.value;
-
     for (const opt of select.options) {
         if (opt.value === "upload") {
-            opt.disabled = !uploadEnabled;
+            opt.disabled = !uploadPubliclyAccessible;
+            opt.title = !uploadEnabled ? "" : (uploadAdminOnly ? "Upload is restricted to admins — not reachable for public visitors" : "");
         } else if (opt.value === "list") {
             opt.disabled = !listEnabled;
         } else if (opt.value === "paste") {
@@ -656,6 +659,9 @@ document.addEventListener("DOMContentLoaded", function () {
         ?.addEventListener("change", syncDefaultHomePageOptions);
     document
         .getElementById("pastebinEnabled")
+        ?.addEventListener("change", syncDefaultHomePageOptions);
+    document
+        .getElementById("uploadAdminOnly")
         ?.addEventListener("change", syncDefaultHomePageOptions);
 
     document

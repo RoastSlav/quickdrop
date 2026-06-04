@@ -513,7 +513,7 @@
                                                    th:field="*{encryptionEnabled}" type="checkbox"/>
                                             <span>
                         <span class="text-sm font-semibold" th:text="#{page.settings.files.encryption.enabled}">Enable file encryption</span>
-                        <span class="form-hint block mt-0.5" th:text="#{page.settings.files.encryption.enabled.help}">Encrypt files at rest when a password is provided.</span>
+                        <span class="form-hint block mt-0.5" th:text="#{page.settings.files.encryption.enabled.help}">Encrypt files at rest using the file password as the key. Only password-protected files are encrypted; files without a password are stored as-is.</span>
                       </span>
                                         </label>
                                     </div>
@@ -589,6 +589,8 @@
                         <span class="text-sm" th:text="#{page.settings.file.hideFromList.adminOnly}">Require admin session to hide files</span>
                         <span class="form-hint block mt-0.5"
                               th:text="#{page.settings.file.hideFromList.adminOnly.help}">Only admins can set or change "Hide from file list".</span>
+                        <span class="form-hint block mt-0.5" style="color:var(--c-text-faint)"
+                              th:text="#{page.settings.file.hideFromList.directAccessNote}">Note: hidden files are only removed from the browseable list — anyone with the direct link can still access them.</span>
                       </span>
                                         </label>
                                     </div>

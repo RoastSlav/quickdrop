@@ -184,7 +184,7 @@
                         <div
                                 class="fieldset"
                                 th:if="${canUseKeepIndefinitely or (isFileListPageEnabled and canHideFromList) or uploadPasswordEnabled}"
-                                x-data="{ open: false }"
+                                th:attr="x-data='{ open: ' + (${uploadPasswordEnabled} ? 'true' : 'false') + ' }'"
                         >
                             <button
                                     @click="open = !open"
@@ -239,6 +239,10 @@
                                         <p class="form-hint ml-6" th:text="#{form.hideFromList.help}">
                                             Won't appear on the "View Files" page.
                                         </p>
+                                        <p class="form-hint ml-6" style="color:var(--c-text-faint)"
+                                           th:text="#{form.hideFromList.directAccessNote}">
+                                            Anyone with the direct link can still access the file.
+                                        </p>
                                     </div>
                                 </div>
 
@@ -254,6 +258,17 @@
                                             th:placeholder="#{form.password.optional}"
                                             type="password"
                                     />
+                                    <p class="form-hint" id="passwordlessWarning" style="color:var(--c-amber)"
+                                       th:text="#{page.upload.passwordless.warning}">
+                                        Without a password you won't be able to edit, delete, or manage this file after
+                                        uploading.
+                                    </p>
+                                    <script>
+                                        document.getElementById('password')?.addEventListener('input', function () {
+                                            const w = document.getElementById('passwordlessWarning');
+                                            if (w) w.style.display = this.value.length ? 'none' : '';
+                                        });
+                                    </script>
                                 </div>
                             </div>
                         </div>

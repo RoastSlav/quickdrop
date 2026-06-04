@@ -116,10 +116,28 @@
     --c-folder-box-bg: #f0f2ee;
     --c-folder-box-border: #c4cdc0;
 
+    /* ── Badge / muted-surface text (WCAG AA contrast on muted backgrounds) ── */
+    --c-primary-badge-text: #065b73; /* #0BA8C4 muted bg → need darker for 4.5:1 */
+    --c-secondary-badge-text: #7a3d00; /* orange on pale orange */
+    --c-teal-badge-text: #3d6b1a; /* green on pale green */
+    --c-amber-badge-text: #5c4500; /* gold on pale gold */
+    --c-rose-badge-text: #9b0029; /* rose on pale rose */
+    --c-danger-badge-text: #b91c1c; /* red on pale red (also used in alert-danger) */
+
     /* ── Motion ───────────────────────────────────────────────────────── */
     --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
     --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
     --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+
+    /* ── Border radius scale ─────────────────────────────────────────── */
+    --r-sm: 0.375rem; /* kbd, chip */
+    --r-md: 0.625rem; /* btn-sm, nav-link, pagination-btn */
+    --r-lg: 0.75rem; /* btn, form-input, file-card-icon */
+    --r-xl: 1rem; /* btn-xl, fieldset, smaller cards */
+    --r-2xl: 1.25rem; /* card, file-card, stat-hero, manifest-card */
+    --r-3xl: 1.5rem; /* card-lg, card-glass, dropzone */
+    --r-4xl: 1.75rem; /* card-xl */
+    --r-pill: 9999px; /* badge, toggle, progress bar, status dot */
 
     /* ── Layout ───────────────────────────────────────────────────────── */
     --nav-h: 3.75rem;
@@ -218,6 +236,15 @@ html.dark {
     --c-folder-connector: #8a9ba8;
     --c-folder-box-bg: #131113;
     --c-folder-box-border: #2E4057;
+
+    /* Badge text: in dark mode the muted backgrounds are very dark, so
+       the standard token colors already pass 4.5:1 — no overrides needed. */
+    --c-primary-badge-text: var(--c-primary);
+    --c-secondary-badge-text: var(--c-secondary);
+    --c-teal-badge-text: var(--c-teal);
+    --c-amber-badge-text: var(--c-amber);
+    --c-rose-badge-text: var(--c-rose);
+    --c-danger-badge-text: var(--c-danger);
 }
 
 /* ════════════════════════════════════════════════════════════════════════
@@ -258,6 +285,11 @@ html.dark {
     button {
         cursor: pointer;
         font-family: inherit;
+    }
+
+    input[type="checkbox"],
+    input[type="radio"] {
+        accent-color: var(--c-primary);
     }
 
     .font-mono, .mono, code, kbd, samp, pre {
@@ -517,7 +549,7 @@ html.dark {
         font-weight: 600;
         font-size: 0.875rem;
         line-height: 1.25rem;
-        border-radius: 0.75rem;
+        border-radius: var(--r-lg);
         padding: 0.5625rem 1.125rem;
         border: 1px solid transparent;
         text-decoration: none;
@@ -540,7 +572,7 @@ html.dark {
     .btn-sm {
         padding: 0.375rem 0.75rem;
         font-size: 0.8125rem;
-        border-radius: 0.625rem;
+        border-radius: var(--r-md);
     }
 
     .btn-lg {
@@ -552,25 +584,13 @@ html.dark {
     .btn-xl {
         padding: 0.875rem 2rem;
         font-size: 1rem;
-        border-radius: 1rem;
+        border-radius: var(--r-xl);
         letter-spacing: -0.01em;
     }
 
+    /* btn-gradient is the canonical primary CTA — btn-primary is kept as an alias */
+    .btn-gradient,
     .btn-primary {
-        background: var(--c-primary);
-        color: var(--c-primary-fg);
-        box-shadow: 0 1px 0 rgba(255, 255, 255, 0.2) inset,
-        0 4px 16px -4px color-mix(in srgb, var(--c-primary) 50%, transparent);
-    }
-
-    .btn-primary:hover {
-        background: var(--c-primary-hover);
-        box-shadow: 0 1px 0 rgba(255, 255, 255, 0.2) inset,
-        0 8px 24px -6px color-mix(in srgb, var(--c-primary) 60%, transparent);
-        transform: translateY(-1px);
-    }
-
-    .btn-gradient {
         background: var(--c-primary);
         color: var(--c-primary-fg);
         border: none;
@@ -578,7 +598,8 @@ html.dark {
         0 8px 24px -6px color-mix(in srgb, var(--c-primary) 60%, transparent);
     }
 
-    .btn-gradient:hover {
+    .btn-gradient:hover,
+    .btn-primary:hover {
         background: var(--c-primary-hover);
         box-shadow: 0 1px 0 rgba(255, 255, 255, 0.2) inset,
         0 8px 24px -6px color-mix(in srgb, var(--c-primary) 60%, transparent);
@@ -694,7 +715,7 @@ html.dark {
     .card {
         background: var(--c-surface);
         border: 1px solid var(--c-border);
-        border-radius: 1.25rem;
+        border-radius: var(--r-2xl);
         padding: 1.5rem;
         box-shadow: 0 1px 3px rgba(15, 23, 42, 0.07),
         0 4px 12px -4px rgba(15, 23, 42, 0.06),
@@ -703,12 +724,12 @@ html.dark {
 
     .card-lg {
         padding: 2rem;
-        border-radius: 1.5rem;
+        border-radius: var(--r-3xl);
     }
 
     .card-xl {
         padding: 2.5rem;
-        border-radius: 1.75rem;
+        border-radius: var(--r-4xl);
     }
 
     .card-glass {
@@ -716,7 +737,7 @@ html.dark {
         backdrop-filter: blur(24px) saturate(150%);
         -webkit-backdrop-filter: blur(24px) saturate(150%);
         border: 1px solid color-mix(in srgb, var(--c-border) 60%, transparent);
-        border-radius: 1.5rem;
+        border-radius: var(--r-3xl);
         box-shadow: 0 8px 40px -16px rgba(15, 23, 42, 0.18);
     }
 
@@ -900,7 +921,7 @@ html.dark {
         width: 100%;
         background: var(--c-surface);
         border: 1px solid var(--c-border-strong);
-        border-radius: 0.75rem;
+        border-radius: var(--r-lg);
         padding: 0.625rem 0.875rem;
         color: var(--c-text);
         font-family: inherit;
@@ -928,6 +949,18 @@ html.dark {
     .form-input:disabled {
         opacity: 0.6;
         cursor: not-allowed;
+    }
+
+    .form-input.is-invalid,
+    .form-input[aria-invalid="true"] {
+        border-color: var(--c-danger);
+        box-shadow: 0 0 0 4px color-mix(in srgb, var(--c-danger) 12%, transparent);
+    }
+
+    .form-input.is-invalid:focus,
+    .form-input[aria-invalid="true"]:focus {
+        border-color: var(--c-danger);
+        box-shadow: 0 0 0 4px color-mix(in srgb, var(--c-danger) 18%, transparent);
     }
 
     textarea.form-input {
@@ -979,9 +1012,27 @@ html.dark {
         height: 1rem;
         margin-top: 0.1875rem;
         flex-shrink: 0;
-        accent-color: var(--c-primary);
         border-radius: 0.25rem;
         cursor: pointer;
+    }
+
+    /* accent-color overrides for non-primary checkboxes */
+    .accent-secondary {
+        accent-color: var(--c-secondary);
+    }
+
+    .accent-teal {
+        accent-color: var(--c-teal);
+    }
+
+    .accent-indigo {
+        accent-color: var(--c-indigo);
+    }
+
+    /* aligns a standalone checkbox with adjacent text in a flex-start row */
+    .check-align {
+        margin-top: 0.1875rem;
+        flex-shrink: 0;
     }
 
     /* Toggle switch */
@@ -1053,6 +1104,16 @@ html.dark {
     .toggle--secondary input:checked + .toggle-slider {
         background: var(--c-secondary);
         box-shadow: 0 0 12px color-mix(in srgb, var(--c-secondary) 40%, transparent);
+    }
+
+    .toggle--indigo input:checked + .toggle-slider {
+        background: var(--c-indigo);
+        box-shadow: 0 0 12px color-mix(in srgb, var(--c-indigo) 40%, transparent);
+    }
+
+    .toggle--amber input:checked + .toggle-slider {
+        background: var(--c-amber);
+        box-shadow: 0 0 12px color-mix(in srgb, var(--c-amber) 40%, transparent);
     }
 
     /* ── Page layout ──────────────────────────────────────────────────── */
@@ -1149,26 +1210,26 @@ html.dark {
         letter-spacing: 0.04em;
         text-transform: uppercase;
         padding: 0.25rem 0.625rem;
-        border-radius: 9999px;
+        border-radius: var(--r-pill);
         border: 1px solid transparent;
         white-space: nowrap;
     }
 
     .badge-primary {
         background: var(--c-primary-muted);
-        color: var(--c-primary);
+        color: var(--c-primary-badge-text);
         border-color: color-mix(in srgb, var(--c-primary) 30%, transparent);
     }
 
     .badge-secondary {
         background: var(--c-secondary-muted);
-        color: var(--c-secondary);
+        color: var(--c-secondary-badge-text);
         border-color: color-mix(in srgb, var(--c-secondary) 30%, transparent);
     }
 
     .badge-teal {
         background: var(--c-teal-muted);
-        color: var(--c-teal);
+        color: var(--c-teal-badge-text);
         border-color: color-mix(in srgb, var(--c-teal) 30%, transparent);
     }
 
@@ -1180,7 +1241,7 @@ html.dark {
 
     .badge-rose {
         background: var(--c-rose-muted);
-        color: var(--c-rose);
+        color: var(--c-rose-badge-text);
         border-color: color-mix(in srgb, var(--c-rose) 30%, transparent);
     }
 
@@ -1192,13 +1253,13 @@ html.dark {
 
     .badge-amber {
         background: var(--c-amber-muted);
-        color: var(--c-amber);
+        color: var(--c-amber-badge-text);
         border-color: color-mix(in srgb, var(--c-amber) 30%, transparent);
     }
 
     .badge-danger {
         background: var(--c-danger-muted);
-        color: var(--c-danger);
+        color: var(--c-danger-badge-text);
         border-color: color-mix(in srgb, var(--c-danger) 30%, transparent);
     }
 
@@ -1256,7 +1317,7 @@ html.dark {
     .alert-danger {
         background: var(--c-danger-muted);
         border-color: color-mix(in srgb, var(--c-danger) 40%, transparent);
-        color: var(--c-danger);
+        color: var(--c-danger-badge-text);
     }
 
     .alert-info {
@@ -1661,7 +1722,7 @@ html.dark {
         padding: 0.4375rem 1rem;
         font-size: 0.8125rem;
         font-weight: 600;
-        border-radius: 0.625rem;
+        border-radius: var(--r-md);
         background: var(--c-surface);
         border: 1px solid var(--c-border-strong);
         color: var(--c-text);

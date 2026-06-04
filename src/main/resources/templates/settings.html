@@ -51,8 +51,8 @@
         <div class="settings-layout animate-in animate-in-delay-1">
 
             <!-- ── Sidebar navigation ── -->
-            <aside class="settings-sidebar">
-                <nav class="card p-2 settings-nav">
+            <nav aria-label="Settings navigation" class="settings-sidebar">
+                <div class="card p-2 settings-nav">
 
                     <!-- Appearance -->
                     <button class="sn-btn flex-shrink-0" data-panel="appearance" onclick="switchPanel('appearance')"
@@ -133,8 +133,8 @@
                         </svg>
                         <span th:text="#{page.settings.about.title(${appName})}">About</span>
                     </button>
-                </nav>
-            </aside>
+                </div>
+            </nav>
 
             <!-- ── Content panels ── -->
             <div class="settings-content">
@@ -239,7 +239,7 @@
                                          style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
                                         <label class="form-check">
                                             <input id="uploadEnabled" onchange="syncUploadEnabled()"
-                                                   style="accent-color:var(--c-primary)"
+
                                                    th:field="*{uploadEnabled}" type="checkbox"/>
                                             <span>
                         <span class="text-sm font-semibold" th:text="#{page.settings.features.uploads.enabled}">Enable file uploads</span>
@@ -250,7 +250,7 @@
                                     <div class="rounded-2xl p-4" id="uploadAdminOnlyRow"
                                          style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
                                         <label class="form-check">
-                                            <input id="uploadAdminOnly" style="accent-color:var(--c-primary)"
+                                            <input id="uploadAdminOnly"
                                                    th:field="*{uploadAdminOnly}" type="checkbox"/>
                                             <span>
                         <span class="text-sm font-semibold" th:text="#{page.settings.features.uploads.adminOnly}">Restrict uploads to admins</span>
@@ -270,7 +270,7 @@
                                      style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
                                     <label class="form-check">
                                         <input id="pastebinEnabled" onchange="syncDefaultHomePageOptions()"
-                                               style="accent-color:var(--c-primary)"
+
                                                th:field="*{pastebinEnabled}" type="checkbox"/>
                                         <span>
                       <span class="text-sm font-semibold" th:text="#{page.settings.system.pastebin.enabled}">Enable Pastebin</span>
@@ -290,7 +290,7 @@
                                          style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
                                         <label class="form-check">
                                             <input id="fileListPageEnabled" onchange="syncDefaultHomePageOptions()"
-                                                   style="accent-color:var(--c-primary)"
+
                                                    th:field="*{fileListPageEnabled}" type="checkbox"/>
                                             <span>
                         <span class="text-sm font-semibold" th:text="#{page.settings.system.fileList.enabled}">Enable public file list</span>
@@ -332,7 +332,7 @@
                                          style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
                                         <label class="form-check">
                                             <input id="shareLinksEnabled" onchange="syncShareLinkSettings()"
-                                                   style="accent-color:var(--c-primary)"
+
                                                    th:field="*{shareLinksEnabled}" type="checkbox"/>
                                             <span>
                         <span class="text-sm font-semibold" th:text="#{page.settings.features.shareLinks.enabled}">Enable share links</span>
@@ -345,7 +345,7 @@
                                          style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
                                         <label class="form-check">
                                             <input id="simplifiedShareLinks" onchange="syncShareLinkSettings()"
-                                                   style="accent-color:var(--c-primary)"
+
                                                    th:field="*{simplifiedShareLinks}" type="checkbox"/>
                                             <span>
                         <span class="text-sm font-semibold" th:text="#{page.settings.security.simplifyShareLinks}">Simplified share links</span>
@@ -365,7 +365,7 @@
                                 <div class="rounded-2xl p-4"
                                      style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
                                     <label class="form-check">
-                                        <input id="adminDashboardButtonEnabled" style="accent-color:var(--c-primary)"
+                                        <input id="adminDashboardButtonEnabled"
                                                th:field="*{adminDashboardButtonEnabled}" type="checkbox"/>
                                         <span>
                       <span class="text-sm font-semibold" th:text="#{page.settings.system.adminDashboard.showButton}">Show Admin Dashboard button</span>
@@ -497,7 +497,7 @@
                                          style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
                                         <label class="form-check">
                                             <input id="uploadPasswordEnabled" onchange="syncUploadPasswordSetting()"
-                                                   style="accent-color:var(--c-primary)"
+
                                                    th:field="*{uploadPasswordEnabled}" type="checkbox"/>
                                             <span>
                         <span class="text-sm font-semibold" th:text="#{page.settings.files.uploadPassword.enabled}">Enable per-file upload passwords</span>
@@ -509,7 +509,7 @@
                                     <div class="rounded-2xl p-4" id="encryptionEnabledRow"
                                          style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
                                         <label class="form-check">
-                                            <input id="encryptionEnabled" style="accent-color:var(--c-primary)"
+                                            <input id="encryptionEnabled"
                                                    th:field="*{encryptionEnabled}" type="checkbox"/>
                                             <span>
                         <span class="text-sm font-semibold" th:text="#{page.settings.files.encryption.enabled}">Enable file encryption</span>
@@ -520,7 +520,7 @@
                                     <div class="rounded-2xl p-4"
                                          style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
                                         <label class="form-check">
-                                            <input id="metadataStrippingEnabled" style="accent-color:var(--c-primary)"
+                                            <input id="metadataStrippingEnabled"
                                                    th:field="*{metadataStrippingEnabled}" type="checkbox"/>
                                             <span>
                         <span class="text-sm font-semibold" th:text="#{page.settings.security.metadataStripping}">Strip EXIF metadata</span>
@@ -543,7 +543,7 @@
                                         <span class="form-label" th:text="#{page.settings.files.preview.enabled}">Enable file preview</span>
                                         <label class="form-check">
                                             <input id="previewEnabled" onchange="togglePreviewSizeField()"
-                                                   style="accent-color:var(--c-primary)"
+
                                                    th:field="*{previewEnabled}" type="checkbox"/>
                                             <span class="text-sm" th:text="#{page.settings.files.preview.enabled.help}">Show inline previews for images and text files.</span>
                                         </label>
@@ -571,7 +571,7 @@
                                     <div class="settings-list-item">
                                         <span class="form-label" th:text="#{page.settings.file.keepIndefinitely.title}">Keep Indefinitely</span>
                                         <label class="form-check">
-                                            <input id="keepIndefinitelyAdminOnly" style="accent-color:var(--c-primary)"
+                                            <input id="keepIndefinitelyAdminOnly"
                                                    th:field="*{keepIndefinitelyAdminOnly}" type="checkbox"/>
                                             <span>
                         <span class="text-sm" th:text="#{page.settings.file.keepIndefinitely.adminOnly}">Require admin session</span>
@@ -583,7 +583,7 @@
                                     <div class="settings-list-item">
                                         <span class="form-label" th:text="#{page.settings.file.hideFromList.title}">Hide from list</span>
                                         <label class="form-check">
-                                            <input id="hideFromListAdminOnly" style="accent-color:var(--c-primary)"
+                                            <input id="hideFromListAdminOnly"
                                                    th:field="*{hideFromListAdminOnly}" type="checkbox"/>
                                             <span>
                         <span class="text-sm" th:text="#{page.settings.file.hideFromList.adminOnly}">Require admin session to hide files</span>
@@ -628,7 +628,7 @@
                                      style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
                                     <label class="form-check mb-3">
                                         <input id="appPasswordEnabled" onclick="togglePasswordField()"
-                                               style="accent-color:var(--c-primary)" th:field="*{appPasswordEnabled}"
+                                               th:field="*{appPasswordEnabled}"
                                                type="checkbox"/>
                                         <span>
                       <span class="text-sm font-semibold" th:text="#{page.settings.security.appPasswordEnabled}">Enable Password Protection</span>
@@ -712,7 +712,7 @@
                                      style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
                                     <div class="flex items-start gap-3">
                                         <input id="discordWebhookEnabled"
-                                               style="margin-top:3px;accent-color:var(--c-secondary)"
+                                               class="check-align accent-secondary"
                                                th:field="*{discordWebhookEnabled}" type="checkbox"/>
                                         <div>
                                             <p class="text-sm font-semibold"
@@ -746,7 +746,7 @@
                                      style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
                                     <div class="flex items-start gap-3">
                                         <input id="emailNotificationsEnabled"
-                                               style="margin-top:3px;accent-color:var(--c-secondary)"
+                                               class="check-align accent-secondary"
                                                th:field="*{emailNotificationsEnabled}" type="checkbox"/>
                                         <div>
                                             <p class="text-sm font-semibold"
@@ -801,13 +801,13 @@
                                             </div>
                                         </div>
                                         <label class="form-check">
-                                            <input id="smtpUseTls" style="accent-color:var(--c-primary)"
+                                            <input id="smtpUseTls"
                                                    th:field="*{smtpUseTls}" type="checkbox"/>
                                             <span class="text-sm"
                                                   th:text="#{page.settings.notifications.email.useStartTls}">Use STARTTLS</span>
                                         </label>
                                         <label class="form-check">
-                                            <input id="smtpUseSsl" style="accent-color:var(--c-primary)"
+                                            <input id="smtpUseSsl"
                                                    th:field="*{smtpUseSsl}" type="checkbox"/>
                                             <span class="text-sm"
                                                   th:text="#{page.settings.notifications.email.useImplicitSsl}">Use Implicit SSL</span>
@@ -831,7 +831,7 @@
                                      style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
                                     <div class="flex items-start gap-3">
                                         <input id="notificationBatchEnabled"
-                                               style="margin-top:3px;accent-color:var(--c-secondary)"
+                                               class="check-align accent-secondary"
                                                th:field="*{notificationBatchEnabled}" type="checkbox"/>
                                         <div>
                                             <p class="text-sm font-semibold"
@@ -859,47 +859,47 @@
                                         which events trigger a notification.</p>
                                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-1">
                                         <label class="flex items-center gap-2 text-sm cursor-pointer">
-                                            <input style="accent-color:var(--c-secondary)" th:field="*{notifyOnUpload}"
+                                            <input class="accent-secondary" th:field="*{notifyOnUpload}"
                                                    type="checkbox"/>
                                             <span th:text="#{page.settings.notifications.events.upload}">Upload</span>
                                         </label>
                                         <label class="flex items-center gap-2 text-sm cursor-pointer">
-                                            <input style="accent-color:var(--c-secondary)"
+                                            <input class="accent-secondary"
                                                    th:field="*{notifyOnDownload}" type="checkbox"/>
                                             <span th:text="#{page.settings.notifications.events.download}">Download</span>
                                         </label>
                                         <label class="flex items-center gap-2 text-sm cursor-pointer">
-                                            <input style="accent-color:var(--c-secondary)" th:field="*{notifyOnRenewal}"
+                                            <input class="accent-secondary" th:field="*{notifyOnRenewal}"
                                                    type="checkbox"/>
                                             <span th:text="#{page.settings.notifications.events.renewal}">Renewal</span>
                                         </label>
                                         <label class="flex items-center gap-2 text-sm cursor-pointer">
-                                            <input style="accent-color:var(--c-secondary)"
+                                            <input class="accent-secondary"
                                                    th:field="*{notifyOnDeletion}" type="checkbox"/>
                                             <span th:text="#{page.settings.notifications.events.deletion}">Deletion</span>
                                         </label>
                                         <label class="flex items-center gap-2 text-sm cursor-pointer">
-                                            <input style="accent-color:var(--c-secondary)"
+                                            <input class="accent-secondary"
                                                    th:field="*{notifyOnShareCreate}" type="checkbox"/>
                                             <span th:text="#{page.settings.notifications.events.shareCreate}">Share Link Created</span>
                                         </label>
                                         <label class="flex items-center gap-2 text-sm cursor-pointer">
-                                            <input style="accent-color:var(--c-secondary)"
+                                            <input class="accent-secondary"
                                                    th:field="*{notifyOnShareDownload}" type="checkbox"/>
                                             <span th:text="#{page.settings.notifications.events.shareDownload}">Share Link Download</span>
                                         </label>
                                         <label class="flex items-center gap-2 text-sm cursor-pointer">
-                                            <input style="accent-color:var(--c-secondary)"
+                                            <input class="accent-secondary"
                                                    th:field="*{notifyOnPasteCreate}" type="checkbox"/>
                                             <span th:text="#{page.settings.notifications.events.pasteCreate}">Paste Create</span>
                                         </label>
                                         <label class="flex items-center gap-2 text-sm cursor-pointer">
-                                            <input style="accent-color:var(--c-secondary)"
+                                            <input class="accent-secondary"
                                                    th:field="*{notifyOnPasteView}" type="checkbox"/>
                                             <span th:text="#{page.settings.notifications.events.pasteView}">Paste View</span>
                                         </label>
                                         <label class="flex items-center gap-2 text-sm cursor-pointer">
-                                            <input style="accent-color:var(--c-secondary)"
+                                            <input class="accent-secondary"
                                                    th:field="*{notifyOnPasteEdit}" type="checkbox"/>
                                             <span th:text="#{page.settings.notifications.events.pasteEdit}">Paste Edit</span>
                                         </label>
@@ -973,7 +973,8 @@
                                     </div>
 
                                     <div class="flex items-start gap-3">
-                                        <input id="s3PathStyle" style="margin-top:3px;accent-color:var(--c-teal)" th:field="*{s3PathStyle}" type="checkbox"/>
+                                        <input class="check-align accent-teal" id="s3PathStyle"
+                                               th:field="*{s3PathStyle}" type="checkbox"/>
                                         <div>
                                             <p class="text-sm font-semibold">Force path-style URLs</p>
                                             <p class="form-hint">Required for MinIO and some other S3-compatible providers.</p>

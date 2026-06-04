@@ -291,7 +291,9 @@ function createShareLink() {
         })
         .catch((error) => {
             console.error(error);
-            alert(error?.message || getI18nStr('shareGenerateFailed', 'Failed to generate share link.'));
+            const msg = error?.message || getI18nStr('shareGenerateFailed', 'Failed to generate share link.');
+            announceShareStatus(msg);
+            alert(msg);
         })
         .finally(() => {
             if (spinner) {
@@ -300,6 +302,16 @@ function createShareLink() {
             }
             generateLinkButton.disabled = false;
         });
+}
+
+function announceShareStatus(message) {
+    const el = document.getElementById("shareStatus");
+    if (!el) return;
+    // Clear first so re-announcing the same message still fires the live region
+    el.textContent = "";
+    requestAnimationFrame(() => {
+        el.textContent = message;
+    });
 }
 
 function updateShareLink(link) {
@@ -318,6 +330,10 @@ function updateShareLink(link) {
     const hasLink = !!link;
     copyRow?.classList.toggle("hidden", !hasLink);
     divider?.classList.toggle("hidden", !hasLink);
+
+    if (hasLink) {
+        announceShareStatus("Share link generated.");
+    }
 
     const ctx = canvas.getContext("2d");
     ctx.clearRect(0, 0, canvas.width, canvas.height);

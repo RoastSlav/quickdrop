@@ -284,8 +284,7 @@ function parsePositiveNumber(value) {
 function markValidity(input, message) {
     if (!input) return;
     input.setCustomValidity(message || "");
-    input.classList.toggle("border-red-500", Boolean(message));
-    input.classList.toggle("focus:ring-red-500", Boolean(message));
+    input.classList.toggle("is-invalid", Boolean(message));
     if (message) {
         input.reportValidity();
     }

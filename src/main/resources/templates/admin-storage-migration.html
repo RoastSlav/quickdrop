@@ -61,12 +61,13 @@
         </div>
 
         <!-- Progress card (shown when migration has run) -->
-        <div class="card p-6 mb-6 animate-in animate-in-delay-2" id="progressCard" th:if="${state.status.name() != 'IDLE'}">
+        <div aria-atomic="true" aria-live="polite" class="card p-6 mb-6 animate-in animate-in-delay-2" id="progressCard"
+             th:if="${state.status.name() != 'IDLE'}">
             <h2 class="font-semibold mb-4">Migration Progress</h2>
 
             <div class="flex items-center gap-4 mb-4">
                 <span class="badge"
-                      th:classappend="${state.status.name() == 'RUNNING' ? ' badge-teal' : state.status.name() == 'COMPLETED' ? ' badge-green' : ' badge-amber'}"
+                      th:classappend="${state.status.name() == 'RUNNING' ? ' badge-teal' : state.status.name() == 'COMPLETED' ? ' badge-teal' : ' badge-amber'}"
                       th:text="${state.status}">RUNNING</span>
                 <span class="text-sm text-muted" th:if="${state.direction != null}"
                       th:text="${state.direction.name() == 'LOCAL_TO_S3' ? 'Local → S3' : 'S3 → Local'}"></span>

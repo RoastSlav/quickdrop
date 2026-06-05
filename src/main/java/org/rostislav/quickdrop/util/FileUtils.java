@@ -138,7 +138,7 @@ public class FileUtils {
             unitIndex++;
         }
 
-        return String.format("%.2f %s", sizeInUnits, units[unitIndex]);
+        return String.format(Locale.ROOT, "%.2f %s", sizeInUnits, units[unitIndex]);
     }
 
     /**
@@ -154,7 +154,16 @@ public class FileUtils {
         if (scheme == null) {
             scheme = request.getScheme();
         }
-        return scheme + "://" + request.getServerName() + "/file/" + fileEntity.uuid;
+        String host = request.getHeader("X-Forwarded-Host");
+        if (host == null) {
+            host = request.getServerName();
+            int port = request.getServerPort();
+            boolean defaultPort = ("https".equals(scheme) && port == 443) || ("http".equals(scheme) && port == 80);
+            if (!defaultPort) {
+                host += ":" + port;
+            }
+        }
+        return scheme + "://" + host + "/file/" + fileEntity.uuid;
     }
 
     /**

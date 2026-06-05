@@ -23,6 +23,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.rostislav.quickdrop.util.FileUtils.validateShareToken;
 import static org.springframework.http.ResponseEntity.ok;
@@ -101,6 +102,7 @@ public class FileRestController {
             @RequestParam(value = "folderUpload", defaultValue = "false") Boolean folderUpload,
             @RequestParam(value = "folderName", required = false) String folderName,
             @RequestParam(value = "folderManifest", required = false) String folderManifest,
+            @RequestParam(value = "uploadId", required = false) String uploadId,
             HttpServletRequest request) {
 
         boolean isAdmin = sessionService.hasValidAdminSession(request);
@@ -148,7 +150,15 @@ public class FileRestController {
                 return ResponseEntity.badRequest().body("{\"error\": \"Invalid folder manifest: must be a JSON array\"}");
             }
 
+            // If the client did not supply an uploadId fall back to a random UUID.
+            // All chunks of the same upload MUST share the same uploadId, so the fallback
+            // is only safe for single-chunk uploads or legacy clients.
+            String effectiveUploadId = (uploadId != null && !uploadId.isBlank())
+                    ? uploadId
+                    : UUID.randomUUID().toString();
+
             UploadRequest fileUploadRequest = new UploadRequest(description, keepIndefinitelyValue, effectivePassword, hiddenValue, fileName, totalChunks, fileSize, uploaderIp, uploaderUserAgent, Boolean.TRUE.equals(folderUpload), folderName, safeManifest, false);
+            fileUploadRequest.uploadId = effectiveUploadId;
             Upload upload = asyncFileMergeService.submitChunk(fileUploadRequest, file, chunkNumber);
             return ResponseEntity.ok(upload);
         } catch (IOException e) {
@@ -268,7 +278,8 @@ public class FileRestController {
             }
 
             return ok()
-                    .header("Content-Disposition", "attachment; filename=\"" + fileEntity.name + "\"")
+                    .header("Content-Disposition", "attachment; filename=\""
+                            + URLEncoder.encode(fileEntity.name, StandardCharsets.UTF_8) + "\"")
                     .header("Content-Type", "application/octet-stream")
                     .body(responseBody);
         } catch (IllegalArgumentException e) {

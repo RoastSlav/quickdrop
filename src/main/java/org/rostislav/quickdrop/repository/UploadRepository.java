@@ -59,4 +59,15 @@ public interface UploadRepository extends JpaRepository<Upload, Long> {
      */
     @Query("SELECT u FROM Upload u WHERE u.keepIndefinitely = false AND u.deleted = false AND u.uploadDate < :thresholdDate")
     List<Upload> getUploadsForDeletion(@Param("thresholdDate") LocalDate thresholdDate);
+
+    /**
+     * Returns only the UUID strings of all non-deleted uploads.
+     *
+     * <p>Use this instead of {@link #findAll()} when only the UUID is needed (e.g. storage
+     * migration key building) to avoid loading full entity graphs into memory.
+     *
+     * @return list of UUIDs for non-deleted uploads
+     */
+    @Query("SELECT u.uuid FROM Upload u WHERE u.deleted = false")
+    List<String> findAllActiveUuids();
 }

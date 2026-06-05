@@ -85,6 +85,22 @@ public interface ShareTokenRepository extends JpaRepository<ShareTokenEntity, Lo
     void deleteByIdTransactional(@Param("id") Long id);
 
     /**
+     * Atomically decrements the download counter for a share token, but only when the
+     * counter is currently greater than zero.  Returns the number of rows updated (1 on
+     * success, 0 if the counter was already exhausted by a concurrent request).
+     *
+     * <p>Using a single UPDATE prevents a read-then-write race where two concurrent
+     * downloads both observe {@code numberOfAllowedDownloads = 1} and both succeed.
+     *
+     * @param id the token's database id
+     * @return 1 if the counter was decremented, 0 if it was already zero
+     */
+    @Modifying
+    @Transactional
+    @Query("UPDATE ShareTokenEntity t SET t.numberOfAllowedDownloads = t.numberOfAllowedDownloads - 1 WHERE t.id = :id AND t.numberOfAllowedDownloads > 0")
+    int decrementDownloadCount(@Param("id") Long id);
+
+    /**
      * Finds the first unlimited token (no expiry, no download cap) for a given upload.
      * Used to reuse an existing unlimited token instead of creating a new one.
      *

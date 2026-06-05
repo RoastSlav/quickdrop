@@ -19,6 +19,11 @@ import java.time.LocalDateTime;
  *
  */
 @Entity
+@Table(name = "activity_log", indexes = {
+    @Index(name = "idx_activity_log_event_type", columnList = "event_type"),
+    @Index(name = "idx_activity_log_event_date", columnList = "event_date"),
+    @Index(name = "idx_activity_log_file_date", columnList = "file_id,event_date")
+})
 public class ActivityLog {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

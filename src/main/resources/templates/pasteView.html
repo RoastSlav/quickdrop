@@ -13,6 +13,7 @@
     <script src="/js/tailwindTheme.js"></script>
     <script src="/js/toast.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@3/dist/purify.min.js"></script>
     <th:block th:replace="~{fragments/header :: scripts}"></th:block>
     <style>
         .markdown-content h1, .markdown-content h2, .markdown-content h3, .markdown-content h4, .markdown-content h5, .markdown-content h6 {
@@ -309,7 +310,7 @@
     function showMarkdown() {
         if (!isMarkdownPaste || !markdownRuntimeAvailable) return;
         try {
-            markdownEl.innerHTML = markedApi.parse(rawText);
+            markdownEl.innerHTML = window.DOMPurify ? window.DOMPurify.sanitize(markedApi.parse(rawText)) : markedApi.parse(rawText);
         } catch (_) {
             showRaw();
             return;

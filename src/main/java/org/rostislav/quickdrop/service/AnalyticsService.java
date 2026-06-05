@@ -4,6 +4,7 @@ import org.rostislav.quickdrop.entity.ActivityLog;
 import org.rostislav.quickdrop.model.AnalyticsDataView;
 import org.rostislav.quickdrop.model.EventType;
 import org.rostislav.quickdrop.repository.ActivityLogRepository;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -119,6 +120,7 @@ public class AnalyticsService {
      * @param ip        requester IP address, or {@code null} for system events
      * @param ua        requester User-Agent header value, or {@code null} for system events
      */
+    @CacheEvict(value = "analytics", allEntries = true)
     public void logEvent(EventType eventType, String ip, String ua) {
         activityLogRepository.save(new ActivityLog(eventType, ip, ua));
     }

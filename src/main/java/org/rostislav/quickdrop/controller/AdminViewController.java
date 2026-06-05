@@ -158,6 +158,9 @@ public class AdminViewController {
 
     @PostMapping("/setup")
     public String setAdminPassword(String adminPassword) {
+        if (adminPassword == null || adminPassword.isBlank()) {
+            return "redirect:setup";
+        }
         applicationSettingsService.setAdminPassword(adminPassword);
         return "redirect:dashboard";
     }
@@ -290,7 +293,7 @@ public class AdminViewController {
                                          @RequestParam(defaultValue = "files") String source,
                                          HttpServletRequest request) {
         fileLifecycleService.updateKeepIndefinitely(uuid, keepIndefinitely, request);
-        return "redirect:/admin/" + source;
+        return "redirect:/admin/" + safeAdminSource(source);
     }
 
     @PostMapping("/toggle-hidden/{uuid}")
@@ -298,7 +301,7 @@ public class AdminViewController {
                                @RequestParam(defaultValue = "files") String source,
                                HttpServletRequest request) {
         fileLifecycleService.toggleHidden(uuid, request);
-        return "redirect:/admin/" + source;
+        return "redirect:/admin/" + safeAdminSource(source);
     }
 
     @PostMapping("/delete/{uuid}")
@@ -307,7 +310,19 @@ public class AdminViewController {
                              HttpServletRequest request) {
         RequesterInfo info = FileUtils.getRequesterInfo(request);
         fileLifecycleService.deleteFileFromDatabaseAndFileSystem(uuid, info.ipAddress(), info.userAgent());
-        return "redirect:/admin/" + source;
+        return "redirect:/admin/" + safeAdminSource(source);
+    }
+
+    /**
+     * Validates the {@code source} redirect parameter used by admin mutation endpoints.
+     * Only the known admin sub-pages are allowed; anything else falls back to {@code "files"}
+     * to prevent open redirects within the admin namespace.
+     *
+     * @param source the raw {@code source} request parameter
+     * @return a safe, whitelisted sub-path segment
+     */
+    private static String safeAdminSource(String source) {
+        return java.util.Set.of("files", "pastes", "share-links").contains(source) ? source : "files";
     }
 
     /**

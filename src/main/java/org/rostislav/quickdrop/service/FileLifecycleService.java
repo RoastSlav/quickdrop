@@ -226,7 +226,8 @@ public class FileLifecycleService {
             extendFile(uuid, request);
         }
 
-        Upload upload = referenceById.get();
+        // Re-fetch after extendFile so we don't overwrite the uploadDate it just set.
+        Upload upload = uploadRepository.findByUUID(uuid).orElseGet(referenceById::get);
         upload.keepIndefinitely = keepIndefinitely;
         logger.info("Upload keepIndefinitely updated: {}", upload);
         uploadRepository.save(upload);

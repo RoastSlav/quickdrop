@@ -35,6 +35,11 @@
         const ua = (wrapper.querySelector('#uaFilter')?.value || '').trim();
         if (ua) p.set('ua', ua);
 
+        const sourceTypeInput = document.getElementById('sourceTypeInput');
+        if (sourceTypeInput && sourceTypeInput.value) {
+            p.set('sourceType', sourceTypeInput.value);
+        }
+
         const size = sizeOverride != null
             ? sizeOverride
             : (wrapper.querySelector('#activityPageSize')?.value
@@ -88,6 +93,8 @@
             if (st2) st2.value = startT;
             if (ep) ep.value = endD;
             if (et2) et2.value = endT;
+            const form = document.getElementById('activityFilterForm');
+            if (form) form.requestSubmit();
             return;
         }
 

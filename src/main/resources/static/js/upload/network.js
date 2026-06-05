@@ -16,6 +16,9 @@ export async function uploadCandidate(
     const chunkSize = 1024 * 1024; // 1MB chunks
     const totalChunks = Math.max(1, Math.ceil(file.size / chunkSize));
     let currentChunk = 0;
+    // Stable per-upload identifier so concurrent uploads of the same filename
+    // never collide server-side and temp-file names are path-traversal-safe.
+    const uploadId = crypto.randomUUID();
 
     const progressElement =
         progressBar || document.getElementById("uploadProgress");
@@ -43,7 +46,8 @@ export async function uploadCandidate(
                 file.size,
                 candidate,
                 uploadPasswordEnabled,
-                form
+                form,
+                uploadId
             );
 
             const xhr = new XMLHttpRequest();
@@ -125,13 +129,17 @@ function buildChunkFormData(
     fileSize,
     candidate,
     uploadPasswordEnabled,
-    form
+    form,
+    uploadId
 ) {
     const uploadForm = form || document.getElementById("uploadForm");
     const formData = new FormData();
 
     formData.append("file", chunk);
     formData.append("fileName", fileName);
+    if (uploadId) {
+        formData.append("uploadId", uploadId);
+    }
     formData.append("chunkNumber", chunkNumber);
     formData.append("totalChunks", totalChunks);
     formData.append("fileSize", fileSize);

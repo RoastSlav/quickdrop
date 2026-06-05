@@ -8,6 +8,15 @@ package org.rostislav.quickdrop.model;
  */
 public class UploadRequest {
     /**
+     * Unique identifier for this upload session, generated client-side (file uploads) or
+     * server-side (paste uploads).  Used as the {@link AsyncFileMergeService} task key and
+     * as the temp-file prefix so that concurrent uploads of files with the same name do not
+     * collide and temp filenames cannot contain path-traversal characters from
+     * user-supplied file names.
+     */
+    public String uploadId;
+
+    /**
      * Original filename (or paste title with extension).
      */
     public String fileName;

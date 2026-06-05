@@ -297,15 +297,21 @@ public class FileDownloadService {
 
     private void updateShareTokenAfterDownload(ShareTokenEntity shareTokenEntity, Upload upload) {
         if (shareTokenEntity.numberOfAllowedDownloads != null) {
-            shareTokenEntity.numberOfAllowedDownloads--;
+            // Atomic decrement — safe under concurrent downloads.  If another thread already
+            // exhausted the count, decrementDownloadCount returns 0 and we still fall through
+            // to the cleanup check using a freshly loaded entity.
+            shareTokenRepository.decrementDownloadCount(shareTokenEntity.getId());
+            // Re-fetch so the cleanup decision is based on the DB-authoritative value.
+            shareTokenEntity = shareTokenRepository.findById(shareTokenEntity.getId())
+                    .orElse(shareTokenEntity);
         }
         if (!validateShareToken(shareTokenEntity)) {
             deleteShareSidecar(shareTokenEntity);
             shareTokenRepository.deleteByIdTransactional(shareTokenEntity.getId());
-        } else {
-            shareTokenRepository.save(shareTokenEntity);
         }
-        logger.info("Share token updated/invalidated. Upload streamed successfully: {}", upload.name);
+        // No explicit save needed for the limited-download path; the decrement was already
+        // applied by the @Modifying query above.  Unlimited tokens need no counter update.
+        logger.info("Share token updated. Upload streamed successfully: {}", upload.name);
     }
 
     private boolean isSvgFile(String fileName) {

@@ -29,6 +29,7 @@ import java.nio.file.StandardCopyOption;
 import java.time.LocalDate;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.UUID;
 
 import org.rostislav.quickdrop.model.RequesterInfo;
 import static org.rostislav.quickdrop.util.FileUtils.getRequesterInfo;
@@ -197,6 +198,7 @@ public class PasteService {
                 effectiveEditOnly,
                 immutable
         );
+        uploadRequest.uploadId = UUID.randomUUID().toString();
 
         org.rostislav.quickdrop.model.InMemoryMultipartFile inMemoryFile =
                 new org.rostislav.quickdrop.model.InMemoryMultipartFile(

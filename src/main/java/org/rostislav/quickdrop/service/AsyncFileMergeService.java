@@ -89,11 +89,16 @@ public class AsyncFileMergeService {
      * @throws IOException if saving the chunk to disk or waiting on the merge future fails
      */
     public Upload submitChunk(UploadRequest request, MultipartFile multipartChunk, int chunkNumber) throws IOException {
-        File savedChunk = new File(tempDir, request.fileName + "_chunk_" + chunkNumber);
+        // Use uploadId (a UUID) as the temp-file prefix — never the user-supplied filename,
+        // which could contain path-traversal sequences or OS-reserved characters.
+        String taskKey = (request.uploadId != null && !request.uploadId.isBlank())
+                ? request.uploadId
+                : request.fileName;
+        File savedChunk = new File(tempDir, taskKey + "_chunk_" + chunkNumber);
         multipartChunk.transferTo(savedChunk);
         logger.info("Chunk {} for file {} saved to {}", chunkNumber, request.fileName, savedChunk.getAbsolutePath());
 
-        MergeTask mergeTask = mergeTasks.computeIfAbsent(request.fileName, key -> {
+        MergeTask mergeTask = mergeTasks.computeIfAbsent(taskKey, key -> {
             MergeTask task = new MergeTask(request);
             executorService.submit(task);
             return task;
@@ -135,8 +140,11 @@ public class AsyncFileMergeService {
      * @param request the upload request whose chunks should be removed
      */
     private void cleanUpChunks(UploadRequest request) {
+        String taskKey = (request.uploadId != null && !request.uploadId.isBlank())
+                ? request.uploadId
+                : request.fileName;
         for (int i = 0; i < request.totalChunks; i++) {
-            File chunkFile = new File(tempDir, request.fileName + "_chunk_" + i);
+            File chunkFile = new File(tempDir, taskKey + "_chunk_" + i);
             if (chunkFile.exists() && !chunkFile.delete()) {
                 logger.warn("Failed to delete chunk file: {}", chunkFile.getAbsolutePath());
             }
@@ -211,7 +219,10 @@ public class AsyncFileMergeService {
                 mergeCompletionFuture.completeExceptionally(e);
                 cleanUpChunks(request);
             } finally {
-                mergeTasks.remove(request.fileName);
+                String taskKey = (request.uploadId != null && !request.uploadId.isBlank())
+                        ? request.uploadId
+                        : request.fileName;
+                mergeTasks.remove(taskKey);
             }
         }
     }

@@ -29,6 +29,6 @@ public class PasswordViewController {
      */
     @GetMapping("/admin")
     public String adminPasswordPage() {
-        return "admin/admin-password";
+        return "admin-password";
     }
 }

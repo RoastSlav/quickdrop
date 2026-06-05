@@ -164,11 +164,8 @@ public class StorageMigrationService {
 
     private List<String> buildKeyList() {
         List<String> keys = new ArrayList<>();
-        // Main file objects (non-deleted uploads)
-        uploadRepository.findAll().stream()
-                .filter(u -> !u.deleted)
-                .map(u -> u.uuid)
-                .forEach(keys::add);
+        // Main file objects — use a UUID-only projection to avoid loading full entities.
+        keys.addAll(uploadRepository.findAllActiveUuids());
         // Encrypted share sidecars — use a native JOIN query so orphaned tokens
         // (share_token rows whose upload was deleted) are skipped safely.
         keys.addAll(shareTokenRepository.findShareSidecarKeys());

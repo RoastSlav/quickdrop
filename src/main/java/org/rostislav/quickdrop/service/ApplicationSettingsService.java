@@ -472,6 +472,9 @@ public class ApplicationSettingsService {
      */
     @CacheEvict(value = "applicationSettings", allEntries = true)
     public void setAdminPassword(String adminPassword) {
+        if (adminPassword == null || adminPassword.isBlank()) {
+            throw new IllegalArgumentException("Admin password must not be blank");
+        }
         ApplicationSettingsEntity entity = applicationSettingsRepository.findById(1L).orElseThrow();
         entity.setAdminPasswordHash(BCrypt.hashpw(adminPassword, BCrypt.gensalt()));
         applicationSettingsRepository.save(entity);

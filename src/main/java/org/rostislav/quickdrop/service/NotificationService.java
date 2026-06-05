@@ -69,7 +69,9 @@ public class NotificationService {
             case PASTE_CREATE -> applicationSettingsService.isNotifyOnPasteCreate();
             case PASTE_VIEW -> applicationSettingsService.isNotifyOnPasteView();
             case PASTE_EDIT -> applicationSettingsService.isNotifyOnPasteEdit();
-            // SHARE_EXPIRE, SHARE_REVOKE, all ADMIN_* and SYSTEM events are always silent
+            case STORAGE_BACKEND_DOWN -> applicationSettingsService.isNotifyOnStorageDown();
+            case STORAGE_BACKEND_UP -> applicationSettingsService.isNotifyOnStorageUp();
+            // SHARE_EXPIRE, SHARE_REVOKE, all ADMIN_*, STARTUP, SHUTDOWN are always silent
             default -> false;
         };
     }
@@ -139,6 +141,29 @@ public class NotificationService {
             if (shouldSendEmail) {
                 sendEmail(event, summary, details);
             }
+        });
+    }
+
+    /**
+     * Sends a system-level notification (no file context) for storage health events.
+     * Respects the per-event toggles and configured channels.
+     */
+    public void notifySystemEvent(EventType type) {
+        if (!isNotificationEventEnabled(type)) return;
+        boolean sendDiscord = shouldSendDiscord();
+        boolean sendEmail = shouldSendEmail();
+        if (!sendDiscord && !sendEmail) return;
+
+        String message = switch (type) {
+            case STORAGE_BACKEND_DOWN ->
+                    "Storage backend is unreachable. Uploads and downloads are disabled until the connection is restored.";
+            case STORAGE_BACKEND_UP -> "Storage backend is reachable again. Service has been restored.";
+            default -> type.name();
+        };
+
+        notificationExecutor.submit(() -> {
+            if (sendDiscord) sendDiscord(message);
+            if (sendEmail) sendEmail(type.name().toLowerCase(), message, "");
         });
     }
 

@@ -73,6 +73,10 @@ public class ApplicationSettingsService {
     @Autowired
     private WebDavStorageService webDavStorageService;
 
+    @Lazy
+    @Autowired
+    private StorageHealthService storageHealthService;
+
     public ApplicationSettingsService(ApplicationSettingsRepository applicationSettingsRepository,
                                       @Qualifier("configDataContextRefresher") ContextRefresher contextRefresher) {
         this.contextRefresher = contextRefresher;
@@ -197,6 +201,42 @@ public class ApplicationSettingsService {
         return applicationSettingsRepository.findById(1L).orElseThrow();
     }
 
+    private static boolean isBlankOrNull(String s) {
+        return s == null || s.isBlank();
+    }
+
+    /**
+     * Coerces the requested {@code defaultHomePage} value so that it always points at a
+     * feature that is actually reachable by public visitors.
+     *
+     * <p>If the requested page is disabled or (for uploads) restricted to admins only,
+     * the method falls through to the next available page in priority order:
+     * upload → list → paste → none.
+     *
+     * @param settings the incoming view-model carrying the requested home page and feature flags
+     * @return a valid home-page identifier ({@code "upload"}, {@code "list"}, {@code "paste"},
+     * or {@code "none"})
+     */
+    private String coerceDefaultHomePage(ApplicationSettingsViewModel settings) {
+        String page = settings.getDefaultHomePage();
+        if (page == null) return "upload";
+        boolean uploadPublic = settings.isUploadEnabled() && !settings.isUploadAdminOnly();
+        boolean listEnabled = settings.isFileListPageEnabled();
+        boolean pasteEnabled = settings.isPastebinEnabled();
+        switch (page.toLowerCase()) {
+            case "upload":
+                if (!uploadPublic) page = listEnabled ? "list" : pasteEnabled ? "paste" : "none";
+                break;
+            case "list":
+                if (!listEnabled) page = uploadPublic ? "upload" : pasteEnabled ? "paste" : "none";
+                break;
+            case "paste":
+                if (!pasteEnabled) page = uploadPublic ? "upload" : listEnabled ? "list" : "none";
+                break;
+        }
+        return page;
+    }
+
     /**
      * Persists all settings from the view-model, evicts the settings cache, updates the
      * cleanup schedule, and triggers a Spring Cloud context refresh.
@@ -272,6 +312,8 @@ public class ApplicationSettingsService {
         entity.setNotifyOnPasteCreate(settings.isNotifyOnPasteCreate());
         entity.setNotifyOnPasteView(settings.isNotifyOnPasteView());
         entity.setNotifyOnPasteEdit(settings.isNotifyOnPasteEdit());
+        entity.setNotifyOnStorageDown(settings.isNotifyOnStorageDown());
+        entity.setNotifyOnStorageUp(settings.isNotifyOnStorageUp());
 
         // S3 / storage backend settings
         if (settings.getStorageBackend() != null) {
@@ -359,39 +401,39 @@ public class ApplicationSettingsService {
         } else if (entity.getStorageBackend() == StorageBackend.WEBDAV) {
             webDavStorageService.refreshClient();
         }
+        // Immediately re-probe health after any settings save so a backend change
+        // (e.g. S3 → LOCAL) takes effect without waiting up to 30 s for the next
+        // scheduled cycle.
+        storageHealthService.recheck();
         contextRefresher.refresh();
     }
 
     /**
-     * Coerces the requested {@code defaultHomePage} value so that it always points at a
-     * feature that is actually reachable by public visitors.
-     *
-     * <p>If the requested page is disabled or (for uploads) restricted to admins only,
-     * the method falls through to the next available page in priority order:
-     * upload → list → paste → none.
-     *
-     * @param settings the incoming view-model carrying the requested home page and feature flags
-     * @return a valid home-page identifier ({@code "upload"}, {@code "list"}, {@code "paste"},
-     * or {@code "none"})
+     * Returns {@code true} if the minimum required fields for {@code backend} are populated.
+     * LOCAL is always considered configured. For remote backends, checks that the
+     * identifying/credentials fields are non-blank.
      */
-    private String coerceDefaultHomePage(ApplicationSettingsViewModel settings) {
-        String page = settings.getDefaultHomePage();
-        if (page == null) return "upload";
-        boolean uploadPublic = settings.isUploadEnabled() && !settings.isUploadAdminOnly();
-        boolean listEnabled = settings.isFileListPageEnabled();
-        boolean pasteEnabled = settings.isPastebinEnabled();
-        switch (page.toLowerCase()) {
-            case "upload":
-                if (!uploadPublic) page = listEnabled ? "list" : pasteEnabled ? "paste" : "none";
-                break;
-            case "list":
-                if (!listEnabled) page = uploadPublic ? "upload" : pasteEnabled ? "paste" : "none";
-                break;
-            case "paste":
-                if (!pasteEnabled) page = uploadPublic ? "upload" : listEnabled ? "list" : "none";
-                break;
-        }
-        return page;
+    public boolean isBackendConfigured(org.rostislav.quickdrop.storage.StorageBackend backend) {
+        return switch (backend) {
+            case LOCAL -> true;
+            case S3 -> {
+                String bucket = getS3Bucket();
+                String key = getS3AccessKey();
+                String secret = getS3SecretKey();
+                yield !isBlankOrNull(bucket) && !isBlankOrNull(key) && !isBlankOrNull(secret);
+            }
+            case AZURE -> {
+                String conn = getAzureConnectionString();
+                String container = getAzureContainerName();
+                yield !isBlankOrNull(conn) && !isBlankOrNull(container);
+            }
+            case SFTP -> {
+                String host = getSftpHost();
+                String user = getSftpUsername();
+                yield !isBlankOrNull(host) && !isBlankOrNull(user);
+            }
+            case WEBDAV -> !isBlankOrNull(getWebDavUrl());
+        };
     }
 
     /**
@@ -793,6 +835,14 @@ public class ApplicationSettingsService {
      */
     public boolean isNotifyOnPasteEdit() {
         return self.getApplicationSettings().isNotifyOnPasteEdit();
+    }
+
+    public boolean isNotifyOnStorageDown() {
+        return self.getApplicationSettings().isNotifyOnStorageDown();
+    }
+
+    public boolean isNotifyOnStorageUp() {
+        return self.getApplicationSettings().isNotifyOnStorageUp();
     }
 
     /** @return the active storage backend (LOCAL or S3) */

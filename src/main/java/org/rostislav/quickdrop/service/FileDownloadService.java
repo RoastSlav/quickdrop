@@ -8,6 +8,7 @@ import org.rostislav.quickdrop.model.EventType;
 import org.rostislav.quickdrop.repository.ActivityLogRepository;
 import org.rostislav.quickdrop.repository.ShareTokenRepository;
 import org.rostislav.quickdrop.repository.UploadRepository;
+import org.rostislav.quickdrop.storage.StorageService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.CacheEvict;
@@ -17,9 +18,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
-import org.rostislav.quickdrop.storage.StorageService;
-
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Locale;
@@ -46,6 +47,7 @@ public class FileDownloadService {
     private final NotificationService notificationService;
     private final FileQueryService fileQueryService;
     private final StorageService storageService;
+    private final StorageHealthService storageHealthService;
 
     public FileDownloadService(UploadRepository uploadRepository,
                                ApplicationSettingsService applicationSettingsService,
@@ -55,7 +57,8 @@ public class FileDownloadService {
                                ActivityLogRepository activityLogRepository,
                                NotificationService notificationService,
                                FileQueryService fileQueryService,
-                               StorageService storageService) {
+                               StorageService storageService,
+                               StorageHealthService storageHealthService) {
         this.uploadRepository = uploadRepository;
         this.applicationSettingsService = applicationSettingsService;
         this.encryptionService = encryptionService;
@@ -65,6 +68,7 @@ public class FileDownloadService {
         this.notificationService = notificationService;
         this.fileQueryService = fileQueryService;
         this.storageService = storageService;
+        this.storageHealthService = storageHealthService;
     }
 
     /**
@@ -74,6 +78,10 @@ public class FileDownloadService {
      * Returns 404 for unknown or soft-deleted files; 500 if decryption fails.
      */
     public ResponseEntity<StreamingResponseBody> downloadFile(String uuid, HttpServletRequest request) {
+        if (storageHealthService.isStorageDown()) {
+            logger.info("Download rejected: storage backend is unreachable (file={})", uuid);
+            return ResponseEntity.status(503).build();
+        }
         Upload fileEntity = uploadRepository.findByUUID(uuid).orElse(null);
         if (fileEntity == null) {
             logger.info("File not found: {}", uuid);
@@ -115,6 +123,9 @@ public class FileDownloadService {
      * @param manualOverride when {@code true}, bypasses the file-size preview limit
      */
     public ResponseEntity<StreamingResponseBody> previewFile(String uuid, HttpServletRequest request, boolean manualOverride) {
+        if (storageHealthService.isStorageDown()) {
+            return ResponseEntity.status(503).build();
+        }
         Upload fileEntity = uploadRepository.findByUUID(uuid).orElse(null);
         if (fileEntity == null) {
             return ResponseEntity.notFound().build();
@@ -195,6 +206,10 @@ public class FileDownloadService {
      */
     @CacheEvict(value = {"adminFiles", "analytics"}, allEntries = true)
     public StreamingResponseBody streamFileByShareToken(ShareTokenEntity shareTokenEntity, HttpServletRequest request) {
+        if (storageHealthService.isStorageDown()) {
+            logger.info("Share download rejected: storage backend is unreachable");
+            return null;
+        }
         if (!validateShareToken(shareTokenEntity)) {
             return null;
         }

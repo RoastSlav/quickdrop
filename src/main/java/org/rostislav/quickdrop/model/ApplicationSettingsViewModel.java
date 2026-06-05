@@ -75,6 +75,8 @@ public class ApplicationSettingsViewModel {
     private boolean notifyOnPasteCreate;
     private boolean notifyOnPasteView;
     private boolean notifyOnPasteEdit;
+    private boolean notifyOnStorageDown;
+    private boolean notifyOnStorageUp;
     private StorageBackend storageBackend;
     private String s3Endpoint;
     private String s3Bucket;
@@ -156,6 +158,8 @@ public class ApplicationSettingsViewModel {
         this.notifyOnPasteCreate = settings.isNotifyOnPasteCreate();
         this.notifyOnPasteView = settings.isNotifyOnPasteView();
         this.notifyOnPasteEdit = settings.isNotifyOnPasteEdit();
+        this.notifyOnStorageDown = settings.isNotifyOnStorageDown();
+        this.notifyOnStorageUp = settings.isNotifyOnStorageUp();
         this.storageBackend = settings.getStorageBackend();
         this.s3Endpoint = settings.getS3Endpoint();
         this.s3Bucket = settings.getS3Bucket();
@@ -573,6 +577,22 @@ public class ApplicationSettingsViewModel {
 
     public void setNotifyOnPasteEdit(boolean v) {
         this.notifyOnPasteEdit = v;
+    }
+
+    public boolean isNotifyOnStorageDown() {
+        return notifyOnStorageDown;
+    }
+
+    public void setNotifyOnStorageDown(boolean v) {
+        this.notifyOnStorageDown = v;
+    }
+
+    public boolean isNotifyOnStorageUp() {
+        return notifyOnStorageUp;
+    }
+
+    public void setNotifyOnStorageUp(boolean v) {
+        this.notifyOnStorageUp = v;
     }
 
     public StorageBackend getStorageBackend() { return storageBackend; }

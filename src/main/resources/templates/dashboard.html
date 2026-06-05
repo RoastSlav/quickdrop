@@ -97,7 +97,7 @@
             </div>
         </div>
 
-        <!-- S3 down banner -->
+        <!-- Storage backend down banner -->
         <div class="alert alert-danger flex items-center gap-3 mb-6 animate-in animate-in-delay-2" role="alert"
              th:if="${s3Down}">
             <svg aria-hidden="true" class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor"
@@ -106,12 +106,14 @@
                       stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
             <div>
-                <p class="font-semibold">S3 storage unreachable</p>
-                <p class="text-sm mt-0.5" th:text="#{alert.s3Down}">S3 storage is unreachable. Uploads are disabled
-                    until the connection is restored.</p>
+                <p class="font-semibold" th:text="#{page.dashboard.storage.unreachableTitle}">Storage backend
+                    unreachable</p>
+                <p class="text-sm mt-0.5" th:text="#{page.dashboard.storage.unreachableDesc}">The active storage backend
+                    is unreachable. Uploads and downloads are disabled until the connection is restored.</p>
             </div>
-            <a class="btn btn-sm ml-auto" href="/admin/settings#panel-storage"
-               style="color:inherit;border:1px solid currentColor;flex-shrink:0">Check Settings</a>
+            <a class="btn btn-sm ml-auto" href="/admin/settings#storage"
+               style="color:inherit;border:1px solid currentColor;flex-shrink:0"
+               th:text="#{page.dashboard.storage.checkSettings}">Check Settings</a>
         </div>
 
         <!-- Navigation cards -->

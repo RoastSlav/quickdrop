@@ -50,6 +50,11 @@ public class StorageMigrationController {
         }
         model.addAttribute("state", migrationService.getState());
         model.addAttribute("currentBackend", applicationSettingsService.getStorageBackend());
+        java.util.Map<String, Boolean> configured = new java.util.LinkedHashMap<>();
+        for (StorageBackend b : StorageBackend.values()) {
+            configured.put(b.name(), applicationSettingsService.isBackendConfigured(b));
+        }
+        model.addAttribute("backendConfigured", configured);
         return "admin-storage-migration";
     }
 
@@ -59,6 +64,10 @@ public class StorageMigrationController {
                                  HttpServletRequest request) {
         if (!sessionService.hasValidAdminSession(request)) {
             return "redirect:/admin";
+        }
+        if (!applicationSettingsService.isBackendConfigured(source) || !applicationSettingsService.isBackendConfigured(dest)) {
+            logger.warn("Migration rejected: backend not fully configured ({} → {})", source, dest);
+            return "redirect:/admin/storage-migration";
         }
         try {
             MigrationDirection dir = new MigrationDirection(source, dest);

@@ -118,7 +118,17 @@ public enum EventType {
     /**
      * The application is shutting down.
      */
-    SHUTDOWN(EventCategory.SYSTEM);
+    SHUTDOWN(EventCategory.SYSTEM),
+
+    /**
+     * The active storage backend became unreachable.
+     */
+    STORAGE_BACKEND_DOWN(EventCategory.SYSTEM),
+
+    /**
+     * The active storage backend recovered and is reachable again.
+     */
+    STORAGE_BACKEND_UP(EventCategory.SYSTEM);
 
     // -------------------------------------------------------------------------
 

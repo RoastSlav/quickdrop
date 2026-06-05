@@ -256,6 +256,16 @@ public class ApplicationSettingsEntity {
      */
     private boolean notifyOnPasteEdit = true;
 
+    /**
+     * Whether notifications are sent when the active storage backend becomes unreachable.
+     */
+    private boolean notifyOnStorageDown = true;
+
+    /**
+     * Whether notifications are sent when the active storage backend recovers.
+     */
+    private boolean notifyOnStorageUp = true;
+
     /** Active file storage backend (LOCAL or S3). */
     @Enumerated(EnumType.STRING)
     private StorageBackend storageBackend = StorageBackend.LOCAL;
@@ -818,6 +828,22 @@ public class ApplicationSettingsEntity {
 
     public void setNotifyOnPasteEdit(boolean notifyOnPasteEdit) {
         this.notifyOnPasteEdit = notifyOnPasteEdit;
+    }
+
+    public boolean isNotifyOnStorageDown() {
+        return notifyOnStorageDown;
+    }
+
+    public void setNotifyOnStorageDown(boolean notifyOnStorageDown) {
+        this.notifyOnStorageDown = notifyOnStorageDown;
+    }
+
+    public boolean isNotifyOnStorageUp() {
+        return notifyOnStorageUp;
+    }
+
+    public void setNotifyOnStorageUp(boolean notifyOnStorageUp) {
+        this.notifyOnStorageUp = notifyOnStorageUp;
     }
 
     public StorageBackend getStorageBackend() { return storageBackend; }

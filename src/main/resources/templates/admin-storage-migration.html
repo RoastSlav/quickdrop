@@ -2,7 +2,7 @@
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8"/>
-    <title th:text="${appName} + ' — Storage Migration'">Storage Migration</title>
+    <title th:text="${appName} + ' — ' + #{page.migration.title}">Storage Migration</title>
     <meta content="width=device-width, initial-scale=1" name="viewport"/>
     <link href="https://fonts.googleapis.com" rel="preconnect"/>
     <link crossorigin href="https://fonts.gstatic.com" rel="preconnect"/>
@@ -23,7 +23,7 @@
 </div>
 
 <main class="flex-1 hero-scene" id="main-content">
-    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
 
         <!-- Back -->
         <div class="mb-6 animate-in">
@@ -31,43 +31,123 @@
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
-                Admin
+                <span th:text="#{nav.admin}">Admin</span>
             </a>
         </div>
 
         <!-- Title -->
         <div class="mb-8 animate-in">
             <h1 class="page-title-xl">
-                <span class="gradient-text">Storage Migration</span>
+                <span class="gradient-text" th:text="#{page.migration.title}">Storage Migration</span>
             </h1>
-            <p class="text-muted mt-2">Copy all files between any two storage backends. The source is not modified —
-                switch the active backend in Settings after verifying.</p>
+            <p class="text-muted mt-2" th:text="#{page.migration.subtitle}">Copy all files between any two storage
+                backends.</p>
         </div>
 
-        <!-- Current state card -->
+        <!-- Backend overview card — one column per backend -->
         <div class="card p-6 mb-6 animate-in animate-in-delay-1">
-            <div class="flex items-center gap-3 mb-4">
-                <span class="text-sm font-medium text-muted">Active backend:</span>
+            <div class="flex items-center gap-3 mb-5">
+                <h2 class="font-semibold" th:text="#{page.migration.backendStatus.title}">Backend Status</h2>
+                <span class="text-xs text-muted" th:text="#{page.migration.backendStatus.active}">Active:</span>
                 <span class="badge badge-teal" th:text="${currentBackend}">LOCAL</span>
             </div>
 
-            <!-- Test source connection -->
-            <div class="flex items-center gap-3">
-                <button class="btn btn-ghost btn-sm" id="testSourceBtn" onclick="testSourceConnection()" type="button">
-                    Test Source Connection
-                </button>
-                <span class="text-sm" id="testSourceResult"></span>
+            <!-- Responsive grid: 2 cols on mobile → 3 on sm → 5 on lg -->
+            <div class="backend-grid">
+
+                <!-- LOCAL -->
+                <div class="flex flex-col gap-2 p-3 rounded-xl"
+                     style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
+                    <p class="text-sm font-semibold" th:text="#{page.migration.backend.local}">Local Filesystem</p>
+                    <span class="badge badge-teal text-xs w-fit"
+                          th:text="#{page.migration.backend.alwaysConfigured}">Always ready</span>
+                    <span class="text-xs text-muted" th:text="#{page.migration.test.notApplicable}">—</span>
+                </div>
+
+                <!-- S3 -->
+                <div class="flex flex-col gap-2 p-3 rounded-xl"
+                     style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
+                    <p class="text-sm font-semibold" th:text="#{page.migration.backend.s3}">S3</p>
+                    <span class="badge text-xs w-fit"
+                          th:classappend="${backendConfigured['S3'] ? ' badge-teal' : ' badge-amber'}"
+                          th:text="${backendConfigured['S3'] ? #messages.msg('page.migration.backend.configured') : #messages.msg('page.migration.backend.notConfigured')}">Status</span>
+                    <div>
+                        <button class="btn btn-ghost btn-sm text-xs"
+                                onclick="testBackendCol(this)"
+                                th:data-backend="S3"
+                                th:data-configured="${backendConfigured['S3']}" th:text="#{page.migration.test.button}"
+                                type="button">Test
+                        </button>
+                        <p class="text-xs mt-1" id="s3ColResult"></p>
+                    </div>
+                </div>
+
+                <!-- AZURE -->
+                <div class="flex flex-col gap-2 p-3 rounded-xl"
+                     style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
+                    <p class="text-sm font-semibold" th:text="#{page.migration.backend.azure}">Azure Blob</p>
+                    <span class="badge text-xs w-fit"
+                          th:classappend="${backendConfigured['AZURE'] ? ' badge-teal' : ' badge-amber'}"
+                          th:text="${backendConfigured['AZURE'] ? #messages.msg('page.migration.backend.configured') : #messages.msg('page.migration.backend.notConfigured')}">Status</span>
+                    <div>
+                        <button class="btn btn-ghost btn-sm text-xs"
+                                onclick="testBackendCol(this)"
+                                th:data-backend="AZURE"
+                                th:data-configured="${backendConfigured['AZURE']}" th:text="#{page.migration.test.button}"
+                                type="button">Test
+                        </button>
+                        <p class="text-xs mt-1" id="azureColResult"></p>
+                    </div>
+                </div>
+
+                <!-- SFTP -->
+                <div class="flex flex-col gap-2 p-3 rounded-xl"
+                     style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
+                    <p class="text-sm font-semibold" th:text="#{page.migration.backend.sftp}">SFTP</p>
+                    <span class="badge text-xs w-fit"
+                          th:classappend="${backendConfigured['SFTP'] ? ' badge-teal' : ' badge-amber'}"
+                          th:text="${backendConfigured['SFTP'] ? #messages.msg('page.migration.backend.configured') : #messages.msg('page.migration.backend.notConfigured')}">Status</span>
+                    <div>
+                        <button class="btn btn-ghost btn-sm text-xs"
+                                onclick="testBackendCol(this)"
+                                th:data-backend="SFTP"
+                                th:data-configured="${backendConfigured['SFTP']}" th:text="#{page.migration.test.button}"
+                                type="button">Test
+                        </button>
+                        <p class="text-xs mt-1" id="sftpColResult"></p>
+                    </div>
+                </div>
+
+                <!-- WEBDAV -->
+                <div class="flex flex-col gap-2 p-3 rounded-xl"
+                     style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
+                    <p class="text-sm font-semibold" th:text="#{page.migration.backend.webdav}">WebDAV</p>
+                    <span class="badge text-xs w-fit"
+                          th:classappend="${backendConfigured['WEBDAV'] ? ' badge-teal' : ' badge-amber'}"
+                          th:text="${backendConfigured['WEBDAV'] ? #messages.msg('page.migration.backend.configured') : #messages.msg('page.migration.backend.notConfigured')}">Status</span>
+                    <div>
+                        <button class="btn btn-ghost btn-sm text-xs"
+                                onclick="testBackendCol(this)"
+                                th:data-backend="WEBDAV"
+                                th:data-configured="${backendConfigured['WEBDAV']}" th:text="#{page.migration.test.button}"
+                                type="button">Test
+                        </button>
+                        <p class="text-xs mt-1" id="webdavColResult"></p>
+                    </div>
+                </div>
+
             </div>
-            <p class="text-xs mt-2" id="testRequiredHint" style="color:var(--c-amber)"
-               th:if="${state.status.name() != 'RUNNING'}">
-                Test the source connection before starting a migration.
-            </p>
+
+            <p class="text-xs mt-3" id="testRequiredHint" style="color:var(--c-amber)"
+               th:if="${state.status.name() != 'RUNNING'}"
+               th:text="#{page.migration.testHint}">Test source and destination before starting.</p>
         </div>
 
         <!-- Progress card (shown when migration has run) -->
-        <div aria-atomic="true" aria-live="polite" class="card p-6 mb-6 animate-in animate-in-delay-2" id="progressCard"
+        <div aria-atomic="true" aria-live="polite" class="card p-6 mb-6 animate-in animate-in-delay-2"
+             id="progressCard"
              th:if="${state.status.name() != 'IDLE'}">
-            <h2 class="font-semibold mb-4">Migration Progress</h2>
+            <h2 class="font-semibold mb-4" th:text="#{page.migration.progress.title}">Migration Progress</h2>
 
             <div class="flex items-center gap-4 mb-4">
                 <span class="badge"
@@ -79,21 +159,25 @@
 
             <div class="mb-2 text-sm text-muted">
                 <span th:text="${state.migrated}">0</span> /
-                <span th:text="${state.total}">0</span> objects
-                <span th:if="${state.failed > 0}" class="text-red-400 ml-2">
-                    (<span th:text="${state.failed}">0</span> failed)
+                <span th:text="${state.total}">0</span>
+                <span th:text="#{page.migration.progress.objects}">objects</span>
+                <span class="ml-2" style="color:var(--c-danger)" th:if="${state.failed > 0}">
+                    (<span th:text="${state.failed}">0</span> <span
+                        th:text="#{page.migration.progress.failed}">failed</span>)
                 </span>
             </div>
 
             <!-- Progress bar -->
-            <div class="w-full bg-white/10 rounded-full h-2 mb-4" th:if="${state.total > 0}">
-                <div class="bg-teal-400 h-2 rounded-full transition-all"
+            <div class="w-full rounded-full h-2 mb-4" style="background:rgba(255,255,255,0.1)"
+                 th:if="${state.total > 0}">
+                <div class="h-2 rounded-full transition-all" style="background:var(--c-teal)"
                      th:style="'width:' + (${state.migrated} * 100 / ${state.total}) + '%'"></div>
             </div>
 
             <!-- Error list -->
             <div th:if="${!#lists.isEmpty(state.errors)}">
-                <p class="text-sm font-medium text-red-400 mb-2">Errors:</p>
+                <p class="text-sm font-medium mb-2" style="color:var(--c-danger)"
+                   th:text="#{page.migration.progress.errors}">Errors:</p>
                 <ul class="text-xs text-muted space-y-1 max-h-40 overflow-y-auto">
                     <li th:each="err : ${state.errors}" th:text="${err}"></li>
                 </ul>
@@ -102,87 +186,166 @@
 
         <!-- Start migration form -->
         <div class="card p-6 animate-in animate-in-delay-3">
-            <h2 class="font-semibold mb-4">Start Migration</h2>
+            <h2 class="font-semibold mb-4" th:text="#{page.migration.start.title}">Start Migration</h2>
 
             <form action="/admin/storage-migration/start" id="migrationForm" method="post">
                 <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden"/>
 
-                <div class="flex flex-col sm:flex-row gap-4 items-start sm:items-end mb-4">
-                    <div class="flex flex-col gap-2 flex-1">
-                        <label class="text-sm font-medium" for="sourceSelect">Source</label>
-                        <select class="input-field" id="sourceSelect" name="source">
-                            <option value="LOCAL">Local filesystem</option>
-                            <option value="S3">S3 / S3-compatible</option>
-                            <option value="AZURE">Azure Blob</option>
-                            <option value="SFTP">SFTP</option>
-                            <option value="WEBDAV">WebDAV</option>
+                <!-- Source + dest selects -->
+                <div class="migration-selects mb-4">
+                    <div class="flex flex-col gap-2 flex-1 min-w-0">
+                        <label class="text-sm font-medium" for="sourceSelect"
+                               th:text="#{page.migration.start.source}">Source</label>
+                        <select class="form-input" id="sourceSelect" name="source">
+                            <option th:text="#{page.migration.backend.local}" value="LOCAL">Local filesystem</option>
+                            <option th:text="#{page.migration.backend.s3}" value="S3">S3 / S3-compatible</option>
+                            <option th:text="#{page.migration.backend.azure}" value="AZURE">Azure Blob</option>
+                            <option th:text="#{page.migration.backend.sftp}" value="SFTP">SFTP</option>
+                            <option th:text="#{page.migration.backend.webdav}" value="WEBDAV">WebDAV</option>
                         </select>
                     </div>
-                    <span class="text-muted font-bold mt-6">→</span>
-                    <div class="flex flex-col gap-2 flex-1">
-                        <label class="text-sm font-medium" for="destSelect">Destination</label>
-                        <select class="input-field" id="destSelect" name="dest">
-                            <option value="LOCAL">Local filesystem</option>
-                            <option value="S3">S3 / S3-compatible</option>
-                            <option value="AZURE">Azure Blob</option>
-                            <option value="SFTP">SFTP</option>
-                            <option value="WEBDAV">WebDAV</option>
+                    <span aria-hidden="true" class="migration-arrow">→</span>
+                    <div class="flex flex-col gap-2 flex-1 min-w-0">
+                        <label class="text-sm font-medium" for="destSelect"
+                               th:text="#{page.migration.start.destination}">Destination</label>
+                        <select class="form-input" id="destSelect" name="dest">
+                            <option th:text="#{page.migration.backend.local}" value="LOCAL">Local filesystem</option>
+                            <option th:text="#{page.migration.backend.s3}" value="S3">S3 / S3-compatible</option>
+                            <option th:text="#{page.migration.backend.azure}" value="AZURE">Azure Blob</option>
+                            <option th:text="#{page.migration.backend.sftp}" value="SFTP">SFTP</option>
+                            <option th:text="#{page.migration.backend.webdav}" value="WEBDAV">WebDAV</option>
                         </select>
                     </div>
-                    <button class="btn btn-gradient"
-                            id="startBtn"
-                            th:disabled="${state.status.name() == 'RUNNING'}"
-                            onclick="startMigration()"
-                            title="Test the source connection above before starting"
-                            type="button">
-                        <span th:if="${state.status.name() == 'RUNNING'}">Migration running…</span>
-                        <span th:unless="${state.status.name() == 'RUNNING'}">Start Migration</span>
-                    </button>
                 </div>
+                <!-- Start button — full-width on mobile, auto on larger screens -->
+                <button class="btn btn-gradient migration-start-btn mb-4"
+                        id="startBtn"
+                        onclick="startMigration()"
+                        th:disabled="${state.status.name() == 'RUNNING'}"
+                        type="button">
+                    <span th:if="${state.status.name() == 'RUNNING'}"
+                          th:text="#{page.migration.start.running}">Migration running…</span>
+                    <span th:text="#{page.migration.start.button}"
+                          th:unless="${state.status.name() == 'RUNNING'}">Start Migration</span>
+                </button>
 
                 <!-- Confirmation step — shown after preflight -->
                 <div class="hidden mt-4 p-4 rounded-xl" id="confirmPanel"
                      style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
                     <p class="text-sm font-semibold mb-1" id="confirmSummary"></p>
-                    <p class="text-xs text-muted mb-3">The source will not be deleted. Switch the active backend in
-                        Settings after verifying.</p>
+                    <p class="text-xs text-muted mb-3" th:text="#{page.migration.confirm.sourceNote}">The source will
+                        not be deleted.</p>
                     <div class="flex gap-2">
-                        <button class="btn btn-gradient btn-sm" onclick="submitMigration()" type="button">Confirm —
-                            Start
+                        <button class="btn btn-gradient btn-sm" onclick="submitMigration()" th:text="#{page.migration.confirm.start}"
+                                type="button">Confirm — Start
                         </button>
-                        <button class="btn btn-ghost btn-sm" onclick="cancelConfirm()" type="button">Cancel</button>
+                        <button class="btn btn-ghost btn-sm" onclick="cancelConfirm()" th:text="#{page.migration.confirm.cancel}"
+                                type="button">Cancel
+                        </button>
                     </div>
                 </div>
             </form>
 
-            <p class="text-xs text-muted mt-4">
-                Migration copies files without deleting the source. After completion, go to
-                <a class="text-teal-400 hover:underline" href="/admin/dashboard">Settings</a>
-                and switch the active backend.
-            </p>
+            <p class="text-xs text-muted mt-4" th:text="#{page.migration.start.footer}">
+                Migration copies files without deleting the source.</p>
         </div>
     </div>
 </main>
 
+<style>
+    /* Responsive backend status grid */
+    .backend-grid {
+        display: grid;
+        gap: 0.75rem;
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    @media (min-width: 640px) {
+        .backend-grid {
+            grid-template-columns: repeat(3, 1fr);
+        }
+    }
+
+    @media (min-width: 900px) {
+        .backend-grid {
+            grid-template-columns: repeat(5, 1fr);
+        }
+    }
+
+    /* Start migration form */
+    .migration-selects {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        align-items: stretch;
+    }
+
+    .migration-arrow {
+        font-weight: bold;
+        color: var(--c-text-muted);
+        text-align: center;
+        font-size: 1.25rem;
+        transform: rotate(90deg);
+        line-height: 1;
+        padding: 0.25rem 0;
+    }
+
+    .migration-start-btn {
+        width: 100%;
+    }
+
+    @media (min-width: 640px) {
+        .migration-selects {
+            flex-direction: row;
+            align-items: flex-end;
+        }
+
+        .migration-arrow {
+            transform: none;
+            flex-shrink: 0;
+            padding-bottom: 0.6rem;
+        }
+
+        .migration-start-btn {
+            width: auto;
+        }
+    }
+</style>
+
 <script th:inline="javascript">
-    // Server-rendered initial status — used to decide whether to start polling.
     const initialStatus = /*[[${state.status.name()}]]*/ 'IDLE';
     const isRunning = initialStatus === 'RUNNING';
+    const backendConfigured = /*[[${backendConfigured}]]*/ {};
 
-    // Source connection test must pass before migration can start.
-    let sourceTestPassed = false;
+    // i18n strings from server
+    const i18n = {
+        testing:         /*[[#{page.migration.test.testing}]]*/ 'Testing…',
+        ok:              /*[[#{page.migration.test.ok}]]*/ 'Connected',
+        failed:          /*[[#{page.migration.test.failed}]]*/ 'Failed',
+        notConfigured:   /*[[#{page.migration.test.notConfigured}]]*/ 'Configure in Settings first',
+        confirmMsg:      /*[[#{page.migration.confirm.message}]]*/ 'Copy {0} file(s) from {1}.',
+        notCfgAlert:     /*[[#{page.migration.notConfiguredAlert}]]*/ 'One or more backends are not configured.',
+        fallbackConfirm: /*[[#{page.migration.confirm.fallback}]]*/ 'Start migration {0}? The source will not be deleted. Proceed?'
+    };
 
-    // Disable Start button unless migration is already running (which means a prior
-    // test must have passed) or the test passes in this page session.
+    // Map backend key → result element id
+    const resultIds = {
+        LOCAL: null,
+        S3: 's3ColResult',
+        AZURE: 'azureColResult',
+        SFTP: 'sftpColResult',
+        WEBDAV: 'webdavColResult'
+    };
+
+    // Track which backends were successfully tested this session.
+    const testedOk = new Set();
+
     (function initStartBtn() {
         const btn = document.getElementById('startBtn');
         if (btn && !isRunning) btn.disabled = true;
     })();
 
     // ── Polling ────────────────────────────────────────────────────────────────
-    // Only poll when page loads in RUNNING or IDLE state.
-    // Terminal states (COMPLETED, COMPLETED_WITH_ERRORS, FAILED) are already shown
-    // server-side; reloading on terminal state caused an infinite flash loop.
     (function startPoll() {
         if (initialStatus !== 'RUNNING' && initialStatus !== 'IDLE') return;
         doPoll();
@@ -195,77 +358,92 @@
                 if (data.status === 'RUNNING') {
                     setTimeout(doPoll, 2000);
                 } else if (data.status !== 'IDLE') {
-                    // Reached a terminal state — reload once to render the final
-                    // server-side view, then stop (initialStatus will be terminal
-                    // after the reload and the poll won't restart).
                     location.reload();
                 }
             })
             .catch(() => setTimeout(doPoll, 5000));
     }
 
-    // ── Test source connection ─────────────────────────────────────────────────
-    function testSourceConnection() {
-        const source = document.getElementById('sourceSelect').value;
-        const btn = document.getElementById('testSourceBtn');
-        const result = document.getElementById('testSourceResult');
-        const hint = document.getElementById('testRequiredHint');
+    // ── Per-column backend test ────────────────────────────────────────────────
+    function testBackendCol(btn) {
+        const backend = btn.dataset.backend;
+        const configured = btn.dataset.configured === 'true';
+        const resultEl = document.getElementById(resultIds[backend]);
+        if (!resultEl) return;
+
+        if (!configured) {
+            resultEl.textContent = i18n.notConfigured;
+            resultEl.style.color = 'var(--c-text-muted)';
+            return;
+        }
+
         btn.disabled = true;
-        result.textContent = 'Testing…';
-        result.style.color = 'var(--c-text-muted)';
-        fetch('/admin/api/test-backend?backend=' + source)
+        resultEl.textContent = i18n.testing;
+        resultEl.style.color = 'var(--c-text-muted)';
+
+        fetch('/admin/api/test-backend?backend=' + backend)
             .then(r => r.json())
             .then(data => {
                 if (data.success) {
-                    result.textContent = '✓ ' + data.message;
-                    result.style.color = 'var(--c-teal)';
-                    sourceTestPassed = true;
-                    const startBtn = document.getElementById('startBtn');
-                    if (startBtn) startBtn.disabled = false;
+                    resultEl.textContent = '✓ ' + i18n.ok;
+                    resultEl.style.color = 'var(--c-teal)';
+                    testedOk.add(backend);
+                    updateStartBtn();
+                    const hint = document.getElementById('testRequiredHint');
                     if (hint) hint.style.display = 'none';
                 } else {
-                    result.textContent = '✗ ' + data.message;
-                    result.style.color = 'var(--c-danger)';
-                    sourceTestPassed = false;
+                    resultEl.textContent = '✗ ' + data.message;
+                    resultEl.style.color = 'var(--c-danger)';
+                    testedOk.delete(backend);
                 }
             })
             .catch(() => {
-                result.textContent = '✗ Request failed';
-                result.style.color = 'var(--c-danger)';
-                sourceTestPassed = false;
+                resultEl.textContent = '✗ ' + i18n.failed;
+                resultEl.style.color = 'var(--c-danger)';
+                testedOk.delete(backend);
             })
             .finally(() => {
                 btn.disabled = false;
             });
     }
 
+    function updateStartBtn() {
+        const source = document.getElementById('sourceSelect').value;
+        const dest = document.getElementById('destSelect').value;
+        const btn = document.getElementById('startBtn');
+        if (!btn || isRunning) return;
+        const sourceOk = source === 'LOCAL' || testedOk.has(source);
+        const destOk = dest === 'LOCAL' || testedOk.has(dest);
+        const sourceCfg = backendConfigured[source] !== false;
+        const destCfg = backendConfigured[dest] !== false;
+        btn.disabled = !(sourceOk && destOk && sourceCfg && destCfg);
+    }
+
+    document.getElementById('sourceSelect').addEventListener('change', updateStartBtn);
+    document.getElementById('destSelect').addEventListener('change', updateStartBtn);
+
     // ── Start migration (with preflight) ──────────────────────────────────────
     function startMigration() {
-        if (!sourceTestPassed) {
-            const result = document.getElementById('testSourceResult');
-            if (result && !result.textContent) {
-                result.textContent = 'Run the connection test first.';
-                result.style.color = 'var(--c-amber)';
-            }
+        const source = document.getElementById('sourceSelect').value;
+        const dest = document.getElementById('destSelect').value;
+
+        if (backendConfigured[source] === false || backendConfigured[dest] === false) {
+            alert(i18n.notCfgAlert);
             return;
         }
 
-        const source = document.getElementById('sourceSelect').value;
-        const dest = document.getElementById('destSelect').value;
         const label = source + ' → ' + dest;
-
         fetch('/admin/api/migration-preflight')
             .then(r => r.json())
             .then(data => {
                 const summary = document.getElementById('confirmSummary');
                 const count = data.count != null ? data.count : '?';
-                summary.textContent = 'Copy ' + count + ' file(s) from ' + label + '. This cannot be undone mid-run.';
+                summary.textContent = i18n.confirmMsg.replace('{0}', count).replace('{1}', label);
                 document.getElementById('confirmPanel').classList.remove('hidden');
                 document.getElementById('startBtn').disabled = true;
             })
             .catch(() => {
-                // Preflight unavailable — fall back to a simple confirm
-                const ok = window.confirm('Start migration ' + label + '? The source will not be deleted. Proceed?');
+                const ok = window.confirm(i18n.fallbackConfirm.replace('{0}', label));
                 if (ok) document.getElementById('migrationForm').submit();
             });
     }
@@ -276,12 +454,9 @@
 
     function cancelConfirm() {
         document.getElementById('confirmPanel').classList.add('hidden');
-        // Re-enable only if the test has passed
-        if (sourceTestPassed) {
-            const btn = document.getElementById('startBtn');
-            if (btn) btn.disabled = false;
-        }
+        updateStartBtn();
     }
 </script>
+<script src="/js/locale-switcher.js"></script>
 </body>
 </html>

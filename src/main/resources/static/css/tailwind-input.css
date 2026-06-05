@@ -2209,10 +2209,16 @@ html.dark {
 
     .settings-pair {
         display: grid;
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: 1fr;
         gap: 0 2rem;
         padding: 1.25rem 0;
         border-bottom: 1px solid var(--c-border);
+    }
+
+    @media (min-width: 640px) {
+        .settings-pair {
+            grid-template-columns: 1fr 1fr;
+        }
     }
 
     .settings-list > .settings-pair:first-child {

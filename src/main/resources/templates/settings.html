@@ -117,7 +117,7 @@
                             <path d="M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375m16.5 0v3.75m-16.5-3.75v3.75m16.5 0v3.75C20.25 16.153 16.556 18 12 18s-8.25-1.847-8.25-4.125v-3.75m16.5 0c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125"
                                   stroke-linecap="round" stroke-linejoin="round"/>
                         </svg>
-                        <span>Storage</span>
+                        <span th:text="#{page.settings.storage.navTitle}">Storage</span>
                     </button>
 
                     <span class="sn-divider"
@@ -151,7 +151,7 @@
                             <div class="panel-header"
                                  style="border-bottom:1px solid var(--c-border);padding-bottom:1rem">
                                 <div class="panel-header-icon"
-                                     style="background:var(--c-indigo-muted);color:var(--c-indigo)">
+                                     style="background:var(--c-primary-muted);color:var(--c-primary)">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8"
                                          viewBox="0 0 24 24">
                                         <path d="M9.53 16.122a3 3 0 0 0-5.78 1.128 2.25 2.25 0 0 1-2.4 2.245 4.5 4.5 0 0 0 8.4-2.245c0-.399-.078-.78-.22-1.128Zm0 0a15.998 15.998 0 0 0 3.388-1.62m-5.043-.025a15.994 15.994 0 0 1 1.622-3.395m3.42 3.42a15.995 15.995 0 0 0 4.764-4.648l3.876-5.814a1.151 1.151 0 0 0-1.597-1.597L14.146 6.32a15.996 15.996 0 0 0-4.649 4.763m3.42 3.42a6.776 6.776 0 0 0-3.42-3.42"
@@ -386,7 +386,7 @@
                             <div class="panel-header"
                                  style="border-bottom:1px solid var(--c-border);padding-bottom:1rem">
                                 <div class="panel-header-icon"
-                                     style="background:var(--c-primary-muted);color:var(--c-primary)">
+                                     style="background:var(--c-secondary-muted,var(--c-indigo-muted));color:var(--c-secondary)">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8"
                                          viewBox="0 0 24 24">
                                         <path d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z"
@@ -695,7 +695,7 @@
                             <div class="panel-header"
                                  style="border-bottom:1px solid var(--c-border);padding-bottom:1rem">
                                 <div class="panel-header-icon"
-                                     style="background:var(--c-secondary-muted,var(--c-indigo-muted));color:var(--c-secondary)">
+                                     style="background:var(--c-amber-muted,var(--c-indigo-muted));color:var(--c-amber)">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8"
                                          viewBox="0 0 24 24">
                                         <path d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0"
@@ -712,7 +712,7 @@
                                      style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
                                     <div class="flex items-start gap-3">
                                         <input id="discordWebhookEnabled"
-                                               class="check-align accent-secondary"
+                                               class="check-align accent-amber"
                                                th:field="*{discordWebhookEnabled}" type="checkbox"/>
                                         <div>
                                             <p class="text-sm font-semibold"
@@ -746,7 +746,7 @@
                                      style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
                                     <div class="flex items-start gap-3">
                                         <input id="emailNotificationsEnabled"
-                                               class="check-align accent-secondary"
+                                               class="check-align accent-amber"
                                                th:field="*{emailNotificationsEnabled}" type="checkbox"/>
                                         <div>
                                             <p class="text-sm font-semibold"
@@ -797,7 +797,8 @@
                                                 <label class="form-label" for="smtpPassword"
                                                        th:text="#{page.settings.notifications.email.smtpPassword}">Password</label>
                                                 <input autocomplete="off" class="form-input" id="smtpPassword"
-                                                       th:field="*{smtpPassword}" type="password"/>
+                                                       th:field="*{smtpPassword}" th:placeholder="${settings.smtpPassword != null and !#strings.isEmpty(settings.smtpPassword)} ? '••••••••' : ''"
+                                                       type="password"/>
                                             </div>
                                         </div>
                                         <label class="form-check">
@@ -831,7 +832,7 @@
                                      style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
                                     <div class="flex items-start gap-3">
                                         <input id="notificationBatchEnabled"
-                                               class="check-align accent-secondary"
+                                               class="check-align accent-amber"
                                                th:field="*{notificationBatchEnabled}" type="checkbox"/>
                                         <div>
                                             <p class="text-sm font-semibold"
@@ -859,49 +860,59 @@
                                         which events trigger a notification.</p>
                                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-1">
                                         <label class="flex items-center gap-2 text-sm cursor-pointer">
-                                            <input class="accent-secondary" th:field="*{notifyOnUpload}"
+                                            <input class="accent-amber" th:field="*{notifyOnUpload}"
                                                    type="checkbox"/>
                                             <span th:text="#{page.settings.notifications.events.upload}">Upload</span>
                                         </label>
                                         <label class="flex items-center gap-2 text-sm cursor-pointer">
-                                            <input class="accent-secondary"
+                                            <input class="accent-amber"
                                                    th:field="*{notifyOnDownload}" type="checkbox"/>
                                             <span th:text="#{page.settings.notifications.events.download}">Download</span>
                                         </label>
                                         <label class="flex items-center gap-2 text-sm cursor-pointer">
-                                            <input class="accent-secondary" th:field="*{notifyOnRenewal}"
+                                            <input class="accent-amber" th:field="*{notifyOnRenewal}"
                                                    type="checkbox"/>
                                             <span th:text="#{page.settings.notifications.events.renewal}">Renewal</span>
                                         </label>
                                         <label class="flex items-center gap-2 text-sm cursor-pointer">
-                                            <input class="accent-secondary"
+                                            <input class="accent-amber"
                                                    th:field="*{notifyOnDeletion}" type="checkbox"/>
                                             <span th:text="#{page.settings.notifications.events.deletion}">Deletion</span>
                                         </label>
                                         <label class="flex items-center gap-2 text-sm cursor-pointer">
-                                            <input class="accent-secondary"
+                                            <input class="accent-amber"
                                                    th:field="*{notifyOnShareCreate}" type="checkbox"/>
                                             <span th:text="#{page.settings.notifications.events.shareCreate}">Share Link Created</span>
                                         </label>
                                         <label class="flex items-center gap-2 text-sm cursor-pointer">
-                                            <input class="accent-secondary"
+                                            <input class="accent-amber"
                                                    th:field="*{notifyOnShareDownload}" type="checkbox"/>
                                             <span th:text="#{page.settings.notifications.events.shareDownload}">Share Link Download</span>
                                         </label>
                                         <label class="flex items-center gap-2 text-sm cursor-pointer">
-                                            <input class="accent-secondary"
+                                            <input class="accent-amber"
                                                    th:field="*{notifyOnPasteCreate}" type="checkbox"/>
                                             <span th:text="#{page.settings.notifications.events.pasteCreate}">Paste Create</span>
                                         </label>
                                         <label class="flex items-center gap-2 text-sm cursor-pointer">
-                                            <input class="accent-secondary"
+                                            <input class="accent-amber"
                                                    th:field="*{notifyOnPasteView}" type="checkbox"/>
                                             <span th:text="#{page.settings.notifications.events.pasteView}">Paste View</span>
                                         </label>
                                         <label class="flex items-center gap-2 text-sm cursor-pointer">
-                                            <input class="accent-secondary"
+                                            <input class="accent-amber"
                                                    th:field="*{notifyOnPasteEdit}" type="checkbox"/>
                                             <span th:text="#{page.settings.notifications.events.pasteEdit}">Paste Edit</span>
+                                        </label>
+                                        <label class="flex items-center gap-2 text-sm cursor-pointer">
+                                            <input class="accent-amber" th:field="*{notifyOnStorageDown}"
+                                                   type="checkbox"/>
+                                            <span th:text="#{page.settings.notifications.events.storageDown}">Storage Down</span>
+                                        </label>
+                                        <label class="flex items-center gap-2 text-sm cursor-pointer">
+                                            <input class="accent-amber" th:field="*{notifyOnStorageUp}"
+                                                   type="checkbox"/>
+                                            <span th:text="#{page.settings.notifications.events.storageUp}">Storage Restored</span>
                                         </label>
                                     </div>
                                 </div>
@@ -921,32 +932,43 @@
                                     <path d="M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375m16.5 0v3.75m-16.5-3.75v3.75m16.5 0v3.75C20.25 16.153 16.556 18 12 18s-8.25-1.847-8.25-4.125v-3.75m16.5 0c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125" stroke-linecap="round" stroke-linejoin="round"/>
                                 </svg>
                             </div>
-                            <h2 class="text-base font-extrabold tracking-tight">Storage Backend</h2>
+                            <h2 class="text-base font-extrabold tracking-tight"
+                                th:text="#{page.settings.storage.panelTitle}">Storage Backend</h2>
                         </div>
                         <div class="flex flex-col gap-6 mt-6">
 
-                            <!-- S3 down banner (only when S3 is active and unreachable) -->
+                            <!-- Backend unreachable banner -->
                             <div class="alert alert-danger flex items-center gap-3" role="alert" th:if="${s3Down}">
                                 <svg aria-hidden="true" class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor"
                                      stroke-width="2" viewBox="0 0 24 24">
                                     <path d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z"
                                           stroke-linecap="round" stroke-linejoin="round"/>
                                 </svg>
-                                <span th:text="#{alert.s3Down}">S3 storage is unreachable. Uploads are disabled until the connection is restored.</span>
+                                <span th:text="#{page.settings.storage.unreachableBanner}">The active storage backend is unreachable.</span>
                             </div>
 
                             <!-- Backend selector -->
                             <div class="form-row">
-                                <label class="form-label" for="storageBackend">Active Backend</label>
+                                <label class="form-label" for="storageBackend"
+                                       th:text="#{page.settings.storage.activeBackend}">Active Backend</label>
                                 <select class="form-input" id="storageBackend" th:field="*{storageBackend}"
                                         onchange="onBackendChange(this.value)">
-                                    <option value="LOCAL">Local filesystem</option>
-                                    <option value="S3">S3 / S3-compatible</option>
-                                    <option value="AZURE">Azure Blob Storage</option>
-                                    <option value="SFTP">SFTP</option>
-                                    <option value="WEBDAV">WebDAV (Nextcloud, ownCloud…)</option>
+                                    <option th:text="#{page.settings.storage.backend.local}" value="LOCAL">Local
+                                        filesystem
+                                    </option>
+                                    <option th:text="#{page.settings.storage.backend.s3}" value="S3">S3 /
+                                        S3-compatible
+                                    </option>
+                                    <option th:text="#{page.settings.storage.backend.azure}" value="AZURE">Azure Blob
+                                        Storage
+                                    </option>
+                                    <option th:text="#{page.settings.storage.backend.sftp}" value="SFTP">SFTP</option>
+                                    <option th:text="#{page.settings.storage.backend.webdav}" value="WEBDAV">WebDAV
+                                        (Nextcloud, ownCloud…)
+                                    </option>
                                 </select>
-                                <p class="form-hint">Switch only after completing a migration. Files on the old backend remain untouched.</p>
+                                <p class="form-hint" th:text="#{page.settings.storage.switchNote}">Switch only after
+                                    completing a migration.</p>
                             </div>
 
                             <!-- S3 fields -->
@@ -954,34 +976,50 @@
                                 <div class="rounded-2xl p-4 flex flex-col gap-4" style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
 
                                     <div class="form-row">
-                                        <label class="form-label" for="s3Endpoint">Endpoint URL <span class="form-hint">(leave blank for AWS)</span></label>
+                                        <label class="form-label" for="s3Endpoint">
+                                            <span th:text="#{page.settings.storage.s3.endpointUrl}">Endpoint URL</span>
+                                            <span class="form-hint"
+                                                  th:text="#{page.settings.storage.s3.endpointUrl.hint}">(leave blank for AWS)</span>
+                                        </label>
                                         <input class="form-input" id="s3Endpoint" placeholder="https://s3.example.com" th:field="*{s3Endpoint}" type="url"/>
                                     </div>
 
                                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <div class="form-row">
-                                            <label class="form-label" for="s3Bucket">Bucket</label>
+                                            <label class="form-label" for="s3Bucket"
+                                                   th:text="#{page.settings.storage.s3.bucket}">Bucket</label>
                                             <input class="form-input" id="s3Bucket" placeholder="my-bucket" th:field="*{s3Bucket}" type="text"/>
                                         </div>
                                         <div class="form-row">
-                                            <label class="form-label" for="s3Region">Region</label>
+                                            <label class="form-label" for="s3Region"
+                                                   th:text="#{page.settings.storage.s3.region}">Region</label>
                                             <input class="form-input" id="s3Region" placeholder="us-east-1" th:field="*{s3Region}" type="text"/>
                                         </div>
                                     </div>
 
                                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <div class="form-row">
-                                            <label class="form-label" for="s3AccessKey">Access Key ID</label>
+                                            <label class="form-label" for="s3AccessKey"
+                                                   th:text="#{page.settings.storage.s3.accessKeyId}">Access Key
+                                                ID</label>
                                             <input class="form-input" id="s3AccessKey" placeholder="AKIAIOSFODNN7EXAMPLE" th:field="*{s3AccessKey}" type="text"/>
                                         </div>
                                         <div class="form-row">
-                                            <label class="form-label" for="s3SecretKey">Secret Access Key</label>
-                                            <input class="form-input" autocomplete="new-password" id="s3SecretKey" placeholder="Leave blank to keep existing" th:field="*{s3SecretKey}" type="password"/>
+                                            <label class="form-label" for="s3SecretKey"
+                                                   th:text="#{page.settings.storage.s3.secretAccessKey}">Secret Access
+                                                Key</label>
+                                            <input autocomplete="new-password" class="form-input" id="s3SecretKey"
+                                                   th:field="*{s3SecretKey}"
+                                                   th:placeholder="${settings.s3SecretKey != null and !#strings.isEmpty(settings.s3SecretKey)} ? '••••••••' : 'Leave blank to keep existing'" type="password"/>
                                         </div>
                                     </div>
 
                                     <div class="form-row">
-                                        <label class="form-label" for="s3KeyPrefix">Key Prefix <span class="form-hint">(optional, e.g. quickdrop/)</span></label>
+                                        <label class="form-label" for="s3KeyPrefix">
+                                            <span th:text="#{page.settings.storage.s3.keyPrefix}">Key Prefix</span>
+                                            <span class="form-hint"
+                                                  th:text="#{page.settings.storage.s3.keyPrefix.hint}">(optional, e.g. quickdrop/)</span>
+                                        </label>
                                         <input class="form-input" id="s3KeyPrefix" placeholder="" th:field="*{s3KeyPrefix}" type="text"/>
                                     </div>
 
@@ -989,16 +1027,18 @@
                                         <input class="check-align accent-teal" id="s3PathStyle"
                                                th:field="*{s3PathStyle}" type="checkbox"/>
                                         <div>
-                                            <p class="text-sm font-semibold">Force path-style URLs</p>
-                                            <p class="form-hint">Required for MinIO and some other S3-compatible providers.</p>
+                                            <p class="text-sm font-semibold"
+                                               th:text="#{page.settings.storage.s3.pathStyle}">Force path-style URLs</p>
+                                            <p class="form-hint" th:text="#{page.settings.storage.s3.pathStyle.help}">
+                                                Required for MinIO and some other S3-compatible providers.</p>
                                         </div>
                                     </div>
 
                                     <!-- Test connection -->
                                     <div class="flex items-center gap-3 pt-1">
                                         <button class="btn btn-secondary btn-sm" id="testS3Btn"
-                                                onclick="testBackend('S3', 's3TestResult', this)" type="button">Test
-                                            Connection
+                                                onclick="testBackend('S3', 's3TestResult', this)" th:text="#{page.settings.storage.testConnection}"
+                                                type="button">Test Connection
                                         </button>
                                         <span class="text-xs" id="s3TestResult"></span>
                                     </div>
@@ -1011,29 +1051,37 @@
                                 <div class="rounded-2xl p-4 flex flex-col gap-4"
                                      style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
                                     <div class="form-row">
-                                        <label class="form-label" for="azureConnectionString">Connection String</label>
+                                        <label class="form-label" for="azureConnectionString"
+                                               th:text="#{page.settings.storage.azure.connectionString}">Connection
+                                            String</label>
                                         <input autocomplete="new-password" class="form-input"
                                                id="azureConnectionString"
-                                               placeholder="DefaultEndpointsProtocol=https;AccountName=…" th:field="*{azureConnectionString}"
+                                               th:field="*{azureConnectionString}"
+                                               th:placeholder="${settings.azureConnectionString != null and !#strings.isEmpty(settings.azureConnectionString)} ? '••••••••' : 'DefaultEndpointsProtocol=https;AccountName=…'"
                                                type="password"/>
                                     </div>
                                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <div class="form-row">
-                                            <label class="form-label" for="azureContainerName">Container Name</label>
+                                            <label class="form-label" for="azureContainerName"
+                                                   th:text="#{page.settings.storage.azure.containerName}">Container
+                                                Name</label>
                                             <input class="form-input" id="azureContainerName" placeholder="my-container"
                                                    th:field="*{azureContainerName}" type="text"/>
                                         </div>
                                         <div class="form-row">
-                                            <label class="form-label" for="azureKeyPrefix">Key Prefix <span
-                                                    class="form-hint">(optional)</span></label>
+                                            <label class="form-label" for="azureKeyPrefix">
+                                                <span th:text="#{page.settings.storage.azure.keyPrefix}">Key Prefix</span>
+                                                <span class="form-hint"
+                                                      th:text="#{page.settings.storage.azure.keyPrefix.hint}">(optional)</span>
+                                            </label>
                                             <input class="form-input" id="azureKeyPrefix" placeholder=""
                                                    th:field="*{azureKeyPrefix}" type="text"/>
                                         </div>
                                     </div>
                                     <div class="flex items-center gap-3 pt-1">
                                         <button class="btn btn-secondary btn-sm"
-                                                onclick="testBackend('AZURE', 'azureTestResult', this)" type="button">
-                                            Test Connection
+                                                onclick="testBackend('AZURE', 'azureTestResult', this)" th:text="#{page.settings.storage.testConnection}"
+                                                type="button">Test Connection
                                         </button>
                                         <span class="text-xs" id="azureTestResult"></span>
                                     </div>
@@ -1047,53 +1095,66 @@
                                      style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
                                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <div class="form-row">
-                                            <label class="form-label" for="sftpHost">Host</label>
+                                            <label class="form-label" for="sftpHost"
+                                                   th:text="#{page.settings.storage.sftp.host}">Host</label>
                                             <input class="form-input" id="sftpHost" placeholder="sftp.example.com"
                                                    th:field="*{sftpHost}" type="text"/>
                                         </div>
                                         <div class="form-row">
-                                            <label class="form-label" for="sftpPort">Port</label>
+                                            <label class="form-label" for="sftpPort"
+                                                   th:text="#{page.settings.storage.sftp.port}">Port</label>
                                             <input class="form-input" id="sftpPort" max="65535"
                                                    min="1" placeholder="22" th:field="*{sftpPort}" type="number"/>
                                         </div>
                                     </div>
                                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <div class="form-row">
-                                            <label class="form-label" for="sftpUsername">Username</label>
+                                            <label class="form-label" for="sftpUsername"
+                                                   th:text="#{page.settings.storage.sftp.username}">Username</label>
                                             <input class="form-input" id="sftpUsername" placeholder="user"
                                                    th:field="*{sftpUsername}" type="text"/>
                                         </div>
                                         <div class="form-row">
-                                            <label class="form-label" for="sftpPassword">Password <span
-                                                    class="form-hint">(leave blank to keep)</span></label>
+                                            <label class="form-label" for="sftpPassword">
+                                                <span th:text="#{page.settings.storage.sftp.password}">Password</span>
+                                                <span class="form-hint"
+                                                      th:text="#{page.settings.storage.sftp.password.hint}">(leave blank to keep)</span>
+                                            </label>
                                             <input autocomplete="new-password" class="form-input" id="sftpPassword"
-                                                   placeholder="" th:field="*{sftpPassword}"
-                                                   type="password"/>
+                                                   th:field="*{sftpPassword}"
+                                                   th:placeholder="${settings.sftpPassword != null and !#strings.isEmpty(settings.sftpPassword)} ? '••••••••' : ''" type="password"/>
                                         </div>
                                     </div>
                                     <div class="form-row">
-                                        <label class="form-label" for="sftpBasePath">Base Path</label>
+                                        <label class="form-label" for="sftpBasePath"
+                                               th:text="#{page.settings.storage.sftp.basePath}">Base Path</label>
                                         <input class="form-input" id="sftpBasePath" placeholder="/uploads"
                                                th:field="*{sftpBasePath}" type="text"/>
                                     </div>
                                     <div class="form-row">
-                                        <label class="form-label" for="sftpPrivateKey">Private Key <span
-                                                class="form-hint">(PEM, optional, leave blank to keep)</span></label>
+                                        <label class="form-label" for="sftpPrivateKey">
+                                            <span th:text="#{page.settings.storage.sftp.privateKey}">Private Key</span>
+                                            <span class="form-hint"
+                                                  th:text="#{page.settings.storage.sftp.privateKey.hint}">(PEM, optional, leave blank to keep)</span>
+                                        </label>
                                         <textarea class="form-input font-mono text-xs" id="sftpPrivateKey"
                                                   placeholder="-----BEGIN OPENSSH PRIVATE KEY-----" rows="4"
                                                   th:field="*{sftpPrivateKey}"></textarea>
                                     </div>
                                     <div class="form-row">
-                                        <label class="form-label" for="sftpKnownHosts">Known Hosts <span
-                                                class="form-hint">(optional — leave blank to accept all hosts)</span></label>
+                                        <label class="form-label" for="sftpKnownHosts">
+                                            <span th:text="#{page.settings.storage.sftp.knownHosts}">Known Hosts</span>
+                                            <span class="form-hint"
+                                                  th:text="#{page.settings.storage.sftp.knownHosts.hint}">(optional — leave blank to accept all hosts)</span>
+                                        </label>
                                         <textarea class="form-input font-mono text-xs" id="sftpKnownHosts"
                                                   placeholder="sftp.example.com ssh-rsa AAAA…" rows="3"
                                                   th:field="*{sftpKnownHosts}"></textarea>
                                     </div>
                                     <div class="flex items-center gap-3 pt-1">
                                         <button class="btn btn-secondary btn-sm"
-                                                onclick="testBackend('SFTP', 'sftpTestResult', this)" type="button">Test
-                                            Connection
+                                                onclick="testBackend('SFTP', 'sftpTestResult', this)" th:text="#{page.settings.storage.testConnection}"
+                                                type="button">Test Connection
                                         </button>
                                         <span class="text-xs" id="sftpTestResult"></span>
                                     </div>
@@ -1106,35 +1167,43 @@
                                 <div class="rounded-2xl p-4 flex flex-col gap-4"
                                      style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
                                     <div class="form-row">
-                                        <label class="form-label" for="webDavUrl">WebDAV URL</label>
+                                        <label class="form-label" for="webDavUrl"
+                                               th:text="#{page.settings.storage.webdav.url}">WebDAV URL</label>
                                         <input class="form-input" id="webDavUrl"
                                                placeholder="https://nextcloud.example.com/remote.php/dav/files/user/"
                                                th:field="*{webDavUrl}" type="url"/>
                                     </div>
                                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <div class="form-row">
-                                            <label class="form-label" for="webDavUsername">Username</label>
+                                            <label class="form-label" for="webDavUsername"
+                                                   th:text="#{page.settings.storage.webdav.username}">Username</label>
                                             <input class="form-input" id="webDavUsername" placeholder="user"
                                                    th:field="*{webDavUsername}" type="text"/>
                                         </div>
                                         <div class="form-row">
-                                            <label class="form-label" for="webDavPassword">Password <span
-                                                    class="form-hint">(leave blank to keep)</span></label>
+                                            <label class="form-label" for="webDavPassword">
+                                                <span th:text="#{page.settings.storage.webdav.password}">Password</span>
+                                                <span class="form-hint"
+                                                      th:text="#{page.settings.storage.webdav.password.hint}">(leave blank to keep)</span>
+                                            </label>
                                             <input autocomplete="new-password" class="form-input" id="webDavPassword"
-                                                   placeholder="" th:field="*{webDavPassword}"
-                                                   type="password"/>
+                                                   th:field="*{webDavPassword}"
+                                                   th:placeholder="${settings.webDavPassword != null and !#strings.isEmpty(settings.webDavPassword)} ? '••••••••' : ''" type="password"/>
                                         </div>
                                     </div>
                                     <div class="form-row">
-                                        <label class="form-label" for="webDavKeyPrefix">Key Prefix <span
-                                                class="form-hint">(optional)</span></label>
+                                        <label class="form-label" for="webDavKeyPrefix">
+                                            <span th:text="#{page.settings.storage.webdav.keyPrefix}">Key Prefix</span>
+                                            <span class="form-hint"
+                                                  th:text="#{page.settings.storage.webdav.keyPrefix.hint}">(optional)</span>
+                                        </label>
                                         <input class="form-input" id="webDavKeyPrefix" placeholder=""
                                                th:field="*{webDavKeyPrefix}" type="text"/>
                                     </div>
                                     <div class="flex items-center gap-3 pt-1">
                                         <button class="btn btn-secondary btn-sm"
-                                                onclick="testBackend('WEBDAV', 'webdavTestResult', this)" type="button">
-                                            Test Connection
+                                                onclick="testBackend('WEBDAV', 'webdavTestResult', this)" th:text="#{page.settings.storage.testConnection}"
+                                                type="button">Test Connection
                                         </button>
                                         <span class="text-xs" id="webdavTestResult"></span>
                                     </div>
@@ -1144,10 +1213,13 @@
                             <!-- Migration link -->
                             <div class="rounded-2xl p-4 flex items-center justify-between" style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
                                 <div>
-                                    <p class="text-sm font-semibold">Storage Migration</p>
-                                    <p class="form-hint">Copy existing files between backends before switching.</p>
+                                    <p class="text-sm font-semibold"
+                                       th:text="#{page.settings.storage.migrationLink.title}">Storage Migration</p>
+                                    <p class="form-hint" th:text="#{page.settings.storage.migrationLink.desc}">Copy
+                                        existing files between backends before switching.</p>
                                 </div>
-                                <a class="btn btn-ghost btn-sm flex-shrink-0" href="/admin/storage-migration">Open Migration Tool →</a>
+                                <a class="btn btn-ghost btn-sm flex-shrink-0" href="/admin/storage-migration"
+                                   th:text="#{page.settings.storage.migrationLink.open}">Open Migration Tool →</a>
                             </div>
 
                         </div>
@@ -1163,7 +1235,7 @@
                     <div class="card card-lg">
                         <div class="panel-header" style="border-bottom:1px solid var(--c-border);padding-bottom:1rem">
                             <div class="panel-header-icon"
-                                 style="background:var(--c-teal-muted,var(--c-indigo-muted));color:var(--c-teal)">
+                                 style="background:var(--c-indigo-muted);color:var(--c-indigo)">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8"
                                      viewBox="0 0 24 24">
                                     <path d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z"
@@ -1259,6 +1331,7 @@
             btn.style.background = '';
             btn.style.color = '';
             btn.style.fontWeight = '';
+            btn.removeAttribute('data-has-error');
         });
         var panel = document.getElementById('panel-' + name);
         if (panel) panel.classList.remove('hidden');
@@ -1272,6 +1345,28 @@
             sessionStorage.setItem('settingsPanel', name);
         } catch (e) {
         }
+        // Refresh error badges on nav buttons (for panels other than the active one)
+        refreshNavErrorBadges();
+    }
+
+    function refreshNavErrorBadges() {
+        document.querySelectorAll('[data-panel]').forEach(function (btn) {
+            var panelName = btn.dataset.panel;
+            var panel = document.getElementById('panel-' + panelName);
+            if (!panel) return;
+            var hasError = panel.querySelector('.is-invalid') !== null;
+            var dot = btn.querySelector('.nav-error-dot');
+            if (hasError) {
+                if (!dot) {
+                    dot = document.createElement('span');
+                    dot.className = 'nav-error-dot';
+                    dot.style.cssText = 'display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--c-danger);margin-left:auto;flex-shrink:0';
+                    btn.appendChild(dot);
+                }
+            } else {
+                if (dot) dot.remove();
+            }
+        });
     }
 
     document.addEventListener('DOMContentLoaded', function () {
@@ -1279,23 +1374,13 @@
         var errorParam = params.get('error') || '';
         var validPanels = ['appearance', 'features', 'files', 'security', 'notifications', 'storage', 'about'];
         var stored = sessionStorage.getItem('settingsPanel');
+        var hash = window.location.hash.replace('#', '').replace('panel-', '');
         var initial = errorParam.includes('invalidCron')
             ? 'files'
-            : (stored && validPanels.includes(stored) ? stored : 'appearance');
+            : (validPanels.includes(hash) ? hash : (stored && validPanels.includes(stored) ? stored : 'appearance'));
         switchPanel(initial);
 
-        var form = document.getElementById('settingsForm');
-        if (form) {
-            form.addEventListener('submit', function () {
-                requestAnimationFrame(function () {
-                    var bad = form.querySelector('.border-red-500');
-                    if (bad) {
-                        var panel = bad.closest('.settings-panel');
-                        if (panel) switchPanel(panel.id.replace('panel-', ''));
-                    }
-                });
-            });
-        }
+        // Note: form submit is handled entirely by settings.js (AJAX + validation + panel nav)
     });
 
     function onBackendChange(value) {
@@ -1305,10 +1390,18 @@
         document.getElementById('webdavFields').classList.toggle('hidden', value !== 'WEBDAV');
     }
 
+    var storageI18n = {
+        testing:       /*[[#{page.settings.storage.test.testing}]]*/ 'Testing…',
+        requestFailed: /*[[#{page.settings.storage.test.requestFailed}]]*/ 'Request failed'
+    };
+
     function testBackend(backend, resultId, btn) {
         var result = document.getElementById(resultId);
         if (btn) btn.disabled = true;
-        if (result) { result.textContent = 'Testing…'; result.className = 'text-xs text-muted'; }
+        if (result) {
+            result.textContent = storageI18n.testing;
+            result.className = 'text-xs text-muted';
+        }
         fetch('/admin/api/test-backend?backend=' + backend)
             .then(function(r) { return r.json(); })
             .then(function(data) {
@@ -1318,7 +1411,10 @@
                 }
             })
             .catch(function() {
-                if (result) { result.textContent = '✗ Request failed'; result.className = 'text-xs text-red-400'; }
+                if (result) {
+                    result.textContent = '✗ ' + storageI18n.requestFailed;
+                    result.className = 'text-xs text-red-400';
+                }
             })
             .finally(function() { if (btn) btn.disabled = false; });
     }

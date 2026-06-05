@@ -377,9 +377,11 @@ function validateSettingsForm() {
         markValidity(fileDeletionCron, '');
     }
 
-    const sessionVal = parsePositiveNumber(sessionLifeTime?.value);
-    if (!sessionVal && sessionVal !== 0) {
-        markValidity(sessionLifeTime, sv('sessionLifetime', 'Enter a session lifetime in minutes (positive number).'));
+    // Session lifetime allows 0 (never expires) — @Min(0) on the entity
+    const sessionRaw = sessionLifeTime?.value?.trim();
+    const sessionNum = Number(sessionRaw);
+    if (sessionRaw === '' || sessionRaw == null || !Number.isFinite(sessionNum) || sessionNum < 0) {
+        markValidity(sessionLifeTime, sv('sessionLifetime', 'Enter a session lifetime in minutes (0 or greater).'));
         firstInvalid = firstInvalid || sessionLifeTime;
     }
 
@@ -448,7 +450,18 @@ function validateSettingsForm() {
         }
     }
 
-    if (firstInvalid) firstInvalid.focus();
+    if (firstInvalid) {
+        // Navigate to the panel that contains the first invalid field
+        const panel = firstInvalid.closest('.settings-panel');
+        if (panel && typeof window.switchPanel === 'function') {
+            window.switchPanel(panel.id.replace('panel-', ''));
+        }
+        // Wait one frame for the panel to become visible before focusing/scrolling
+        requestAnimationFrame(() => {
+            firstInvalid.focus();
+            firstInvalid.scrollIntoView({behavior: 'smooth', block: 'center'});
+        });
+    }
     return !firstInvalid;
 }
 
@@ -559,9 +572,12 @@ document.addEventListener("DOMContentLoaded", function () {
                 await saveSettings(getCsrfToken());
                 window.toast?.("Settings saved", "success");
             } catch (err) {
-                if (err.message !== "Validation failed") {
-                    window.toast?.(err.message || "Failed to save settings", "error");
-                }
+                window.toast?.(
+                    err.message === "Validation failed"
+                        ? sv('failed', 'Validation failed — check highlighted fields')
+                        : (err.message || "Failed to save settings"),
+                    "error"
+                );
             } finally {
                 saveBtns.forEach(b => (b.disabled = false));
             }

@@ -1,11 +1,8 @@
 package org.rostislav.quickdrop.service;
 
-import jakarta.transaction.Transactional;
-import org.rostislav.quickdrop.entity.ActivityLog;
+import jakarta.annotation.PreDestroy;
 import org.rostislav.quickdrop.entity.ShareTokenEntity;
 import org.rostislav.quickdrop.entity.Upload;
-import org.rostislav.quickdrop.model.EventType;
-import org.rostislav.quickdrop.repository.ActivityLogRepository;
 import org.rostislav.quickdrop.repository.ShareTokenRepository;
 import org.rostislav.quickdrop.repository.UploadRepository;
 import org.rostislav.quickdrop.storage.StorageService;
@@ -50,10 +47,10 @@ public class ScheduleService {
     private final FileQueryService fileQueryService;
     private final FileDownloadService fileDownloadService;
     private final ThreadPoolTaskScheduler taskScheduler = new ThreadPoolTaskScheduler();
-    private final ActivityLogRepository activityLogRepository;
     private final ShareTokenRepository shareTokenRepository;
     private final ApplicationSettingsService applicationSettingsService;
     private final StorageService storageService;
+    private final ScheduleTransactionHelper scheduleTransactionHelper;
     private ScheduledFuture<?> scheduledTask;
 
     /**
@@ -70,33 +67,36 @@ public class ScheduleService {
                            FileLifecycleService fileLifecycleService,
                            FileQueryService fileQueryService,
                            FileDownloadService fileDownloadService,
-                           ActivityLogRepository activityLogRepository,
                            ShareTokenRepository shareTokenRepository,
                            ApplicationSettingsService applicationSettingsService,
-                           StorageService storageService) {
+                           StorageService storageService,
+                           ScheduleTransactionHelper scheduleTransactionHelper) {
         this.uploadRepository = uploadRepository;
         this.fileLifecycleService = fileLifecycleService;
         this.fileQueryService = fileQueryService;
         this.fileDownloadService = fileDownloadService;
         taskScheduler.setPoolSize(1);
         taskScheduler.initialize();
-        this.activityLogRepository = activityLogRepository;
         this.shareTokenRepository = shareTokenRepository;
         this.applicationSettingsService = applicationSettingsService;
         this.storageService = storageService;
+        this.scheduleTransactionHelper = scheduleTransactionHelper;
     }
 
     /**
      * Replaces the dynamic file-deletion schedule with a new cron expression.
      *
-     * <p>If the expression matches the currently running schedule, the call is a
-     * no-op. If a task is already scheduled, it is cancelled (without interrupting
+     * <p>If the expression and lifetime match the currently running schedule, the call
+     * is a no-op. If a task is already scheduled, it is cancelled (without interrupting
      * a running execution) before the new task is registered.
+     *
+     * <p>Synchronised to prevent two concurrent settings saves from registering
+     * duplicate tasks when both pass the equality guard at the same time.
      *
      * @param cronExpression  Spring-compatible 6-field cron expression
      * @param maxFileLifeTime maximum file age in days; files older than this are deleted
      */
-    public void updateSchedule(String cronExpression, long maxFileLifeTime) {
+    public synchronized void updateSchedule(String cronExpression, long maxFileLifeTime) {
         if (cronExpression == null || cronExpression.isBlank()) {
             logger.warn("No cron expression provided; cleanup scheduling skipped");
             return;
@@ -123,6 +123,18 @@ public class ScheduleService {
     }
 
     /**
+     * Shuts down the dynamic-cleanup scheduler gracefully on application stop.
+     */
+    @PreDestroy
+    public void shutdown() {
+        logger.info("Shutting down file cleanup scheduler");
+        if (scheduledTask != null) {
+            scheduledTask.cancel(false);
+        }
+        taskScheduler.shutdown();
+    }
+
+    /**
      * Deletes uploads (files and pastes) that have exceeded the configured maximum lifetime.
      *
      * <p>Only uploads with {@code keepIndefinitely = false} and an {@code uploadDate}
@@ -131,7 +143,6 @@ public class ScheduleService {
      *
      * @param maxFileLifeTime maximum upload age in days
      */
-    @Transactional
     public void deleteOldFiles(long maxFileLifeTime) {
         logger.info("Deleting old files (max life: {} days)", maxFileLifeTime);
         LocalDate thresholdDate = LocalDate.now().minusDays(maxFileLifeTime);
@@ -154,11 +165,9 @@ public class ScheduleService {
         }
 
         if (!deletedIds.isEmpty()) {
-            // Soft-delete through FileService so history logs and entity records are retained.
-            filesForDeletion.stream()
-                    .filter(f -> deletedIds.contains(f.id))
-                    .forEach(f -> fileLifecycleService.removeFileFromDatabase(f.uuid, null, null));
-            logger.info("Soft-deleted {} files (threshold date: {})", deletedIds.size(), thresholdDate);
+            // Delegate DB work to the helper so the operation runs inside a real transaction.
+            scheduleTransactionHelper.deleteFilesAndHistory(deletedIds);
+            logger.info("Deleted {} files (threshold date: {})", deletedIds.size(), thresholdDate);
         } else {
             logger.warn("No database soft-deletions performed; all filesystem deletions failed or nothing matched");
         }
@@ -175,7 +184,6 @@ public class ScheduleService {
      *
      * <p>Runs daily at 03:00.
      */
-    @Transactional
     @Scheduled(cron = "0 0 3 * * *")
     public void cleanDatabaseFromDeletedFiles() {
         logger.info("Cleaning database from deleted files");
@@ -193,7 +201,6 @@ public class ScheduleService {
                 }
             }
         } while (batch.hasNext());
-        uuidsToRemove.forEach(uuid -> fileLifecycleService.removeFileFromDatabase(uuid));
 
         // Remove legacy plaintext {uuid}-decrypted sidecars that have no active share tokens
         storageService.listKeySuffix("-decrypted").forEach(key -> {
@@ -211,26 +218,32 @@ public class ScheduleService {
                     }
             );
         });
+
+        if (!uuidsToRemove.isEmpty()) {
+            // Delegate to the helper so each removeFileFromDatabase call is wrapped in a transaction.
+            scheduleTransactionHelper.softDeleteByUuids(uuidsToRemove);
+            logger.info("Removed {} database records for missing files", uuidsToRemove.size());
+        }
     }
 
     /**
      * Deletes share tokens that have either passed their expiry date or exhausted
      * their download allowance, and removes their associated re-encrypted sidecars.
      * Runs daily at 03:30.
+     *
+     * <p>DB rows are deleted first (inside a transaction via the helper) so that a
+     * crash after the DB delete but before any sidecar cleanup leaves orphaned sidecars
+     * rather than dangling token records — orphaned sidecars are cleaned up by the
+     * daily {@link #cleanDatabaseFromDeletedFiles()} scan.
      */
-    @Transactional
     @Scheduled(cron = "0 30 3 * * *")
     public void cleanShareTokens() {
         logger.info("Cleaning invalid share tokens");
         List<ShareTokenEntity> toDelete = shareTokenRepository.getShareTokenEntitiesForDeletion(LocalDate.now());
         if (!toDelete.isEmpty()) {
-            toDelete.forEach(token -> {
-                fileDownloadService.deleteShareSidecar(token);
-                if (token.file != null) {
-                    activityLogRepository.save(new ActivityLog(token.file, EventType.SHARE_EXPIRE, null, null));
-                }
-            });
-            shareTokenRepository.deleteAll(toDelete);
+            toDelete.forEach(token -> fileDownloadService.deleteShareSidecar(token));
+            // Delete DB rows inside a transaction, then handle any sidecar cleanup.
+            scheduleTransactionHelper.deleteExpiredShareTokens(toDelete);
             logger.info("Deleted {} invalid share tokens", toDelete.size());
         } else {
             logger.debug("No invalid share tokens found");

@@ -12,7 +12,7 @@
     <link href="/images/favicon.png" rel="icon" th:href="${appLogoPath}" type="image/png"/>
     <script src="/js/tailwindTheme.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/dompurify@3/dist/purify.min.js"></script>
+    <script src="/js/dompurify.min.js"></script>
     <th:block th:replace="~{fragments/header :: scripts}"></th:block>
     <style>
         .editor-wrapper .CodeMirror {
@@ -481,7 +481,12 @@
         const txt = editor.value();
         if (markdownRuntimeAvailable) {
             try {
-                manualPreviewPane.innerHTML = window.DOMPurify ? window.DOMPurify.sanitize(markedApi.parse(txt)) : markedApi.parse(txt);
+                const rawHtml = markedApi.parse(txt);
+                if (typeof DOMPurify !== 'undefined') {
+                    manualPreviewPane.innerHTML = DOMPurify.sanitize(rawHtml);
+                } else {
+                    manualPreviewPane.textContent = txt; // Plain text fallback — safe but unformatted
+                }
                 return;
             } catch (_) {
             }

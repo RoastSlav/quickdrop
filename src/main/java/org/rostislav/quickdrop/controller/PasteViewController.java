@@ -83,6 +83,9 @@ public class PasteViewController {
             return "redirect:/file/" + uuid;
         }
 
+        if (paste.deleted) {
+            return "redirect:/file/" + uuid;
+        }
         if (paste.immutable) {
             return "redirect:/file/" + uuid;
         }
@@ -158,7 +161,7 @@ public class PasteViewController {
         }
 
         Upload upload = fileQueryService.getFile(uuid).orElse(null);
-        if (upload instanceof Paste paste && paste.immutable) {
+        if (upload instanceof Paste paste && (paste.deleted || paste.immutable)) {
             return "redirect:/file/" + uuid;
         }
         if (!fileQueryService.isAuthorizedToEdit(uuid, request)) {

@@ -244,6 +244,10 @@ public class PasteService {
         }
 
         Paste paste = byUuid.get();
+        if (paste.deleted) {
+            logger.warn("Attempted to edit soft-deleted paste: {}", uuid);
+            return null;
+        }
         if (paste.immutable) {
             logger.warn("Attempted to edit immutable paste: {}", uuid);
             return null;
@@ -375,7 +379,10 @@ public class PasteService {
      * @throws IllegalArgumentException if the limit is exceeded
      */
     private void validatePasteSize(byte[] contentBytes) {
-        if (contentBytes.length > applicationSettingsService.getMaxFileSize()) {
+        long maxPasteSize = applicationSettingsService.getMaxFileSize();
+        long effectiveMax = Math.min(maxPasteSize, 10 * 1024 * 1024L);
+        if (contentBytes.length > effectiveMax) {
+            logger.warn("Paste content exceeds maximum size ({} bytes), rejecting", contentBytes.length);
             throw new IllegalArgumentException("Paste exceeds max file size limit.");
         }
     }

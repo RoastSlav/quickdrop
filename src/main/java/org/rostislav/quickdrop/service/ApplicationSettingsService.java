@@ -282,8 +282,29 @@ public class ApplicationSettingsService {
         boolean uploadEnabled = settings.isUploadEnabled();
         entity.setUploadEnabled(uploadEnabled);
         entity.setUploadAdminOnly(uploadEnabled && settings.isUploadAdminOnly());
+        // Validate Discord webhook URL before persisting — only accept https://discord.com
+        // or https://discordapp.com to prevent SSRF via saved webhook URLs.
+        String webhookUrl = settings.getDiscordWebhookUrl();
+        if (webhookUrl != null && !webhookUrl.isBlank()) {
+            try {
+                java.net.URI uri = new java.net.URI(webhookUrl);
+                String host = uri.getHost() != null ? uri.getHost().toLowerCase() : "";
+                boolean validDiscord = "https".equalsIgnoreCase(uri.getScheme()) &&
+                        (host.equals("discord.com") || host.endsWith(".discord.com")
+                                || host.equals("discordapp.com") || host.endsWith(".discordapp.com"));
+                if (!validDiscord) {
+                    logger.warn("Discord webhook URL rejected at save: must be https://discord.com or https://discordapp.com, got: {}", webhookUrl);
+                    webhookUrl = "";
+                    settings.setDiscordWebhookEnabled(false);
+                }
+            } catch (Exception e) {
+                logger.warn("Discord webhook URL is malformed, clearing: {}", webhookUrl);
+                webhookUrl = "";
+                settings.setDiscordWebhookEnabled(false);
+            }
+        }
         entity.setDiscordWebhookEnabled(settings.isDiscordWebhookEnabled());
-        entity.setDiscordWebhookUrl(settings.getDiscordWebhookUrl());
+        entity.setDiscordWebhookUrl(webhookUrl);
         entity.setEmailNotificationsEnabled(settings.isEmailNotificationsEnabled());
         entity.setEmailFrom(settings.getEmailFrom());
         entity.setEmailTo(settings.getEmailTo());

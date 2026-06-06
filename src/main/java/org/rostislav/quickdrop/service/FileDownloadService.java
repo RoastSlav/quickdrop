@@ -223,8 +223,14 @@ public class FileDownloadService {
                 shareTokenRepository.deleteByIdTransactional(shareTokenEntity.getId());
                 return null;
             }
-            logHistory(upload, request, EventType.SHARE_DOWNLOAD);
+            // Enforce key auth server-side: if the session has no validated key the
+            // caller has not gone through the /share/{token}/auth flow — refuse download.
             String shareKey = (String) request.getSession().getAttribute("share-key-" + shareTokenEntity.shareToken);
+            if (shareKey == null) {
+                logger.warn("Share download blocked: no session key for token {}", shareTokenEntity.shareToken);
+                return null;
+            }
+            logHistory(upload, request, EventType.SHARE_DOWNLOAD);
             return outputStream -> {
                 try {
                     InputStream decIn;

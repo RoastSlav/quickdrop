@@ -23,6 +23,10 @@
             const doc = new DOMParser().parseFromString(await res.text(), 'text/html');
             const next = doc.getElementById(containerId);
             if (next) {
+                // Update the browser tab title from the fetched document
+                if (doc.title) {
+                    document.title = doc.title;
+                }
                 container.replaceWith(next);
                 if (opts && opts.replace) {
                     history.replaceState({}, '', url);
@@ -36,6 +40,10 @@
             if (c) {
                 c.style.opacity = '';
                 c.style.pointerEvents = '';
+            }
+            // Surface the failure to the user instead of swallowing it silently
+            if (typeof window.toast === 'function') {
+                window.toast('Navigation failed. Please try again.', 'error');
             }
         }
     }
@@ -79,6 +87,22 @@
             }
         });
     }
+
+    // Handle browser Back/Forward so the DOM reflects the new URL.
+    // Probes known container IDs used by each SPA section to find the live one.
+    window.addEventListener('popstate', function () {
+        const knownContainers = [
+            'listDynamicContent',    // file list page
+            'fileDynamicContent',    // admin files
+            'pasteDynamicContent',   // admin pastes
+            'activityContent',       // admin activity
+            'shareLinksContent',     // admin share links
+        ];
+        const containerId = knownContainers.find((id) => document.getElementById(id));
+        if (containerId) {
+            loadDynamic(window.location.href, containerId, {replace: true});
+        }
+    });
 
     global.QD = global.QD || {};
     global.QD.loadDynamic = loadDynamic;

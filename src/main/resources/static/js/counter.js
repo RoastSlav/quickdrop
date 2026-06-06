@@ -33,6 +33,11 @@
                 const rounded = decimals > 0 ? n.toFixed(decimals) : Math.round(n).toString();
                 return rounded.replace(/\B(?=(\d{3})+(?!\d))/g, ',') + suffix;
             };
+            // Negative or zero targets must never animate downward
+            if (target <= 0) {
+                el.textContent = formatter(0);
+                return;
+            }
             if (reduceMotion || target < 10) {
                 el.textContent = formatter(target);
                 return;

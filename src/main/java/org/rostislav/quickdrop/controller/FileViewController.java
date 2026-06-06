@@ -12,6 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -197,6 +198,9 @@ public class FileViewController {
     @GetMapping("/preview/{uuid}")
     public ResponseEntity<StreamingResponseBody> previewFile(@PathVariable String uuid, HttpServletRequest request,
                                                              @RequestParam(name = "manual", defaultValue = "false") boolean manual) {
+        if (!fileQueryService.isAuthorizedForFile(uuid, request)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
         return fileDownloadService.previewFile(uuid, request, manual);
     }
 
@@ -210,8 +214,20 @@ public class FileViewController {
     }
 
     @GetMapping("/history/{uuid}")
-    public String viewFileHistory(@PathVariable String uuid, Model model) {
+    public String viewFileHistory(@PathVariable String uuid, Model model, HttpServletRequest request) {
         Upload fileEntity = fileQueryService.getFile(uuid).orElse(null);
+        if (fileEntity == null) {
+            return "redirect:/file/list";
+        }
+
+        // Auth check: if file has a password, require either a valid file session or admin session
+        if (fileEntity.passwordHash != null && !fileEntity.passwordHash.isBlank()) {
+            if (!fileQueryService.isAuthorizedForFile(uuid, request)
+                    && !sessionService.hasValidAdminSession(request)) {
+                return "redirect:/file/password/" + uuid;
+            }
+        }
+
         long totalDownloads = analyticsService.getTotalDownloadsByFile(uuid);
         FileEntityView fileEntityView = new FileEntityView(fileEntity, totalDownloads);
 
@@ -267,6 +283,11 @@ public class FileViewController {
 
     @GetMapping("/download/{uuid}")
     public ResponseEntity<StreamingResponseBody> downloadFile(@PathVariable String uuid, HttpServletRequest request) {
+        if (!fileQueryService.isAuthorizedForFile(uuid, request)) {
+            return ResponseEntity.status(HttpStatus.FOUND)
+                    .header("Location", "/file/password/" + uuid)
+                    .build();
+        }
         return fileDownloadService.downloadFile(uuid, request);
     }
 

@@ -146,7 +146,11 @@ public class StorageMigrationController {
             default -> null; // LOCAL, AZURE — no user-supplied host to validate here
         };
 
-        if (endpointToCheck != null && !endpointToCheck.isBlank() && !isSafeEndpoint(endpointToCheck)) {
+        if (endpointToCheck != null && endpointToCheck.isBlank()) {
+            // Backend requires a host/URL but none is configured yet — fail fast with a clear message.
+            return ResponseEntity.badRequest().body(Map.of("success", false, "error", "No host or URL configured for this backend."));
+        }
+        if (endpointToCheck != null && !isSafeEndpoint(endpointToCheck)) {
             logger.warn("Backend test blocked for {}: endpoint '{}' resolved to an internal/loopback address", backend, endpointToCheck);
             return ResponseEntity.badRequest().body(Map.of("success", false, "error", "Invalid or internal endpoint address."));
         }

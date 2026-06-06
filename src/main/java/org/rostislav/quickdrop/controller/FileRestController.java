@@ -220,7 +220,8 @@ public class FileRestController {
             tokenString = result.token().shareToken;
             sharePath = FileUtils.getSharePath(tokenString);
             if (result.shareKey() != null) {
-                sharePath += "?key=" + URLEncoder.encode(result.shareKey(), StandardCharsets.UTF_8);
+                // Use URL fragment so the key is never sent to the server in HTTP requests
+                sharePath += "#key=" + URLEncoder.encode(result.shareKey(), StandardCharsets.UTF_8);
             }
             // Warn the creator only for large files; small files encrypt quickly in the background
             if (!result.token().sidecarReady && fileEntity.size >= 50L * 1024 * 1024) {

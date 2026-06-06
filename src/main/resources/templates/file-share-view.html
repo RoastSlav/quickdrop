@@ -67,20 +67,77 @@
                 </div>
             </dl>
 
-            <!-- Download CTA -->
-            <a class="btn btn-gradient btn-lg w-full justify-center" id="downloadButton" th:href="${downloadLink}">
+            <!-- Download CTA: always rendered; hidden until key auth completes when needsKeyAuth=true -->
+            <a class="btn btn-gradient btn-lg w-full justify-center"
+               id="downloadButton"
+               th:href="${downloadLink}"
+               th:classappend="${needsKeyAuth} ? ' opacity-50 pointer-events-none' : ''"
+               aria-disabled="${needsKeyAuth}">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3"
                           stroke-linecap="round"
                           stroke-linejoin="round"/>
                 </svg>
-                <span th:text="#{button.download}">Download</span>
+                <span id="downloadLabel" th:text="${needsKeyAuth} ? 'Verifying…' : #{button.download}">Download</span>
             </a>
+
+            <!-- Shown only when fragment key auth fails -->
+            <p class="text-sm text-center mt-3 hidden" id="keyErrorMsg"
+               style="color:var(--c-danger, #ef4444)">Invalid or missing access key.</p>
         </div>
     </div>
 
 </main>
 
 <script src="/js/locale-switcher.js"></script>
+<script th:if="${needsKeyAuth}" th:inline="javascript">
+    (function () {
+        const token = /*[[${#strings.substringAfterLast(downloadLink, '/')}]]*/ '';
+        const btn = document.getElementById('downloadButton');
+        const label = document.getElementById('downloadLabel');
+        const errMsg = document.getElementById('keyErrorMsg');
+
+        // Extract key from URL fragment: #key=<value>
+        const hash = window.location.hash;
+        const match = hash.match(/[#&]key=([^&]+)/);
+        const key = match ? decodeURIComponent(match[1]) : null;
+
+        if (!key) {
+            label.textContent = 'Missing key';
+            errMsg.classList.remove('hidden');
+            return;
+        }
+
+        // Get CSRF token from meta tag (Spring inserts it via CookieCsrfTokenRepository)
+        const csrfToken = document.cookie.split(';')
+            .map(c => c.trim())
+            .find(c => c.startsWith('XSRF-TOKEN='));
+        const csrf = csrfToken ? csrfToken.split('=')[1] : '';
+
+        fetch('/share/' + token + '/auth', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-XSRF-TOKEN': csrf
+            },
+            body: 'key=' + encodeURIComponent(key),
+            credentials: 'same-origin'
+        }).then(function (res) {
+            if (res.ok) {
+                btn.classList.remove('opacity-50', 'pointer-events-none');
+                btn.removeAttribute('aria-disabled');
+                label.textContent = 'Download';
+                // Remove the key fragment from the URL bar (cosmetic, key is now in session)
+                history.replaceState(null, '', window.location.pathname + window.location.search);
+            } else {
+                label.textContent = 'Access denied';
+                errMsg.classList.remove('hidden');
+            }
+        }).catch(function () {
+            label.textContent = 'Error';
+            errMsg.classList.remove('hidden');
+        });
+    })();
+</script>
 </body>
 </html>

@@ -12,9 +12,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.*;
 import java.time.Instant;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.*;
 
 /**
@@ -37,6 +35,8 @@ public class AsyncFileMergeService {
     private static final Logger logger = LoggerFactory.getLogger(AsyncFileMergeService.class);
     private static final int MAX_CONCURRENT_MERGES = 20;
     private static final long TASK_TTL_MINUTES = 60;
+    // Fix 3: cap totalChunks to prevent DoS via Integer.MAX_VALUE
+    private static final int MAX_TOTAL_CHUNKS = 10_000;
 
     private final ConcurrentMap<String, MergeTask> mergeTasks = new ConcurrentHashMap<>();
     private final ExecutorService executorService = new ThreadPoolExecutor(
@@ -89,6 +89,12 @@ public class AsyncFileMergeService {
      * @throws IOException if saving the chunk to disk or waiting on the merge future fails
      */
     public Upload submitChunk(UploadRequest request, MultipartFile multipartChunk, int chunkNumber) throws IOException {
+        // Fix 3: reject absurdly large totalChunks to prevent DoS
+        if (request.totalChunks > MAX_TOTAL_CHUNKS) {
+            throw new IllegalArgumentException(
+                    "totalChunks " + request.totalChunks + " exceeds the maximum allowed value of " + MAX_TOTAL_CHUNKS);
+        }
+
         // Use uploadId (a UUID) as the temp-file prefix — never the user-supplied filename,
         // which could contain path-traversal sequences or OS-reserved characters.
         String taskKey = (request.uploadId != null && !request.uploadId.isBlank())
@@ -100,7 +106,8 @@ public class AsyncFileMergeService {
 
         MergeTask mergeTask = mergeTasks.computeIfAbsent(taskKey, key -> {
             MergeTask task = new MergeTask(request);
-            executorService.submit(task);
+            // Fix 4: store the Future so eviction can cancel the thread
+            task.future = executorService.submit(task);
             return task;
         });
         boolean isLastChunk = (chunkNumber == request.totalChunks - 1);
@@ -129,6 +136,11 @@ public class AsyncFileMergeService {
             Map.Entry<String, MergeTask> entry = it.next();
             if (entry.getValue().createdAt.isBefore(threshold)) {
                 logger.warn("Evicting stale merge task for file: {}", entry.getKey());
+                // Fix 4: cancel the background thread when evicting
+                Future<?> f = entry.getValue().future;
+                if (f != null) {
+                    f.cancel(true);
+                }
                 it.remove();
             }
         }
@@ -159,9 +171,17 @@ public class AsyncFileMergeService {
      */
     private class MergeTask implements Runnable {
         final Instant createdAt = Instant.now();
+        // Inter-thread signalling: producer parks new chunks here.
         private final BlockingQueue<ChunkInfo> queue = new LinkedBlockingQueue<>();
         private final CompletableFuture<Upload> mergeCompletionFuture = new CompletableFuture<>();
         private final UploadRequest request;
+        // Fix 4: held so eviction can cancel this thread.
+        volatile Future<?> future;
+        // Fix 1: ordered assembly — TreeMap keyed by chunkNumber.
+        private final TreeMap<Integer, ChunkInfo> pendingChunks = new TreeMap<>();
+        // Fix 2: dedup tracker — prevents duplicate queue entries on retry.
+        private final Set<Integer> receivedChunks = new HashSet<>();
+        private int nextExpectedChunk = 0;
         private int processedChunks = 0;
         private String uuid;
 
@@ -173,6 +193,18 @@ public class AsyncFileMergeService {
         }
 
         public void enqueueChunk(ChunkInfo chunkInfo) {
+            // Fix 2: deduplicate retried chunks — drop duplicates before queuing.
+            synchronized (receivedChunks) {
+                if (receivedChunks.contains(chunkInfo.chunkNumber)) {
+                    logger.warn("Duplicate chunk {} for file {} — dropping and deleting temp file",
+                            chunkInfo.chunkNumber, request.fileName);
+                    if (!chunkInfo.chunkFile.delete()) {
+                        logger.warn("Failed to delete duplicate chunk file: {}", chunkInfo.chunkFile.getAbsolutePath());
+                    }
+                    return;
+                }
+                receivedChunks.add(chunkInfo.chunkNumber);
+            }
             queue.add(chunkInfo);
         }
 
@@ -190,18 +222,23 @@ public class AsyncFileMergeService {
                         : new BufferedOutputStream(baseOut);
 
                 try (finalOut) {
+                    // Fix 1: ordered write loop — park chunks in TreeMap, write in sequence.
                     while (processedChunks < request.totalChunks) {
                         ChunkInfo info = queue.take();
-                        try (InputStream in = new BufferedInputStream(new FileInputStream(info.chunkFile))) {
-                            in.transferTo(finalOut);
-                        }
-                        if (!info.chunkFile.delete()) {
-                            logger.warn("Failed to delete chunk file: {}", info.chunkFile.getAbsolutePath());
-                        }
-                        processedChunks++;
-                        logger.info("Merged chunk {} for file {}", info.chunkNumber, request.fileName);
-                        if (info.isLastChunk) {
-                            break;
+                        pendingChunks.put(info.chunkNumber, info);
+
+                        // Drain all consecutive chunks starting at nextExpectedChunk.
+                        while (pendingChunks.containsKey(nextExpectedChunk)) {
+                            ChunkInfo toWrite = pendingChunks.remove(nextExpectedChunk);
+                            try (InputStream in = new BufferedInputStream(new FileInputStream(toWrite.chunkFile))) {
+                                in.transferTo(finalOut);
+                            }
+                            if (!toWrite.chunkFile.delete()) {
+                                logger.warn("Failed to delete chunk file: {}", toWrite.chunkFile.getAbsolutePath());
+                            }
+                            processedChunks++;
+                            logger.info("Merged chunk {} for file {}", toWrite.chunkNumber, request.fileName);
+                            nextExpectedChunk++;
                         }
                     }
                 }

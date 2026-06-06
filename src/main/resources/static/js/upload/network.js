@@ -148,7 +148,10 @@ function buildChunkFormData(
         formData.append("folderUpload", candidate.folderUpload ? "true" : "false");
         if (candidate.folderUpload) {
             formData.append("folderName", candidate.folderName || "");
-            formData.append("folderManifest", candidate.folderManifest || "[]");
+            // Fix 5: only send the manifest on the last chunk to avoid wasted bandwidth
+            if (chunkNumber === totalChunks - 1) {
+                formData.append("folderManifest", candidate.folderManifest || "[]");
+            }
         }
     }
 

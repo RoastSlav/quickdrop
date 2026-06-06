@@ -5,6 +5,8 @@ import org.rostislav.quickdrop.entity.ApplicationSettingsEntity;
 import org.rostislav.quickdrop.model.ApplicationSettingsViewModel;
 import org.rostislav.quickdrop.repository.ApplicationSettingsRepository;
 import org.rostislav.quickdrop.storage.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -17,6 +19,7 @@ import org.springframework.security.crypto.bcrypt.BCrypt;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -40,6 +43,8 @@ import static org.rostislav.quickdrop.util.FileUtils.formatFileSize;
  */
 @Service
 public class ApplicationSettingsService {
+    private static final Logger logger = LoggerFactory.getLogger(ApplicationSettingsService.class);
+
     private final ApplicationSettingsRepository applicationSettingsRepository;
     private final ContextRefresher contextRefresher;
 
@@ -364,16 +369,30 @@ public class ApplicationSettingsService {
             entity.setLogoFileName(null);
         } else if (logoFile != null && !logoFile.isEmpty()) {
             try {
+                validateLogoFile(logoFile);
                 String sanitizedName = logoFile.getOriginalFilename();
                 if (sanitizedName == null || sanitizedName.isBlank()) {
                     sanitizedName = "custom-logo";
                 }
                 sanitizedName = sanitizedName.replaceAll("[^a-zA-Z0-9._-]", "_");
+                // Fix 2a: reject filenames starting with dot
+                if (sanitizedName.startsWith(".")) {
+                    logger.warn("Rejecting logo filename starting with dot: {}", sanitizedName);
+                    return;
+                }
                 Path brandingDir = Path.of("branding").toAbsolutePath();
                 Files.createDirectories(brandingDir);
-                Path targetPath = brandingDir.resolve(sanitizedName);
-                logoFile.transferTo(targetPath);
-                entity.setLogoFileName(targetPath.getFileName().toString());
+                // Fix 2b: path-confinement check
+                Path resolvedPath = brandingDir.resolve(sanitizedName).normalize();
+                if (!resolvedPath.startsWith(brandingDir.normalize())) {
+                    logger.warn("Logo path traversal attempt detected: {}", sanitizedName);
+                    return;
+                }
+                logoFile.transferTo(resolvedPath);
+                entity.setLogoFileName(resolvedPath.getFileName().toString());
+            } catch (IllegalArgumentException e) {
+                logger.warn("Logo upload rejected: {}", e.getMessage());
+                return;
             } catch (Exception e) {
                 throw new RuntimeException("Failed to store logo file", e);
             }
@@ -1004,10 +1023,67 @@ public class ApplicationSettingsService {
             return "/images/favicon.png";
         }
         Path brandingDir = Path.of("branding").toAbsolutePath();
-        Path candidate = brandingDir.resolve(fileName);
+        // Fix 2: path-confinement check when serving the stored filename
+        Path candidate = brandingDir.resolve(fileName).normalize();
+        if (!candidate.startsWith(brandingDir.normalize())) {
+            logger.warn("Stored logo filename escapes branding directory, ignoring: {}", fileName);
+            return "/images/favicon.png";
+        }
         if (Files.exists(candidate)) {
             return "/branding/" + candidate.getFileName();
         }
         return "/images/favicon.png";
+    }
+
+    /**
+     * Validates a logo {@link MultipartFile} before persisting it.
+     *
+     * <p>Checks the declared MIME type, the file extension, the first 100 bytes for
+     * SVG/XML signatures, and enforces a 2 MB size cap.
+     *
+     * @param logoFile the uploaded file to validate (may be {@code null} or empty)
+     * @throws IllegalArgumentException if the file fails any validation rule
+     */
+    private void validateLogoFile(MultipartFile logoFile) throws IllegalArgumentException {
+        if (logoFile == null || logoFile.isEmpty()) return;
+
+        String contentType = logoFile.getContentType();
+        String originalFilename = logoFile.getOriginalFilename();
+
+        // Check declared MIME type — reject SVG and other non-raster types
+        java.util.Set<String> allowedTypes = java.util.Set.of(
+                "image/png", "image/jpeg", "image/gif", "image/webp", "image/x-icon"
+        );
+        if (contentType == null || !allowedTypes.contains(contentType.toLowerCase())) {
+            throw new IllegalArgumentException(
+                    "Logo must be a PNG, JPEG, GIF, WebP, or ICO image. SVG is not allowed.");
+        }
+
+        // Check file extension
+        if (originalFilename != null) {
+            String lower = originalFilename.toLowerCase();
+            if (lower.endsWith(".svg") || lower.endsWith(".xml") || lower.endsWith(".html")) {
+                throw new IllegalArgumentException("SVG and XML files are not allowed as logo.");
+            }
+        }
+
+        // Check magic bytes — catch SVG disguised as another MIME type
+        try {
+            byte[] header = logoFile.getBytes();
+            if (header.length > 4) {
+                String headerStr = new String(header, 0, Math.min(100, header.length), StandardCharsets.UTF_8);
+                if (headerStr.contains("<svg") || headerStr.contains("<?xml") || headerStr.contains("<!DOCTYPE")) {
+                    throw new IllegalArgumentException(
+                            "SVG/XML content detected. Only raster images are allowed as logo.");
+                }
+            }
+        } catch (java.io.IOException e) {
+            throw new IllegalArgumentException("Could not read logo file: " + e.getMessage());
+        }
+
+        // Size limit: 2 MB maximum
+        if (logoFile.getSize() > 2L * 1024L * 1024L) {
+            throw new IllegalArgumentException("Logo file exceeds 2 MB limit.");
+        }
     }
 }

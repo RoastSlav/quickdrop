@@ -89,6 +89,10 @@ public class ShareViewController {
                 // New-style: key arrives via URL fragment — client JS will POST it
                 Upload file = shareToken.file;
                 if (file == null) return "redirect:/file/list";
+                if (!shareToken.sidecarReady) {
+                    model.addAttribute("fileName", file.name);
+                    return "file-share-preparing";
+                }
                 model.addAttribute("file", new FileEntityView(file, analyticsService.getTotalDownloadsByFile(file.uuid)));
                 model.addAttribute("downloadLink", "/api/file/download/" + token);
                 model.addAttribute("needsKeyAuth", true);

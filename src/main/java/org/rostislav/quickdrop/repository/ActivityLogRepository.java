@@ -83,7 +83,7 @@ public interface ActivityLogRepository extends JpaRepository<ActivityLog, Long> 
      *                   {@code "system"} (no associated upload), or {@code null} for all
      * @param pageable   pagination and sort configuration
      */
-    @Query(value = "SELECT h FROM ActivityLog h LEFT JOIN h.file WHERE " +
+    @Query(value = "SELECT h FROM ActivityLog h LEFT JOIN FETCH h.file WHERE " +
             "(:startDate IS NULL OR h.eventDate >= :startDate) AND " +
             "(:endDate IS NULL OR h.eventDate <= :endDate) AND " +
             "(:eventType IS NULL OR h.eventType = :eventType) AND " +

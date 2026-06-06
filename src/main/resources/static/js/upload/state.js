@@ -142,15 +142,16 @@ export function showMessage(type, text) {
     }
     const container = document.getElementById("messageContainer");
     if (!container) return;
+    // Fix 6: use DOM construction instead of innerHTML to avoid XSS
     container.textContent = "";
-    const wrapper = document.createElement("div");
-    const cls = {
-        danger: "alert alert-danger",
-        warning: "alert alert-warning",
-        success: "alert alert-success",
-        info: "alert alert-info"
+    const styles = {
+        danger: "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-100",
+        warning: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-100",
+        success: "bg-sky-100 text-sky-700 dark:bg-sky-900 dark:text-sky-100",
+        info: "bg-sky-100 text-sky-700 dark:bg-sky-900 dark:text-sky-100",
     };
-    wrapper.className = cls[type] || cls.info;
-    wrapper.textContent = text;
-    container.appendChild(wrapper);
+    const div = document.createElement("div");
+    div.className = `rounded-lg p-4 mb-4 ${styles[type] || styles.info}`;
+    div.textContent = text;
+    container.appendChild(div);
 }

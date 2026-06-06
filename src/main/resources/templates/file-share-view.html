@@ -11,6 +11,8 @@
     <link href="/images/favicon.png" rel="icon" th:href="${appLogoPath}" type="image/png"/>
     <script src="/js/tailwindTheme.js"></script>
     <th:block th:replace="~{fragments/header :: scripts}"></th:block>
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
 </head>
 <body>
 
@@ -92,7 +94,7 @@
 <script src="/js/locale-switcher.js"></script>
 <script th:if="${needsKeyAuth}" th:inline="javascript">
     (function () {
-        const token = /*[[${#strings.substringAfterLast(downloadLink, '/')}]]*/ '';
+        const token = /*[[${downloadLink.substring(downloadLink.lastIndexOf('/') + 1)}]]*/ '';
         const btn = document.getElementById('downloadButton');
         const label = document.getElementById('downloadLabel');
         const errMsg = document.getElementById('keyErrorMsg');
@@ -113,9 +115,8 @@
             return;
         }
 
-        // Read CSRF token from XSRF-TOKEN cookie (set by CookieCsrfTokenRepository with httpOnly=false)
-        const csrfCookie = document.cookie.split(';').map(c => c.trim()).find(c => c.startsWith('XSRF-TOKEN='));
-        const csrf = csrfCookie ? decodeURIComponent(csrfCookie.split('=').slice(1).join('=')) : '';
+        // Read CSRF token from meta tag (set by Thymeleaf, XOR-encoded for Spring Security 6)
+        const csrf = document.querySelector('meta[name="_csrf"]')?.getAttribute('content') || '';
 
         // 10-second timeout via AbortController
         const controller = new AbortController();

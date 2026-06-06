@@ -1406,7 +1406,7 @@
             .then(function(r) { return r.json(); })
             .then(function(data) {
                 if (result) {
-                    result.textContent = data.success ? '✓ ' + data.message : '✗ ' + (data.message || data.error || 'Unknown error');
+                    result.textContent = data.success ? '✓ ' + data.message : '✗ ' + (data.message || data.error || storageI18n.requestFailed);
                     result.className = 'text-xs ' + (data.success ? 'text-teal-400' : 'text-red-400');
                 }
             })

@@ -283,9 +283,25 @@ public class FileDownloadService {
     }
 
     private ResponseEntity<StreamingResponseBody> createFileDownloadResponse(InputStream inputStream, Upload upload, HttpServletRequest request) {
-        StreamingResponseBody responseBody = getStreamingResponseBody(inputStream);
         logger.info("Sending file: {}", upload);
-        logHistory(upload, request, EventType.DOWNLOAD);
+        // Fix 5: log the download INSIDE the streaming lambda's finally block so it is
+        // recorded after the transfer completes, not before bytes start flowing.
+        StreamingResponseBody responseBody = outputStream -> {
+            try {
+                byte[] buffer = new byte[8192];
+                int bytesRead;
+                while ((bytesRead = inputStream.read(buffer)) != -1) {
+                    outputStream.write(buffer, 0, bytesRead);
+                }
+                outputStream.flush();
+            } finally {
+                try {
+                    inputStream.close();
+                } catch (IOException ignored) {
+                }
+                logHistory(upload, request, EventType.DOWNLOAD);
+            }
+        };
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + URLEncoder.encode(upload.name, StandardCharsets.UTF_8) + "\"")

@@ -13,9 +13,9 @@ import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
+import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * In-memory session management for admin and file-level access tokens.
@@ -32,8 +32,22 @@ import java.util.concurrent.ConcurrentHashMap;
 @Component
 public class SessionService implements HttpSessionListener {
     private static final Logger logger = LoggerFactory.getLogger(SessionService.class);
-    private final Set<String> adminSessionTokens = ConcurrentHashMap.newKeySet();
-    private final Map<String, FileSession> fileSessions = new ConcurrentHashMap<>();
+    private final Set<String> adminSessionTokens = Collections.synchronizedSet(
+            Collections.newSetFromMap(new java.util.LinkedHashMap<String, Boolean>() {
+                @Override
+                protected boolean removeEldestEntry(Map.Entry<String, Boolean> eldest) {
+                    return size() > 1000; // Max 1000 concurrent admin sessions
+                }
+            })
+    );
+    private final Map<String, FileSession> fileSessions = Collections.synchronizedMap(
+            new java.util.LinkedHashMap<String, FileSession>() {
+                @Override
+                protected boolean removeEldestEntry(Map.Entry<String, FileSession> eldest) {
+                    return size() > 10000; // Max 10000 concurrent file sessions
+                }
+            }
+    );
 
     /**
      * Lazily injected to avoid a startup-time circular dependency with the servlet listener
@@ -62,7 +76,8 @@ public class SessionService implements HttpSessionListener {
         Object adminToken = session.getAttribute("admin-session-token");
         if (adminToken != null) {
             adminSessionTokens.remove(adminToken.toString());
-            logger.info("Session destroyed, admin session token invalidated: {}", adminToken);
+            String at = adminToken.toString();
+            logger.info("Session destroyed, admin session token invalidated (id: {}...)", at.length() > 8 ? at.substring(0, 8) : "***");
             // Token still present → session timed out, not an explicit logout.
             String ip = (String) session.getAttribute("admin-ip");
             String ua = (String) session.getAttribute("admin-ua");
@@ -78,7 +93,8 @@ public class SessionService implements HttpSessionListener {
         Object fileSessionToken = session.getAttribute("file-session-token");
         if (fileSessionToken != null) {
             fileSessions.remove(fileSessionToken.toString());
-            logger.info("Session destroyed, file session token invalidated: {}", fileSessionToken);
+            String ft = fileSessionToken.toString();
+            logger.info("Session destroyed, file session token invalidated (id: {}...)", ft.length() > 8 ? ft.substring(0, 8) : "***");
         }
     }
 
@@ -90,7 +106,7 @@ public class SessionService implements HttpSessionListener {
      */
     public String addAdminToken(String token) {
         adminSessionTokens.add(token);
-        logger.info("admin session token added: {}", token);
+        logger.info("Admin session token added (id: {}...)", token.length() > 8 ? token.substring(0, 8) : "***");
         return token;
     }
 
@@ -104,7 +120,7 @@ public class SessionService implements HttpSessionListener {
      */
     public String addFileSessionToken(String token, String password, String fileUuid) {
         fileSessions.put(token, new FileSession(password, fileUuid));
-        logger.info("file session token added: {}", token);
+        logger.info("File session token added (id: {}...)", token.length() > 8 ? token.substring(0, 8) : "***");
         return token;
     }
 
@@ -146,7 +162,8 @@ public class SessionService implements HttpSessionListener {
         if (token != null) {
             adminSessionTokens.remove(token.toString());
             session.removeAttribute("admin-session-token");
-            logger.info("Admin session token invalidated: {}", token);
+            String t = token.toString();
+            logger.info("Admin session token invalidated (id: {}...)", t.length() > 8 ? t.substring(0, 8) : "***");
         }
     }
 

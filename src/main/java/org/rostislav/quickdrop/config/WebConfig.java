@@ -3,6 +3,7 @@ package org.rostislav.quickdrop.config;
 import org.rostislav.quickdrop.interceptor.AdminPasswordInterceptor;
 import org.rostislav.quickdrop.interceptor.AdminPasswordSetupInterceptor;
 import org.rostislav.quickdrop.interceptor.FilePasswordInterceptor;
+import org.rostislav.quickdrop.interceptor.RateLimitInterceptor;
 import org.rostislav.quickdrop.service.ApplicationSettingsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.web.servlet.ServletContextInitializer;
@@ -39,13 +40,15 @@ public class WebConfig implements WebMvcConfigurer {
     private final AdminPasswordInterceptor adminPasswordInterceptor;
     private final ApplicationSettingsService applicationSettingsService;
     private final FilePasswordInterceptor filePasswordInterceptor;
+    private final RateLimitInterceptor rateLimitInterceptor;
 
     @Autowired
-    public WebConfig(AdminPasswordSetupInterceptor adminPasswordSetupInterceptor, AdminPasswordInterceptor adminPasswordInterceptor, ApplicationSettingsService applicationSettingsService, FilePasswordInterceptor filePasswordInterceptor) {
+    public WebConfig(AdminPasswordSetupInterceptor adminPasswordSetupInterceptor, AdminPasswordInterceptor adminPasswordInterceptor, ApplicationSettingsService applicationSettingsService, FilePasswordInterceptor filePasswordInterceptor, RateLimitInterceptor rateLimitInterceptor) {
         this.adminPasswordSetupInterceptor = adminPasswordSetupInterceptor;
         this.adminPasswordInterceptor = adminPasswordInterceptor;
         this.applicationSettingsService = applicationSettingsService;
         this.filePasswordInterceptor = filePasswordInterceptor;
+        this.rateLimitInterceptor = rateLimitInterceptor;
     }
 
     @Override
@@ -61,6 +64,9 @@ public class WebConfig implements WebMvcConfigurer {
         registry.addInterceptor(filePasswordInterceptor)
                 .addPathPatterns("/file/**", "/api/file/share/**")
                 .excludePathPatterns("/file/upload", "/file/list", "/file/password", "/file/password/**", "/file/history/*", "/file/search", "/file/paste", "/file/paste/new");
+
+        registry.addInterceptor(rateLimitInterceptor)
+                .addPathPatterns("/file/password", "/admin/password", "/share/**");
     }
 
     /**

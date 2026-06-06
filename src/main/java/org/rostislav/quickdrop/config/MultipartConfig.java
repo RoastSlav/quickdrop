@@ -1,6 +1,8 @@
 package org.rostislav.quickdrop.config;
 
 import jakarta.servlet.MultipartConfigElement;
+import org.springframework.boot.web.embedded.tomcat.TomcatServletWebServerFactory;
+import org.springframework.boot.web.server.WebServerFactoryCustomizer;
 import org.springframework.boot.web.servlet.MultipartConfigFactory;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.context.annotation.Bean;
@@ -39,5 +41,21 @@ public class MultipartConfig {
         factory.setMaxRequestSize(maxRequestSize);
 
         return factory.createMultipartConfig();
+    }
+
+    /**
+     * Raises Tomcat's {@code maxPartCount} connector limit (default 50) so that
+     * large multipart forms – such as the admin settings form with 100+ fields –
+     * are not rejected with {@code FileCountLimitExceededException}.
+     *
+     * <p>Tomcat's {@code Connector.maxPartCount} caps the file-part count allowed
+     * per multipart request, independent of {@code max-parameter-count}.
+     * The admin settings form sends 100+ multipart parts (one per field) when a
+     * logo file is attached, which exceeds the 50-part default.
+     */
+    @Bean
+    public WebServerFactoryCustomizer<TomcatServletWebServerFactory> tomcatMultipartPartCountCustomizer() {
+        return factory -> factory.addConnectorCustomizers(connector ->
+                connector.setMaxPartCount(500));
     }
 }

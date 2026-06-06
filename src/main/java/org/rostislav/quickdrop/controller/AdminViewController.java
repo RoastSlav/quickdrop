@@ -158,6 +158,10 @@ public class AdminViewController {
 
     @PostMapping("/setup")
     public String setAdminPassword(String adminPassword) {
+        // Guard: if admin password is already set, refuse to overwrite via unauthenticated POST
+        if (applicationSettingsService.isAdminPasswordSet()) {
+            return "redirect:/admin/dashboard";
+        }
         if (adminPassword == null || adminPassword.isBlank()) {
             return "redirect:setup";
         }
@@ -250,6 +254,10 @@ public class AdminViewController {
     public String checkAdminPassword(@RequestParam String password, HttpServletRequest request) {
         String adminPasswordHash = applicationSettingsService.getAdminPasswordHash();
         RequesterInfo info = FileUtils.getRequesterInfo(request);
+
+        if (adminPasswordHash == null || adminPasswordHash.isBlank()) {
+            return "redirect:/admin/setup";
+        }
 
         if (BCrypt.checkpw(password, adminPasswordHash)) {
             String adminAccessToken = sessionService.addAdminToken(UUID.randomUUID().toString());

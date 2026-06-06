@@ -24,6 +24,8 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import org.springframework.beans.factory.annotation.Value;
+
 import java.util.Arrays;
 import java.util.List;
 
@@ -45,6 +47,9 @@ import java.util.List;
 public class SecurityConfig {
     private static final Logger logger = LoggerFactory.getLogger(SecurityConfig.class);
     private final ApplicationSettingsService applicationSettingsService;
+
+    @Value("${quickdrop.cors.allowed-origins:*}")
+    private String corsAllowedOrigins;
 
     public SecurityConfig(ApplicationSettingsService applicationSettingsService) {
         this.applicationSettingsService = applicationSettingsService;
@@ -74,6 +79,7 @@ public class SecurityConfig {
                             "/css/**",
                             "/js/**",
                             "/images/**",
+                            "/branding/**",
                             "/webjars/**"
                     ).permitAll()
                     .anyRequest().authenticated()
@@ -108,10 +114,18 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.addAllowedOriginPattern("*");
+        if ("*".equals(corsAllowedOrigins)) {
+            // Wildcard origin is incompatible with credentials=true; use open/anonymous CORS.
+            configuration.addAllowedOriginPattern("*");
+            configuration.setAllowCredentials(false);
+        } else {
+            for (String origin : corsAllowedOrigins.split(",")) {
+                configuration.addAllowedOrigin(origin.trim());
+            }
+            configuration.setAllowCredentials(true);
+        }
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-CSRF-TOKEN", "X-XSRF-TOKEN"));
-        configuration.setAllowCredentials(true);
         configuration.setExposedHeaders(Arrays.asList("Authorization", "Content-Disposition"));
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

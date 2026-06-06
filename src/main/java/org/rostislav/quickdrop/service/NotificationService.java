@@ -32,10 +32,20 @@ import static org.rostislav.quickdrop.util.DataValidator.safeString;
 public class NotificationService {
     private static final Logger logger = LoggerFactory.getLogger(NotificationService.class);
     private static final long DEFAULT_FLUSH_POLL_SECONDS = 60;
-    private static final RestTemplate REST_TEMPLATE = new RestTemplate();
+    private static final RestTemplate REST_TEMPLATE;
+
+    static {
+        org.springframework.http.client.SimpleClientHttpRequestFactory factory =
+                new org.springframework.http.client.SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(5_000);
+        factory.setReadTimeout(10_000);
+        REST_TEMPLATE = new RestTemplate(factory);
+    }
+
     private final ApplicationSettingsService applicationSettingsService;
     private final MessageSource messageSource;
-    private final Queue<String> pendingMessages = new ConcurrentLinkedQueue<>();
+    private final java.util.concurrent.BlockingDeque<String> pendingMessages =
+            new java.util.concurrent.LinkedBlockingDeque<>(10_000);
     private final Object schedulerLock = new Object();
     private final ExecutorService notificationExecutor = Executors.newSingleThreadExecutor(r -> {
         Thread t = new Thread(r);
@@ -118,7 +128,7 @@ public class NotificationService {
             default -> "";
         };
 
-        String summary = "File '" + file.name + "' (" + file.uuid + ") was " + event + ".";
+        String summary = "File '" + escapeDiscord(file.name) + "' (" + file.uuid + ") was " + event + ".";
         StringBuilder detailsBuilder = new StringBuilder();
         if (type == EventType.UPLOAD) {
             detailsBuilder.append("Size: ").append(file.size).append(" bytes");
@@ -127,7 +137,9 @@ public class NotificationService {
         String formattedMessage = details.isBlank() ? summary : summary + "\n---\n" + details;
 
         if (shouldUseBatching(shouldSendDiscord, shouldSendEmail)) {
-            pendingMessages.add(formattedMessage);
+            if (!pendingMessages.offer(formattedMessage)) {
+                logger.warn("Notification queue full — discarding notification.");
+            }
             startSchedulerIfNeeded(shouldSendDiscord, shouldSendEmail);
             return;
         }
@@ -181,14 +193,58 @@ public class NotificationService {
     }
 
     /**
+     * Returns {@code true} only when {@code url} is an {@code https://} URL pointing at a
+     * Discord-owned domain ({@code discord.com} or {@code discordapp.com} and their subdomains).
+     * Rejects {@code null}, blank, non-HTTPS, and any other hostname to prevent SSRF.
+     *
+     * @param url the webhook URL to validate
+     * @return {@code true} if the URL is safe to call
+     */
+    private boolean isValidDiscordWebhookUrl(String url) {
+        if (url == null || url.isBlank()) return false;
+        try {
+            java.net.URI uri = new java.net.URI(url);
+            String scheme = uri.getScheme();
+            String host = uri.getHost();
+            if (!"https".equalsIgnoreCase(scheme)) return false;
+            if (host == null) return false;
+            // Only allow Discord domains
+            return host.equals("discord.com") || host.endsWith(".discord.com")
+                    || host.equals("discordapp.com") || host.endsWith(".discordapp.com");
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /**
+     * Escapes Discord Markdown special characters and neutralises {@code @everyone} / {@code @here}
+     * pings by inserting a zero-width space after the {@code @} sign.
+     *
+     * @param text the raw text to escape; {@code null} returns an empty string
+     * @return the escaped string safe for inclusion in a Discord message
+     */
+    private String escapeDiscord(String text) {
+        if (text == null) return "";
+        // Prevent @everyone and @here mentions
+        text = text.replace("@everyone", "@​everyone").replace("@here", "@​here");
+        // Escape Discord markdown special characters
+        return text.replaceAll("([*_`~|>\\\\\\[\\]])", "\\\\$1");
+    }
+
+    /**
      * Posts {@code content} to the configured Discord webhook URL.
      * Failures are logged as warnings and do not propagate.
      *
      * @param content the message text to send
      */
     private void sendDiscord(String content) {
+        String webhookUrl = safeString(applicationSettingsService.getDiscordWebhookUrl());
+        if (!isValidDiscordWebhookUrl(webhookUrl)) {
+            logger.warn("Discord notification blocked: URL failed validation — must be https://discord.com or https://discordapp.com");
+            return;
+        }
         try {
-            REST_TEMPLATE.postForEntity(safeString(applicationSettingsService.getDiscordWebhookUrl()), Map.of("content", content), Void.class);
+            REST_TEMPLATE.postForEntity(webhookUrl, Map.of("content", content), Void.class);
         } catch (Exception e) {
             logger.warn("Discord notification failed: {}", e.getMessage());
         }
@@ -203,6 +259,11 @@ public class NotificationService {
         String url = safeString(applicationSettingsService.getDiscordWebhookUrl());
         if (url.isBlank()) {
             return NotificationTestResult.failure(messageSource.getMessage("page.settings.notifications.discord.missingUrl", null, "Discord webhook URL is not configured.", LocaleContextHolder.getLocale()));
+        }
+
+        if (!isValidDiscordWebhookUrl(url)) {
+            logger.warn("Discord test notification blocked: URL failed validation — must be https://discord.com or https://discordapp.com");
+            return NotificationTestResult.failure(messageSource.getMessage("page.settings.notifications.discord.invalidUrl", null, "Discord webhook URL is invalid. Only https://discord.com and https://discordapp.com URLs are allowed.", LocaleContextHolder.getLocale()));
         }
 
         try {
@@ -465,7 +526,7 @@ public class NotificationService {
                 t.setName("notification-batch-flush");
                 return t;
             });
-            scheduler.scheduleAtFixedRate(this::flushBatchIfDue, DEFAULT_FLUSH_POLL_SECONDS, DEFAULT_FLUSH_POLL_SECONDS, TimeUnit.SECONDS);
+            scheduler.scheduleWithFixedDelay(this::flushBatchIfDue, DEFAULT_FLUSH_POLL_SECONDS, DEFAULT_FLUSH_POLL_SECONDS, TimeUnit.SECONDS);
         }
     }
 

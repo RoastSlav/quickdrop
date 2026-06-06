@@ -16,9 +16,10 @@ import java.util.function.Supplier;
 /**
  * {@link StorageService} backed by SFTP (SSH File Transfer Protocol).
  *
- * <p>Uses a {@link Supplier} config. A JSch {@link Session} is kept alive and
- * reconnected on demand. Each individual I/O operation opens and closes its own
- * {@link ChannelSftp}.
+ * <p>Uses a {@link Supplier} config. Each I/O operation creates its own SSH
+ * {@link Session} and {@link ChannelSftp}, performs the work, then closes both
+ * in a finally block. This eliminates all shared-state concurrency races at the
+ * cost of one reconnect per operation.
  *
  * <p>Writes buffer to a local temp file then upload on {@link OutputStream#close()}
  * to avoid holding an SSH channel open for the full transfer duration.
@@ -27,24 +28,19 @@ public class SftpStorageService implements StorageService {
     private static final Logger logger = LoggerFactory.getLogger(SftpStorageService.class);
 
     private final Supplier<SftpConfig> configSupplier;
-    private volatile Session session;
 
     public SftpStorageService(Supplier<SftpConfig> configSupplier) {
         this.configSupplier = configSupplier;
     }
 
-    private synchronized ChannelSftp openChannel() throws JSchException {
+    /**
+     * Fix 1 &amp; 2: Creates a fresh {@link Session} per call (no shared state).
+     * When knownHosts is blank, {@code StrictHostKeyChecking=no} is used but a
+     * prominent WARNING is logged on every connection attempt. When knownHosts IS
+     * configured, {@code StrictHostKeyChecking=yes} is set explicitly.
+     */
+    private Session createSession() throws JSchException {
         SftpConfig cfg = configSupplier.get();
-        if (session == null || !session.isConnected()) {
-            session = buildSession(cfg);
-            session.connect(10_000);
-        }
-        ChannelSftp ch = (ChannelSftp) session.openChannel("sftp");
-        ch.connect(10_000);
-        return ch;
-    }
-
-    private Session buildSession(SftpConfig cfg) throws JSchException {
         JSch jsch = new JSch();
         if (cfg.privateKey() != null && !cfg.privateKey().isBlank()) {
             byte[] keyBytes = cfg.privateKey().getBytes(java.nio.charset.StandardCharsets.UTF_8);
@@ -58,10 +54,16 @@ public class SftpStorageService implements StorageService {
         if (cfg.password() != null && !cfg.password().isBlank()) {
             s.setPassword(cfg.password());
         }
-        // Accept unknown hosts by default (admin can supply known_hosts to lock it down)
         if (cfg.knownHosts() == null || cfg.knownHosts().isBlank()) {
+            // Fix 1: Warn loudly on every connection when host key verification is off.
+            logger.warn("SFTP WARNING: knownHosts is not configured. Host key verification is DISABLED. " +
+                    "Configure sftpKnownHosts in settings to enable host verification and prevent MITM attacks.");
             s.setConfig("StrictHostKeyChecking", "no");
+        } else {
+            // Fix 1: Explicitly enforce strict checking when knownHosts is provided.
+            s.setConfig("StrictHostKeyChecking", "yes");
         }
+        s.connect(10_000);
         return s;
     }
 
@@ -75,16 +77,19 @@ public class SftpStorageService implements StorageService {
     @Override
     public InputStream getInputStream(String key) throws IOException {
         try {
-            ChannelSftp ch = openChannel();
+            Session s = createSession();
+            ChannelSftp ch = (ChannelSftp) s.openChannel("sftp");
+            ch.connect(10_000);
             InputStream raw = ch.get(remotePath(key));
-            // Wrap to close channel when stream is closed
+            // Wrap to close channel and disconnect session when the stream is closed.
             return new FilterInputStream(raw) {
                 @Override
                 public void close() throws IOException {
                     try {
                         super.close();
                     } finally {
-                        ch.disconnect();
+                        try { ch.disconnect(); } catch (Exception ignored) {}
+                        try { s.disconnect(); } catch (Exception ignored) {}
                     }
                 }
             };
@@ -115,87 +120,112 @@ public class SftpStorageService implements StorageService {
     }
 
     private void uploadFromFile(String key, Path tmp) throws IOException {
+        Session s = null;
+        ChannelSftp ch = null;
         try {
-            ChannelSftp ch = openChannel();
-            try {
-                ensureParentDirs(ch, remotePath(key));
-                try (InputStream in = Files.newInputStream(tmp)) {
-                    ch.put(in, remotePath(key));
-                }
-            } finally {
-                ch.disconnect();
+            s = createSession();
+            ch = (ChannelSftp) s.openChannel("sftp");
+            ch.connect(10_000);
+            ensureParentDirs(ch, remotePath(key));
+            try (InputStream in = Files.newInputStream(tmp)) {
+                ch.put(in, remotePath(key));
             }
         } catch (Exception e) {
             throw new IOException("SFTP upload failed for " + key, e);
+        } finally {
+            if (ch != null) try { ch.disconnect(); } catch (Exception ignored) {}
+            if (s != null) try { s.disconnect(); } catch (Exception ignored) {}
         }
     }
 
+    /**
+     * Fix 3: Walk each path component individually so multi-level paths are created.
+     */
     private void ensureParentDirs(ChannelSftp ch, String path) {
-        String parent = path.contains("/") ? path.substring(0, path.lastIndexOf('/')) : null;
-        if (parent == null || parent.isBlank()) return;
-        try {
-            ch.mkdir(parent);
-        } catch (SftpException ignored) { /* may already exist */ }
+        String[] parts = path.split("/");
+        StringBuilder current = new StringBuilder();
+        for (int i = 0; i < parts.length - 1; i++) {
+            if (parts[i].isEmpty()) continue;
+            current.append("/").append(parts[i]);
+            try {
+                ch.mkdir(current.toString());
+            } catch (SftpException e) {
+                // Directory likely already exists — ignore
+            }
+        }
     }
 
     @Override
     public boolean exists(String key) {
+        Session s = null;
+        ChannelSftp ch = null;
         try {
-            ChannelSftp ch = openChannel();
+            s = createSession();
+            ch = (ChannelSftp) s.openChannel("sftp");
+            ch.connect(10_000);
             try {
                 ch.lstat(remotePath(key));
                 return true;
             } catch (SftpException e) {
                 return e.id != ChannelSftp.SSH_FX_NO_SUCH_FILE;
-            } finally {
-                ch.disconnect();
             }
         } catch (Exception e) {
             logger.warn("SFTP exists check failed for {}: {}", key, e.getMessage());
             return false;
+        } finally {
+            if (ch != null) try { ch.disconnect(); } catch (Exception ignored) {}
+            if (s != null) try { s.disconnect(); } catch (Exception ignored) {}
         }
     }
 
     @Override
     public boolean delete(String key) {
+        Session s = null;
+        ChannelSftp ch = null;
         try {
-            ChannelSftp ch = openChannel();
+            s = createSession();
+            ch = (ChannelSftp) s.openChannel("sftp");
+            ch.connect(10_000);
             try {
                 ch.rm(remotePath(key));
                 return true;
             } catch (SftpException e) {
                 return e.id == ChannelSftp.SSH_FX_NO_SUCH_FILE;
-            } finally {
-                ch.disconnect();
             }
         } catch (Exception e) {
             logger.error("SFTP delete failed for {}: {}", key, e.getMessage());
             return false;
+        } finally {
+            if (ch != null) try { ch.disconnect(); } catch (Exception ignored) {}
+            if (s != null) try { s.disconnect(); } catch (Exception ignored) {}
         }
     }
 
     @Override
     public List<String> listKeySuffix(String suffix) {
+        Session s = null;
+        ChannelSftp ch = null;
         try {
-            ChannelSftp ch = openChannel();
-            try {
-                String base = configSupplier.get().basePath();
-                if (base == null || base.isBlank()) base = "/";
-                @SuppressWarnings("unchecked")
-                Vector<ChannelSftp.LsEntry> entries = ch.ls(base);
-                List<String> result = new ArrayList<>();
-                for (ChannelSftp.LsEntry e : entries) {
-                    if (!e.getAttrs().isDir() && e.getFilename().endsWith(suffix)) {
-                        result.add(e.getFilename());
-                    }
+            s = createSession();
+            ch = (ChannelSftp) s.openChannel("sftp");
+            ch.connect(10_000);
+            String base = configSupplier.get().basePath();
+            if (base == null || base.isBlank()) base = "/";
+            @SuppressWarnings("unchecked")
+            Vector<ChannelSftp.LsEntry> entries = ch.ls(base);
+            List<String> result = new ArrayList<>();
+            for (ChannelSftp.LsEntry e : entries) {
+                if (!e.getAttrs().isDir() && e.getFilename().endsWith(suffix)) {
+                    result.add(e.getFilename());
                 }
-                return result;
-            } finally {
-                ch.disconnect();
             }
+            return result;
         } catch (Exception e) {
             logger.error("SFTP list failed with suffix {}: {}", suffix, e.getMessage());
             return Collections.emptyList();
+        } finally {
+            if (ch != null) try { ch.disconnect(); } catch (Exception ignored) {}
+            if (s != null) try { s.disconnect(); } catch (Exception ignored) {}
         }
     }
 
@@ -208,33 +238,36 @@ public class SftpStorageService implements StorageService {
      * Returns null on success, error message on failure.
      */
     public String testConnection() {
+        Session s = null;
+        ChannelSftp ch = null;
         try {
-            synchronized (this) {
-                if (session != null) {
-                    try {
-                        session.disconnect();
-                    } catch (Exception ignored) {
-                    }
-                    session = null;
-                }
-            }
-            ChannelSftp ch = openChannel();
-            ch.disconnect();
+            s = createSession();
+            ch = (ChannelSftp) s.openChannel("sftp");
+            ch.connect(10_000);
             return null;
         } catch (Exception e) {
             return e.getMessage();
+        } finally {
+            if (ch != null) try { ch.disconnect(); } catch (Exception ignored) {}
+            if (s != null) try { s.disconnect(); } catch (Exception ignored) {}
         }
     }
 
     @Override
     public boolean isReachable() {
+        Session s = null;
+        ChannelSftp ch = null;
         try {
-            ChannelSftp ch = openChannel();
-            ch.disconnect();
+            s = createSession();
+            ch = (ChannelSftp) s.openChannel("sftp");
+            ch.connect(10_000);
             return true;
         } catch (Exception e) {
             logger.debug("SFTP health probe failed: {}", e.getMessage());
             return false;
+        } finally {
+            if (ch != null) try { ch.disconnect(); } catch (Exception ignored) {}
+            if (s != null) try { s.disconnect(); } catch (Exception ignored) {}
         }
     }
 

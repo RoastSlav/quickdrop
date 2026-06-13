@@ -594,7 +594,8 @@ public class ApplicationSettingsService {
      * @return {@code true} if an admin password has been set (hash is non-empty)
      */
     public boolean isAdminPasswordSet() {
-        return !self.getApplicationSettings().getAdminPasswordHash().isEmpty();
+        String hash = self.getApplicationSettings().getAdminPasswordHash();
+        return hash != null && !hash.isEmpty();
     }
 
     /**

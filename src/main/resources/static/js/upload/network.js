@@ -53,9 +53,9 @@ export async function uploadCandidate(
             const xhr = new XMLHttpRequest();
             xhr.open("POST", "/api/file/upload-chunk", true);
 
-            const csrfTokenElement = document.querySelector('input[name="_csrf"]');
-            if (csrfTokenElement) {
-                xhr.setRequestHeader("X-XSRF-TOKEN", csrfTokenElement.value);
+            const csrfToken = getCsrfToken();
+            if (csrfToken) {
+                xhr.setRequestHeader("X-XSRF-TOKEN", csrfToken);
             }
 
             xhr.onload = () => {
@@ -119,6 +119,30 @@ export async function uploadCandidate(
 
         uploadNextChunk();
     });
+}
+
+function getCookieValue(name) {
+    const prefix = `${name}=`;
+    const cookie = document.cookie
+        .split(";")
+        .map((value) => value.trim())
+        .find((value) => value.startsWith(prefix));
+    if (!cookie) return "";
+
+    try {
+        return decodeURIComponent(cookie.substring(prefix.length));
+    } catch (_) {
+        return cookie.substring(prefix.length);
+    }
+}
+
+function getCsrfToken() {
+    return (
+        getCookieValue("XSRF-TOKEN") ||
+        document.querySelector('input[name="_csrf"]')?.value ||
+        document.querySelector('meta[name="_csrf"]')?.content ||
+        ""
+    );
 }
 
 function buildChunkFormData(

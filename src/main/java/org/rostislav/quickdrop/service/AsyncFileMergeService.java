@@ -110,6 +110,7 @@ public class AsyncFileMergeService {
             task.future = executorService.submit(task);
             return task;
         });
+        mergeTask.applyFolderMetadata(request);
         boolean isLastChunk = (chunkNumber == request.totalChunks - 1);
         mergeTask.enqueueChunk(new ChunkInfo(chunkNumber, savedChunk, isLastChunk));
 
@@ -206,6 +207,21 @@ public class AsyncFileMergeService {
                 receivedChunks.add(chunkInfo.chunkNumber);
             }
             queue.add(chunkInfo);
+        }
+
+        public void applyFolderMetadata(UploadRequest latestRequest) {
+            if (!latestRequest.folderUpload) {
+                return;
+            }
+            synchronized (request) {
+                request.folderUpload = true;
+                if (latestRequest.folderName != null && !latestRequest.folderName.isBlank()) {
+                    request.folderName = latestRequest.folderName;
+                }
+                if (latestRequest.folderManifest != null && !latestRequest.folderManifest.isBlank()) {
+                    request.folderManifest = latestRequest.folderManifest;
+                }
+            }
         }
 
         public CompletableFuture<Upload> getMergeCompletionFuture() {

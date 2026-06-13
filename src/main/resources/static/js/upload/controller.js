@@ -223,6 +223,7 @@ export function initUploadPage(config = {}) {
         isUploading = true;
         applyState(UploadState.UPLOADING);
 
+        let handledUploadFailure = false;
         try {
             await uploadCandidate(candidate, {
                 uploadPasswordEnabled,
@@ -234,19 +235,23 @@ export function initUploadPage(config = {}) {
                     window.location.href = `/file/${uuid}`;
                 },
                 onWarn: () => {
+                    handledUploadFailure = true;
                     showMessage("warning", window.i18n?.upload?.noFileInfo || 'Upload finished but no file information was returned from the server.');
                     isUploading = false;
                     applyState(UploadState.READY);
                 },
                 onError: () => {
+                    handledUploadFailure = true;
                     showMessage("danger", window.i18n?.upload?.uploadFailed || 'Upload failed. Please try again.');
                     resetUploadUI();
                 },
             });
         } catch (err) {
             console.error("Upload failed", err);
-            showMessage("danger", "Upload failed. Please try again.");
-            resetUploadUI();
+            if (!handledUploadFailure) {
+                showMessage("danger", window.i18n?.upload?.uploadFailed || 'Upload failed. Please try again.');
+                resetUploadUI();
+            }
         }
     }
 

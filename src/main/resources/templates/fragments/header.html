@@ -8,6 +8,46 @@
 -->
 
 <!-- ─── Shared CDN scripts (Alpine + htmx) ──────────────────────────────── -->
+<th:block th:fragment="themePreload">
+    <script>
+        (function () {
+            const storageKey = 'theme';
+            const validThemes = ['light', 'dark', 'system'];
+            const root = document.documentElement;
+
+            function readPreference() {
+                try {
+                    const stored = localStorage.getItem(storageKey);
+                    return validThemes.indexOf(stored) >= 0 ? stored : 'system';
+                } catch (e) {
+                    return 'system';
+                }
+            }
+
+            function systemTheme() {
+                return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+                    ? 'dark'
+                    : 'light';
+            }
+
+            const preference = readPreference();
+            const resolved = preference === 'system' ? systemTheme() : preference;
+            root.classList.toggle('dark', resolved === 'dark');
+            root.dataset.themePreference = preference;
+            root.dataset.theme = resolved;
+            root.style.colorScheme = resolved;
+
+            try {
+                if (!localStorage.getItem(storageKey)) {
+                    localStorage.setItem(storageKey, 'system');
+                }
+            } catch (e) {
+                // Storage can be unavailable in private or locked-down contexts.
+            }
+        })();
+    </script>
+</th:block>
+
 <th:block th:fragment="scripts">
     <link as="image" rel="preload" th:href="${appLogoPath}"/>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>

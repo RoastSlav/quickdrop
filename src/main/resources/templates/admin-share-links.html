@@ -1,9 +1,10 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8"/>
     <title th:text="#{page.adminShareLinks.title.browser(${appName})}">Share Links — Admin</title>
     <meta content="width=device-width, initial-scale=1" name="viewport"/>
+    <th:block th:replace="~{fragments/header :: themePreload}"></th:block>
     <link href="https://fonts.googleapis.com" rel="preconnect"/>
     <link crossorigin href="https://fonts.gstatic.com" rel="preconnect"/>
     <link href="/css/tailwind.css" rel="stylesheet"/>

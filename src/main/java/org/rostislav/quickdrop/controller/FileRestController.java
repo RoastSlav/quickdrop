@@ -159,13 +159,34 @@ public class FileRestController {
 
             UploadRequest fileUploadRequest = new UploadRequest(description, keepIndefinitelyValue, effectivePassword, hiddenValue, fileName, totalChunks, fileSize, uploaderIp, uploaderUserAgent, Boolean.TRUE.equals(folderUpload), folderName, safeManifest, false);
             fileUploadRequest.uploadId = effectiveUploadId;
-            Upload upload = asyncFileMergeService.submitChunk(fileUploadRequest, file, chunkNumber);
+            boolean isLastChunk = chunkNumber == totalChunks - 1;
+            Upload upload = asyncFileMergeService.submitChunk(fileUploadRequest, file, chunkNumber, false);
+            if (isLastChunk) {
+                return ResponseEntity.accepted()
+                        .body(Map.of("status", "processing", "uploadId", effectiveUploadId));
+            }
             return ResponseEntity.ok(upload);
         } catch (IOException e) {
             logger.error("Error processing chunk {} for file {}: {}", chunkNumber, fileName, e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("{\"error\": \"Error processing chunk\"}");
         }
+    }
+
+    @PostMapping("/upload-abort")
+    public ResponseEntity<Void> abortChunkUpload(
+            @RequestParam(value = "uploadId", required = false) String uploadId) {
+        if (uploadId == null || uploadId.isBlank()) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        asyncFileMergeService.abortUpload(uploadId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/upload-status/{uploadId}")
+    public ResponseEntity<AsyncFileMergeService.UploadProgress> getUploadStatus(@PathVariable String uploadId) {
+        return ResponseEntity.ok(asyncFileMergeService.getUploadStatus(uploadId));
     }
 
     /**

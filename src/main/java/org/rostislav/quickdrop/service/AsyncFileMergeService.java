@@ -18,13 +18,12 @@ import java.util.concurrent.*;
 /**
  * Merges chunked file uploads into a single file asynchronously.
  *
- * <p>Each unique file upload (keyed by filename) gets its own {@link MergeTask} running
+ * <p>Each unique file upload (keyed by upload id) gets its own {@link MergeTask} running
  * on the shared thread pool. Chunks are enqueued as they arrive via
  * {@link #submitChunk(UploadRequest, MultipartFile, int)} and processed in order
- * by the task's {@link BlockingQueue}. When the caller submits the last chunk it
- * blocks on the {@link CompletableFuture} until the merge and database save complete,
- * then returns the saved {@link Upload} (a {@link org.rostislav.quickdrop.entity.StoredFile}
- * or {@link org.rostislav.quickdrop.entity.Paste} instance).
+ * by the task's {@link BlockingQueue}. Callers can either wait for the last chunk
+ * to finish merging, or return immediately and poll {@link #getUploadStatus(String)}
+ * for completion.
  *
  * <p>The thread pool uses {@link ThreadPoolExecutor.CallerRunsPolicy}.
  * A background TTL sweeper runs every {@value #TASK_TTL_MINUTES} minutes to evict
@@ -39,6 +38,8 @@ public class AsyncFileMergeService {
     private static final int MAX_TOTAL_CHUNKS = 10_000;
 
     private final ConcurrentMap<String, MergeTask> mergeTasks = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, Instant> abortedUploads = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, UploadCompletion> completedUploads = new ConcurrentHashMap<>();
     private final ExecutorService executorService = new ThreadPoolExecutor(
             2, MAX_CONCURRENT_MERGES,
             60L, TimeUnit.SECONDS,
@@ -89,6 +90,11 @@ public class AsyncFileMergeService {
      * @throws IOException if saving the chunk to disk or waiting on the merge future fails
      */
     public Upload submitChunk(UploadRequest request, MultipartFile multipartChunk, int chunkNumber) throws IOException {
+        return submitChunk(request, multipartChunk, chunkNumber, true);
+    }
+
+    public Upload submitChunk(UploadRequest request, MultipartFile multipartChunk, int chunkNumber,
+                              boolean waitForCompletion) throws IOException {
         // Fix 3: reject absurdly large totalChunks to prevent DoS
         if (request.totalChunks > MAX_TOTAL_CHUNKS) {
             throw new IllegalArgumentException(
@@ -100,9 +106,18 @@ public class AsyncFileMergeService {
         String taskKey = (request.uploadId != null && !request.uploadId.isBlank())
                 ? request.uploadId
                 : request.fileName;
+        if (isRecentlyAborted(taskKey)) {
+            throw new IOException("Upload was aborted");
+        }
+
         File savedChunk = new File(tempDir, taskKey + "_chunk_" + chunkNumber);
         multipartChunk.transferTo(savedChunk);
         logger.info("Chunk {} for file {} saved to {}", chunkNumber, request.fileName, savedChunk.getAbsolutePath());
+
+        if (isRecentlyAborted(taskKey)) {
+            deleteChunkFile(savedChunk);
+            throw new IOException("Upload was aborted");
+        }
 
         MergeTask mergeTask = mergeTasks.computeIfAbsent(taskKey, key -> {
             MergeTask task = new MergeTask(request);
@@ -112,22 +127,80 @@ public class AsyncFileMergeService {
         });
         mergeTask.applyFolderMetadata(request);
         boolean isLastChunk = (chunkNumber == request.totalChunks - 1);
-        mergeTask.enqueueChunk(new ChunkInfo(chunkNumber, savedChunk, isLastChunk));
+        if (!mergeTask.enqueueChunk(new ChunkInfo(chunkNumber, savedChunk, isLastChunk))) {
+            throw new IOException("Upload was aborted");
+        }
 
-        if (isLastChunk) {
+        if (isLastChunk && waitForCompletion) {
             try {
                 return mergeTask.getMergeCompletionFuture().get();
-            } catch (InterruptedException | ExecutionException e) {
+            } catch (InterruptedException e) {
                 logger.error("Error waiting for merge completion: {}", e.getMessage());
                 Thread.currentThread().interrupt();
                 throw new IOException("Merge task interrupted", e);
+            } catch (ExecutionException e) {
+                logger.error("Error waiting for merge completion: {}", e.getMessage());
+                throw new IOException("Merge task failed", e);
             }
         }
         return null;
     }
 
+    public UploadProgress getUploadStatus(String uploadId) {
+        if (uploadId == null || uploadId.isBlank()) {
+            return new UploadProgress("unknown", null, "Upload id is required", null, null);
+        }
+
+        String taskKey = uploadId.trim();
+        UploadCompletion completion = completedUploads.get(taskKey);
+        if (completion != null) {
+            return completion.toProgress();
+        }
+
+        MergeTask task = mergeTasks.get(taskKey);
+        if (task != null) {
+            return new UploadProgress("processing", null, null, task.processedChunks, task.request.totalChunks);
+        }
+
+        if (isRecentlyAborted(taskKey)) {
+            return new UploadProgress("aborted", null, "Upload was aborted", null, null);
+        }
+
+        return new UploadProgress("unknown", null, "Upload not found", null, null);
+    }
+
     /**
-     * Removes {@link MergeTask} entries whose creation timestamp is older than
+     * Marks an upload as abandoned and requests cleanup of its merge task and temp chunks.
+     *
+     * @param uploadId stable per-upload identifier sent by the browser
+     * @return {@code true} if a live task was found or any chunk files were removed
+     */
+    public boolean abortUpload(String uploadId) {
+        if (uploadId == null || uploadId.isBlank()) {
+            return false;
+        }
+
+        String taskKey = uploadId.trim();
+        abortedUploads.put(taskKey, Instant.now());
+        MergeTask task = mergeTasks.remove(taskKey);
+        if (task != null) {
+            task.abort("client abort");
+        }
+
+        int deletedChunks = cleanUpChunks(taskKey);
+        if (task == null) {
+            logger.info("Abort requested for inactive upload {}; cleaned {} temporary chunk(s)",
+                    taskKey, deletedChunks);
+            return deletedChunks > 0;
+        }
+
+        logger.info("Abort requested for upload {} ({}); cleaned {} queued temporary chunk(s)",
+                taskKey, task.request.fileName, deletedChunks);
+        return true;
+    }
+
+    /**
+     * Removes {@link MergeTask} entries whose last activity timestamp is older than
      * {@value #TASK_TTL_MINUTES} minutes. Called periodically by the TTL sweeper.
      */
     private void evictStaleTasks() {
@@ -135,16 +208,18 @@ public class AsyncFileMergeService {
         Iterator<Map.Entry<String, MergeTask>> it = mergeTasks.entrySet().iterator();
         while (it.hasNext()) {
             Map.Entry<String, MergeTask> entry = it.next();
-            if (entry.getValue().createdAt.isBefore(threshold)) {
-                logger.warn("Evicting stale merge task for file: {}", entry.getKey());
-                // Fix 4: cancel the background thread when evicting
-                Future<?> f = entry.getValue().future;
-                if (f != null) {
-                    f.cancel(true);
-                }
+            MergeTask task = entry.getValue();
+            if (task.lastActivityAt.isBefore(threshold)) {
                 it.remove();
+                abortedUploads.put(entry.getKey(), Instant.now());
+                task.abort("inactivity timeout");
+                int deletedChunks = cleanUpChunks(entry.getKey(), task.request.totalChunks);
+                logger.warn("Evicted stale upload {} ({}) after {} minutes of inactivity; cleaned {} temporary chunk(s)",
+                        entry.getKey(), task.request.fileName, TASK_TTL_MINUTES, deletedChunks);
             }
         }
+        abortedUploads.entrySet().removeIf(entry -> entry.getValue().isBefore(threshold));
+        completedUploads.entrySet().removeIf(entry -> entry.getValue().completedAt().isBefore(threshold));
     }
 
     /**
@@ -152,16 +227,103 @@ public class AsyncFileMergeService {
      *
      * @param request the upload request whose chunks should be removed
      */
-    private void cleanUpChunks(UploadRequest request) {
-        String taskKey = (request.uploadId != null && !request.uploadId.isBlank())
+    private int cleanUpChunks(UploadRequest request) {
+        return cleanUpChunks(getTaskKey(request), request.totalChunks);
+    }
+
+    private int cleanUpChunks(String taskKey) {
+        return cleanUpChunks(taskKey, -1);
+    }
+
+    private int cleanUpChunks(String taskKey, int totalChunks) {
+        int deleted = 0;
+        int failed = 0;
+
+        if (totalChunks > 0) {
+            for (int i = 0; i < totalChunks; i++) {
+                DeleteResult result = deleteChunkFile(new File(tempDir, taskKey + "_chunk_" + i));
+                if (result == DeleteResult.DELETED) {
+                    deleted++;
+                } else if (result == DeleteResult.FAILED) {
+                    failed++;
+                }
+            }
+        } else {
+            File[] chunkFiles = tempDir.listFiles((dir, name) -> name.startsWith(taskKey + "_chunk_"));
+            if (chunkFiles != null) {
+                for (File chunkFile : chunkFiles) {
+                    DeleteResult result = deleteChunkFile(chunkFile);
+                    if (result == DeleteResult.DELETED) {
+                        deleted++;
+                    } else if (result == DeleteResult.FAILED) {
+                        failed++;
+                    }
+                }
+            }
+        }
+
+        if (deleted > 0 || failed > 0) {
+            logger.info("Cleaned up {} temporary chunk(s) for upload {} ({} failed)",
+                    deleted, taskKey, failed);
+        }
+        return deleted;
+    }
+
+    private boolean isRecentlyAborted(String taskKey) {
+        Instant abortedAt = abortedUploads.get(taskKey);
+        if (abortedAt == null) {
+            return false;
+        }
+        Instant threshold = Instant.now().minusSeconds(TASK_TTL_MINUTES * 60);
+        if (abortedAt.isBefore(threshold)) {
+            abortedUploads.remove(taskKey, abortedAt);
+            return false;
+        }
+        return true;
+    }
+
+    private DeleteResult deleteChunkFile(File chunkFile) {
+        if (!chunkFile.exists()) {
+            return DeleteResult.MISSING;
+        }
+        if (chunkFile.delete()) {
+            return DeleteResult.DELETED;
+        }
+        logger.warn("Failed to delete chunk file: {}", chunkFile.getAbsolutePath());
+        return DeleteResult.FAILED;
+    }
+
+    private String getTaskKey(UploadRequest request) {
+        return (request.uploadId != null && !request.uploadId.isBlank())
                 ? request.uploadId
                 : request.fileName;
-        for (int i = 0; i < request.totalChunks; i++) {
-            File chunkFile = new File(tempDir, taskKey + "_chunk_" + i);
-            if (chunkFile.exists() && !chunkFile.delete()) {
-                logger.warn("Failed to delete chunk file: {}", chunkFile.getAbsolutePath());
-            }
-            logger.info("Cleaning up chunk {}", i);
+    }
+
+    private enum DeleteResult {
+        DELETED,
+        FAILED,
+        MISSING
+    }
+
+    public record UploadProgress(String status, String uuid, String error,
+                                 Integer processedChunks, Integer totalChunks) {
+    }
+
+    private record UploadCompletion(Instant completedAt, String status, String uuid, String error) {
+        static UploadCompletion complete(Upload upload) {
+            return new UploadCompletion(Instant.now(), "complete", upload.uuid, null);
+        }
+
+        static UploadCompletion failed(String error) {
+            return new UploadCompletion(Instant.now(), "failed", null, error);
+        }
+
+        static UploadCompletion aborted() {
+            return new UploadCompletion(Instant.now(), "aborted", null, "Upload was aborted");
+        }
+
+        UploadProgress toProgress() {
+            return new UploadProgress(status, uuid, error, null, null);
         }
     }
 
@@ -171,7 +333,6 @@ public class AsyncFileMergeService {
      * Completes {@link #mergeCompletionFuture} with the saved {@link Upload}.
      */
     private class MergeTask implements Runnable {
-        final Instant createdAt = Instant.now();
         // Inter-thread signalling: producer parks new chunks here.
         private final BlockingQueue<ChunkInfo> queue = new LinkedBlockingQueue<>();
         private final CompletableFuture<Upload> mergeCompletionFuture = new CompletableFuture<>();
@@ -183,8 +344,10 @@ public class AsyncFileMergeService {
         // Fix 2: dedup tracker — prevents duplicate queue entries on retry.
         private final Set<Integer> receivedChunks = new HashSet<>();
         private int nextExpectedChunk = 0;
-        private int processedChunks = 0;
+        private volatile int processedChunks = 0;
         private String uuid;
+        private volatile boolean aborted;
+        private volatile Instant lastActivityAt = Instant.now();
 
         MergeTask(UploadRequest request) {
             this.request = request;
@@ -193,7 +356,12 @@ public class AsyncFileMergeService {
             } while (uploadRepository.findByUUID(uuid).isPresent());
         }
 
-        public void enqueueChunk(ChunkInfo chunkInfo) {
+        public boolean enqueueChunk(ChunkInfo chunkInfo) {
+            lastActivityAt = Instant.now();
+            if (aborted) {
+                deleteChunkFile(chunkInfo.chunkFile);
+                return false;
+            }
             // Fix 2: deduplicate retried chunks — drop duplicates before queuing.
             synchronized (receivedChunks) {
                 if (receivedChunks.contains(chunkInfo.chunkNumber)) {
@@ -202,11 +370,16 @@ public class AsyncFileMergeService {
                     if (!chunkInfo.chunkFile.delete()) {
                         logger.warn("Failed to delete duplicate chunk file: {}", chunkInfo.chunkFile.getAbsolutePath());
                     }
-                    return;
+                    return true;
                 }
                 receivedChunks.add(chunkInfo.chunkNumber);
             }
+            if (aborted) {
+                deleteChunkFile(chunkInfo.chunkFile);
+                return false;
+            }
             queue.add(chunkInfo);
+            return true;
         }
 
         public void applyFolderMetadata(UploadRequest latestRequest) {
@@ -226,6 +399,15 @@ public class AsyncFileMergeService {
 
         public CompletableFuture<Upload> getMergeCompletionFuture() {
             return mergeCompletionFuture;
+        }
+
+        public void abort(String reason) {
+            aborted = true;
+            mergeCompletionFuture.completeExceptionally(new CancellationException("Upload aborted: " + reason));
+            Future<?> f = future;
+            if (f != null) {
+                f.cancel(true);
+            }
         }
 
         @Override
@@ -260,22 +442,52 @@ public class AsyncFileMergeService {
                 }
                 logger.info("All {} chunks merged for file {}", request.totalChunks, request.fileName);
 
-                Upload upload = fileLifecycleService.saveFile(request, uuid);
-                if (upload != null) {
-                    logger.info("File {} saved successfully with UUID {}", request.fileName, upload.uuid);
-                } else {
-                    logger.error("Saving file {} failed", request.fileName);
+                if (aborted) {
+                    throw new IOException("Upload was aborted before saving");
                 }
+
+                Upload upload = fileLifecycleService.saveFile(request, uuid);
+                if (upload == null) {
+                    throw new IOException("Saving file " + request.fileName + " failed");
+                }
+
+                logger.info("File {} saved successfully with UUID {}", request.fileName, upload.uuid);
+                completedUploads.put(getTaskKey(request), UploadCompletion.complete(upload));
                 mergeCompletionFuture.complete(upload);
             } catch (Exception e) {
-                logger.error("Error merging chunks for file {}: {}", request.fileName, e.getMessage());
+                if (e instanceof InterruptedException) {
+                    Thread.currentThread().interrupt();
+                }
+                if (aborted) {
+                    logger.info("Upload {} ({}) was aborted before completion", getTaskKey(request), request.fileName);
+                    completedUploads.put(getTaskKey(request), UploadCompletion.aborted());
+                } else {
+                    logger.error("Error merging chunks for file {}: {}", request.fileName, e.getMessage());
+                    completedUploads.put(getTaskKey(request), UploadCompletion.failed(e.getMessage()));
+                }
                 mergeCompletionFuture.completeExceptionally(e);
-                cleanUpChunks(request);
+                cleanUpPartialStorageObject();
+                int deletedChunks = cleanUpChunks(request);
+                logger.info("Upload cleanup for {} ({}) removed {} temporary chunk(s)",
+                        getTaskKey(request), request.fileName, deletedChunks);
             } finally {
-                String taskKey = (request.uploadId != null && !request.uploadId.isBlank())
-                        ? request.uploadId
-                        : request.fileName;
-                mergeTasks.remove(taskKey);
+                mergeTasks.remove(getTaskKey(request));
+            }
+        }
+
+        private void cleanUpPartialStorageObject() {
+            if (uuid == null) {
+                return;
+            }
+            boolean existed = storageService.exists(uuid);
+            if (storageService.delete(uuid)) {
+                if (!existed) {
+                    logger.info("No committed partial storage object found for upload {}", request.fileName);
+                    return;
+                }
+                logger.info("Removed partial storage object {} for upload {}", uuid, request.fileName);
+            } else {
+                logger.warn("Failed to remove partial storage object {} for upload {}", uuid, request.fileName);
             }
         }
     }

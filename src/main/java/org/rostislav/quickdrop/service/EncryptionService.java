@@ -1,5 +1,10 @@
 package org.rostislav.quickdrop.service;
 
+import org.bouncycastle.crypto.InvalidCipherTextException;
+import org.bouncycastle.crypto.engines.AESEngine;
+import org.bouncycastle.crypto.modes.GCMBlockCipher;
+import org.bouncycastle.crypto.params.AEADParameters;
+import org.bouncycastle.crypto.params.KeyParameter;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.*;
@@ -48,8 +53,6 @@ public class EncryptionService {
     private static final int GCM_TAG_BYTES = GCM_TAG_BITS / 8;
     private static final int GCM_CHUNK_SIZE = 4 * 1024 * 1024;
     private static final String GCM_ALGORITHM = "AES/GCM/NoPadding";
-    private static final String AES_ECB_ALGORITHM = "AES/ECB/NoPadding";
-    private static final String AES_CTR_ALGORITHM = "AES/CTR/NoPadding";
 
     private static final String KEY_DERIVATION_ALGORITHM = "PBKDF2WithHmacSHA256";
     private static final int ITERATION_COUNT = 65536;
@@ -114,36 +117,6 @@ public class EncryptionService {
                 .putLong(chunkIndex)
                 .putInt(plaintextLength)
                 .array();
-    }
-
-    private static byte[] gcmJ0(byte[] iv) {
-        byte[] j0 = new byte[16];
-        System.arraycopy(iv, 0, j0, 0, GCM_IV_LENGTH);
-        j0[15] = 1;
-        return j0;
-    }
-
-    private static byte[] gcmCtrStart(byte[] iv) {
-        byte[] counter = gcmJ0(iv);
-        counter[15] = 2;
-        return counter;
-    }
-
-    private static byte[] encryptBlock(SecretKey key, byte[] block) throws Exception {
-        Cipher aes = Cipher.getInstance(AES_ECB_ALGORITHM);
-        aes.init(Cipher.ENCRYPT_MODE, key);
-        return aes.doFinal(block);
-    }
-
-    private static boolean constantTimeEquals(byte[] a, byte[] b) {
-        if (a.length != b.length) {
-            return false;
-        }
-        int diff = 0;
-        for (int i = 0; i < a.length; i++) {
-            diff |= a[i] ^ b[i];
-        }
-        return diff == 0;
     }
 
     private SecretKey deriveKey(String password, byte[] salt, int keyLength)
@@ -438,27 +411,21 @@ public class EncryptionService {
     }
 
     private static class LegacyGcmInputStream extends InputStream {
-        private static final int READ_BUFFER_SIZE = 64 * 1024;
+        private static final int READ_BUFFER_SIZE = 256 * 1024;
 
         private final InputStream source;
-        private final Cipher ctrCipher;
-        private final GHash gHash;
-        private final byte[] tagLookahead = new byte[GCM_TAG_BYTES];
+        private final GCMBlockCipher cipher;
         private final byte[] readBuffer = new byte[READ_BUFFER_SIZE];
         private byte[] plainBuffer = new byte[0];
         private int plainBufferPos;
-        private int tagLookaheadLength;
-        private long ciphertextLength;
         private boolean eof;
         private boolean closed;
 
-        LegacyGcmInputStream(InputStream source, SecretKey key, byte[] iv) throws Exception {
+        @SuppressWarnings("deprecation")
+        LegacyGcmInputStream(InputStream source, SecretKey key, byte[] iv) {
             this.source = source;
-            this.gHash = new GHash(encryptBlock(key, new byte[16]));
-            this.ctrCipher = Cipher.getInstance(AES_CTR_ALGORITHM);
-            this.ctrCipher.init(Cipher.DECRYPT_MODE, key, new IvParameterSpec(gcmCtrStart(iv)));
-            this.gHash.setTagMask(encryptBlock(key, gcmJ0(iv)));
-            this.tagLookaheadLength = fillTagLookahead();
+            this.cipher = new GCMBlockCipher(new AESEngine());
+            this.cipher.init(false, new AEADParameters(new KeyParameter(key.getEncoded()), GCM_TAG_BITS, iv));
         }
 
         @Override
@@ -504,170 +471,33 @@ public class EncryptionService {
             int read = source.read(readBuffer);
             if (read == -1) {
                 eof = true;
-                verifyFinalTag();
-                plainBuffer = new byte[0];
-                plainBufferPos = 0;
+                byte[] finalBuffer = new byte[cipher.getOutputSize(0)];
+                try {
+                    int finalLength = cipher.doFinal(finalBuffer, 0);
+                    plainBuffer = finalLength == finalBuffer.length
+                            ? finalBuffer
+                            : Arrays.copyOf(finalBuffer, finalLength);
+                    plainBufferPos = 0;
+                } catch (InvalidCipherTextException e) {
+                    throw new IOException("Legacy GCM authentication failed", e);
+                }
                 return;
             }
 
-            int combinedLength = tagLookaheadLength + read;
-            if (combinedLength <= GCM_TAG_BYTES) {
-                System.arraycopy(readBuffer, 0, tagLookahead, tagLookaheadLength, read);
-                tagLookaheadLength = combinedLength;
+            byte[] output = new byte[cipher.getUpdateOutputSize(read)];
+            int outputLength = cipher.processBytes(readBuffer, 0, read, output, 0);
+            if (outputLength == 0) {
                 refill();
                 return;
             }
-
-            byte[] combined = new byte[combinedLength];
-            System.arraycopy(tagLookahead, 0, combined, 0, tagLookaheadLength);
-            System.arraycopy(readBuffer, 0, combined, tagLookaheadLength, read);
-
-            int ciphertextBytes = combinedLength - GCM_TAG_BYTES;
-            byte[] ciphertext = new byte[ciphertextBytes];
-            System.arraycopy(combined, 0, ciphertext, 0, ciphertextBytes);
-            System.arraycopy(combined, ciphertextBytes, tagLookahead, 0, GCM_TAG_BYTES);
-            tagLookaheadLength = GCM_TAG_BYTES;
-
-            gHash.update(ciphertext, 0, ciphertext.length);
-            ciphertextLength += ciphertext.length;
-            plainBuffer = ctrCipher.update(ciphertext);
-            if (plainBuffer == null) {
-                plainBuffer = new byte[0];
-            }
+            plainBuffer = outputLength == output.length ? output : Arrays.copyOf(output, outputLength);
             plainBufferPos = 0;
-        }
-
-        private int fillTagLookahead() throws IOException {
-            int offset = 0;
-            while (offset < GCM_TAG_BYTES) {
-                int read = source.read(tagLookahead, offset, GCM_TAG_BYTES - offset);
-                if (read == -1) {
-                    break;
-                }
-                offset += read;
-            }
-            return offset;
-        }
-
-        private void verifyFinalTag() throws IOException {
-            if (tagLookaheadLength != GCM_TAG_BYTES) {
-                throw new EOFException("Encrypted stream is too short to contain a GCM tag");
-            }
-            byte[] expectedTag = gHash.finish(ciphertextLength);
-            if (!constantTimeEquals(expectedTag, tagLookahead)) {
-                throw new IOException("Legacy GCM authentication failed");
-            }
-            try {
-                ctrCipher.doFinal();
-            } catch (Exception e) {
-                throw new IOException("Failed to finalize legacy GCM content", e);
-            }
         }
 
         private void ensureOpen() throws IOException {
             if (closed) {
                 throw new IOException("Encrypted stream is already closed");
             }
-        }
-    }
-
-    private static class GHash {
-        private final byte[] hashSubkey;
-        private final byte[] y = new byte[16];
-        private final byte[] partial = new byte[16];
-        private int partialLength;
-        private byte[] tagMask = new byte[16];
-
-        GHash(byte[] hashSubkey) {
-            this.hashSubkey = hashSubkey;
-        }
-
-        private static byte[] multiply(byte[] x, byte[] h) {
-            byte[] z = new byte[16];
-            byte[] v = h.clone();
-            for (int i = 0; i < 128; i++) {
-                if (bit(x, i)) {
-                    xorInPlace(z, v);
-                }
-                boolean lsb = (v[15] & 1) != 0;
-                shiftRight(v);
-                if (lsb) {
-                    v[0] ^= (byte) 0xe1;
-                }
-            }
-            return z;
-        }
-
-        private static boolean bit(byte[] data, int bitIndex) {
-            return ((data[bitIndex / 8] >>> (7 - (bitIndex % 8))) & 1) == 1;
-        }
-
-        private static void shiftRight(byte[] data) {
-            int carry = 0;
-            for (int i = 0; i < data.length; i++) {
-                int value = data[i] & 0xff;
-                data[i] = (byte) ((value >>> 1) | carry);
-                carry = (value & 1) << 7;
-            }
-        }
-
-        private static void xorInPlace(byte[] target, byte[] input) {
-            for (int i = 0; i < target.length; i++) {
-                target[i] ^= input[i];
-            }
-        }
-
-        void setTagMask(byte[] tagMask) {
-            this.tagMask = tagMask;
-        }
-
-        void update(byte[] data, int off, int len) {
-            int offset = off;
-            int remaining = len;
-            if (partialLength > 0) {
-                int toCopy = Math.min(remaining, 16 - partialLength);
-                System.arraycopy(data, offset, partial, partialLength, toCopy);
-                partialLength += toCopy;
-                offset += toCopy;
-                remaining -= toCopy;
-                if (partialLength == 16) {
-                    updateBlock(partial);
-                    Arrays.fill(partial, (byte) 0);
-                    partialLength = 0;
-                }
-            }
-            while (remaining >= 16) {
-                byte[] block = Arrays.copyOfRange(data, offset, offset + 16);
-                updateBlock(block);
-                offset += 16;
-                remaining -= 16;
-            }
-            if (remaining > 0) {
-                System.arraycopy(data, offset, partial, 0, remaining);
-                partialLength = remaining;
-            }
-        }
-
-        byte[] finish(long ciphertextLengthBytes) {
-            if (partialLength > 0) {
-                updateBlock(partial);
-                Arrays.fill(partial, (byte) 0);
-                partialLength = 0;
-            }
-            byte[] lengths = ByteBuffer.allocate(16)
-                    .putLong(0L)
-                    .putLong(ciphertextLengthBytes * 8L)
-                    .array();
-            updateBlock(lengths);
-            byte[] tag = y.clone();
-            xorInPlace(tag, tagMask);
-            return tag;
-        }
-
-        private void updateBlock(byte[] block) {
-            xorInPlace(y, block);
-            byte[] multiplied = multiply(y, hashSubkey);
-            System.arraycopy(multiplied, 0, y, 0, y.length);
         }
     }
 }

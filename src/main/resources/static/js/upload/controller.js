@@ -215,7 +215,7 @@ export function initUploadPage(config = {}) {
         const candidate = shouldUseFallback
             ? fallbackCandidate
             : cleanCandidate || fallbackCandidate;
-        if (!candidate || !candidate.file) {
+        if (!candidate || (!candidate.file && !candidate.streamUpload)) {
             showMessage("danger", window.i18n?.upload?.noCandidate || 'No upload candidate is available.');
             return;
         }

@@ -12,6 +12,19 @@ export async function uploadCandidate(
         onError,
     }
 ) {
+    if (candidate.streamUpload) {
+        return uploadStreamCandidate(candidate, {
+            uploadPasswordEnabled,
+            form,
+            progressBar,
+            statusEl,
+            indicatorEl,
+            onSuccess,
+            onWarn,
+            onError,
+        });
+    }
+
     const file = candidate.file;
     const chunkSize = 1024 * 1024; // 1MB chunks
     const totalChunks = Math.max(1, Math.ceil(file.size / chunkSize));
@@ -118,6 +131,181 @@ export async function uploadCandidate(
         };
 
         uploadNextChunk();
+    });
+}
+
+async function uploadStreamCandidate(
+    candidate,
+    {
+        uploadPasswordEnabled,
+        form,
+        progressBar,
+        statusEl,
+        indicatorEl,
+        onSuccess,
+        onWarn,
+        onError,
+    }
+) {
+    const chunkSize = 1024 * 1024;
+    const totalChunks = Math.max(1, Math.ceil(candidate.size / chunkSize));
+    const uploadId = crypto.randomUUID();
+    const progressElement =
+        progressBar || document.getElementById("uploadProgress");
+    const statusElement = statusEl || document.getElementById("uploadStatus");
+    const indicatorElement =
+        indicatorEl || document.getElementById("uploadIndicator");
+
+    indicatorElement?.classList.remove("hidden");
+    if (statusElement) statusElement.innerText = window.i18n?.upload?.statusStarted || "Upload started...";
+    if (progressElement) {
+        progressElement.style.width = "0%";
+        progressElement.setAttribute("aria-valuenow", "0");
+    }
+
+    let currentChunk = 0;
+    let bufferedSize = 0;
+    let bufferedParts = [];
+    let generatedSize = 0;
+
+    const appendPart = (part) => {
+        if (!part || part.length === 0) return;
+        bufferedParts.push(part);
+        bufferedSize += part.length;
+        generatedSize += part.length;
+    };
+
+    const takeBytes = (size) => {
+        const chunk = new Uint8Array(size);
+        let offset = 0;
+
+        while (offset < size) {
+            const part = bufferedParts[0];
+            const needed = size - offset;
+            if (part.length <= needed) {
+                chunk.set(part, offset);
+                offset += part.length;
+                bufferedParts.shift();
+            } else {
+                chunk.set(part.subarray(0, needed), offset);
+                bufferedParts[0] = part.subarray(needed);
+                offset += needed;
+            }
+        }
+
+        bufferedSize -= size;
+        return chunk;
+    };
+
+    const sendNextChunk = async (bytes) => {
+        const chunkNumber = currentChunk;
+        const blob = new Blob([bytes], {type: "application/zip"});
+        const response = await sendChunk(
+            blob,
+            chunkNumber,
+            candidate.name,
+            totalChunks,
+            candidate.size,
+            candidate,
+            uploadPasswordEnabled,
+            form,
+            uploadId
+        );
+
+        currentChunk++;
+        const percentComplete = (currentChunk / totalChunks) * 100;
+        if (progressElement) {
+            progressElement.style.width = percentComplete + "%";
+            progressElement.setAttribute("aria-valuenow", String(percentComplete));
+        }
+
+        return response;
+    };
+
+    try {
+        for await (const part of candidate.createStream()) {
+            appendPart(part);
+            while (currentChunk < totalChunks - 1 && bufferedSize >= chunkSize) {
+                await sendNextChunk(takeBytes(chunkSize));
+            }
+        }
+
+        if (generatedSize !== candidate.size) {
+            throw new Error(`Generated archive size ${generatedSize} did not match expected size ${candidate.size}.`);
+        }
+        if (currentChunk !== totalChunks - 1) {
+            throw new Error("Archive stream ended before all chunks were produced.");
+        }
+
+        const response = await sendNextChunk(takeBytes(bufferedSize));
+        if (statusElement) statusElement.innerText = window.i18n?.upload?.statusComplete || "Upload complete.";
+        if (response && response.uuid) {
+            onSuccess?.(response.uuid);
+            return response;
+        }
+
+        onWarn?.();
+        throw new Error("Upload finished without file information.");
+    } catch (error) {
+        console.error("Upload error:", error);
+        onError?.();
+        throw error;
+    }
+}
+
+function sendChunk(
+    chunk,
+    chunkNumber,
+    fileName,
+    totalChunks,
+    fileSize,
+    candidate,
+    uploadPasswordEnabled,
+    form,
+    uploadId
+) {
+    const formData = buildChunkFormData(
+        chunk,
+        chunkNumber,
+        fileName,
+        totalChunks,
+        fileSize,
+        candidate,
+        uploadPasswordEnabled,
+        form,
+        uploadId
+    );
+
+    return new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", "/api/file/upload-chunk", true);
+
+        const csrfToken = getCsrfToken();
+        if (csrfToken) {
+            xhr.setRequestHeader("X-XSRF-TOKEN", csrfToken);
+        }
+
+        xhr.onload = () => {
+            if (xhr.status !== 200) {
+                reject(new Error(xhr.responseText || `Upload failed with status ${xhr.status}.`));
+                return;
+            }
+
+            if (!xhr.responseText || xhr.responseText.trim().length === 0) {
+                resolve(null);
+                return;
+            }
+
+            try {
+                resolve(JSON.parse(xhr.responseText));
+            } catch (error) {
+                console.warn("Failed to parse server response:", error);
+                resolve(null);
+            }
+        };
+
+        xhr.onerror = () => reject(new Error("An error occurred during upload."));
+        xhr.send(formData);
     });
 }
 

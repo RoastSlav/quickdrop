@@ -96,10 +96,9 @@
                 <!-- Action buttons (right-aligned on desktop) -->
                 <div class="flex flex-wrap gap-3 lg:flex-col lg:items-end flex-shrink-0">
                     <a class="btn btn-gradient btn-lg" id="downloadButton"
-                       th:attr="aria-disabled=${isDeleted},tabindex=${isDeleted ? '-1' : null}"
+                       th:attr="aria-disabled=${isDeleted},tabindex=${isDeleted ? '-1' : null},data-show-preparing=${file.passwordHash != null and !isDeleted}"
                        th:classappend="${isDeleted} ? ' opacity-50 pointer-events-none'"
-                       th:href="@{/file/download/{uuid}(uuid=${file.uuid})}"
-                       th:onclick="${file.passwordHash != null and !isDeleted} ? 'showPreparingMessage()' : ''">
+                       th:href="@{/file/download/{uuid}(uuid=${file.uuid})}">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <path d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-6-6-3 3m0 0-3-3m3 3V3"
                                   stroke-linecap="round"

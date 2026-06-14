@@ -269,7 +269,7 @@ public class AdminViewController {
             return "redirect:dashboard";
         } else {
             analyticsService.logEvent(EventType.ADMIN_LOGIN_FAIL, info.ipAddress(), info.userAgent());
-            return "redirect:password";
+            return "redirect:password?error";
         }
     }
 

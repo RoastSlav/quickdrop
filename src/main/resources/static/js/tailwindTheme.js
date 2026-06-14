@@ -10,7 +10,11 @@
 
     const updateToggleButtons = (theme) => {
         document.querySelectorAll(".theme-toggle, #themeToggle").forEach((btn) => {
+            const iconMarkup = btn.querySelector("svg") ? btn.innerHTML : "";
             btn.textContent = theme === "dark" ? "☀️" : "🌙";
+            if (iconMarkup) {
+                btn.innerHTML = iconMarkup;
+            }
             btn.setAttribute(
                 "aria-label",
                 theme === "dark" ? "Switch to light theme" : "Switch to dark theme"

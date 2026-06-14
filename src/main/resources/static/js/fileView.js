@@ -48,6 +48,25 @@ function updateFileViewBadges(name, checked) {
     }
 }
 
+function showPreparingMessage() {
+    document.getElementById("preparingMessage")?.removeAttribute("hidden");
+}
+
+function setupDownloadPreparingMessage() {
+    const btn = document.getElementById("downloadButton");
+    if (!btn || btn.dataset.showPreparing !== "true") return;
+    btn.addEventListener("click", showPreparingMessage);
+}
+
+Object.assign(window, {
+    copyShareLink,
+    createShareLink,
+    showPreparingMessage,
+    toggleDownloadLimit,
+    toggleExpirationLimit,
+    updateCheckboxState,
+});
+
 function initializeModal() {
     updateShareLink("");
 
@@ -383,6 +402,7 @@ function toggleDownloadLimit() {
 document.addEventListener("DOMContentLoaded", () => {
     initializeModal();
     renderFolderTree();
+    setupDownloadPreparingMessage();
     setupPreviewInit();
     setupDeleteConfirm();
     if (window.hljs && typeof window.hljs.highlightAll === "function") {

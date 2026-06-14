@@ -6,7 +6,7 @@ document.addEventListener("DOMContentLoaded", () => {
         window.location.assign(url.toString());
     };
 
-    const selects = document.querySelectorAll(".locale-switch-select[data-locale-select]");
+    const selects = document.querySelectorAll("[data-locale-select]");
     selects.forEach((select) => {
         select.addEventListener("change", () => {
             updateLocale(select.value);

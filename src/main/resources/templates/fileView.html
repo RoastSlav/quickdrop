@@ -5,6 +5,7 @@
     <meta name="_csrf" th:content="${_csrf.token}"/>
     <title th:text="#{page.fileView.title.browser(${appName})}">File — QuickDrop</title>
     <meta content="width=device-width, initial-scale=1" name="viewport"/>
+    <th:block th:replace="~{fragments/header :: themePreload}"></th:block>
     <link href="https://fonts.googleapis.com" rel="preconnect"/>
     <link crossorigin href="https://fonts.gstatic.com" rel="preconnect"/>
     <link href="/css/tailwind.css" rel="stylesheet"/>

@@ -5,6 +5,7 @@
     <meta name="_csrf" th:content="${_csrf != null ? _csrf.token : ''}"/>
     <title th:text="#{page.pasteView.title.browser(${appName})}">Paste — QuickDrop</title>
     <meta content="width=device-width, initial-scale=1" name="viewport"/>
+    <th:block th:replace="~{fragments/header :: themePreload}"></th:block>
     <link href="https://fonts.googleapis.com" rel="preconnect"/>
     <link crossorigin href="https://fonts.gstatic.com" rel="preconnect"/>
     <link href="/css/tailwind.css" rel="stylesheet"/>

@@ -271,6 +271,9 @@
 <script th:inline="javascript">
     /*<![CDATA[*/
     window.i18n = window.i18n || {};
+    window.i18n.common = Object.assign({}, window.i18n.common || {}, {
+        deleteFailed: /*[[#{notification.delete.failed}]]*/ 'Delete failed. Please try again.'
+    });
     window.i18n.pastes = {deleteConfirm: /*[[#{page.adminPastes.deleteConfirm}]]*/ 'Are you sure you want to delete this paste? This action cannot be undone.'};
     /*]]>*/
 </script>

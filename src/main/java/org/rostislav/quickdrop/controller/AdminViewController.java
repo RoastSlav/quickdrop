@@ -312,12 +312,21 @@ public class AdminViewController {
         return "redirect:/admin/" + safeAdminSource(source);
     }
 
+    private static boolean isAjaxRequest(HttpServletRequest request) {
+        return "XMLHttpRequest".equalsIgnoreCase(request.getHeader("X-Requested-With"));
+    }
+
     @PostMapping("/delete/{uuid}")
-    public String deleteFile(@PathVariable String uuid,
+    public Object deleteFile(@PathVariable String uuid,
                              @RequestParam(defaultValue = "files") String source,
                              HttpServletRequest request) {
         RequesterInfo info = FileUtils.getRequesterInfo(request);
-        fileLifecycleService.deleteFileFromDatabaseAndFileSystem(uuid, info.ipAddress(), info.userAgent());
+        boolean deleted = fileLifecycleService.deleteFileFromDatabaseAndFileSystem(uuid, info.ipAddress(), info.userAgent());
+        if (isAjaxRequest(request)) {
+            return deleted
+                    ? ResponseEntity.noContent().build()
+                    : ResponseEntity.internalServerError().build();
+        }
         return "redirect:/admin/" + safeAdminSource(source);
     }
 

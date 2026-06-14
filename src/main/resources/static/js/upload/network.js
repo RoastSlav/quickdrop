@@ -1,4 +1,136 @@
 // Handles chunked upload network interaction
+const activeUploadIds = new Set();
+let unloadAbortListenerAttached = false;
+const UPLOAD_CHUNK_SIZE = 4 * 1024 * 1024;
+const UPLOAD_STATUS_POLL_INTERVAL_MS = 2000;
+const UPLOAD_STATUS_MAX_FAILURES = 15;
+
+function registerActiveUpload(uploadId) {
+    activeUploadIds.add(uploadId);
+    ensureUnloadAbortListener();
+    return () => activeUploadIds.delete(uploadId);
+}
+
+function ensureUnloadAbortListener() {
+    if (unloadAbortListenerAttached) return;
+    unloadAbortListenerAttached = true;
+    window.addEventListener("pagehide", abortActiveUploads, {capture: true});
+    window.addEventListener("beforeunload", abortActiveUploads, {capture: true});
+}
+
+function abortActiveUploads() {
+    for (const uploadId of Array.from(activeUploadIds)) {
+        sendUploadAbort(uploadId);
+    }
+    activeUploadIds.clear();
+}
+
+function abortUpload(uploadId) {
+    activeUploadIds.delete(uploadId);
+    sendUploadAbort(uploadId);
+}
+
+function sendUploadAbort(uploadId) {
+    if (!uploadId) return;
+
+    const formData = buildAbortFormData(uploadId);
+    if (navigator.sendBeacon && navigator.sendBeacon("/api/file/upload-abort", formData)) {
+        return;
+    }
+
+    const headers = {};
+    const csrfToken = getCsrfToken();
+    if (csrfToken) {
+        headers["X-XSRF-TOKEN"] = csrfToken;
+    }
+
+    fetch("/api/file/upload-abort", {
+        method: "POST",
+        body: formData,
+        headers,
+        credentials: "same-origin",
+        keepalive: true,
+    }).catch(() => {
+    });
+}
+
+function buildAbortFormData(uploadId) {
+    const formData = new FormData();
+    formData.append("uploadId", uploadId);
+
+    const csrfToken = getCsrfFormToken();
+    if (csrfToken) {
+        formData.append("_csrf", csrfToken);
+    }
+
+    return formData;
+}
+
+function getCsrfFormToken() {
+    return (
+        document.querySelector('input[name="_csrf"]')?.value ||
+        document.querySelector('meta[name="_csrf"]')?.content ||
+        getCookieValue("XSRF-TOKEN") ||
+        ""
+    );
+}
+
+function isSuccessfulHttpStatus(status) {
+    return status >= 200 && status < 300;
+}
+
+function delay(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function setFinalizingStatus(statusElement, uploadPasswordEnabled) {
+    if (!statusElement) return;
+    const passwordValue = document.getElementById("password")?.value.trim();
+    statusElement.innerText =
+        uploadPasswordEnabled && passwordValue
+            ? window.i18n?.upload?.statusEncrypting || "Upload complete. Encrypting..."
+            : window.i18n?.upload?.statusFinalizing || "Finalizing upload...";
+}
+
+async function waitForUploadCompletion(uploadId, statusElement, uploadPasswordEnabled) {
+    let consecutiveFailures = 0;
+    setFinalizingStatus(statusElement, uploadPasswordEnabled);
+
+    while (true) {
+        try {
+            const response = await fetch(`/api/file/upload-status/${encodeURIComponent(uploadId)}`, {
+                credentials: "same-origin",
+                headers: {Accept: "application/json"},
+            });
+            if (!response.ok) {
+                throw new Error(`Upload status failed with status ${response.status}.`);
+            }
+
+            const status = await response.json();
+            consecutiveFailures = 0;
+
+            if (status.status === "complete" && status.uuid) {
+                return status;
+            }
+            if (status.status === "failed" || status.status === "aborted" || status.status === "unknown") {
+                const error = new Error(status.error || "Upload processing failed.");
+                error.terminalUploadStatus = true;
+                throw error;
+            }
+        } catch (error) {
+            if (error.terminalUploadStatus) {
+                throw error;
+            }
+            consecutiveFailures++;
+            if (consecutiveFailures >= UPLOAD_STATUS_MAX_FAILURES) {
+                throw error;
+            }
+        }
+
+        await delay(UPLOAD_STATUS_POLL_INTERVAL_MS);
+    }
+}
+
 export async function uploadCandidate(
     candidate,
     {
@@ -26,12 +158,22 @@ export async function uploadCandidate(
     }
 
     const file = candidate.file;
-    const chunkSize = 1024 * 1024; // 1MB chunks
+    const chunkSize = UPLOAD_CHUNK_SIZE;
     const totalChunks = Math.max(1, Math.ceil(file.size / chunkSize));
     let currentChunk = 0;
     // Stable per-upload identifier so concurrent uploads of the same filename
     // never collide server-side and temp-file names are path-traversal-safe.
     const uploadId = crypto.randomUUID();
+    let unregisterAbort = registerActiveUpload(uploadId);
+    const finishUpload = () => {
+        if (!unregisterAbort) return;
+        unregisterAbort();
+        unregisterAbort = null;
+    };
+    const failUpload = () => {
+        abortUpload(uploadId);
+        finishUpload();
+    };
 
     const progressElement =
         progressBar || document.getElementById("uploadProgress");
@@ -71,8 +213,8 @@ export async function uploadCandidate(
                 xhr.setRequestHeader("X-XSRF-TOKEN", csrfToken);
             }
 
-            xhr.onload = () => {
-                if (xhr.status === 200) {
+            xhr.onload = async () => {
+                if (isSuccessfulHttpStatus(xhr.status)) {
                     let response = null;
                     if (xhr.responseText && xhr.responseText.trim().length > 0) {
                         try {
@@ -106,23 +248,43 @@ export async function uploadCandidate(
                         }
                         uploadNextChunk();
                     } else {
-                        if (statusElement) statusElement.innerText = window.i18n?.upload?.statusComplete || "Upload complete.";
-                        if (response && response.uuid) {
-                            onSuccess?.(response.uuid);
-                            resolve(response);
-                        } else {
-                            onWarn?.();
-                            reject(new Error("Upload finished without file information."));
+                        try {
+                            if (response && response.uuid) {
+                                if (statusElement) statusElement.innerText = window.i18n?.upload?.statusComplete || "Upload complete.";
+                                finishUpload();
+                                onSuccess?.(response.uuid);
+                                resolve(response);
+                            } else if (response?.status === "processing") {
+                                const completed = await waitForUploadCompletion(
+                                    response.uploadId || uploadId,
+                                    statusElement,
+                                    uploadPasswordEnabled
+                                );
+                                if (statusElement) statusElement.innerText = window.i18n?.upload?.statusComplete || "Upload complete.";
+                                finishUpload();
+                                onSuccess?.(completed.uuid);
+                                resolve(completed);
+                            } else {
+                                failUpload();
+                                onWarn?.();
+                                reject(new Error("Upload finished without file information."));
+                            }
+                        } catch (error) {
+                            failUpload();
+                            onError?.();
+                            reject(error);
                         }
                     }
                 } else {
                     console.error("Upload error:", xhr.responseText);
+                    failUpload();
                     onError?.();
                     reject(new Error("Upload failed."));
                 }
             };
 
             xhr.onerror = () => {
+                failUpload();
                 onError?.();
                 reject(new Error("An error occurred during upload."));
             };
@@ -147,9 +309,19 @@ async function uploadStreamCandidate(
         onError,
     }
 ) {
-    const chunkSize = 1024 * 1024;
+    const chunkSize = UPLOAD_CHUNK_SIZE;
     const totalChunks = Math.max(1, Math.ceil(candidate.size / chunkSize));
     const uploadId = crypto.randomUUID();
+    let unregisterAbort = registerActiveUpload(uploadId);
+    const finishUpload = () => {
+        if (!unregisterAbort) return;
+        unregisterAbort();
+        unregisterAbort = null;
+    };
+    const failUpload = () => {
+        abortUpload(uploadId);
+        finishUpload();
+    };
     const progressElement =
         progressBar || document.getElementById("uploadProgress");
     const statusElement = statusEl || document.getElementById("uploadStatus");
@@ -238,16 +410,29 @@ async function uploadStreamCandidate(
         }
 
         const response = await sendNextChunk(takeBytes(bufferedSize));
-        if (statusElement) statusElement.innerText = window.i18n?.upload?.statusComplete || "Upload complete.";
         if (response && response.uuid) {
+            if (statusElement) statusElement.innerText = window.i18n?.upload?.statusComplete || "Upload complete.";
+            finishUpload();
             onSuccess?.(response.uuid);
             return response;
+        }
+        if (response?.status === "processing") {
+            const completed = await waitForUploadCompletion(
+                response.uploadId || uploadId,
+                statusElement,
+                uploadPasswordEnabled
+            );
+            if (statusElement) statusElement.innerText = window.i18n?.upload?.statusComplete || "Upload complete.";
+            finishUpload();
+            onSuccess?.(completed.uuid);
+            return completed;
         }
 
         onWarn?.();
         throw new Error("Upload finished without file information.");
     } catch (error) {
         console.error("Upload error:", error);
+        failUpload();
         onError?.();
         throw error;
     }
@@ -286,7 +471,7 @@ function sendChunk(
         }
 
         xhr.onload = () => {
-            if (xhr.status !== 200) {
+            if (!isSuccessfulHttpStatus(xhr.status)) {
                 reject(new Error(xhr.responseText || `Upload failed with status ${xhr.status}.`));
                 return;
             }

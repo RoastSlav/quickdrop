@@ -56,19 +56,41 @@
      * @param {Element|null}     card - Card element to animate and remove
      */
     async function deleteWithAnimation(form, card) {
+        const submitter = form.querySelector('button[type="submit"], input[type="submit"]');
         if (card) {
             card.style.transition = 'opacity 250ms, transform 250ms';
-            card.style.opacity = '0';
-            card.style.transform = 'translateX(1.5rem)';
+            card.style.opacity = '0.55';
+            card.style.pointerEvents = 'none';
         }
+        if (submitter) submitter.disabled = true;
+
         try {
-            const res = await fetch(form.action, {method: 'POST', body: new FormData(form)});
-            if (res.ok || res.redirected) setTimeout(() => card?.remove(), 260);
-            else throw new Error(res.status);
+            const res = await fetch(form.action, {
+                method: 'POST',
+                body: new FormData(form),
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json, text/plain, */*',
+                },
+            });
+            if (!res.ok) throw new Error(res.status);
+
+            if (card) {
+                card.style.opacity = '0';
+                card.style.transform = 'translateX(1.5rem)';
+                setTimeout(() => card.remove(), 260);
+            }
         } catch {
             if (card) {
                 card.style.opacity = '';
                 card.style.transform = '';
+                card.style.pointerEvents = '';
+            }
+            if (submitter) submitter.disabled = false;
+            if (typeof window.toast === 'function') {
+                const message = window.i18n?.common?.deleteFailed
+                    || 'Delete failed. Please try again.';
+                window.toast(message, 'error');
             }
         }
     }

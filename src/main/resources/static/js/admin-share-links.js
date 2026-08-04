@@ -5,6 +5,9 @@
     const wrapper = document.getElementById(WRAPPER_ID);
     if (!wrapper) return;
 
+    const REVOKE_MSG = window.i18n?.adminShareLinks?.revokeConfirm
+        || 'Revoke this share link? This action cannot be undone.';
+
     /** @returns {URLSearchParams} current URL query params */
     function state() {
         return new URLSearchParams(window.location.search);
@@ -73,13 +76,22 @@
     });
 
     wrapper.addEventListener('submit', function (e) {
-        const form = e.target.closest('#shareSearchForm');
-        if (!form) return;
-        e.preventDefault();
-        const p = state();
-        const q = (form.querySelector('#shareSearch')?.value || '').trim();
-        if (q) p.set('query', q); else p.delete('query');
-        p.set('page', '0');
-        QD.loadDynamic('/admin/share-links?' + p, CONTENT_ID, {replace: false});
+        const searchForm = e.target.closest('#shareSearchForm');
+        if (searchForm) {
+            e.preventDefault();
+            const p = state();
+            const q = (searchForm.querySelector('#shareSearch')?.value || '').trim();
+            if (q) p.set('query', q); else p.delete('query');
+            p.set('page', '0');
+            QD.loadDynamic('/admin/share-links?' + p, CONTENT_ID, {replace: false});
+            return;
+        }
+
+        const revokeForm = e.target.closest('form[data-revoke-form]');
+        if (revokeForm) {
+            if (!confirm(REVOKE_MSG)) {
+                e.preventDefault();
+            }
+        }
     });
 })();

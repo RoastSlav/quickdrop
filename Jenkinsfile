@@ -13,7 +13,12 @@ pipeline {
     stage('Build and Test') {
       steps {
         withMaven(maven: 'Maven') {
-          sh 'mvn -B -DskipTests clean package'
+          sh 'mvn -B clean package'
+        }
+      }
+      post {
+        always {
+          junit testResults: 'target/surefire-reports/*.xml', allowEmptyResults: true
         }
       }
     }

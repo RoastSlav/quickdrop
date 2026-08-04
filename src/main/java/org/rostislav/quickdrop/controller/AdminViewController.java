@@ -200,9 +200,9 @@ public class AdminViewController {
                                @RequestParam(value = "clearLogo", required = false, defaultValue = "false") boolean clearLogo,
                                @RequestParam(value = "adminPassword", required = false) String adminPassword,
                                HttpServletRequest request) {
-        String cronError = applySettingsPreprocessing(settings, request);
-        if (cronError != null) {
-            return "redirect:settings?error=invalidCron";
+        String validationError = applySettingsPreprocessing(settings, request);
+        if (validationError != null) {
+            return "redirect:settings?error=" + validationError;
         }
         applicationSettingsService.updateApplicationSettings(settings, settings.getAppPassword(), appLogo, clearLogo);
         if (adminPassword != null && !adminPassword.isBlank()) {
@@ -220,9 +220,9 @@ public class AdminViewController {
                                                   @RequestParam(value = "clearLogo", required = false, defaultValue = "false") boolean clearLogo,
                                                   @RequestParam(value = "adminPassword", required = false) String adminPassword,
                                                   HttpServletRequest request) {
-        String cronError = applySettingsPreprocessing(settings, request);
-        if (cronError != null) {
-            return ResponseEntity.badRequest().body("Invalid cron expression");
+        String validationError = applySettingsPreprocessing(settings, request);
+        if (validationError != null) {
+            return ResponseEntity.badRequest().body(validationErrorMessage(validationError));
         }
         applicationSettingsService.updateApplicationSettings(settings, settings.getAppPassword(), appLogo, clearLogo);
         if (adminPassword != null && !adminPassword.isBlank()) {
@@ -233,6 +233,12 @@ public class AdminViewController {
         return ResponseEntity.ok("Settings saved");
     }
 
+    /**
+     * Validates and normalises the submitted settings before they're persisted. Returns
+     * {@code null} when valid, or an error code consumed by both callers above
+     * ({@code saveSettings} redirects with {@code ?error=<code>}, {@code saveSettingsApi}
+     * maps it to a message via {@link #validationErrorMessage}).
+     */
     private String applySettingsPreprocessing(ApplicationSettingsViewModel settings, HttpServletRequest request) {
         settings.setMaxFileSize(megabytesToBytes(settings.getMaxFileSize()));
         if (request.getParameter("maxPreviewSizeBytes") != null) {
@@ -242,12 +248,71 @@ public class AdminViewController {
             } catch (NumberFormatException ignored) {
             }
         }
+
+        if (settings.getMaxFileSize() <= 0) {
+            return "invalidMaxFileSize";
+        }
+        if (settings.getMaxFileLifeTime() < 1) {
+            return "invalidRetention";
+        }
+        String storagePath = settings.getFileStoragePath();
+        if (storagePath == null || storagePath.isBlank() || !isSafeStoragePath(storagePath)) {
+            return "invalidStoragePath";
+        }
+
         try {
             CronExpression.parse(settings.getFileDeletionCron());
             return null;
         } catch (IllegalArgumentException ex) {
             return "invalidCron";
         }
+    }
+
+    // Absolute paths are deliberately allowed (Docker deployments mount /app/files, and
+    // dev/test tooling points this at temp directories) — only outward directory-traversal
+    // and a short list of well-known OS-critical directories are rejected.
+    private static final java.util.List<String> DANGEROUS_STORAGE_ROOTS = java.util.List.of(
+            "c:/windows", "c:/program files", "c:/program files (x86)",
+            "/etc", "/bin", "/sbin", "/usr", "/sys", "/proc", "/boot", "/dev", "/root", "/var"
+    );
+
+    /**
+     * Rejects a blank/traversal-escaping path and a short list of well-known OS-critical
+     * directories (e.g. {@code C:\Windows}), but otherwise allows absolute paths — Docker
+     * deployments legitimately mount the storage root at an absolute path
+     * (see README: {@code mount /app/db, /app/files, /app/log}), so "must be relative" would
+     * reject valid production configuration, not just dangerous ones.
+     */
+    private boolean isSafeStoragePath(String storagePath) {
+        try {
+            java.nio.file.Path path = java.nio.file.Path.of(storagePath);
+            String normalized = path.normalize().toString().replace('\\', '/');
+            if (normalized.equals("..") || normalized.startsWith("../")) {
+                return false;
+            }
+            String lower = normalized.toLowerCase(java.util.Locale.ROOT);
+            if (lower.equals("/") || lower.matches("^[a-z]:/?$")) {
+                return false; // filesystem/drive root itself
+            }
+            for (String dangerous : DANGEROUS_STORAGE_ROOTS) {
+                if (lower.equals(dangerous) || lower.startsWith(dangerous + "/")) {
+                    return false;
+                }
+            }
+            return true;
+        } catch (java.nio.file.InvalidPathException e) {
+            return false;
+        }
+    }
+
+    private String validationErrorMessage(String code) {
+        return switch (code) {
+            case "invalidMaxFileSize" -> "Max file size must be greater than zero";
+            case "invalidRetention" -> "File retention must be at least 1 day";
+            case "invalidStoragePath" -> "Storage path must be a relative path under the app directory";
+            case "invalidCron" -> "Invalid cron expression";
+            default -> "Invalid settings";
+        };
     }
 
     @PostMapping("/password")

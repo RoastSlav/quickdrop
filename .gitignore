@@ -49,5 +49,14 @@ __pycache__/
 .claude/
 RELEASE_NOTES_*.md
 
+### Local-only test/dev tooling (not for public repo) ###
+/scripts/
+/docs/AGENTIC_TEST_PLAN.md
+/docs/test-reports/
+/src/main/resources/application-e2e.properties
+/src/main/resources/application-e2e2.properties
+/src/main/resources/application-e2e3.properties
+/src/main/resources/application-e2e4.properties
+
 ### Graphify ###
 graphify-out/

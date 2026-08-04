@@ -91,8 +91,13 @@ public class FileQueryService {
     /**
      * Returns {@code true} if the current request may edit the file identified by {@code uuid}.
      *
-     * <p>Immutable files always return {@code false} regardless of session state. For
-     * password-protected files a valid file-session token must be present in the HTTP session.
+     * <p>Immutable files always return {@code false} regardless of session state. Admins may
+     * always edit. For password-protected files a valid file-session token must be present in
+     * the HTTP session. A file/paste with <em>no</em> password has no credential to check
+     * against, so — matching the precedent set by {@link org.rostislav.quickdrop.controller.FileViewController}'s
+     * delete-authorization check for the same "no password = no owner proof" case — only an
+     * admin may edit it; this is deliberately stricter than {@link #isAuthorizedForFile}
+     * (view), which is public for no-password uploads by design.
      */
     public boolean isAuthorizedToEdit(String uuid, HttpServletRequest request) {
         Upload upload = uploadRepository.findByUUID(uuid).orElse(null);
@@ -102,8 +107,11 @@ public class FileQueryService {
         if (upload.isImmutable()) {
             return false;
         }
-        if (upload.passwordHash == null || upload.passwordHash.isBlank()) {
+        if (sessionService.hasValidAdminSession(request)) {
             return true;
+        }
+        if (upload.passwordHash == null || upload.passwordHash.isBlank()) {
+            return false;
         }
         Object sessionToken = request.getSession().getAttribute("file-session-token");
         return sessionToken != null && sessionService.validateFileSessionToken(sessionToken.toString(), uuid);

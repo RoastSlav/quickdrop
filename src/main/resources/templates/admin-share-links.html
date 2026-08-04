@@ -267,7 +267,7 @@
                                           th:text="#{page.adminShareLinks.fileHistory}">History</span>
                                 </a>
                                 <!-- Revoke button -->
-                                <form method="post" th:action="@{/admin/share-links/revoke/{id}(id=${token.id})}">
+                                <form data-revoke-form method="post" th:action="@{/admin/share-links/revoke/{id}(id=${token.id})}">
                                     <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden"/>
                                     <button class="btn btn-danger btn-sm" th:title="#{page.adminShareLinks.revoke}"
                                             type="submit">
@@ -334,6 +334,14 @@
     </div>
 </main>
 
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    window.i18n = window.i18n || {};
+    window.i18n.adminShareLinks = Object.assign({}, window.i18n.adminShareLinks || {}, {
+        revokeConfirm: /*[[#{page.adminShareLinks.revokeConfirm}]]*/ 'Revoke this share link? This action cannot be undone.'
+    });
+    /*]]>*/
+</script>
 <script src="/js/spa.js"></script>
 <script src="/js/admin-share-links.js"></script>
 <script src="/js/locale-switcher.js"></script>

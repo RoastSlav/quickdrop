@@ -107,7 +107,7 @@ public class AsyncFileMergeService {
                 ? request.uploadId
                 : request.fileName;
         if (isRecentlyAborted(taskKey)) {
-            throw new IOException("Upload was aborted");
+            throw new UploadAbortedException("Upload was aborted");
         }
 
         // Attempt-unique filename: a resubmission of the same chunk number (network retry)
@@ -124,7 +124,7 @@ public class AsyncFileMergeService {
 
         if (isRecentlyAborted(taskKey)) {
             deleteChunkFile(savedChunk);
-            throw new IOException("Upload was aborted");
+            throw new UploadAbortedException("Upload was aborted");
         }
 
         MergeTask mergeTask = mergeTasks.computeIfAbsent(taskKey, key -> {
@@ -136,7 +136,7 @@ public class AsyncFileMergeService {
         mergeTask.applyFolderMetadata(request);
         boolean isLastChunk = (chunkNumber == request.totalChunks - 1);
         if (!mergeTask.enqueueChunk(new ChunkInfo(chunkNumber, savedChunk, isLastChunk))) {
-            throw new IOException("Upload was aborted");
+            throw new UploadAbortedException("Upload was aborted");
         }
 
         if (isLastChunk && waitForCompletion) {

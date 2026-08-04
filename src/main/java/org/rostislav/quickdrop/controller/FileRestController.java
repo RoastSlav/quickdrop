@@ -120,6 +120,15 @@ public class FileRestController {
         if (file.isEmpty()) {
             return ResponseEntity.badRequest().body(Map.of("error", "Empty files cannot be uploaded."));
         }
+        if (fileName == null || fileName.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "fileName is required."));
+        }
+        if (totalChunks <= 0) {
+            return ResponseEntity.badRequest().body(Map.of("error", "totalChunks must be greater than zero."));
+        }
+        if (chunkNumber < 0 || chunkNumber >= totalChunks) {
+            return ResponseEntity.badRequest().body(Map.of("error", "chunkNumber must be between 0 and totalChunks - 1."));
+        }
 
         if (chunkNumber == 0) {
             logger.info("Upload started for file: {}", fileName);
@@ -166,6 +175,13 @@ public class FileRestController {
                         .body(Map.of("status", "processing", "uploadId", effectiveUploadId));
             }
             return ResponseEntity.ok(upload);
+        } catch (UploadAbortedException e) {
+            // Deliberate, expected condition (the client called upload-abort, or the task was
+            // TTL-evicted) -- not a server error, so it must not map to the same 500 a genuine
+            // I/O failure below gets.
+            logger.info("Chunk {} for file {} rejected: upload was aborted", chunkNumber, fileName);
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(Map.of("error", "This upload was aborted."));
         } catch (IOException e) {
             logger.error("Error processing chunk {} for file {}: {}", chunkNumber, fileName, e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

@@ -240,16 +240,16 @@ export function initUploadPage(config = {}) {
                     isUploading = false;
                     applyState(UploadState.READY);
                 },
-                onError: () => {
+                onError: (serverMessage) => {
                     handledUploadFailure = true;
-                    showMessage("danger", window.i18n?.upload?.uploadFailed || 'Upload failed. Please try again.');
+                    showMessage("danger", serverMessage || window.i18n?.upload?.uploadFailed || 'Upload failed. Please try again.');
                     resetUploadUI();
                 },
             });
         } catch (err) {
             console.error("Upload failed", err);
             if (!handledUploadFailure) {
-                showMessage("danger", window.i18n?.upload?.uploadFailed || 'Upload failed. Please try again.');
+                showMessage("danger", err?.message || window.i18n?.upload?.uploadFailed || 'Upload failed. Please try again.');
                 resetUploadUI();
             }
         }

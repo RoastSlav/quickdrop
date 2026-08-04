@@ -5,6 +5,18 @@ const UPLOAD_CHUNK_SIZE = 4 * 1024 * 1024;
 const UPLOAD_STATUS_POLL_INTERVAL_MS = 2000;
 const UPLOAD_STATUS_MAX_FAILURES = 15;
 
+// Extracts the server's {"error": "..."} message from a failed response body, if present,
+// so callers can surface the specific reason instead of a generic fallback.
+function parseServerErrorMessage(responseText) {
+    if (!responseText) return null;
+    try {
+        const parsed = JSON.parse(responseText);
+        return typeof parsed?.error === "string" ? parsed.error : null;
+    } catch (e) {
+        return null;
+    }
+}
+
 function registerActiveUpload(uploadId) {
     activeUploadIds.add(uploadId);
     ensureUnloadAbortListener();
@@ -271,15 +283,16 @@ export async function uploadCandidate(
                             }
                         } catch (error) {
                             failUpload();
-                            onError?.();
+                            onError?.(error?.message);
                             reject(error);
                         }
                     }
                 } else {
                     console.error("Upload error:", xhr.responseText);
                     failUpload();
-                    onError?.();
-                    reject(new Error("Upload failed."));
+                    const serverMessage = parseServerErrorMessage(xhr.responseText);
+                    onError?.(serverMessage);
+                    reject(new Error(serverMessage || "Upload failed."));
                 }
             };
 

@@ -403,6 +403,11 @@
                                  th:text="#{validation.cron.invalid.example}">Invalid cron expression.
                             </div>
 
+                            <div class="alert alert-danger"
+                                 th:if="${param.error != null && (param.error.contains('invalidMaxFileSize') || param.error.contains('invalidRetention') || param.error.contains('invalidStoragePath'))}"
+                                 th:text="#{validation.settings.invalid}">Invalid settings value.
+                            </div>
+
                             <!-- Limits & Storage -->
                             <section>
                                 <p class="text-xs font-semibold uppercase tracking-widest mb-3"

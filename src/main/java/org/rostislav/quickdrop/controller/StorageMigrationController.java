@@ -139,18 +139,27 @@ public class StorageMigrationController {
         }
 
         // Validate the configured endpoint/host before making any live network connection.
+        // requiresHostCheck distinguishes "this backend type has no host field to validate"
+        // (LOCAL, AZURE -- endpointToCheck is null by design) from "this backend needs a host
+        // but none has been configured yet" (S3/WEBDAV/SFTP with a never-set, genuinely-null
+        // column) -- collapsing both into a single null check previously let the
+        // never-configured case skip validation entirely and NPE deeper in
+        // testBackendConnection() when it tried to build credentials from a null value.
+        boolean requiresHostCheck = switch (backend) {
+            case S3, WEBDAV, SFTP -> true;
+            default -> false; // LOCAL, AZURE — no user-supplied host to validate here
+        };
         String endpointToCheck = switch (backend) {
             case S3 -> applicationSettingsService.getS3Endpoint();
             case WEBDAV -> applicationSettingsService.getWebDavUrl();
             case SFTP -> applicationSettingsService.getSftpHost();
-            default -> null; // LOCAL, AZURE — no user-supplied host to validate here
+            default -> null;
         };
 
-        if (endpointToCheck != null && endpointToCheck.isBlank()) {
-            // Backend requires a host/URL but none is configured yet — fail fast with a clear message.
+        if (requiresHostCheck && (endpointToCheck == null || endpointToCheck.isBlank())) {
             return ResponseEntity.badRequest().body(Map.of("success", false, "error", "No host or URL configured for this backend."));
         }
-        if (endpointToCheck != null && !isSafeEndpoint(endpointToCheck)) {
+        if (requiresHostCheck && !isSafeEndpoint(endpointToCheck)) {
             logger.warn("Backend test blocked for {}: endpoint '{}' resolved to an internal/loopback address", backend, endpointToCheck);
             return ResponseEntity.badRequest().body(Map.of("success", false, "error", "Invalid or internal endpoint address."));
         }

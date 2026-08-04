@@ -1,0 +1,14 @@
+QuickDrop test fixture -- plain text.
+Line 1 of deterministic fixture content for round-trip and hashing tests.
+Line 2 of deterministic fixture content for round-trip and hashing tests.
+Line 3 of deterministic fixture content for round-trip and hashing tests.
+Line 4 of deterministic fixture content for round-trip and hashing tests.
+Line 5 of deterministic fixture content for round-trip and hashing tests.
+Line 6 of deterministic fixture content for round-trip and hashing tests.
+Line 7 of deterministic fixture content for round-trip and hashing tests.
+Line 8 of deterministic fixture content for round-trip and hashing tests.
+Line 9 of deterministic fixture content for round-trip and hashing tests.
+Line 10 of deterministic fixture content for round-trip and hashing tests.
+Line 11 of deterministic fixture content for round-trip and hashing tests.
+Line 12 of deterministic fixture content for round-trip and hashing tests.
+Line 13 of deterministic fixture content for round-trip and hashing tests.

@@ -34,9 +34,14 @@ build/
 /db/
 /log/
 /files/
+/e2e-data/
+/e2e-data-2/
+/e2e-data-3/
+/e2e-data-4/
 .qodo
 
 /node_modules
+__pycache__/
 
 ### Runtime / local files ###
 *.db

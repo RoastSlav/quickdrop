@@ -111,7 +111,8 @@
                     <form id="renewForm" method="post" th:action="@{/file/extend/{uuid}(uuid=${file.uuid})}"
                           th:classappend="${file.keepIndefinitely or isDeleted} ? ' hidden'">
                         <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden"/>
-                        <button class="btn btn-teal" th:text="#{page.fileView.renewLifetime}" type="submit">Renew
+                        <button class="btn btn-teal" th:disabled="${!hasAdminSession and file.passwordHash == null}"
+                                th:text="#{page.fileView.renewLifetime}" type="submit">Renew
                             Lifetime
                         </button>
                     </form>

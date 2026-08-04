@@ -214,6 +214,19 @@ public class FileDownloadService {
             return null;
         }
 
+        // Atomically claim a download slot BEFORE streaming any bytes. This is the actual
+        // admission decision for limited-download tokens — without it, two concurrent
+        // requests both pass the SELECT-based validateShareToken() check above and both
+        // stream the full file, since the counter was previously only decremented in a
+        // finally block after streaming already completed (a TOCTOU race).
+        if (shareTokenEntity.numberOfAllowedDownloads != null) {
+            int claimed = shareTokenRepository.decrementDownloadCount(shareTokenEntity.getId());
+            if (claimed == 0) {
+                // Exhausted by a concurrent request between validateShareToken() and here.
+                return null;
+            }
+        }
+
         Upload upload = shareTokenEntity.file;
 
         if (shareTokenEntity.shareKeyHash != null) {
@@ -318,12 +331,12 @@ public class FileDownloadService {
     }
 
     private void updateShareTokenAfterDownload(ShareTokenEntity shareTokenEntity, Upload upload) {
+        // The download slot itself is claimed atomically BEFORE streaming, in
+        // streamFileByShareToken() -- this method now only handles post-stream cleanup:
+        // deleting the token/sidecar once it's exhausted or expired. Re-fetch so the
+        // cleanup decision is based on the DB-authoritative value (the pre-stream claim
+        // may have just decremented it).
         if (shareTokenEntity.numberOfAllowedDownloads != null) {
-            // Atomic decrement — safe under concurrent downloads.  If another thread already
-            // exhausted the count, decrementDownloadCount returns 0 and we still fall through
-            // to the cleanup check using a freshly loaded entity.
-            shareTokenRepository.decrementDownloadCount(shareTokenEntity.getId());
-            // Re-fetch so the cleanup decision is based on the DB-authoritative value.
             shareTokenEntity = shareTokenRepository.findById(shareTokenEntity.getId())
                     .orElse(shareTokenEntity);
         }
@@ -331,8 +344,6 @@ public class FileDownloadService {
             deleteShareSidecar(shareTokenEntity);
             shareTokenRepository.deleteByIdTransactional(shareTokenEntity.getId());
         }
-        // No explicit save needed for the limited-download path; the decrement was already
-        // applied by the @Modifying query above.  Unlimited tokens need no counter update.
         logger.info("Share token updated. Upload streamed successfully: {}", upload.name);
     }
 

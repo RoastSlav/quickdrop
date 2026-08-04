@@ -58,9 +58,16 @@ public class WebConfig implements WebMvcConfigurer {
                 .excludePathPatterns("/admin/setup", "/static/**", "/css/**", "/js/**", "/images/**");
 
         registry.addInterceptor(adminPasswordInterceptor)
-                .addPathPatterns("/admin/**", "/file/history/*")
+                .addPathPatterns("/admin/**")
                 .excludePathPatterns("/admin/password", "/admin/setup");
 
+        // /file/history/* is deliberately excluded from BOTH interceptors below: it's gated
+        // by FileViewController#viewFileHistory's own "file session OR admin session" check
+        // instead. Gating it by AdminPasswordInterceptor (as before) made it admin-only,
+        // unreachable for a caller holding a valid file-session token; gating it by
+        // FilePasswordInterceptor instead would block an admin who lacks a file-session-token
+        // for that specific file, since that interceptor has no admin bypass. Neither
+        // blanket interceptor alone expresses the controller's actual "OR" intent.
         registry.addInterceptor(filePasswordInterceptor)
                 .addPathPatterns("/file/**", "/api/file/share/**")
                 .excludePathPatterns("/file/upload", "/file/list", "/file/password", "/file/password/**", "/file/history/*", "/file/search", "/file/paste", "/file/paste/new");

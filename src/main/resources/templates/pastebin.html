@@ -363,18 +363,27 @@
                     <div class="manual-preview-pane markdown-content" id="manualPreviewPane"></div>
                 </div>
 
-                <!-- Password (create mode only) -->
-                <div class="form-row" id="passwordSection" th:if="${uploadPasswordEnabled and !isEditMode}">
+                <!-- Password: settable on create; on edit, a non-blank value changes it but a
+                     blank field leaves the CURRENT password state untouched (a password field
+                     can never be pre-filled with the real value, so "blank = remove" would
+                     silently strip protection any time someone edits content without retyping
+                     the password -- see PasteService#updatePaste). The editOnly *scope* is
+                     fixed at creation and not editable here, so that sub-section stays
+                     create-only. -->
+                <div class="form-row" id="passwordSection" th:if="${uploadPasswordEnabled}">
                     <label class="form-label" for="password" th:text="#{page.paste.password.label}">Password
                         (optional)</label>
                     <input class="form-input" id="password" name="password"
                            placeholder="Set password to protect this paste"
-                           th:placeholder="#{page.paste.password.placeholder}" type="password"/>
-                    <p class="form-hint" th:text="#{page.paste.password.help}">Leave empty to remove password
-                        protection.</p>
+                           th:placeholder="${isEditMode} ? #{page.paste.password.placeholder.edit} : #{page.paste.password.placeholder}"
+                           type="password"/>
+                    <p class="form-hint"
+                       th:text="${isEditMode} ? #{page.paste.password.help.edit} : #{page.paste.password.help}">Leave
+                        empty to remove password protection.</p>
 
-                    <!-- Password scope: shown only when password field has text -->
+                    <!-- Password scope: shown only when password field has text (create mode only) -->
                     <div class="flex flex-col gap-2 mt-3 p-3 rounded-xl" id="editOnlySection"
+                         th:if="${!isEditMode}"
                          style="background:var(--c-surface-raised);border:1px solid var(--c-border);display:none">
                         <p class="text-sm font-semibold" th:text="#{page.paste.field.editOnly}">Password scope</p>
                         <label class="form-check">

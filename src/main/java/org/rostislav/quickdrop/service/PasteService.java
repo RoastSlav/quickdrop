@@ -60,6 +60,7 @@ public class PasteService {
     private final EncryptionService encryptionService;
     private final SessionService sessionService;
     private final AsyncFileMergeService asyncFileMergeService;
+    private final org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
 
     @Lazy
     public PasteService(PasteRepository pasteRepository,
@@ -67,13 +68,15 @@ public class PasteService {
                         ApplicationSettingsService applicationSettingsService,
                         EncryptionService encryptionService,
                         SessionService sessionService,
-                        @Lazy AsyncFileMergeService asyncFileMergeService) {
+                        @Lazy AsyncFileMergeService asyncFileMergeService,
+                        org.springframework.security.crypto.password.PasswordEncoder passwordEncoder) {
         this.pasteRepository = pasteRepository;
         this.activityLogRepository = activityLogRepository;
         this.applicationSettingsService = applicationSettingsService;
         this.encryptionService = encryptionService;
         this.sessionService = sessionService;
         this.asyncFileMergeService = asyncFileMergeService;
+        this.passwordEncoder = passwordEncoder;
     }
 
     // -------------------------------------------------------------------------
@@ -225,10 +228,21 @@ public class PasteService {
      * @param syntax           syntax hint for filename extension
      * @param keepIndefinitely whether the paste should be exempt from scheduled deletion
      * @param setImmutable     when {@code true} the paste is locked permanently after this edit
+     * @param password         new access password; blank/{@code null} removes password
+     *                         protection entirely (matches the create form's own documented
+     *                         blank/{@code null} leaves the paste's current password state
+     *                         untouched (a password field can never be pre-filled with the
+     *                         real value, so treating blank as "remove" would silently strip
+     *                         protection any time someone edits content without retyping the
+     *                         password) -- mirrors the same convention
+     *                         {@link ApplicationSettingsService#updateApplicationSettings}
+     *                         already uses for {@code appPassword}/{@code smtpPassword}. A
+     *                         non-blank value sets/changes it. {@code editOnly} is fixed at
+     *                         creation and not editable here.
      * @param request          the HTTP request (provides session token and admin check)
      * @return the updated {@link Paste}, or {@code null} if the UUID is not a paste or is immutable
      * @throws IOException              if writing the new content fails
-     * @throws IllegalArgumentException if the paste is encrypted but no valid session exists
+     * @throws IllegalArgumentException if the paste is currently encrypted but no valid session exists
      */
     @CacheEvict(value = {"publicFiles", "adminFiles", "adminPastes", "adminDeletedPastes", "analytics"}, allEntries = true)
     public Paste updatePaste(String uuid,
@@ -237,6 +251,7 @@ public class PasteService {
                              String syntax,
                              boolean keepIndefinitely,
                              boolean setImmutable,
+                             String password,
                              HttpServletRequest request) throws IOException {
         Optional<Paste> byUuid = pasteRepository.findByUUID(uuid);
         if (byUuid.isEmpty()) {
@@ -253,12 +268,38 @@ public class PasteService {
             return null;
         }
 
-        PasteUploadOptions options = resolvePasteUploadOptions(keepIndefinitely, null, request);
-        byte[] contentBytes = (content == null ? "" : content).getBytes(StandardCharsets.UTF_8);
-        validatePasteSize(contentBytes);
+        // Proof of current access: an already-encrypted paste requires a valid session before
+        // ANY edit is allowed, including changing its own password -- unchanged from before
+        // this method could set a new password.
         String existingPassword = paste.encrypted ? getFilePasswordFromSessionToken(request) : null;
         if (paste.encrypted && (existingPassword == null || existingPassword.isBlank())) {
             throw new IllegalArgumentException("Valid paste session is required to edit encrypted pastes.");
+        }
+
+        // Blank password = leave the current password state untouched (see javadoc); only the
+        // controller-level isUploadPasswordEnabled() gate needs to run when actually changing it,
+        // so pass null through resolvePasteUploadOptions when nothing is being changed.
+        boolean changingPassword = password != null && !password.isBlank();
+        PasteUploadOptions options = resolvePasteUploadOptions(keepIndefinitely, changingPassword ? password : null, request);
+        byte[] contentBytes = (content == null ? "" : content).getBytes(StandardCharsets.UTF_8);
+        validatePasteSize(contentBytes);
+
+        String contentEncryptionPassword;
+        if (changingPassword) {
+            // Mirrors FileLifecycleService#populateUpload's create-time logic exactly:
+            // passwordHash is set whenever a non-blank password is given; `encrypted`
+            // additionally requires the global encryption setting and is always false for
+            // editOnly pastes (content stays publicly viewable even when a password guards
+            // editing). options.password() is guaranteed non-blank here: the controller already
+            // rejects a non-blank password when upload passwords are globally disabled.
+            boolean effectiveEncrypted = applicationSettingsService.isEncryptionEnabled() && !paste.editOnly;
+            contentEncryptionPassword = effectiveEncrypted ? options.password() : null;
+            paste.encrypted = effectiveEncrypted;
+            paste.passwordHash = passwordEncoder.encode(options.password());
+        } else {
+            // Unchanged: re-encrypt with the same existing password if the paste already had
+            // one; paste.encrypted / paste.passwordHash are left exactly as they are.
+            contentEncryptionPassword = paste.encrypted ? existingPassword : null;
         }
 
         Path storagePath = Path.of(applicationSettingsService.getFileStoragePath());
@@ -266,7 +307,7 @@ public class PasteService {
         Path tempPath = storagePath.resolve(paste.uuid + "-paste-tmp");
 
         Files.createDirectories(storagePath);
-        writeContentToFile(tempPath, contentBytes, existingPassword);
+        writeContentToFile(tempPath, contentBytes, contentEncryptionPassword);
         Files.move(tempPath, filePath, StandardCopyOption.REPLACE_EXISTING);
 
         paste.name = sanitizePasteFileName(title, syntax);

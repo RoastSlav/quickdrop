@@ -37,8 +37,11 @@
             </svg>
         </div>
 
-        <h1 class="text-4xl font-extrabold tracking-tight mb-3" th:text="#{page.error.title}">Oops!</h1>
-        <p class="page-subtitle mb-8" th:text="#{page.error.message}">Something went wrong. Please try again later.</p>
+        <h1 class="text-4xl font-extrabold tracking-tight mb-3"
+            th:text="${isNotFound} ? #{page.error.notFound.title} : #{page.error.title}">Oops!</h1>
+        <p class="page-subtitle mb-8"
+           th:text="${isNotFound} ? #{page.error.notFound.message} : #{page.error.message}">Something went wrong.
+            Please try again later.</p>
 
         <a class="btn btn-gradient btn-lg" href="/">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">

@@ -110,7 +110,15 @@ public class AsyncFileMergeService {
             throw new IOException("Upload was aborted");
         }
 
-        File savedChunk = new File(tempDir, taskKey + "_chunk_" + chunkNumber);
+        // Attempt-unique filename: a resubmission of the same chunk number (network retry)
+        // must never share an on-disk path with an earlier submission of that same chunk
+        // number. If it did, enqueueChunk()'s dedup cleanup (which deletes the *duplicate's*
+        // file) would actually delete the still-pending original's file out from under it,
+        // since both ChunkInfo.chunkFile references would point at the same path -- the
+        // original then hits FileNotFoundException when the drain loop finally reaches it,
+        // aborting the whole upload. evictStaleTasks()'s cleanup glob matches on
+        // startsWith(taskKey + "_chunk_"), so the added suffix doesn't break that.
+        File savedChunk = new File(tempDir, taskKey + "_chunk_" + chunkNumber + "_" + UUID.randomUUID());
         multipartChunk.transferTo(savedChunk);
         logger.info("Chunk {} for file {} saved to {}", chunkNumber, request.fileName, savedChunk.getAbsolutePath());
 

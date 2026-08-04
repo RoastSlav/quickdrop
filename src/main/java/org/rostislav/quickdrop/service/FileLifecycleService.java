@@ -172,6 +172,10 @@ public class FileLifecycleService {
             return;
         }
         Upload upload = referenceById.get();
+        if (!canMutateNoPasswordUpload(upload, request)) {
+            logger.info("Extend blocked (no credential for a no-password upload) for UUID: {}", uuid);
+            return;
+        }
         upload.uploadDate = LocalDate.now();
         logger.info("Upload extended: {}", upload);
         uploadRepository.save(upload);
@@ -192,11 +196,40 @@ public class FileLifecycleService {
             logger.info("Hide toggle blocked (admin only) for UUID: {}", uuid);
             return upload;
         }
+        if (!canMutateNoPasswordUpload(upload, request)) {
+            logger.info("Hide toggle blocked (no credential for a no-password upload) for UUID: {}", uuid);
+            return upload;
+        }
 
         upload.hidden = !upload.hidden;
         logger.info("Upload hidden updated: {}", upload);
         uploadRepository.save(upload);
         return upload;
+    }
+
+    /**
+     * Returns {@code true} when the caller may mutate (extend/keep-indefinitely/hide) an
+     * upload that has <em>no password set</em> — an admin session, or nobody else, since a
+     * no-password upload has no credential to check a session token against. This matches
+     * the precedent {@link org.rostislav.quickdrop.controller.FileViewController}'s
+     * delete-authorization check and {@link FileQueryService#isAuthorizedToEdit} already set
+     * for the same "no password = no owner proof" case, and is exactly what the fileView.html
+     * template's existing {@code keepDisabled}/{@code hiddenDisabled} logic already visually
+     * enforces — this brings the server in line with what the UI already implied.
+     *
+     * <p>Password-protected uploads are unaffected and always return {@code true} here:
+     * {@link org.rostislav.quickdrop.interceptor.FilePasswordInterceptor} already gates every
+     * {@code /file/**} request for them before the controller runs, so by the time this method
+     * is reached (from a {@code /file/**} route) the caller has already proven a valid
+     * file-session token. {@code /admin/**} routes are separately gated by
+     * {@code AdminPasswordInterceptor}, so the admin-session check below is trivially satisfied
+     * there too.
+     */
+    private boolean canMutateNoPasswordUpload(Upload upload, HttpServletRequest request) {
+        if (upload.passwordHash != null && !upload.passwordHash.isBlank()) {
+            return true;
+        }
+        return request != null && sessionService.hasValidAdminSession(request);
     }
 
     /**
@@ -219,6 +252,10 @@ public class FileLifecycleService {
 
         if (applicationSettingsService.isKeepIndefinitelyAdminOnly() && !sessionService.hasValidAdminSession(request)) {
             logger.info("Keep indefinitely change blocked (admin only) for UUID: {}", uuid);
+            return referenceById.get();
+        }
+        if (!canMutateNoPasswordUpload(referenceById.get(), request)) {
+            logger.info("Keep indefinitely change blocked (no credential for a no-password upload) for UUID: {}", uuid);
             return referenceById.get();
         }
 

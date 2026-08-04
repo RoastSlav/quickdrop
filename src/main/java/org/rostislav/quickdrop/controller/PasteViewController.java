@@ -154,6 +154,7 @@ public class PasteViewController {
                               @RequestParam(name = "syntax", defaultValue = "markdown") String syntax,
                               @RequestParam(name = "keepIndefinitely", defaultValue = "false") boolean keepIndefinitely,
                               @RequestParam(name = "immutable", defaultValue = "false") boolean setImmutable,
+                              @RequestParam(name = "password", required = false) String password,
                               HttpServletRequest request,
                               RedirectAttributes redirectAttributes) {
         if (!applicationSettingsService.isPastebinEnabled() && !sessionService.hasValidAdminSession(request)) {
@@ -167,9 +168,13 @@ public class PasteViewController {
         if (!fileQueryService.isAuthorizedToEdit(uuid, request)) {
             return "redirect:/file/password/" + uuid + "?editMode=true";
         }
+        if (!applicationSettingsService.isUploadPasswordEnabled() && password != null && !password.isBlank()) {
+            redirectAttributes.addFlashAttribute("pasteError", "Upload passwords are disabled.");
+            return "redirect:/file/paste/edit/" + uuid;
+        }
 
         try {
-            Paste updated = pasteService.updatePaste(uuid, title, content, syntax, keepIndefinitely, setImmutable, request);
+            Paste updated = pasteService.updatePaste(uuid, title, content, syntax, keepIndefinitely, setImmutable, password, request);
             if (updated == null) {
                 redirectAttributes.addFlashAttribute("pasteError", "Could not update paste.");
                 return "redirect:/file/paste/edit/" + uuid;

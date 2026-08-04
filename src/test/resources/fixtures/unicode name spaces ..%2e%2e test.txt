@@ -1,0 +1,1 @@
+Fixture with unicode, spaces and a dangerous-looking segment.

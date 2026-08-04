@@ -43,6 +43,9 @@ _SKIP_UNTRANSLATED_RE = re.compile(
 _LOCALE_INVARIANT = frozenset({
     "Markdown", "Markdown (.md)", "SQLite", "Pastebin",
     "Discord Webhook", "Webhook URL", "My Brand", "Logo / favicon",
+    # Storage-backend protocol/product names — every existing translation (8/8 locales)
+    # keeps these unchanged, confirming they're treated as proper nouns, not translatable text.
+    "SFTP", "WebDAV", "WebDAV (Nextcloud, ownCloud…)", "Azure Blob", "Azure Blob Storage",
 })
 
 

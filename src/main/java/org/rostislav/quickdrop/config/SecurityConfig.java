@@ -6,18 +6,21 @@ import org.rostislav.quickdrop.service.ApplicationSettingsService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.authorization.AuthenticatedAuthorizationManager;
+import org.springframework.security.authorization.AuthorizationDecision;
+import org.springframework.security.authorization.AuthorizationManager;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.web.access.intercept.RequestAuthorizationContext;
 import org.springframework.security.crypto.bcrypt.BCrypt;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -38,10 +41,11 @@ import java.util.function.Supplier;
  * <p>When {@code appPasswordEnabled} is set in application settings, all routes
  * except the login page, static assets, and share-download endpoints require
  * form-based authentication. When the setting is disabled, all requests are
- * permitted without authentication.
+ * permitted without authentication. This is re-evaluated on every request (not
+ * baked in once at filter-chain build time) so a settings change takes effect
+ * immediately, with no dependency on a config refresh rebuilding the chain.
  *
- * <p>The {@link SecurityFilterChain} bean is {@link RefreshScope}-scoped.
- * CSRF protection uses a cookie-based token repository (readable by JavaScript).
+ * <p>CSRF protection uses a cookie-based token repository (readable by JavaScript).
  * {@code X-Frame-Options} is disabled; {@code Content-Security-Policy: frame-ancestors *}
  * is set instead.
  */
@@ -59,44 +63,37 @@ public class SecurityConfig {
     }
 
     /**
-     * Builds the security filter chain. When the app password is enabled, only the
-     * listed public endpoints are accessible without authentication; all others
-     * redirect to the login page.
+     * Builds the security filter chain. Whether the app password is required is
+     * decided per-request by {@link #appPasswordGate()}, not baked in at build time,
+     * so toggling the setting takes effect on the very next request.
      *
      * @param http the Spring Security HTTP builder
      * @return the configured filter chain
      * @throws Exception if the security configuration cannot be applied
      */
     @Bean
-    @RefreshScope
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        if (applicationSettingsService.isAppPasswordEnabled()) {
-            http.authorizeHttpRequests(authz -> authz
-                    .requestMatchers(
-                            "/password/login",
-                            "/favicon.ico",
-                            "/error",
-                            "/share/**",
-                            "/file/share/**",
-                            "/api/file/download/**",
-                            "/css/**",
-                            "/js/**",
-                            "/images/**",
-                            "/branding/**",
-                            "/webjars/**"
-                    ).permitAll()
-                    .anyRequest().authenticated()
-            ).formLogin(form -> form
-                    .loginPage("/password/login")
-                    .permitAll()
-                    .failureUrl("/password/login?error")
-                    .defaultSuccessUrl("/", true)
-            ).authenticationProvider(authenticationProvider()
-            );
-        } else {
-            http.authorizeHttpRequests(authz -> authz
-                    .anyRequest().permitAll());
-        }
+        http.authorizeHttpRequests(authz -> authz
+                .requestMatchers(
+                        "/password/login",
+                        "/favicon.ico",
+                        "/error",
+                        "/share/**",
+                        "/file/share/**",
+                        "/api/file/download/**",
+                        "/css/**",
+                        "/js/**",
+                        "/images/**",
+                        "/branding/**",
+                        "/webjars/**"
+                ).permitAll()
+                .anyRequest().access(appPasswordGate())
+        ).formLogin(form -> form
+                .loginPage("/password/login")
+                .permitAll()
+                .failureUrl("/password/login?error")
+                .defaultSuccessUrl("/", true)
+        ).authenticationProvider(authenticationProvider());
 
         http.csrf(csrf -> csrf
                 .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
@@ -107,6 +104,22 @@ public class SecurityConfig {
         ).cors(Customizer.withDefaults());
 
         return http.build();
+    }
+
+    /**
+     * Authorization rule for every non-public route: permits the request outright when
+     * the app password is currently disabled, otherwise defers to the standard
+     * authenticated-session check. Reads {@link ApplicationSettingsService#isAppPasswordEnabled()}
+     * fresh on every request rather than once at filter-chain construction time.
+     *
+     * @return the authorization manager applied to {@code anyRequest()}
+     */
+    @Bean
+    public AuthorizationManager<RequestAuthorizationContext> appPasswordGate() {
+        AuthorizationManager<RequestAuthorizationContext> authenticated = AuthenticatedAuthorizationManager.authenticated();
+        return (authentication, context) -> applicationSettingsService.isAppPasswordEnabled()
+                ? authenticated.check(authentication, context)
+                : new AuthorizationDecision(true);
     }
 
     /**

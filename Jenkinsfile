@@ -22,16 +22,10 @@ pipeline {
         always {
           junit testResults: 'target/surefire-reports/*.xml', allowEmptyResults: true
 
-          script {
-            try {
-              jacoco execPattern: 'target/jacoco.exec',
-                     classPattern: 'target/classes',
-                     sourcePattern: 'src/main/java'
-            } catch (e) {
-              echo "JaCoCo Jenkins plugin not available, skipping trend graph: ${e}"
-            }
-          }
-
+          // No JaCoCo/Coverage Jenkins plugin is installed on this instance (confirmed --
+          // the 'jacoco' pipeline step isn't in the available DSL steps here), so there's
+          // no native trend-graph step to call. The HTML report and badge JSON below are
+          // archived as plain build artifacts instead, which needs no plugin.
           sh '''
             set -e
             if [ -f target/site/jacoco/jacoco.csv ]; then
@@ -47,7 +41,9 @@ pipeline {
               cat coverage-badge.json
             fi
           '''
-          archiveArtifacts artifacts: 'coverage-badge.json, target/site/jacoco/**', allowEmptyArchive: true
+          // archiveArtifacts isn't registered on this instance either (same DSL-step
+          // check as above) -- 'archive' is the step actually available here.
+          archive 'coverage-badge.json, target/site/jacoco/**'
         }
       }
     }

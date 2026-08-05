@@ -13,12 +13,41 @@ pipeline {
     stage('Build and Test') {
       steps {
         withMaven(maven: 'Maven') {
-          sh 'mvn -B clean package'
+          // 'verify' (not 'package') so the jacoco:check goal runs and hard-gates the
+          // build on the minimum line-coverage ratio configured in pom.xml.
+          sh 'mvn -B clean verify'
         }
       }
       post {
         always {
           junit testResults: 'target/surefire-reports/*.xml', allowEmptyResults: true
+
+          script {
+            try {
+              jacoco execPattern: 'target/jacoco.exec',
+                     classPattern: 'target/classes',
+                     sourcePattern: 'src/main/java'
+            } catch (e) {
+              echo "JaCoCo Jenkins plugin not available, skipping trend graph: ${e}"
+            }
+          }
+
+          sh '''
+            set -e
+            if [ -f target/site/jacoco/jacoco.csv ]; then
+              awk -F',' 'NR>1 { covered+=$9; missed+=$8 } END {
+                total = covered + missed
+                pct = (total > 0) ? (covered / total * 100) : 0
+                color = "red"
+                if (pct >= 90) color = "brightgreen"
+                else if (pct >= 70) color = "green"
+                else if (pct >= 50) color = "yellow"
+                printf "{\\"schemaVersion\\":1,\\"label\\":\\"coverage\\",\\"message\\":\\"%.1f%%\\",\\"color\\":\\"%s\\"}\\n", pct, color
+              }' target/site/jacoco/jacoco.csv > coverage-badge.json
+              cat coverage-badge.json
+            fi
+          '''
+          archiveArtifacts artifacts: 'coverage-badge.json, target/site/jacoco/**', allowEmptyArchive: true
         }
       }
     }

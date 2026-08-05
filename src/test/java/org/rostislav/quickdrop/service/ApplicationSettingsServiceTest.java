@@ -128,10 +128,22 @@ class ApplicationSettingsServiceTest extends QuickdropIntegrationTest {
 
         applicationSettingsService.updateApplicationSettings(vm, "app-access-pw", null, false);
 
-        assertTrue(applicationSettingsService.isAppPasswordEnabled());
-        String hash = applicationSettingsService.getAppPasswordHash();
-        assertTrue(hash.startsWith("$2"));
-        assertTrue(BCrypt.checkpw("app-access-pw", hash));
+        try {
+            assertTrue(applicationSettingsService.isAppPasswordEnabled());
+            String hash = applicationSettingsService.getAppPasswordHash();
+            assertTrue(hash.startsWith("$2"));
+            assertTrue(BCrypt.checkpw("app-access-pw", hash));
+        } finally {
+            // Leaving the app password enabled would gate every route behind Spring Security
+            // authentication for every other test class sharing this context (no @Order
+            // relative to omittingAppPasswordFlagDisablesAppPassword pins execution order,
+            // so this must self-clean regardless of which runs last on a given JVM). Restore
+            // a safe state regardless of assertion outcome, matching the Discord webhook
+            // test's cleanup pattern above.
+            ApplicationSettingsViewModel cleanup = new ApplicationSettingsViewModel(applicationSettingsService.getApplicationSettings());
+            cleanup.setAppPasswordEnabled(false);
+            applicationSettingsService.updateApplicationSettings(cleanup, null, null, false);
+        }
     }
 
     @Test
@@ -160,8 +172,12 @@ class ApplicationSettingsServiceTest extends QuickdropIntegrationTest {
 
         applicationSettingsService.updateApplicationSettings(vm, null, null, false);
 
-        assertEquals("list", applicationSettingsService.getDefaultHomePage(),
-                "upload is disabled, so the home page should fall through to the next available page");
+        try {
+            assertEquals("list", applicationSettingsService.getDefaultHomePage(),
+                    "upload is disabled, so the home page should fall through to the next available page");
+        } finally {
+            restoreUploadDefaults();
+        }
     }
 
     @Test
@@ -174,7 +190,11 @@ class ApplicationSettingsServiceTest extends QuickdropIntegrationTest {
 
         applicationSettingsService.updateApplicationSettings(vm, null, null, false);
 
-        assertEquals("none", applicationSettingsService.getApplicationSettings().getDefaultHomePage());
+        try {
+            assertEquals("none", applicationSettingsService.getApplicationSettings().getDefaultHomePage());
+        } finally {
+            restoreUploadDefaults();
+        }
     }
 
     @Test
@@ -185,8 +205,30 @@ class ApplicationSettingsServiceTest extends QuickdropIntegrationTest {
 
         applicationSettingsService.updateApplicationSettings(vm, null, null, false);
 
-        assertFalse(applicationSettingsService.getApplicationSettings().isUploadAdminOnly(),
-                "uploadAdminOnly must not stick when upload itself is disabled");
+        try {
+            assertFalse(applicationSettingsService.getApplicationSettings().isUploadAdminOnly(),
+                    "uploadAdminOnly must not stick when upload itself is disabled");
+        } finally {
+            restoreUploadDefaults();
+        }
+    }
+
+    /**
+     * Restores upload/file-list/pastebin/home-page settings to their fresh-install defaults.
+     * None of the three tests above have an {@code @Order} relative to each other or to any
+     * test in another class sharing this context, so leaving {@code uploadEnabled=false} (or
+     * similar) behind would silently break upload-dependent tests elsewhere in the suite,
+     * non-deterministically depending on JVM method-reflection order -- the same class of bug
+     * fixed for {@code providingAppPasswordEnablesItAndStoresBCryptHash} above.
+     */
+    private void restoreUploadDefaults() {
+        ApplicationSettingsViewModel cleanup = new ApplicationSettingsViewModel(applicationSettingsService.getApplicationSettings());
+        cleanup.setUploadEnabled(true);
+        cleanup.setUploadAdminOnly(false);
+        cleanup.setFileListPageEnabled(true);
+        cleanup.setPastebinEnabled(true);
+        cleanup.setDefaultHomePage("upload");
+        applicationSettingsService.updateApplicationSettings(cleanup, null, null, false);
     }
 
     @Test

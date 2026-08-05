@@ -48,6 +48,7 @@ __pycache__/
 *.log
 .claude/
 RELEASE_NOTES_*.md
+/coverage-badge.json
 
 ### Local-only test/dev tooling (not for public repo) ###
 /scripts/

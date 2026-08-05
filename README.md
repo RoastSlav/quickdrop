@@ -1,4 +1,5 @@
 ![Build Status](https://jenkins.tyron.rocks/buildStatus/icon?job=quickdrop/master)
+![Coverage](https://img.shields.io/endpoint?url=https%3A%2F%2Fjenkins.tyron.rocks%2Fjob%2Fquickdrop%2Fjob%2Fmaster%2FlastSuccessfulBuild%2Fartifact%2Fcoverage-badge.json)
 [![MIT License](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Docker Pulls](https://img.shields.io/docker/pulls/roastslav/quickdrop?logo=docker&style=flat)](https://hub.docker.com/r/roastslav/quickdrop)
 

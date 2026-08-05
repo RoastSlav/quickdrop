@@ -140,4 +140,64 @@ class NotificationServiceTest {
 
         assertFalse(result.success());
     }
+
+    @Test
+    void notifyFileAction_batchingEnabled_queuesWithoutImmediateDispatch() {
+        when(settings.isNotifyOnDownload()).thenReturn(true);
+        when(settings.isDiscordWebhookEnabled()).thenReturn(true);
+        when(settings.getDiscordWebhookUrl()).thenReturn("https://discord.com/api/webhooks/abc");
+        when(settings.isNotificationBatchEnabled()).thenReturn(true);
+        NotificationService service = newService();
+
+        // Second call must hit the "scheduler already running" guard rather than starting
+        // a second one.
+        assertDoesNotThrow(() -> {
+            service.notifyFileAction(someFile(), EventType.DOWNLOAD);
+            service.notifyFileAction(someFile(), EventType.DOWNLOAD);
+        });
+
+        // Batched -> queued, never dispatched synchronously or via the immediate executor.
+        verify(settings, never()).getEmailTo();
+    }
+
+    @Test
+    void notifyFileAction_immediateDispatch_submitsAsyncAndAttemptsDiscordDelivery() {
+        when(settings.isNotifyOnUpload()).thenReturn(true);
+        when(settings.isDiscordWebhookEnabled()).thenReturn(true);
+        // Non-Discord host: shouldSendDiscord() only checks "configured", so this still
+        // gets submitted to the async executor -- the URL is re-validated (and rejected)
+        // inside sendDiscord() itself, on the background thread, without a network call.
+        when(settings.getDiscordWebhookUrl()).thenReturn("https://not-discord.example.com/hook");
+        NotificationService service = newService();
+
+        service.notifyFileAction(someFile(), EventType.UPLOAD);
+
+        // Once synchronously (shouldSendDiscord), once on the background dispatch thread
+        // (sendDiscord's own validation) -- proves the async submit actually ran.
+        verify(settings, timeout(2000).times(2)).getDiscordWebhookUrl();
+    }
+
+    @Test
+    void notifySystemEvent_storageBackendDown_withChannelEnabled_buildsMessageAndSubmits() {
+        when(settings.isNotifyOnStorageDown()).thenReturn(true);
+        when(settings.isDiscordWebhookEnabled()).thenReturn(true);
+        when(settings.getDiscordWebhookUrl()).thenReturn("https://not-discord.example.com/hook");
+        NotificationService service = newService();
+
+        service.notifySystemEvent(EventType.STORAGE_BACKEND_DOWN);
+
+        verify(settings, timeout(2000).times(2)).getDiscordWebhookUrl();
+    }
+
+    @Test
+    void notifySystemEvent_storageBackendUp_withChannelEnabled_buildsMessageAndSubmits() {
+        when(settings.isNotifyOnStorageUp()).thenReturn(true);
+        when(settings.isDiscordWebhookEnabled()).thenReturn(true);
+        when(settings.getDiscordWebhookUrl()).thenReturn("https://not-discord.example.com/hook");
+        NotificationService service = newService();
+
+        service.notifySystemEvent(EventType.STORAGE_BACKEND_UP);
+
+        verify(settings, timeout(2000).times(2)).getDiscordWebhookUrl();
+    }
 }

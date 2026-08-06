@@ -59,6 +59,7 @@ restart required for configuration changes.
 
 *Activity - all activity that has happened in the app.*
 
+
 ---
 
 ## Features

@@ -507,11 +507,8 @@ function sendChunk(
 }
 
 function getCsrfToken() {
-    // Read the masked value Thymeleaf renders into the page, matching getCsrfFormToken()
-    // below and fileView.js/settings.js -- not the raw XSRF-TOKEN cookie value. Sending the
-    // raw token as a header only worked because SecurityConfig carried a custom handler with
-    // a raw-token fallback; that's gone now that the frontend is consistent, in favor of
-    // Spring Security's own default XorCsrfTokenRequestAttributeHandler (masked-only).
+    // Masked token from the rendered page, not the raw XSRF-TOKEN cookie -- matches
+    // getCsrfFormToken() below and Spring Security's default masked-only handler.
     return (
         document.querySelector('input[name="_csrf"]')?.value ||
         document.querySelector('meta[name="_csrf"]')?.content ||

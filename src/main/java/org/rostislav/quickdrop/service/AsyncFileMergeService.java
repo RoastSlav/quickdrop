@@ -40,13 +40,10 @@ public class AsyncFileMergeService {
     private final ConcurrentMap<String, MergeTask> mergeTasks = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, Instant> abortedUploads = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, UploadCompletion> completedUploads = new ConcurrentHashMap<>();
-    // Deliberately NOT converted to a virtual-thread-per-task executor: the bounded pool
-    // (max MAX_CONCURRENT_MERGES) plus CallerRunsPolicy is an intentional admission-control
-    // mechanism -- once the pool and its queue are full, submitting threads (Tomcat request
-    // threads) do the merge work themselves, throttling the client instead of accepting
-    // unbounded concurrent merges. Executors.newVirtualThreadPerTaskExecutor() has no
-    // equivalent bound or rejection policy (unbounded thread creation, no queue), so swapping
-    // this would silently remove that backpressure rather than just make it cheaper.
+    // Not a virtual-thread-per-task executor: the bounded pool + CallerRunsPolicy is
+    // deliberate admission control (once full, the submitting Tomcat thread does the merge
+    // itself, throttling the client). Virtual threads have no equivalent bound, so swapping
+    // this would silently remove that backpressure.
     private final ExecutorService executorService = new ThreadPoolExecutor(
             2, MAX_CONCURRENT_MERGES,
             60L, TimeUnit.SECONDS,
@@ -377,10 +374,9 @@ public class AsyncFileMergeService {
                 deleteChunkFile(chunkInfo.chunkFile);
                 return false;
             }
-            // Fix 2: deduplicate retried chunks — drop duplicates before queuing. Set.add()'s
-            // return value gives an atomic check-and-mark in one call; the file delete (disk
-            // I/O) is deliberately done after releasing the lock rather than inside it, since
-            // holding a monitor across blocking I/O is a virtual-thread pinning hazard.
+            // Set.add()'s return value is an atomic check-and-mark. The file delete (disk I/O)
+            // runs after releasing the lock, not inside it -- holding a monitor across
+            // blocking I/O is a virtual-thread pinning hazard.
             boolean isDuplicate;
             synchronized (receivedChunks) {
                 isDuplicate = !receivedChunks.add(chunkInfo.chunkNumber);

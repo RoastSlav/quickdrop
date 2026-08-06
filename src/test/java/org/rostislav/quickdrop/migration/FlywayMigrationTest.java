@@ -15,19 +15,14 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Layer 1 §3.5 of the test plan: boots Flyway against a fresh, empty SQLite database (this
- * already happens implicitly for every {@link QuickdropIntegrationTest}-based test, via
- * Spring Boot's Flyway auto-configuration running before the context is ready) and makes one
- * explicit assertion about the resulting {@code flyway_schema_history} table.
+ * Asserts every Flyway migration applied cleanly against a fresh SQLite database (this
+ * already happens implicitly for every {@link QuickdropIntegrationTest}-based test).
  *
- * <p><b>Known gap:</b> the plan's "legacy 1.6.0 DB snapshot migrates cleanly" scenario is
- * intentionally skipped here. There is no real 1.6.0-era database file available in this repo
- * to use as a fixture, and fabricating a synthetic one wouldn't actually validate the migration
- * path against real historical data/schema quirks -- it would just prove the migrations work
- * against whatever guess we encoded into the fixture. If a real pre-2.0 database snapshot
- * becomes available, it should be added at {@code src/test/resources/fixtures/legacy-1.6.db}
- * and a new test should boot Flyway against a copy of it, then assert row counts and that the
- * V28/V31/V32 renamed columns carried values over.
+ * <p>Does not cover migrating a real legacy pre-2.0 database snapshot -- none is available
+ * in this repo, and a synthetic one would only prove the migrations handle our own guess at
+ * the old schema. If a real snapshot becomes available, add it at
+ * {@code src/test/resources/fixtures/legacy-1.6.db} and assert the V28/V31/V32 renamed
+ * columns carried values over.
  */
 class FlywayMigrationTest extends QuickdropIntegrationTest {
 

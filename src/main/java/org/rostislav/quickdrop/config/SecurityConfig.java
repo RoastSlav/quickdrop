@@ -59,13 +59,9 @@ public class SecurityConfig {
     }
 
     /**
-     * Builds the security filter chain. Whether the app password is required is
-     * decided per-request by {@link #appPasswordGate()}, not baked in at build time,
-     * so toggling the setting takes effect on the very next request.
-     *
-     * @param http the Spring Security HTTP builder
-     * @return the configured filter chain
-     * @throws Exception if the security configuration cannot be applied
+     * Whether the app password is required is decided per-request by
+     * {@link #appPasswordGate()}, not baked in at build time, so toggling the setting
+     * takes effect on the very next request.
      */
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -103,12 +99,10 @@ public class SecurityConfig {
     }
 
     /**
-     * Authorization rule for every non-public route: permits the request outright when
-     * the app password is currently disabled, otherwise defers to the standard
-     * authenticated-session check. Reads {@link ApplicationSettingsService#isAppPasswordEnabled()}
-     * fresh on every request rather than once at filter-chain construction time.
-     *
-     * @return the authorization manager applied to {@code anyRequest()}
+     * Permits every request when the app password is disabled, otherwise defers to the
+     * standard authenticated-session check. Reads
+     * {@link ApplicationSettingsService#isAppPasswordEnabled()} fresh on every request
+     * rather than once at filter-chain construction time.
      */
     @Bean
     public AuthorizationManager<RequestAuthorizationContext> appPasswordGate() {
@@ -118,12 +112,6 @@ public class SecurityConfig {
                 : new AuthorizationDecision(true);
     }
 
-    /**
-     * CORS configuration that allows all origins and the standard request headers.
-     * Credentials are allowed.
-     *
-     * @return the CORS configuration source
-     */
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
@@ -146,12 +134,7 @@ public class SecurityConfig {
         return source;
     }
 
-    /**
-     * Authentication provider that validates the site-wide app password stored as a
-     * BCrypt hash in the application settings.
-     *
-     * @return the authentication provider
-     */
+    /** Validates the site-wide app password stored as a BCrypt hash in application settings. */
     @Bean
     public AuthenticationProvider authenticationProvider() {
         return new AuthenticationProvider() {
@@ -174,11 +157,6 @@ public class SecurityConfig {
         };
     }
 
-    /**
-     * Password encoder used for hashing and verifying file-level access passwords.
-     *
-     * @return BCrypt password encoder
-     */
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();

@@ -11,18 +11,15 @@ import java.nio.charset.StandardCharsets;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Shared contract for every {@link StorageService} implementation: store / read /
- * delete / exists / missing-key behaviour (test plan Layer 1 §3.2).
+ * Shared contract for every {@link StorageService} implementation: store / read / delete /
+ * exists / missing-key behaviour.
  *
- * <p>Subclasses supply a concrete, ready-to-use {@link StorageService} via
- * {@link #storageService()}. {@link LocalStorageServiceTest} runs this for real against
- * a {@code @TempDir}. Cloud backends (S3/Azure/SFTP/WebDAV) are intentionally NOT
- * subclassed here: exercising them for real would require live credentials or
- * Testcontainers/MinIO (Docker is not guaranteed available in this sandbox), and their
- * client-boundary behaviour is instead covered indirectly via
- * {@link DelegatingStorageServiceTest}'s routing tests with mocked {@code StorageService}
- * beans, per the test-plan instruction to mock cloud SDKs at their client boundary
- * rather than skip coverage silently.
+ * <p>Subclasses supply a concrete {@link StorageService} via {@link #storageService()}.
+ * {@link LocalStorageServiceTest} runs this for real against a {@code @TempDir}. Cloud
+ * backends (S3/Azure/SFTP/WebDAV) aren't subclassed here -- exercising them for real needs
+ * live credentials or Testcontainers/MinIO; their client-boundary behaviour is covered
+ * instead via {@link DelegatingStorageServiceTest}'s routing tests with mocked
+ * {@code StorageService} beans.
  */
 abstract class StorageServiceContractTest {
 

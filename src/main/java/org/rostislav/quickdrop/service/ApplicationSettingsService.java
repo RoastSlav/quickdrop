@@ -56,21 +56,14 @@ public class ApplicationSettingsService {
     @Autowired
     private ApplicationSettingsService self;
 
-    /**
-     * Lazily injected {@link ScheduleService}, needed only for the one-off initial schedule
-     * fired by {@link #onApplicationReady()} -- routine settings-change rescheduling is
-     * handled by {@link ScheduleService}'s own {@link SettingsChangedEvent} listener.
-     */
+    /** Only for the one-off initial schedule in {@link #onApplicationReady()}; routine
+     *  rescheduling is handled by {@link ScheduleService}'s own event listener. */
     @Lazy
     @Autowired
     private ScheduleService scheduleService;
 
-    /**
-     * These four storage-backend services are used only by {@link #testS3Connection()} and
-     * {@link #testBackendConnection}, i.e. the admin panel's explicit "Test Connection"
-     * button -- not by settings-save propagation, which each service's own
-     * {@link SettingsChangedEvent} listener handles independently.
-     */
+    /** Used only by the admin panel's "Test Connection" button -- settings-save
+     *  propagation goes through each service's own {@link SettingsChangedEvent} listener. */
     @Lazy
     @Autowired
     private S3StorageService s3StorageService;
@@ -263,13 +256,11 @@ public class ApplicationSettingsService {
      * @param logoFile    optional new logo image to store
      * @param clearLogo   if {@code true}, removes the current custom logo
      */
-    // Evicted both before AND after the method body: beforeInvocation guarantees a clean
-    // cache even if a mid-method failure means save() never runs; the second (default,
-    // post-invocation-only) eviction closes a race where a concurrent cache-populating read
-    // -- e.g. StorageHealthService's async post-save health recheck, triggered by the
-    // SettingsChangedEvent this method publishes below -- lands in the window between this
-    // call's beforeInvocation eviction and its own save(), repopulating the cache with the
-    // pre-update row. Evicting once more after save() flushes that stale entry back out.
+    // Two evictions, not one: beforeInvocation covers a mid-method failure before save()
+    // runs; the post-invocation one closes a race where a concurrent read (e.g.
+    // StorageHealthService's async recheck, triggered by the event published below) lands
+    // between the beforeInvocation eviction and save(), repopulating the cache with the
+    // stale pre-update row.
     @Caching(evict = {
             @CacheEvict(value = "applicationSettings", allEntries = true, beforeInvocation = true),
             @CacheEvict(value = "applicationSettings", allEntries = true)

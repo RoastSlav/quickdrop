@@ -150,20 +150,40 @@ public class FileUtils {
      * @return absolute URL string (e.g. {@code https://example.com/file/abc-123})
      */
     public static String getDownloadLink(HttpServletRequest request, Upload fileEntity) {
-        String scheme = request.getHeader("X-Forwarded-Proto");
-        if (scheme == null) {
-            scheme = request.getScheme();
-        }
+        String rawScheme = request.getHeader("X-Forwarded-Proto");
+        String scheme = rawScheme != null ? rawScheme : request.getScheme();
         String host = request.getHeader("X-Forwarded-Host");
         if (host == null) {
             host = request.getServerName();
-            int port = request.getServerPort();
-            boolean defaultPort = ("https".equals(scheme) && port == 443) || ("http".equals(scheme) && port == 80);
-            if (!defaultPort) {
-                host += ":" + port;
-            }
+            host += resolvePortSuffix(request, scheme, rawScheme != null);
         }
         return scheme + "://" + host + "/file/" + fileEntity.uuid;
+    }
+
+    /**
+     * Returns "" for the scheme's default port, otherwise ":port". When the scheme was
+     * forwarded but neither Host nor Port were, request.getServerPort() is the backend's own
+     * raw listening port (e.g. 8080) -- pairing that with a forwarded "https" would leak it
+     * as "https://host:8080". X-Forwarded-Port is honored if the proxy sends it; otherwise
+     * the scheme's standard port is assumed, since that's true for effectively every
+     * reverse-proxy deployment.
+     */
+    private static String resolvePortSuffix(HttpServletRequest request, String scheme, boolean schemeForwarded) {
+        int port;
+        String forwardedPort = request.getHeader("X-Forwarded-Port");
+        if (forwardedPort != null) {
+            try {
+                port = Integer.parseInt(forwardedPort.trim());
+            } catch (NumberFormatException e) {
+                port = request.getServerPort();
+            }
+        } else if (schemeForwarded) {
+            port = "https".equals(scheme) ? 443 : 80;
+        } else {
+            port = request.getServerPort();
+        }
+        boolean defaultPort = ("https".equals(scheme) && port == 443) || ("http".equals(scheme) && port == 80);
+        return defaultPort ? "" : ":" + port;
     }
 
     /**

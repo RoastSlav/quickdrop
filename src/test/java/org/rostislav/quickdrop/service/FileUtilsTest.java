@@ -142,18 +142,14 @@ class FileUtilsTest {
     }
 
     @Test
-    void getDownloadLinkFindingLeaksBackendPortWhenOnlyProtoIsForwardedWithoutHost() {
-        // FINDING (minor): when a proxy forwards only X-Forwarded-Proto (not
-        // X-Forwarded-Host) -- e.g. a minimal proxy config, or the backend Tomcat port
-        // differing from the standard port for the forwarded scheme -- getDownloadLink()
-        // compares the *forwarded* scheme against the *raw* request.getServerPort()
-        // (the backend's own listening port, e.g. 8080), not the port the client
-        // actually connected to. That means a client on https://public-host/ can be
-        // handed back a link like "https://internal-host:8080/file/..." which is wrong
-        // (leaks the internal port, wrong scheme/port pairing) whenever the proxy
-        // doesn't also forward the Host header. This test documents the CURRENT
-        // behaviour rather than asserting the (arguably more correct) alternative,
-        // since fixing it is a production-code change out of this test track's scope.
+    void getDownloadLinkAssumesSchemeDefaultPortWhenOnlyProtoIsForwarded() {
+        // Regression guard for a fixed port-leak bug: when a proxy forwards only
+        // X-Forwarded-Proto (not Host or Port) -- e.g. a minimal proxy config --
+        // request.getServerPort() is the backend's own raw listening port (8080 here),
+        // not the port the client actually connected to. Pairing that raw port with the
+        // forwarded scheme used to produce "https://internal-host:8080/...", leaking the
+        // internal port. getDownloadLink() now assumes the scheme's standard port in this
+        // case instead, since that holds for effectively every reverse-proxy deployment.
         MockHttpServletRequest request = new MockHttpServletRequest();
         request.setScheme("http");
         request.setServerName("internal-host");
@@ -163,7 +159,40 @@ class FileUtilsTest {
 
         String link = FileUtils.getDownloadLink(request, upload);
 
-        assertEquals("https://internal-host:8080/file/abc-123", link);
+        assertEquals("https://internal-host/file/abc-123", link);
+    }
+
+    @Test
+    void getDownloadLinkHonoursXForwardedPortWhenProvided() {
+        // A proxy that forwards its own non-standard external port explicitly (rather
+        // than relying on the "assume standard port" fallback above) should have that
+        // port used verbatim, since it's an authoritative signal for the client-facing port.
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.setScheme("http");
+        request.setServerName("internal-host");
+        request.setServerPort(8080);
+        request.addHeader("X-Forwarded-Proto", "https");
+        request.addHeader("X-Forwarded-Port", "9443");
+        Upload upload = fileWithUuid("abc-123");
+
+        String link = FileUtils.getDownloadLink(request, upload);
+
+        assertEquals("https://internal-host:9443/file/abc-123", link);
+    }
+
+    @Test
+    void getDownloadLinkOmitsForwardedPortWhenItMatchesSchemeDefault() {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.setScheme("http");
+        request.setServerName("internal-host");
+        request.setServerPort(8080);
+        request.addHeader("X-Forwarded-Proto", "https");
+        request.addHeader("X-Forwarded-Port", "443");
+        Upload upload = fileWithUuid("abc-123");
+
+        String link = FileUtils.getDownloadLink(request, upload);
+
+        assertEquals("https://internal-host/file/abc-123", link);
     }
 
     // -------------------------------------------------------------------------

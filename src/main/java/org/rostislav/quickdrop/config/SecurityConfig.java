@@ -1,7 +1,5 @@
 package org.rostislav.quickdrop.config;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import org.rostislav.quickdrop.service.ApplicationSettingsService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,14 +24,12 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.csrf.*;
-import org.springframework.util.StringUtils;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.function.Supplier;
 
 /**
  * Spring Security configuration for the application.
@@ -97,7 +93,7 @@ public class SecurityConfig {
 
         http.csrf(csrf -> csrf
                 .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
-                .csrfTokenRequestHandler(new FlexibleCsrfTokenRequestHandler())
+                .csrfTokenRequestHandler(new XorCsrfTokenRequestAttributeHandler())
         ).headers(headers -> headers
                 .frameOptions(HeadersConfigurer.FrameOptionsConfig::disable)
                 .contentSecurityPolicy(csp -> csp.policyDirectives("frame-ancestors *;"))
@@ -186,35 +182,5 @@ public class SecurityConfig {
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
-    }
-
-    /**
-     * Supports both Thymeleaf's masked CSRF tokens and the raw XSRF-TOKEN cookie value
-     * used by JavaScript clients right before an AJAX request is sent.
-     */
-    private static final class FlexibleCsrfTokenRequestHandler implements CsrfTokenRequestHandler {
-        private final CsrfTokenRequestAttributeHandler plain = new CsrfTokenRequestAttributeHandler();
-        private final XorCsrfTokenRequestAttributeHandler xor = new XorCsrfTokenRequestAttributeHandler();
-
-        @Override
-        public void handle(HttpServletRequest request, HttpServletResponse response, Supplier<CsrfToken> csrfToken) {
-            xor.handle(request, response, csrfToken);
-            csrfToken.get();
-        }
-
-        @Override
-        public String resolveCsrfTokenValue(HttpServletRequest request, CsrfToken csrfToken) {
-            String headerValue = request.getHeader(csrfToken.getHeaderName());
-            if (StringUtils.hasText(headerValue) && headerValue.equals(csrfToken.getToken())) {
-                return headerValue;
-            }
-
-            String maskedValue = xor.resolveCsrfTokenValue(request, csrfToken);
-            if (StringUtils.hasText(maskedValue)) {
-                return maskedValue;
-            }
-
-            return plain.resolveCsrfTokenValue(request, csrfToken);
-        }
     }
 }

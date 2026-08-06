@@ -19,7 +19,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * controllers and services. No Spring context needed.
  *
  * <p>Placed under service/ (rather than a mirrored util/ test directory) per this
- * track's assigned scope — see docs/AGENTIC_TEST_PLAN.md Track A.
+ * track's assigned scope — see docs/TESTING.md.
  */
 class FileUtilsTest {
 

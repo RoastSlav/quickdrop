@@ -46,18 +46,13 @@ __pycache__/
 ### Runtime / local files ###
 *.db
 *.log
-.claude/
+.claude/*
+!.claude/launch.json
 RELEASE_NOTES_*.md
 /coverage-badge.json
 
-### Local-only test/dev tooling (not for public repo) ###
-/scripts/
-/docs/AGENTIC_TEST_PLAN.md
+### Test findings stay local: reports may document open, unpatched vulnerabilities ###
 /docs/test-reports/
-/src/main/resources/application-e2e.properties
-/src/main/resources/application-e2e2.properties
-/src/main/resources/application-e2e3.properties
-/src/main/resources/application-e2e4.properties
 
 ### Graphify ###
 graphify-out/

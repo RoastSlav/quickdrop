@@ -1,6 +1,6 @@
 # QuickDrop — Agent Guide
 
-Self-hosted file sharing: Spring Boot 3.5 + Thymeleaf + SQLite (Flyway) + Tailwind. Java 21.
+Self-hosted file sharing: Spring Boot 4.1 + Thymeleaf + SQLite (Flyway, Hibernate community dialect) + Tailwind. Java 21.
 
 ## Build & run
 - Build: `./mvnw clean package` (Windows: `mvnw.cmd clean package`). Output: `target/quickdrop.jar`.

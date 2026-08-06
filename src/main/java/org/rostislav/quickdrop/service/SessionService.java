@@ -57,8 +57,35 @@ public class SessionService implements HttpSessionListener {
     @Lazy
     private AnalyticsService analyticsService;
 
+    /**
+     * Lazily injected for the same reason as {@code analyticsService} above: only needed at
+     * runtime when a session is created, not during servlet listener registration.
+     */
+    @Autowired
+    @Lazy
+    private ApplicationSettingsService applicationSettingsService;
+
     @Autowired
     private ConfigurableApplicationContext applicationContext;
+
+    /**
+     * Applies the currently configured session lifetime to every newly created HTTP session.
+     *
+     * <p>Read live from {@link ApplicationSettingsService} rather than baked in once at
+     * startup, so a change to "Session Lifetime" in the admin settings takes effect for the
+     * very next session created, without an app restart. {@code sessionLifetime} is stored in
+     * minutes; {@link HttpSession#setMaxInactiveInterval(int)} takes seconds.
+     *
+     * <p>Sessions already in progress keep whatever interval was set when they were created —
+     * only sessions created after the settings change pick up the new value.
+     *
+     * @param se the session event
+     */
+    @Override
+    public void sessionCreated(HttpSessionEvent se) {
+        long lifetimeMinutes = applicationSettingsService.getSessionLifetime();
+        se.getSession().setMaxInactiveInterval((int) (lifetimeMinutes * 60));
+    }
 
     /**
      * Removes admin and file session tokens when their HTTP session is invalidated or expires.

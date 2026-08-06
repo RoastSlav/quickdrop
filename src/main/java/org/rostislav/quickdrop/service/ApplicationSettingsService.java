@@ -8,11 +8,11 @@ import org.rostislav.quickdrop.storage.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
-import org.springframework.cloud.context.refresh.ContextRefresher;
+import org.springframework.cache.annotation.Caching;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.context.event.EventListener;
 import org.springframework.security.crypto.bcrypt.BCrypt;
@@ -38,15 +38,16 @@ import static org.rostislav.quickdrop.util.FileUtils.formatFileSize;
  * fully started ({@link #onApplicationReady()}) the cleanup schedule is
  * initialised with the persisted cron expression and max file lifetime.
  *
- * <p>{@link #updateApplicationSettings} evicts the cache, persists all changed
- * fields, updates the cleanup schedule, and triggers a Spring Cloud context refresh.
+ * <p>{@link #updateApplicationSettings} evicts the cache, persists all changed fields, and
+ * publishes a {@link SettingsChangedEvent} so anything that can't simply read this service
+ * live (a cached SDK client, a running scheduled task) can react.
  */
 @Service
 public class ApplicationSettingsService {
     private static final Logger logger = LoggerFactory.getLogger(ApplicationSettingsService.class);
 
     private final ApplicationSettingsRepository applicationSettingsRepository;
-    private final ContextRefresher contextRefresher;
+    private final ApplicationEventPublisher eventPublisher;
 
     /**
      * Self-reference for routing calls through the Spring AOP proxy.
@@ -56,12 +57,20 @@ public class ApplicationSettingsService {
     private ApplicationSettingsService self;
 
     /**
-     * Lazily injected {@link ScheduleService}.
+     * Lazily injected {@link ScheduleService}, needed only for the one-off initial schedule
+     * fired by {@link #onApplicationReady()} -- routine settings-change rescheduling is
+     * handled by {@link ScheduleService}'s own {@link SettingsChangedEvent} listener.
      */
     @Lazy
     @Autowired
     private ScheduleService scheduleService;
 
+    /**
+     * These four storage-backend services are used only by {@link #testS3Connection()} and
+     * {@link #testBackendConnection}, i.e. the admin panel's explicit "Test Connection"
+     * button -- not by settings-save propagation, which each service's own
+     * {@link SettingsChangedEvent} listener handles independently.
+     */
     @Lazy
     @Autowired
     private S3StorageService s3StorageService;
@@ -78,14 +87,10 @@ public class ApplicationSettingsService {
     @Autowired
     private WebDavStorageService webDavStorageService;
 
-    @Lazy
-    @Autowired
-    private StorageHealthService storageHealthService;
-
     public ApplicationSettingsService(ApplicationSettingsRepository applicationSettingsRepository,
-                                      @Qualifier("configDataContextRefresher") ContextRefresher contextRefresher) {
-        this.contextRefresher = contextRefresher;
+                                      ApplicationEventPublisher eventPublisher) {
         this.applicationSettingsRepository = applicationSettingsRepository;
+        this.eventPublisher = eventPublisher;
     }
 
     /**
@@ -243,8 +248,9 @@ public class ApplicationSettingsService {
     }
 
     /**
-     * Persists all settings from the view-model, evicts the settings cache, updates the
-     * cleanup schedule, and triggers a Spring Cloud context refresh.
+     * Persists all settings from the view-model, evicts the settings cache, and publishes a
+     * {@link SettingsChangedEvent} so the cleanup schedule, storage backend clients, and
+     * storage health check all pick up the change.
      *
      * <p>The SMTP password is only overwritten if a non-blank value is provided in the
      * view-model. When upload passwords are disabled, encryption is also disabled.
@@ -257,7 +263,17 @@ public class ApplicationSettingsService {
      * @param logoFile    optional new logo image to store
      * @param clearLogo   if {@code true}, removes the current custom logo
      */
-    @CacheEvict(value = "applicationSettings", allEntries = true, beforeInvocation = true)
+    // Evicted both before AND after the method body: beforeInvocation guarantees a clean
+    // cache even if a mid-method failure means save() never runs; the second (default,
+    // post-invocation-only) eviction closes a race where a concurrent cache-populating read
+    // -- e.g. StorageHealthService's async post-save health recheck, triggered by the
+    // SettingsChangedEvent this method publishes below -- lands in the window between this
+    // call's beforeInvocation eviction and its own save(), repopulating the cache with the
+    // pre-update row. Evicting once more after save() flushes that stale entry back out.
+    @Caching(evict = {
+            @CacheEvict(value = "applicationSettings", allEntries = true, beforeInvocation = true),
+            @CacheEvict(value = "applicationSettings", allEntries = true)
+    })
     public void updateApplicationSettings(ApplicationSettingsViewModel settings, String appPassword, MultipartFile logoFile, boolean clearLogo) {
         ApplicationSettingsEntity entity = applicationSettingsRepository.findById(1L).orElseThrow();
         entity.setMaxFileSize(settings.getMaxFileSize());
@@ -433,19 +449,10 @@ public class ApplicationSettingsService {
         }
 
         applicationSettingsRepository.save(entity);
-        scheduleService.updateSchedule(entity.getFileDeletionCron(), entity.getMaxFileLifeTime());
-        if (entity.getStorageBackend() == StorageBackend.S3) {
-            s3StorageService.refreshClient();
-        } else if (entity.getStorageBackend() == StorageBackend.AZURE) {
-            azureStorageService.refreshClient();
-        } else if (entity.getStorageBackend() == StorageBackend.WEBDAV) {
-            webDavStorageService.refreshClient();
-        }
-        // Immediately re-probe health after any settings save so a backend change
-        // (e.g. S3 → LOCAL) takes effect without waiting up to 30 s for the next
-        // scheduled cycle.
-        storageHealthService.recheck();
-        contextRefresher.refresh();
+        // Carries the just-saved entity rather than letting listeners read it back through
+        // getApplicationSettings() -- see SettingsChangedEvent's javadoc for why that would
+        // be a race against this method's beforeInvocation cache eviction.
+        eventPublisher.publishEvent(new SettingsChangedEvent(entity));
     }
 
     /**

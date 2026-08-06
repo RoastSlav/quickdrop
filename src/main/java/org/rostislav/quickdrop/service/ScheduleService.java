@@ -8,6 +8,7 @@ import org.rostislav.quickdrop.repository.UploadRepository;
 import org.rostislav.quickdrop.storage.StorageService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.event.EventListener;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -27,8 +28,8 @@ import java.util.concurrent.ScheduledFuture;
  * <ol>
  *   <li><strong>Dynamic cleanup job</strong> — runs on a user-configurable cron expression
  *       (set in application settings) and deletes files older than the configured
- *       {@code maxFileLifeTime}. The schedule can be updated at runtime without a
- *       restart via {@link #updateSchedule(String, long)}.</li>
+ *       {@code maxFileLifeTime}. Rescheduled at runtime, without an app restart, via
+ *       {@link #onSettingsChanged} whenever the admin saves new settings.</li>
  *   <li><strong>Fixed maintenance jobs</strong> — run on hardcoded cron expressions:
  *     <ul>
  *       <li>03:00 daily — {@link #cleanDatabaseFromDeletedFiles()}: soft-deletes records
@@ -81,6 +82,16 @@ public class ScheduleService {
         this.applicationSettingsService = applicationSettingsService;
         this.storageService = storageService;
         this.scheduleTransactionHelper = scheduleTransactionHelper;
+    }
+
+    /**
+     * Reschedules the dynamic cleanup job whenever the admin saves new settings.
+     *
+     * @param event carries the just-saved settings entity
+     */
+    @EventListener
+    public void onSettingsChanged(SettingsChangedEvent event) {
+        updateSchedule(event.settings().getFileDeletionCron(), event.settings().getMaxFileLifeTime());
     }
 
     /**

@@ -1,46 +1,48 @@
 package org.rostislav.quickdrop.config;
 
 import jakarta.servlet.MultipartConfigElement;
+import org.rostislav.quickdrop.service.ApplicationSettingsService;
 import org.springframework.boot.web.embedded.tomcat.TomcatServletWebServerFactory;
 import org.springframework.boot.web.server.WebServerFactoryCustomizer;
-import org.springframework.boot.web.servlet.MultipartConfigFactory;
-import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.util.unit.DataSize;
 
 /**
  * Configures the multipart file-upload limits to match the value stored in
  * application settings.
  *
- * <p>The bean is annotated with {@link RefreshScope}.
- * The max request size is set to {@code maxFileSize + 10 MB}.
+ * <p>{@code getMaxFileSize()}/{@code getMaxRequestSize()} are overridden to read
+ * {@link ApplicationSettingsService} live -- Tomcat calls these per request during part
+ * parsing, so a settings change takes effect on the very next upload with no bean
+ * recreation or app restart needed. The max request size is {@code maxFileSize + 10 MB}.
  */
 @Configuration
 public class MultipartConfig {
     /**
      * Extra bytes added on top of the max file size to cover form field overhead.
      */
-    private final long ADDITIONAL_REQUEST_SIZE = 1024L * 1024L * 10L; // 10 MB
+    private static final long ADDITIONAL_REQUEST_SIZE = 1024L * 1024L * 10L; // 10 MB
 
     /**
-     * Creates the multipart configuration element with limits read from {@link MultipartProperties}.
+     * Creates the multipart configuration element with limits read live from
+     * {@link ApplicationSettingsService} on every call.
      *
-     * @param multipartProperties provides the dynamically resolved max file size
+     * @param settings provides the dynamically resolved max file size
      * @return the configured {@link MultipartConfigElement}
      */
     @Bean
-    @RefreshScope
-    public MultipartConfigElement multipartConfigElement(MultipartProperties multipartProperties) {
-        MultipartConfigFactory factory = new MultipartConfigFactory();
+    public MultipartConfigElement multipartConfigElement(ApplicationSettingsService settings) {
+        return new MultipartConfigElement(null, -1L, -1L, 0) {
+            @Override
+            public long getMaxFileSize() {
+                return settings.getMaxFileSize();
+            }
 
-        factory.setMaxFileSize(DataSize.parse(multipartProperties.getMaxFileSize()));
-
-        DataSize maxRequestSize = DataSize.parse(multipartProperties.getMaxFileSize());
-        maxRequestSize = DataSize.ofBytes(maxRequestSize.toBytes() + ADDITIONAL_REQUEST_SIZE);
-        factory.setMaxRequestSize(maxRequestSize);
-
-        return factory.createMultipartConfig();
+            @Override
+            public long getMaxRequestSize() {
+                return settings.getMaxFileSize() + ADDITIONAL_REQUEST_SIZE;
+            }
+        };
     }
 
     /**

@@ -4,10 +4,7 @@ import org.rostislav.quickdrop.interceptor.AdminPasswordInterceptor;
 import org.rostislav.quickdrop.interceptor.AdminPasswordSetupInterceptor;
 import org.rostislav.quickdrop.interceptor.FilePasswordInterceptor;
 import org.rostislav.quickdrop.interceptor.RateLimitInterceptor;
-import org.rostislav.quickdrop.service.ApplicationSettingsService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.web.servlet.ServletContextInitializer;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.CacheControl;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
@@ -18,7 +15,11 @@ import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Spring MVC web configuration: interceptors, session timeout, and resource handlers.
+ * Spring MVC web configuration: interceptors and resource handlers.
+ *
+ * <p>Session timeout is applied per-session by {@link org.rostislav.quickdrop.service.SessionService#sessionCreated}
+ * rather than here, so a settings change takes effect for the next session created without
+ * an app restart.
  *
  * <p>Three interceptors are registered in priority order:
  * <ol>
@@ -38,15 +39,13 @@ public class WebConfig implements WebMvcConfigurer {
 
     private final AdminPasswordSetupInterceptor adminPasswordSetupInterceptor;
     private final AdminPasswordInterceptor adminPasswordInterceptor;
-    private final ApplicationSettingsService applicationSettingsService;
     private final FilePasswordInterceptor filePasswordInterceptor;
     private final RateLimitInterceptor rateLimitInterceptor;
 
     @Autowired
-    public WebConfig(AdminPasswordSetupInterceptor adminPasswordSetupInterceptor, AdminPasswordInterceptor adminPasswordInterceptor, ApplicationSettingsService applicationSettingsService, FilePasswordInterceptor filePasswordInterceptor, RateLimitInterceptor rateLimitInterceptor) {
+    public WebConfig(AdminPasswordSetupInterceptor adminPasswordSetupInterceptor, AdminPasswordInterceptor adminPasswordInterceptor, FilePasswordInterceptor filePasswordInterceptor, RateLimitInterceptor rateLimitInterceptor) {
         this.adminPasswordSetupInterceptor = adminPasswordSetupInterceptor;
         this.adminPasswordInterceptor = adminPasswordInterceptor;
-        this.applicationSettingsService = applicationSettingsService;
         this.filePasswordInterceptor = filePasswordInterceptor;
         this.rateLimitInterceptor = rateLimitInterceptor;
     }
@@ -74,16 +73,6 @@ public class WebConfig implements WebMvcConfigurer {
 
         registry.addInterceptor(rateLimitInterceptor)
                 .addPathPatterns("/file/password", "/admin/password", "/share/**");
-    }
-
-    /**
-     * Applies the session timeout from application settings.
-     *
-     * @return a {@link ServletContextInitializer} that sets the session timeout
-     */
-    @Bean
-    public ServletContextInitializer servletContextInitializer() {
-        return servletContext -> servletContext.setSessionTimeout((int) applicationSettingsService.getSessionLifetime());
     }
 
     /**

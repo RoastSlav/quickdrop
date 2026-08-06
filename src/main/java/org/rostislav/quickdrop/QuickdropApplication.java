@@ -37,6 +37,7 @@ public class QuickdropApplication {
     public static void main(String[] args) {
         try {
             Files.createDirectories(Path.of("./db"));
+            Files.createDirectories(Path.of("./db-backups"));
         } catch (Exception e) {
             logger.error("Error creating directory for database", e);
         }

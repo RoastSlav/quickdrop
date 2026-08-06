@@ -172,8 +172,8 @@ expression is validated client-side before the form can be saved.
 | Layer           | Technology                                                    |
 |-----------------|---------------------------------------------------------------|
 | Language        | Java 21                                                       |
-| Framework       | Spring Boot 3.5.x (Web/MVC, Security, Actuator)               |
-| ORM             | Spring Data JPA + Hibernate 6.6                               |
+| Framework       | Spring Boot 4.1.x (Web/MVC, Security, Actuator)               |
+| ORM             | Spring Data JPA + Hibernate 7.4                               |
 | Database        | SQLite via Hibernate Community Dialects                       |
 | Connection pool | HikariCP                                                      |
 | Migrations      | Flyway                                                        |

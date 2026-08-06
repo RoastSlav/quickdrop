@@ -7,6 +7,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.rostislav.quickdrop.entity.StoredFile;
 import org.rostislav.quickdrop.entity.Upload;
 import org.rostislav.quickdrop.model.EventType;
+import org.springframework.boot.restclient.RestTemplateBuilder;
 import org.springframework.context.MessageSource;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -34,7 +35,7 @@ class NotificationServiceTest {
         // message text rather than null, since no real i18n bundle is loaded here.
         lenient().when(messageSource.getMessage(anyString(), any(), anyString(), any()))
                 .thenAnswer(inv -> inv.getArgument(2));
-        return new NotificationService(settings, messageSource);
+        return new NotificationService(settings, messageSource, new RestTemplateBuilder());
     }
 
     private Upload someFile() {

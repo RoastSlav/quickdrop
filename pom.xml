@@ -61,6 +61,14 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
+        <!-- As of Boot 4, RestTemplate/RestTemplateBuilder auto-configuration is its own
+             module rather than bundled into spring-boot-starter-web; needed so
+             NotificationService's RestTemplateBuilder picks up HttpClientConfig's SSRF
+             filter via the shared HttpClientSettings bean. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-restclient</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-mail</artifactId>

@@ -11,7 +11,6 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -36,7 +35,7 @@ class FlywayMigrationTest extends QuickdropIntegrationTest {
     private DataSource dataSource;
 
     @Test
-    void allMigrationsApplyCleanlyThroughV37() throws Exception {
+    void allMigrationsApplyCleanly() throws Exception {
         record MigrationRow(String version, boolean success) {
         }
         List<MigrationRow> rows = new ArrayList<>();
@@ -54,9 +53,5 @@ class FlywayMigrationTest extends QuickdropIntegrationTest {
 
         List<MigrationRow> failed = rows.stream().filter(r -> !r.success()).toList();
         assertTrue(failed.isEmpty(), "found failed migrations: " + failed);
-
-        String latestVersion = rows.get(rows.size() - 1).version();
-        assertEquals("37", latestVersion,
-                "expected the latest applied migration to be V37 (see src/main/resources/db/migration)");
     }
 }

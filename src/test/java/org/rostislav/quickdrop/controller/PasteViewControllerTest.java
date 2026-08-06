@@ -3,7 +3,6 @@ package org.rostislav.quickdrop.controller;
 import org.junit.jupiter.api.Test;
 import org.rostislav.quickdrop.entity.Paste;
 import org.rostislav.quickdrop.entity.StoredFile;
-import org.rostislav.quickdrop.support.FixtureFiles;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.annotation.DirtiesContext;
 
@@ -148,28 +147,32 @@ class PasteViewControllerTest extends ControllerTestSupport {
     }
 
     /**
-     * Regression check for the paste XSS fix: the raw payload is stored as-is (sanitization
-     * is client-side via DOMPurify, per the plan). This confirms the server does not itself
-     * execute or reject the markup -- it is not, by itself, evidence of a vulnerability.
+     * The other tests in this class use {@link ControllerTestSupport#createPaste} to seed
+     * pastes directly, bypassing the real {@code POST /file/paste} endpoint entirely. This is
+     * the only test that goes through that endpoint and checks what actually reaches disk:
+     * that content isn't escaped, re-encoded, or otherwise mangled on the way in. Content
+     * sanitization for display is a client-side concern (DOMPurify) and is not what this
+     * asserts -- markup surviving verbatim is the expected, correct behavior here, not a
+     * vulnerability.
      */
     @Test
-    void createPaste_xssPayload_isStoredVerbatim() throws Exception {
+    void createPaste_viaRealEndpoint_persistsContentVerbatim() throws Exception {
         ensureAdminPasswordSet();
-        String xssContent = FixtureFiles.readFixtureText("xss-payload.svg");
+        String content = "<script>alert(1)</script> & \"quotes\" & 'apostrophes' & unicode: üñî";
 
         mockMvc.perform(post("/file/paste").with(csrf())
-                        .param("title", "xss-test")
-                        .param("content", xssContent)
+                        .param("title", "verbatim-test")
+                        .param("content", content)
                         .param("syntax", "text"))
                 .andExpect(status().is3xxRedirection());
 
         var all = pasteRepository.findAll();
         Paste stored = all.stream()
-                .filter(p -> "xss-test.txt".equals(p.name))
+                .filter(p -> "verbatim-test.txt".equals(p.name))
                 .max(java.util.Comparator.comparing(p -> p.id))
                 .orElseThrow();
         String storedContent = java.nio.file.Files.readString(storageDir.resolve(stored.uuid));
-        assertEquals(xssContent, storedContent);
+        assertEquals(content, storedContent);
     }
 
     // -- POST /file/paste/edit/{uuid} --------------------------------------------

@@ -99,28 +99,17 @@ class StorageMigrationControllerTest extends ControllerTestSupport {
     }
 
     /**
-     * FINDING (genuine production bug, not a test bug -- kept failing intentionally per the
-     * task instructions rather than weakened): {@code StorageMigrationController#testBackend}
-     * guards the "no host/URL configured" case with
-     * {@code if (endpointToCheck != null && endpointToCheck.isBlank())}. When S3 has never been
-     * configured, {@code ApplicationSettingsService#getS3Endpoint()} returns {@code null} (the
-     * real default -- see ApplicationSettingsService#initSettings(), which never seeds
-     * s3Endpoint), so {@code endpointToCheck != null} is false and this guard is silently
-     * skipped entirely (it only catches "configured but blank", not "never configured"). The
-     * same is true for the {@code !isSafeEndpoint(...)} guard immediately below it. Execution
-     * falls through to {@code applicationSettingsService.testBackendConnection(S3)} ->
-     * {@code S3StorageService.buildClient()}, which calls
-     * {@code AwsBasicCredentials.create(null, null)} and throws an uncaught
-     * {@code NullPointerException("Access key ID cannot be blank.")}, surfacing as an unhandled
-     * 500 instead of the intended graceful 400 "No host or URL configured for this backend."
-     * The same bug pattern applies to WEBDAV/SFTP, whose blank-check has the same
-     * {@code != null &&} short-circuit.
-     * <p>
-     * Repro: fresh install (S3 never configured), admin session,
-     * {@code GET /admin/api/test-backend?backend=S3} -> 500 instead of 400.
-     * <p>
-     * Expected fix (not applied here per the "don't edit src/main/java" rule): change both
-     * guards to {@code endpointToCheck == null || endpointToCheck.isBlank()}.
+     * Regression guard for a fixed NPE: {@code StorageMigrationController#testBackend} now
+     * treats "never configured" (a {@code null} endpoint -- the real default for a backend
+     * that has never been saved, per {@code ApplicationSettingsService#initSettings()}) and
+     * "configured but blank" as the same case, via
+     * {@code endpointToCheck == null || endpointToCheck.isBlank()}. Previously the guard was
+     * {@code endpointToCheck != null && endpointToCheck.isBlank()}, which silently skipped
+     * validation for a never-configured backend and fell through to
+     * {@code S3StorageService.buildClient()} -> {@code AwsBasicCredentials.create(null, null)},
+     * throwing an uncaught NPE that surfaced as a 500 instead of the intended 400. Same pattern
+     * applied to WEBDAV/SFTP. If this guard regresses to the narrower {@code != null &&} form,
+     * this test starts failing with a 500 instead of the expected 400.
      */
     @Test
     void testBackend_s3WithoutEndpointConfigured_returns400() throws Exception {

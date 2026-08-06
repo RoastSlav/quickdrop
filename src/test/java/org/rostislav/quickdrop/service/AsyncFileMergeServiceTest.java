@@ -114,25 +114,22 @@ class AsyncFileMergeServiceTest extends QuickdropIntegrationTest {
     @Test
     @Timeout(30)
     void duplicateChunkSubmissionIsDroppedNotDuplicated() throws Exception {
-        // FINDING (genuine production bug, not a test-assumption error): temp chunk
-        // files are named purely by "{taskKey}_chunk_{chunkNumber}" with no
-        // per-attempt uniqueness (AsyncFileMergeService.submitChunk / MergeTask). When
-        // a duplicate of a chunk that hasn't been drained yet (i.e. arrived out of
-        // order and is still parked in MergeTask.pendingChunks) is submitted, the
-        // dedup path in MergeTask.enqueueChunk() deletes "chunkInfo.chunkFile" by
-        // path -- which is the SAME on-disk file the still-pending original ChunkInfo
-        // will later try to read. That later read throws FileNotFoundException and
-        // fails the ENTIRE merge task (the whole upload is lost), instead of the
-        // duplicate being harmlessly dropped as the "Fix 2: dedup tracker" comment in
-        // the source intends.
+        // Regression guard for a fixed bug: temp chunk files are now named
+        // "{taskKey}_chunk_{chunkNumber}_{UUID}" (per-attempt-unique), not just
+        // "{taskKey}_chunk_{chunkNumber}". Previously, a duplicate submission of a chunk
+        // that hadn't been drained yet (still parked in MergeTask.pendingChunks) would have
+        // its dedup path in MergeTask.enqueueChunk() delete "chunkInfo.chunkFile" by path --
+        // the SAME on-disk file the still-pending original ChunkInfo would later try to read,
+        // throwing FileNotFoundException and failing the entire merge task (the whole upload
+        // lost), instead of the duplicate being harmlessly dropped. The per-attempt UUID
+        // means the duplicate's file is now distinct from the pending original's, so deleting
+        // it can't affect the original's read.
         //
-        // Repro: totalChunks=3; submit chunk index 1 (parked, not yet drained since
+        // Scenario: totalChunks=3; submit chunk index 1 (parked, not yet drained since
         // nextExpectedChunk=0); submit chunk index 1 AGAIN (duplicate); submit chunk
-        // index 0 (this drains both 0 and 1 -- chunk 1's file is now missing); submit
-        // chunk index 2 (final). Expected: upload completes with content "AAABBBCCC".
-        // Actual: submitChunk on the final chunk throws IOException("Merge task
-        // failed") wrapping a FileNotFoundException on "..._chunk_1", and the whole
-        // upload is silently discarded.
+        // index 0 (this drains both 0 and 1); submit chunk index 2 (final). Expected (and
+        // now actual): upload completes with content "AAABBBCCC". If the per-attempt
+        // uniqueness regresses, this starts throwing IOException("Merge task failed") again.
         String uploadId = UUID.randomUUID().toString();
         UploadRequest request = baseRequest(uploadId, "dup.txt", 3, 9);
 
@@ -141,7 +138,7 @@ class AsyncFileMergeServiceTest extends QuickdropIntegrationTest {
         asyncFileMergeService.submitChunk(request, chunk("AAA".getBytes(StandardCharsets.UTF_8)), 0, false);
         Upload result = asyncFileMergeService.submitChunk(request, chunk("CCC".getBytes(StandardCharsets.UTF_8)), 2, true);
 
-        assertNotNull(result, "the upload must complete despite the duplicate submission -- see FINDING comment above");
+        assertNotNull(result, "the upload must complete despite the duplicate submission -- see comment above");
         byte[] storedBytes = readStoredBytes(result.uuid);
         assertEquals("AAABBBCCC", new String(storedBytes, StandardCharsets.UTF_8),
                 "a duplicate chunk submission must not be written twice, and must not destroy the still-pending original");

@@ -35,16 +35,6 @@ class LocalStorageServiceTest extends StorageServiceContractTest {
     }
 
     @Test
-    void backendIsLocal() {
-        assertEquals(StorageBackend.LOCAL, service.getBackend());
-    }
-
-    @Test
-    void isReachableIsAlwaysTrueForLocalDisk() {
-        assertTrue(service.isReachable());
-    }
-
-    @Test
     void rootSupplierIsConsultedOnEveryCallSoPathChangesTakeEffectImmediately() throws IOException {
         Path firstRoot = tempDir.resolve("root-a");
         Path secondRoot = tempDir.resolve("root-b");

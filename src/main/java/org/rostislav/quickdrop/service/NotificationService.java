@@ -47,12 +47,13 @@ public class NotificationService {
     private final java.util.concurrent.BlockingDeque<String> pendingMessages =
             new java.util.concurrent.LinkedBlockingDeque<>(10_000);
     private final Object schedulerLock = new Object();
-    private final ExecutorService notificationExecutor = Executors.newSingleThreadExecutor(r -> {
-        Thread t = new Thread(r);
-        t.setDaemon(true);
-        t.setName("notification-dispatch");
-        return t;
-    });
+    // Virtual-thread-per-task rather than a fixed single thread: dispatched notifications
+    // (a Discord webhook POST, an SMTP send) are independent and order-insensitive -- nothing
+    // here relies on the old single-thread executor's incidental serialization -- so this is
+    // a pure win, letting a burst of notifications proceed concurrently instead of queuing
+    // behind whichever one is currently blocked on a slow network call.
+    private final ExecutorService notificationExecutor =
+            Executors.newThreadPerTaskExecutor(Thread.ofVirtual().name("notification-dispatch-", 0).factory());
     private volatile long lastFlushEpochMillis = System.currentTimeMillis();
     private ScheduledExecutorService scheduler;
 

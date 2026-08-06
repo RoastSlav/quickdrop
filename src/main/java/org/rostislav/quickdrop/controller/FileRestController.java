@@ -1,6 +1,5 @@
 package org.rostislav.quickdrop.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import org.rostislav.quickdrop.entity.ShareTokenEntity;
 import org.rostislav.quickdrop.entity.Upload;
@@ -15,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.io.IOException;
 import java.net.URI;
@@ -54,7 +54,7 @@ import static org.springframework.http.ResponseEntity.ok;
 @RequestMapping("/api/file")
 public class FileRestController {
     private static final Logger logger = LoggerFactory.getLogger(FileRestController.class);
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private static final JsonMapper OBJECT_MAPPER = JsonMapper.builder().build();
     private final FileQueryService fileQueryService;
     private final FileLifecycleService fileLifecycleService;
     private final FileDownloadService fileDownloadService;

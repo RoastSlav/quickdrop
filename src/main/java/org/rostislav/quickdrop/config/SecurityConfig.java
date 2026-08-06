@@ -118,7 +118,7 @@ public class SecurityConfig {
     public AuthorizationManager<RequestAuthorizationContext> appPasswordGate() {
         AuthorizationManager<RequestAuthorizationContext> authenticated = AuthenticatedAuthorizationManager.authenticated();
         return (authentication, context) -> applicationSettingsService.isAppPasswordEnabled()
-                ? authenticated.check(authentication, context)
+                ? authenticated.authorize(authentication, context)
                 : new AuthorizationDecision(true);
     }
 

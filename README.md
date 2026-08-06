@@ -31,27 +31,33 @@ restart required for configuration changes.
 
 ## Screenshots
 
-<img width="1691" height="943" alt="Upload page" src="https://github.com/user-attachments/assets/16125ad7-98bf-4353-b779-4cd35932e1c4" />
+<img width="2116" height="1155" alt="image" src="https://github.com/user-attachments/assets/d3f8c350-f368-4182-b5ec-886be4dfd27f" />
 
 *Upload page — drag-and-drop with configurable size limit, retention period, and encryption status.*
 
-<img width="1703" height="943" alt="File view page" src="https://github.com/user-attachments/assets/3b65b8bc-45fc-44bc-8e7a-cb52524261b4" />
+<img width="2175" height="1308" alt="image" src="https://github.com/user-attachments/assets/3d687b60-b3ac-4f62-ae09-8f56dad14176" />
 
 *File view page — download, renew, and generate a share link with expiry and download limits.*
 
-<img width="1686" height="945" alt="Share link recipient view" src="https://github.com/user-attachments/assets/4ef1a580-c89a-49d6-b565-77913871ca2a" />
+<img width="2175" height="1303" alt="image" src="https://github.com/user-attachments/assets/ed502d6b-1087-4f9a-8411-bed7f04c5af5" />
+
+*File list view - view all upload non-hidden files. Can be disabled in the settings*
+
+<img width="2217" height="1300" alt="image" src="https://github.com/user-attachments/assets/9e1cb812-0a67-4a52-a234-f33518433ff8" />
 
 *Share link recipient view — clean download page, no password required.*
 
-<img width="1667" height="944" alt="Admin dashboard" src="https://github.com/user-attachments/assets/599812fd-f3a5-49b8-9bfa-b010be3caffc" />
+<img width="2148" height="1299" alt="image" src="https://github.com/user-attachments/assets/2e903985-bf93-48b0-afe8-b86882d73a4b" />
 
 *Admin dashboard — aggregate stats for files and pastes, with quick links to all management pages.*
 
-<img width="1695" height="942" alt="Admin settings" src="https://github.com/user-attachments/assets/0e5abc59-36ed-48ee-8afe-eecaf54f8b9a" />
+<img width="2194" height="1305" alt="image" src="https://github.com/user-attachments/assets/c3a7290a-5c1a-4771-b316-e59504ee2fcc" />
 
 *Admin settings — all configuration in one place, applied instantly without a restart.*
 
+<img width="2116" height="1302" alt="image" src="https://github.com/user-attachments/assets/13117bd0-fcbb-49f5-89ad-a63b46d7c194" />
 
+*Activity - all activity that has happened in the app.*
 ---
 
 ## Features

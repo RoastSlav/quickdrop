@@ -5,6 +5,7 @@ import org.rostislav.quickdrop.entity.Upload;
 import org.rostislav.quickdrop.model.EventType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.restclient.RestTemplateBuilder;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
@@ -12,6 +13,7 @@ import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.*;
 
@@ -32,18 +34,16 @@ import static org.rostislav.quickdrop.util.DataValidator.safeString;
 public class NotificationService {
     private static final Logger logger = LoggerFactory.getLogger(NotificationService.class);
     private static final long DEFAULT_FLUSH_POLL_SECONDS = 60;
-    private static final RestTemplate REST_TEMPLATE;
-
-    static {
-        org.springframework.http.client.SimpleClientHttpRequestFactory factory =
-                new org.springframework.http.client.SimpleClientHttpRequestFactory();
-        factory.setConnectTimeout(5_000);
-        factory.setReadTimeout(10_000);
-        REST_TEMPLATE = new RestTemplate(factory);
-    }
 
     private final ApplicationSettingsService applicationSettingsService;
     private final MessageSource messageSource;
+    /**
+     * Built from the Spring-managed {@link RestTemplateBuilder} (rather than constructed
+     * directly) so it picks up the app-wide {@code HttpClientSettings}, including the
+     * {@link org.rostislav.quickdrop.config.HttpClientConfig#outboundHttpClientAddressFilter()}
+     * SSRF filter -- a hand-built {@code RestTemplate} would bypass that auto-configuration.
+     */
+    private final RestTemplate restTemplate;
     private final java.util.concurrent.BlockingDeque<String> pendingMessages =
             new java.util.concurrent.LinkedBlockingDeque<>(10_000);
     private final Object schedulerLock = new Object();
@@ -56,9 +56,14 @@ public class NotificationService {
     private volatile long lastFlushEpochMillis = System.currentTimeMillis();
     private ScheduledExecutorService scheduler;
 
-    public NotificationService(ApplicationSettingsService applicationSettingsService, MessageSource messageSource) {
+    public NotificationService(ApplicationSettingsService applicationSettingsService, MessageSource messageSource,
+                               RestTemplateBuilder restTemplateBuilder) {
         this.applicationSettingsService = applicationSettingsService;
         this.messageSource = messageSource;
+        this.restTemplate = restTemplateBuilder
+                .connectTimeout(Duration.ofSeconds(5))
+                .readTimeout(Duration.ofSeconds(10))
+                .build();
     }
 
     /**
@@ -244,7 +249,7 @@ public class NotificationService {
             return;
         }
         try {
-            REST_TEMPLATE.postForEntity(webhookUrl, Map.of("content", content), Void.class);
+            restTemplate.postForEntity(webhookUrl, Map.of("content", content), Void.class);
         } catch (Exception e) {
             logger.warn("Discord notification failed: {}", e.getMessage());
         }
@@ -267,7 +272,7 @@ public class NotificationService {
         }
 
         try {
-            REST_TEMPLATE.postForEntity(url, Map.of("content", "QuickDrop notification test (Discord)"), Void.class);
+            restTemplate.postForEntity(url, Map.of("content", "QuickDrop notification test (Discord)"), Void.class);
             return NotificationTestResult.success(messageSource.getMessage("page.settings.notifications.discord.success", null, "Discord test notification sent.", LocaleContextHolder.getLocale()));
         } catch (Exception e) {
             logger.warn("Discord test notification failed: {}", e.getMessage());

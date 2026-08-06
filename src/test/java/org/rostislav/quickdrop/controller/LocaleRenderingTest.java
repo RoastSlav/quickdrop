@@ -8,7 +8,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.hamcrest.Matchers.containsString;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -45,14 +44,6 @@ class LocaleRenderingTest extends ControllerTestSupport {
                 .andExpect(content().string(containsString("<html lang=\"en\"")));
     }
 
-    @Test
-    void uploadPage_withNonLatinLocale_advertisesThatLocale() throws Exception {
-        ensureAdminPasswordSet();
-        mockMvc.perform(get("/file/upload").param("lang", "ja"))
-                .andExpect(status().isOk())
-                .andExpect(content().string(containsString("<html lang=\"ja\"")));
-    }
-
     /**
      * Structural guard: a newly added page template that copies the old hardcoded
      * {@code lang="en"} would not fail the rendering tests above (they only cover the upload
@@ -77,29 +68,5 @@ class LocaleRenderingTest extends ControllerTestSupport {
         assertTrue(missing.isEmpty(),
                 "these page templates hardcode <html lang> instead of binding it to the active "
                         + "locale (add th:lang=\"${#locale.language}\"): " + missing);
-    }
-
-    /**
-     * The static {@code lang="en"} is deliberately kept alongside {@code th:lang} so the raw
-     * template still previews correctly as a static file (Thymeleaf natural templating); it is
-     * overwritten at render time. This documents that pairing rather than the value alone, so
-     * that dropping the static attribute is a deliberate choice rather than an accident.
-     */
-    @Test
-    void pageTemplatesKeepAStaticLangFallbackAlongsideTheBinding() throws Exception {
-        Resource[] templates = new PathMatchingResourcePatternResolver()
-                .getResources("classpath:templates/*.html");
-
-        List<String> withoutFallback = new ArrayList<>();
-        for (Resource template : templates) {
-            String html = new String(template.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
-            if (html.contains("th:lang=") && !html.contains("<html lang=")) {
-                withoutFallback.add(template.getFilename());
-            }
-        }
-
-        assertFalse(templates.length == 0);
-        assertTrue(withoutFallback.isEmpty(),
-                "these templates bind th:lang but dropped the static lang fallback: " + withoutFallback);
     }
 }

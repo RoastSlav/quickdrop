@@ -12,15 +12,14 @@ import org.springframework.test.util.ReflectionTestUtils;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
- * Characterization tests for "does a settings-page change actually take effect without a
- * restart" -- the behaviour docs/MODERNIZATION_PLAN.md's Part 1 refactors. These pin the
- * intended contract regardless of *how* it's implemented underneath, so they keep passing
- * across that refactor.
+ * Regression guards for "does a settings-page change actually take effect without a restart."
+ * These pin the intended contract regardless of *how* it's implemented underneath, so a future
+ * refactor of the settings-propagation path can't silently reintroduce a restart requirement.
  *
- * <p>{@code sessionCreated_appliesCurrentSessionLifetimeInSeconds} is the one exception: it
- * currently fails, because {@code WebConfig}'s {@code ServletContextInitializer} only ever
- * applies the session lifetime once at startup and {@link SessionService} doesn't yet apply
- * it per-session. It's included now, failing, as the regression guard for that fix.
+ * <p>{@code sessionCreated_appliesCurrentSessionLifetimeInSeconds} in particular guards a fixed
+ * bug: {@code WebConfig}'s {@code ServletContextInitializer} only ever applied the session
+ * lifetime once at startup, so a settings change had no effect until the app restarted.
+ * {@link SessionService#sessionCreated} now reads the setting live for every new session.
  */
 class SettingsPropagationTest extends QuickdropIntegrationTest {
 

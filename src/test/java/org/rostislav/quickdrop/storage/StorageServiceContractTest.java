@@ -81,13 +81,10 @@ abstract class StorageServiceContractTest {
         assertTrue(storageService().delete("to-delete"));
 
         assertFalse(storageService().exists("to-delete"));
-    }
-
-    @Test
-    void deletingTwiceIsStillSuccessful() throws IOException {
-        store("delete-twice", "content");
-        assertTrue(storageService().delete("delete-twice"));
-        assertTrue(storageService().delete("delete-twice"), "second delete of an already-gone key must still report success");
+        // A retried delete against a key that WAS present (as opposed to
+        // deleteOfMissingKeyIsIdempotentSuccess's never-existed case) must be just as
+        // idempotent -- this is the shape a failed migration retry actually takes.
+        assertTrue(storageService().delete("to-delete"), "second delete of a just-deleted key must still report success");
     }
 
     @Test

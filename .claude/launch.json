@@ -1,0 +1,35 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "quickdrop",
+      "runtimeExecutable": "C:\\Programming\\quickdrop\\mvnw.cmd",
+      "runtimeArgs": ["spring-boot:run"],
+      "port": 8080
+    },
+    {
+      "name": "quickdrop-e2e",
+      "runtimeExecutable": "C:\\Programming\\quickdrop\\mvnw.cmd",
+      "runtimeArgs": ["spring-boot:run", "-Dspring-boot.run.profiles=e2e"],
+      "port": 8081
+    },
+    {
+      "name": "quickdrop-e2e2",
+      "runtimeExecutable": "C:\\Programming\\quickdrop\\mvnw.cmd",
+      "runtimeArgs": ["spring-boot:run", "-Dspring-boot.run.profiles=e2e2"],
+      "port": 8082
+    },
+    {
+      "name": "quickdrop-e2e3",
+      "runtimeExecutable": "C:\\Programming\\quickdrop\\mvnw.cmd",
+      "runtimeArgs": ["spring-boot:run", "-Dspring-boot.run.profiles=e2e3"],
+      "port": 8083
+    },
+    {
+      "name": "quickdrop-e2e4",
+      "runtimeExecutable": "C:\\Programming\\quickdrop\\mvnw.cmd",
+      "runtimeArgs": ["spring-boot:run", "-Dspring-boot.run.profiles=e2e4"],
+      "port": 8084
+    }
+  ]
+}

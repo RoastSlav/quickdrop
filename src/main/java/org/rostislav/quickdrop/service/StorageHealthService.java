@@ -53,6 +53,15 @@ public class StorageHealthService {
     }
 
     /**
+     * Re-probes immediately after any settings save, so a backend change (e.g. S3 → LOCAL)
+     * takes effect without waiting up to 30 s for the next scheduled cycle.
+     */
+    @EventListener
+    public void onSettingsChanged(SettingsChangedEvent event) {
+        recheck();
+    }
+
+    /**
      * Probes the active storage backend every 30 seconds.
      * The initial delay is aligned to the fixed delay since startup is now
      * handled by {@link #onApplicationReady()}.
@@ -84,9 +93,9 @@ public class StorageHealthService {
      * Optimistically clears any stale "down" state and immediately re-probes the active
      * backend in a background thread.
      *
-     * <p>Call this whenever the active backend is changed (e.g. after saving settings)
-     * so uploads are not blocked for up to 30 seconds while waiting for the next
-     * scheduled probe cycle.
+     * <p>Called automatically by {@link #onSettingsChanged} whenever settings are saved
+     * (e.g. the active backend changes) so uploads are not blocked for up to 30 seconds
+     * while waiting for the next scheduled probe cycle.
      */
     public void recheck() {
         healthy = true;                          // optimistic reset — unblocks uploads immediately

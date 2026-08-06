@@ -22,7 +22,7 @@ Self-hosted file sharing: Spring Boot 3.5 + Thymeleaf + SQLite (Flyway) + Tailwi
 - Template-level feature flags (file list enabled, app password set, admin button, encryption on, previews, pastebin) are injected by [`GlobalControllerAdvice`](src/main/java/org/rostislav/quickdrop/config/GlobalControllerAdvice.java) — read from there; don't duplicate.
 
 ## Security & interceptors
-- [`SecurityConfig`](src/main/java/org/rostislav/quickdrop/config/SecurityConfig.java): optional whole-app password at `/password/login`, BCrypt, CSRF cookie, permissive CORS. Session timeout configured in [`WebConfig`](src/main/java/org/rostislav/quickdrop/config/WebConfig.java).
+- [`SecurityConfig`](src/main/java/org/rostislav/quickdrop/config/SecurityConfig.java): optional whole-app password at `/password/login`, BCrypt, CSRF cookie, permissive CORS. Session timeout applied per-session by [`SessionService#sessionCreated`](src/main/java/org/rostislav/quickdrop/service/SessionService.java), reading the current setting live so a change takes effect for the next session created without a restart.
 - In-memory admin + file session tokens live in [`SessionService`](src/main/java/org/rostislav/quickdrop/service/SessionService.java) (not persisted — restarts invalidate).
 - Add new protected routes via the right interceptor: `AdminPasswordSetupInterceptor` (forces `/admin/setup` until admin pwd exists), `AdminPasswordInterceptor` (`/admin/**` + file history), `FilePasswordInterceptor` (redirects to `/file/password/{uuid}` when the file has a password and no valid session token).
 

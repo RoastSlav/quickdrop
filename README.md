@@ -58,6 +58,7 @@ restart required for configuration changes.
 <img width="2116" height="1302" alt="image" src="https://github.com/user-attachments/assets/13117bd0-fcbb-49f5-89ad-a63b46d7c194" />
 
 *Activity - all activity that has happened in the app.*
+
 ---
 
 ## Features

@@ -126,4 +126,74 @@ class StorageMigrationControllerTest extends ControllerTestSupport {
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/admin/password"));
     }
+
+    // -- isSafeEndpoint() SSRF guard, exercised through /admin/api/test-backend --------
+    // No real network connection is ever reached in these: a rejected endpoint returns
+    // 400 before testBackendConnection() is called. Literal IPs (not hostnames) are used
+    // throughout so InetAddress.getByName() resolves them locally with no DNS lookup.
+
+    @Test
+    void testBackend_webdavUrlPointingAtLoopback_isRejected() throws Exception {
+        MockHttpSession session = adminSession();
+        updateSettings(s -> s.setWebDavUrl("https://127.0.0.1/dav"));
+
+        mockMvc.perform(get("/admin/api/test-backend").session(session).param("backend", "WEBDAV"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.error").value("Invalid or internal endpoint address."));
+    }
+
+    @Test
+    void testBackend_webdavUrlPointingAtRfc1918PrivateAddress_isRejected() throws Exception {
+        MockHttpSession session = adminSession();
+        updateSettings(s -> s.setWebDavUrl("https://10.0.0.5/dav"));
+
+        mockMvc.perform(get("/admin/api/test-backend").session(session).param("backend", "WEBDAV"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("Invalid or internal endpoint address."));
+    }
+
+    @Test
+    void testBackend_webdavUrlPointingAtLinkLocalAddress_isRejected() throws Exception {
+        MockHttpSession session = adminSession();
+        updateSettings(s -> s.setWebDavUrl("https://169.254.1.1/dav"));
+
+        mockMvc.perform(get("/admin/api/test-backend").session(session).param("backend", "WEBDAV"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("Invalid or internal endpoint address."));
+    }
+
+    @Test
+    void testBackend_webdavUrlUsingPlainHttp_isRejected() throws Exception {
+        // isSafeEndpoint() requires https:// for URL-form endpoints regardless of host safety.
+        MockHttpSession session = adminSession();
+        updateSettings(s -> s.setWebDavUrl("http://8.8.8.8/dav"));
+
+        mockMvc.perform(get("/admin/api/test-backend").session(session).param("backend", "WEBDAV"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("Invalid or internal endpoint address."));
+    }
+
+    @Test
+    void testBackend_webdavUrlTargetingLocalhostLiteral_isRejected() throws Exception {
+        // "localhost" is rejected outright, before any DNS/loopback-address resolution.
+        MockHttpSession session = adminSession();
+        updateSettings(s -> s.setWebDavUrl("https://localhost/dav"));
+
+        mockMvc.perform(get("/admin/api/test-backend").session(session).param("backend", "WEBDAV"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("Invalid or internal endpoint address."));
+    }
+
+    @Test
+    void testBackend_sftpHostAsBareLoopbackHostname_isRejected() throws Exception {
+        // SFTP's host field is a bare hostname, not a URL -- isSafeEndpoint() resolves it
+        // directly rather than parsing it as a URL first.
+        MockHttpSession session = adminSession();
+        updateSettings(s -> s.setSftpHost("127.0.0.1"));
+
+        mockMvc.perform(get("/admin/api/test-backend").session(session).param("backend", "SFTP"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("Invalid or internal endpoint address."));
+    }
 }

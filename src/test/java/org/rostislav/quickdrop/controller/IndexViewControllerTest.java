@@ -61,6 +61,47 @@ class IndexViewControllerTest extends ControllerTestSupport {
     }
 
     @Test
+    @DirtiesContext
+    void indexPage_defaultHomePagePaste_withPastebinEnabled_redirectsToPasteNew() throws Exception {
+        ensureAdminPasswordSet();
+        updateSettings(s -> {
+            s.setDefaultHomePage("paste");
+            s.setPastebinEnabled(true);
+        });
+        mockMvc.perform(get("/"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/file/paste/new"));
+    }
+
+    @Test
+    @DirtiesContext
+    void indexPage_defaultHomePagePaste_withPastebinDisabled_fallsThroughToUpload() throws Exception {
+        // "paste" home page requires pastebin to ALSO be enabled -- otherwise cascades
+        // past the paste check to the default upload branch (uploads still enabled here).
+        ensureAdminPasswordSet();
+        updateSettings(s -> {
+            s.setDefaultHomePage("paste");
+            s.setPastebinEnabled(false);
+        });
+        mockMvc.perform(get("/"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/file/upload"));
+    }
+
+    @Test
+    @DirtiesContext
+    void indexPage_defaultHomePageList_withFileListEnabled_redirectsToFileList() throws Exception {
+        ensureAdminPasswordSet();
+        updateSettings(s -> {
+            s.setDefaultHomePage("list");
+            s.setFileListPageEnabled(true);
+        });
+        mockMvc.perform(get("/"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/file/list"));
+    }
+
+    @Test
     void errorPage_returnsErrorView() throws Exception {
         ensureAdminPasswordSet();
         mockMvc.perform(get("/error"))

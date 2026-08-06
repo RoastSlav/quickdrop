@@ -9,13 +9,19 @@ import org.rostislav.quickdrop.support.FixtureFiles;
 import org.rostislav.quickdrop.support.QuickdropIntegrationTest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -257,5 +263,124 @@ class AsyncFileMergeServiceTest extends QuickdropIntegrationTest {
 
         assertThrows(IllegalArgumentException.class, () ->
                 asyncFileMergeService.submitChunk(request, chunk("x".getBytes(StandardCharsets.UTF_8)), 0, false));
+    }
+
+    // -------------------------------------------------------------------------
+    // evictStaleTasks() -- the TTL sweeper, private and normally scheduled every
+    // TASK_TTL_MINUTES (60) minutes. Reflection is used both to invoke it directly and to
+    // backdate a task's lastActivityAt, since waiting 60 real minutes isn't practical.
+    // -------------------------------------------------------------------------
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> mergeTasksField() {
+        return (Map<String, Object>) ReflectionTestUtils.getField(asyncFileMergeService, "mergeTasks");
+    }
+
+    @Test
+    @Timeout(30)
+    void evictStaleTasks_removesTaskInactiveBeyondTtl() throws Exception {
+        // Chunk file cleanup itself is already covered by abortUploadCleansUpTempChunkFilesFromDisk
+        // (evictStaleTasks delegates to the same cleanup as an explicit abort) -- asserting it
+        // again here would race against the real background MergeTask thread, which may still
+        // hold the chunk file open under Windows file-locking semantics at the instant eviction
+        // runs. This test focuses on what's specific to the TTL sweep itself: that a task past
+        // the TTL is actually removed and marked aborted.
+        String uploadId = UUID.randomUUID().toString();
+        UploadRequest request = baseRequest(uploadId, "stale.bin", 3, 30);
+        // Chunk 1 (not the first-expected) stays parked, un-drained, on disk.
+        asyncFileMergeService.submitChunk(request, chunk(FixtureFiles.deterministicBytes(10, 7L)), 1, false);
+
+        Object task = mergeTasksField().get(uploadId);
+        assertNotNull(task, "merge task must be registered under the upload id");
+        ReflectionTestUtils.setField(task, "lastActivityAt", Instant.now().minusSeconds(61 * 60));
+
+        ReflectionTestUtils.invokeMethod(asyncFileMergeService, "evictStaleTasks");
+
+        assertFalse(mergeTasksField().containsKey(uploadId), "stale task must be removed from the active-tasks map");
+        AsyncFileMergeService.UploadProgress status = asyncFileMergeService.getUploadStatus(uploadId);
+        assertEquals("aborted", status.status(), "an evicted task must report as aborted, same as an explicit abort");
+    }
+
+    @Test
+    void evictStaleTasks_leavesRecentlyActiveTaskAlone() throws Exception {
+        String uploadId = UUID.randomUUID().toString();
+        UploadRequest request = baseRequest(uploadId, "fresh.bin", 3, 30);
+        asyncFileMergeService.submitChunk(request, chunk(FixtureFiles.deterministicBytes(10, 8L)), 1, false);
+        // lastActivityAt left at its real "just now" value -- well within the TTL.
+
+        try {
+            ReflectionTestUtils.invokeMethod(asyncFileMergeService, "evictStaleTasks");
+
+            assertTrue(mergeTasksField().containsKey(uploadId), "a recently active task must not be evicted");
+        } finally {
+            // Chunk 0 was deliberately never sent, so -- proving this task is deliberately left
+            // running is the point of the test -- its background MergeTask would otherwise leak
+            // for the life of the JVM, parked waiting for a chunk that will never arrive.
+            asyncFileMergeService.abortUpload(uploadId);
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // submitChunk's waitForCompletion=true branch: InterruptedException / ExecutionException
+    // -------------------------------------------------------------------------
+
+    @Test
+    @Timeout(30)
+    void submitChunk_waitForCompletionInterrupted_wrapsAsIOException() throws Exception {
+        String uploadId = UUID.randomUUID().toString();
+        // totalChunks=2, and chunk 0 (the first-expected chunk) is deliberately never sent --
+        // the drain loop can then never complete the merge, so the completion future the
+        // background thread blocks on stays genuinely pending regardless of scheduling, making
+        // this deterministic rather than a timing race.
+        UploadRequest request = baseRequest(uploadId, "interrupt-me.bin", 2, 6);
+
+        AtomicReference<Throwable> caught = new AtomicReference<>();
+        Thread waiter = new Thread(() -> {
+            try {
+                asyncFileMergeService.submitChunk(request, chunk("BBB".getBytes(StandardCharsets.UTF_8)), 1, true);
+            } catch (Throwable t) {
+                caught.set(t);
+            }
+        });
+        waiter.start();
+        // No fixed sleep needed for correctness (the future can't complete on its own -- see
+        // above); a short wait just gives the thread a realistic chance to reach the blocking
+        // get() before interrupt() is delivered.
+        Thread.sleep(200);
+        waiter.interrupt();
+        waiter.join(10_000);
+
+        try {
+            assertFalse(waiter.isAlive(), "waiter thread must have exited after being interrupted");
+            assertNotNull(caught.get(), "submitChunk must have thrown");
+            assertInstanceOf(java.io.IOException.class, caught.get());
+            assertEquals("Merge task interrupted", caught.get().getMessage());
+            assertInstanceOf(InterruptedException.class, caught.get().getCause());
+        } finally {
+            // Interrupting the waiter only unblocks submitChunk's own get() call -- chunk 0 was
+            // deliberately never sent, so the real background MergeTask is still alive, parked
+            // waiting for it. Without this, it would leak for the life of the JVM.
+            asyncFileMergeService.abortUpload(uploadId);
+        }
+    }
+
+    @Test
+    @Timeout(30)
+    void submitChunk_waitForCompletionOnExceptionallyCompletedFuture_wrapsAsIOException() throws Exception {
+        String uploadId = UUID.randomUUID().toString();
+        UploadRequest request = baseRequest(uploadId, "boom.bin", 2, 6);
+        // Chunk 0 registers the MergeTask without completing the merge (chunk 1 -- the last
+        // one -- hasn't arrived yet), leaving a real window to corrupt its completion future
+        // before ever triggering the isLastChunk branch.
+        asyncFileMergeService.submitChunk(request, chunk("AAA".getBytes(StandardCharsets.UTF_8)), 0, false);
+
+        CompletableFuture<Upload> future = (CompletableFuture<Upload>)
+                ReflectionTestUtils.invokeMethod(mergeTasksField().get(uploadId), "getMergeCompletionFuture");
+        future.completeExceptionally(new RuntimeException("simulated merge failure"));
+
+        IOException thrown = assertThrows(IOException.class, () ->
+                asyncFileMergeService.submitChunk(request, chunk("BBB".getBytes(StandardCharsets.UTF_8)), 1, true));
+        assertEquals("Merge task failed", thrown.getMessage());
+        assertInstanceOf(java.util.concurrent.ExecutionException.class, thrown.getCause());
     }
 }

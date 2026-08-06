@@ -2,13 +2,21 @@ package org.rostislav.quickdrop.interceptor;
 
 import org.junit.jupiter.api.Test;
 import org.rostislav.quickdrop.entity.StoredFile;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockHttpSession;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 class FilePasswordInterceptorTest extends InterceptorTestSupport {
+
+    @Autowired
+    private FilePasswordInterceptor filePasswordInterceptor;
 
     @Test
     void unknownUuid_returns404NeverRedirectsOr500() throws Exception {
@@ -57,6 +65,25 @@ class FilePasswordInterceptorTest extends InterceptorTestSupport {
         mockMvc.perform(get("/file/" + fileB.uuid).session(sessionForA))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/file/password/" + fileB.uuid));
+    }
+
+    /**
+     * No route currently wired through this interceptor omits the {@code {uuid}} path
+     * variable (every non-excluded pattern under {@code /file/**} and
+     * {@code /api/file/share/**} carries one), so this branch can't be reached through a
+     * real request today -- it's a defensive guard against a future route addition, not
+     * exercised via {@code mockMvc}. Calling {@code preHandle} directly against the real
+     * bean is the only way to exercise it.
+     */
+    @Test
+    void preHandle_noUuidPathVariableResolved_sendsBadRequestAndHaltsChain() throws Exception {
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/file/whatever");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        boolean shouldContinue = filePasswordInterceptor.preHandle(request, response, new Object());
+
+        assertFalse(shouldContinue, "the handler chain must not continue when uuid is missing");
+        assertEquals(400, response.getStatus());
     }
 
     @Test

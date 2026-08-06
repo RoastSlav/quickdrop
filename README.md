@@ -338,7 +338,7 @@ docker pull roastslav/quickdrop:develop
 
 - `:develop` tracks the latest work on the `dev` branch and may change frequently.
 - It can include incomplete features, breaking changes, or debug logging.
-- For stable deployments use `:latest` or a versioned tag such as `:v1.5.3`.
+- For stable deployments use `:latest` or a versioned tag such as `:v2.0.0`.
 
 ---
 

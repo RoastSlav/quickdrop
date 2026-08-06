@@ -179,7 +179,7 @@ expression is validated client-side before the form can be saved.
 | Migrations      | Flyway                                                        |
 | Templates       | Thymeleaf (with Spring Security dialect)                      |
 | CSS             | Tailwind CSS + custom styles                                  |
-| Runtime config  | Spring Cloud Context (`@RefreshScope`)                        |
+| Runtime config  | Live reads + Spring application events (no restart needed)    |
 | SVG rendering   | Apache Batik (server-side SVG-to-PNG transcoder)              |
 | Email           | Spring Mail (JavaMailSender)                                  |
 | Build           | Maven                                                         |

@@ -178,6 +178,8 @@ class AdminViewControllerTest extends ControllerTestSupport {
                 .param("maxFileLifeTime", maxFileLifeTime)
                 .param("fileStoragePath", fileStoragePath)
                 .param("fileDeletionCron", cron)
+                .param("backupCron", "0 0 4 * * *")
+                .param("maxBackups", "7")
                 .param("sessionLifeTime", "30")
                 .param("maxPreviewSizeBytes", "5")
                 .param("isFileListPageEnabled", "true")

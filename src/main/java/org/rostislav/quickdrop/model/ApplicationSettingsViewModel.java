@@ -106,6 +106,13 @@ public class ApplicationSettingsViewModel {
     private String webDavPassword;
     private String webDavKeyPrefix;
 
+    // Database backups
+    private boolean backupScheduleEnabled;
+    @NotBlank(message = "{validation.required}")
+    private String backupCron;
+    @Min(value = 1, message = "{validation.number.positive}")
+    private int maxBackups;
+
     public ApplicationSettingsViewModel() {
     }
 
@@ -185,6 +192,9 @@ public class ApplicationSettingsViewModel {
         this.webDavUsername = settings.getWebDavUsername();
         this.webDavPassword = settings.getWebDavPassword();
         this.webDavKeyPrefix = settings.getWebDavKeyPrefix();
+        this.backupScheduleEnabled = settings.isBackupScheduleEnabled();
+        this.backupCron = settings.getBackupCron();
+        this.maxBackups = settings.getMaxBackups();
     }
 
     public Long getId() {
@@ -725,5 +735,30 @@ public class ApplicationSettingsViewModel {
 
     public void setWebDavKeyPrefix(String v) {
         this.webDavKeyPrefix = v;
+    }
+
+    // Backup getters/setters
+    public boolean isBackupScheduleEnabled() {
+        return backupScheduleEnabled;
+    }
+
+    public void setBackupScheduleEnabled(boolean backupScheduleEnabled) {
+        this.backupScheduleEnabled = backupScheduleEnabled;
+    }
+
+    public String getBackupCron() {
+        return backupCron;
+    }
+
+    public void setBackupCron(String backupCron) {
+        this.backupCron = backupCron;
+    }
+
+    public int getMaxBackups() {
+        return maxBackups;
+    }
+
+    public void setMaxBackups(int maxBackups) {
+        this.maxBackups = maxBackups;
     }
 }

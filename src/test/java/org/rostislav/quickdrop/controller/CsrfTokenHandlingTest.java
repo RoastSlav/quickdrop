@@ -19,27 +19,20 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * Locks in the CSRF token contract after unifying the frontend on the masked token value
  * and simplifying {@link org.rostislav.quickdrop.config.SecurityConfig} to Security 7's
  * default {@code XorCsrfTokenRequestAttributeHandler} (masked-only). Deliberately bypasses
- * {@code SecurityMockMvcRequestPostProcessors.csrf()} (which injects a valid token directly
- * as a request attribute, short-circuiting the real header/cookie resolution these tests
- * exist to exercise).
+ * {@code SecurityMockMvcRequestPostProcessors.csrf()}, which injects a valid token directly
+ * as a request attribute and would short-circuit the header/cookie resolution under test.
  *
- * <p>The app's own {@code CookieCsrfTokenRepository.withHttpOnlyFalse()} stores the token in
- * an {@code XSRF-TOKEN} cookie holding the <b>raw</b> value; Thymeleaf's
- * {@code ${_csrf.token}} renders the <b>masked</b> (XOR-encoded) value into a hidden input.
- * All three frontend JS files ({@code fileView.js}, {@code settings.js},
- * {@code upload/network.js}) now read the masked hidden-input/meta value -- the raw cookie
- * value is deliberately no longer accepted (see the rejection test below), since Security
- * 7's default handler only understands masked values. This was a real behavior change, not
- * a no-op refactor: before the frontend was unified, the raw-cookie path was load-bearing
- * for every chunked upload, and swapping the handler without fixing the JS first would have
- * broken every upload with a silent 403.
+ * <p>{@code CookieCsrfTokenRepository.withHttpOnlyFalse()} stores the <b>raw</b> token in the
+ * {@code XSRF-TOKEN} cookie; Thymeleaf's {@code ${_csrf.token}} renders the <b>masked</b>
+ * value into a hidden input. All frontend JS now reads the masked value -- the raw cookie
+ * value is deliberately no longer accepted (see the rejection test below). This was a real
+ * behavior change: before the frontend was unified, the raw-cookie path was load-bearing for
+ * every chunked upload.
  *
- * <p>Class-level {@code @DirtiesContext(BEFORE_CLASS)}: these tests depend on
- * {@code CookieCsrfTokenRepository} actually writing an {@code XSRF-TOKEN} cookie on the
- * initial GET, which was observed to silently stop happening when this class ran in the same
- * cached context after {@code AdminViewControllerTest}'s full suite (reproducible, but the
- * exact interaction wasn't pinned down -- forcing a fresh context sidesteps it rather than
- * leaving an order-dependent flake in the suite).
+ * <p>Class-level {@code @DirtiesContext(BEFORE_CLASS)}: {@code CookieCsrfTokenRepository}
+ * writing an {@code XSRF-TOKEN} cookie on the initial GET was observed to silently stop
+ * happening when this class ran in the same cached context after
+ * {@code AdminViewControllerTest}'s full suite -- forcing a fresh context sidesteps it.
  */
 @DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_CLASS)
 class CsrfTokenHandlingTest extends ControllerTestSupport {
@@ -47,7 +40,12 @@ class CsrfTokenHandlingTest extends ControllerTestSupport {
     private static final Pattern MASKED_TOKEN_INPUT = Pattern.compile(
             "name=\"_csrf\"\\s+value=\"([^\"]+)\"");
 
-    /** GETs the upload page (renders a masked {@code _csrf} hidden input) and returns the result. */
+    /**
+     * GETs the upload page and returns the result. Uses an admin session rather than a bare
+     * one: whether /file/upload renders the form at all (vs. redirecting) depends on the
+     * uploadEnabled/uploadAdminOnly settings, which other tests sharing this context can leave
+     * toggled between runs -- an admin session bypasses both checks.
+     */
     private MvcResult loadUploadPage(MockHttpSession session) throws Exception {
         return mockMvc.perform(get("/file/upload").session(session)).andReturn();
     }
@@ -66,15 +64,8 @@ class CsrfTokenHandlingTest extends ControllerTestSupport {
     @Test
     void chunkUpload_withRawCookieTokenAsHeader_isNowRejected() throws Exception {
         // Before the frontend was unified, this was upload/network.js's actual behavior on
-        // every chunk of every upload -- and it worked, because SecurityConfig carried a
-        // custom handler with a raw-token fallback. That fallback is gone; Security 7's
-        // default handler expects a masked value, so this must now fail closed (403) rather
-        // than silently accept an unmasked token.
-        // Use an authenticated admin session rather than a bare one: whether /file/upload
-        // renders the form at all (vs. redirecting) depends on the uploadEnabled/
-        // uploadAdminOnly settings, which other tests sharing this context can leave toggled
-        // between runs. Admin sessions bypass both checks, so this test doesn't depend on
-        // ambient settings state left behind by test execution order.
+        // every chunk of every upload, working only because SecurityConfig carried a custom
+        // handler with a raw-token fallback. That fallback is gone, so this must fail closed.
         MockHttpSession session = adminSession();
         MvcResult getResult = loadUploadPage(session);
         Cookie xsrfCookie = getResult.getResponse().getCookie("XSRF-TOKEN");
@@ -92,14 +83,8 @@ class CsrfTokenHandlingTest extends ControllerTestSupport {
 
     @Test
     void chunkUpload_withMaskedHiddenInputTokenAsHeader_isAccepted() throws Exception {
-        // Mirrors fileView.js/settings.js's getCsrfToken(), and upload/network.js's
-        // getCsrfToken() after unification: read the masked value Thymeleaf rendered into
-        // the page, send it as the X-XSRF-TOKEN header.
-        // Use an authenticated admin session rather than a bare one: whether /file/upload
-        // renders the form at all (vs. redirecting) depends on the uploadEnabled/
-        // uploadAdminOnly settings, which other tests sharing this context can leave toggled
-        // between runs. Admin sessions bypass both checks, so this test doesn't depend on
-        // ambient settings state left behind by test execution order.
+        // Mirrors getCsrfToken() in fileView.js/settings.js/upload/network.js: read the
+        // masked value Thymeleaf rendered into the page, send it as the X-XSRF-TOKEN header.
         MockHttpSession session = adminSession();
         MvcResult getResult = loadUploadPage(session);
         Cookie xsrfCookie = getResult.getResponse().getCookie("XSRF-TOKEN");
@@ -120,11 +105,6 @@ class CsrfTokenHandlingTest extends ControllerTestSupport {
     void formSubmit_withMaskedTokenAsParameter_isAccepted() throws Exception {
         // The plain Thymeleaf form-submit path: masked token sent as the _csrf request
         // parameter (not a header) -- e.g. every non-AJAX <form> in the app.
-        // Use an authenticated admin session rather than a bare one: whether /file/upload
-        // renders the form at all (vs. redirecting) depends on the uploadEnabled/
-        // uploadAdminOnly settings, which other tests sharing this context can leave toggled
-        // between runs. Admin sessions bypass both checks, so this test doesn't depend on
-        // ambient settings state left behind by test execution order.
         MockHttpSession session = adminSession();
         MvcResult getResult = loadUploadPage(session);
         Cookie xsrfCookie = getResult.getResponse().getCookie("XSRF-TOKEN");

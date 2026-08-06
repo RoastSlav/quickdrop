@@ -84,11 +84,7 @@ public class ScheduleService {
         this.scheduleTransactionHelper = scheduleTransactionHelper;
     }
 
-    /**
-     * Reschedules the dynamic cleanup job whenever the admin saves new settings.
-     *
-     * @param event carries the just-saved settings entity
-     */
+    /** Reschedules the dynamic cleanup job whenever the admin saves new settings. */
     @EventListener
     public void onSettingsChanged(SettingsChangedEvent event) {
         updateSchedule(event.settings().getFileDeletionCron(), event.settings().getMaxFileLifeTime());

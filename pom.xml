@@ -61,10 +61,6 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
-        <!-- As of Boot 4, RestTemplate/RestTemplateBuilder auto-configuration is its own
-             module rather than bundled into spring-boot-starter-web; needed so
-             NotificationService's RestTemplateBuilder picks up HttpClientConfig's SSRF
-             filter via the shared HttpClientSettings bean. -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-restclient</artifactId>
@@ -90,9 +86,6 @@
             <artifactId>spring-boot-starter-logging</artifactId>
         </dependency>
         <dependency>
-            <!-- As of Boot 4, FlywayAutoConfiguration lives in its own module rather than
-                 spring-boot-autoconfigure, so a bare flyway-core dependency no longer
-                 triggers it; this starter is required for migrations to run at all. -->
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-flyway</artifactId>
         </dependency>
@@ -107,8 +100,6 @@
                 </exclusion>
             </exclusions>
         </dependency>
-        <!-- @SpringBootTest no longer auto-configures MockMvc as of Boot 4; this starter
-             (plus @AutoConfigureMockMvc, already used throughout src/test) restores it. -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-webmvc-test</artifactId>
@@ -147,10 +138,8 @@
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>s3</artifactId>
             <exclusions>
-                <!-- S3StorageService only ever builds a synchronous S3Client, which is served
-                     by apache5-client (also pulled in by this artifact). The Netty-based async
-                     HTTP client is never instantiated, so it and its Netty tree are dead weight
-                     in the shipped jar. -->
+                <!-- S3StorageService only builds a sync S3Client (served by apache5-client);
+                     the Netty async client is never used. -->
                 <exclusion>
                     <groupId>software.amazon.awssdk</groupId>
                     <artifactId>netty-nio-client</artifactId>
@@ -162,19 +151,16 @@
             <artifactId>batik-transcoder</artifactId>
             <version>1.19</version>
         </dependency>
-        <!-- Azure Blob Storage -->
         <dependency>
             <groupId>com.azure</groupId>
             <artifactId>azure-storage-blob</artifactId>
             <version>12.35.0</version>
             <exclusions>
-                <!-- azure-core-http-netty drags in Reactor Netty's full transport matrix. The
-                     exclusions below drop ~20 MB of native binaries we can never execute:
-                     QUIC/HTTP-3 is never negotiated (AzureBlobStorageService uses the sync
-                     BlobClient over HTTPS), and the kqueue/macOS natives target a platform the
-                     container does not run on. Only the *native* artifacts are excluded — the
-                     corresponding -classes- jars stay, so Netty's availability checks resolve
-                     to "unavailable" and fall back to NIO rather than throwing. -->
+                <!-- azure-core-http-netty drags in ~20 MB of native binaries QuickDrop never
+                     exercises: QUIC/HTTP-3 (AzureBlobStorageService uses sync BlobClient over
+                     plain HTTPS), kqueue/macOS natives, and BoringSSL (Netty falls back to the
+                     JDK's own TLS stack). Excluding only the native artifacts, not the
+                     -classes- jars, so Netty's availability checks degrade to NIO instead of throwing. -->
                 <exclusion>
                     <groupId>io.netty</groupId>
                     <artifactId>netty-codec-native-quic</artifactId>
@@ -187,22 +173,17 @@
                     <groupId>io.netty</groupId>
                     <artifactId>netty-resolver-dns-native-macos</artifactId>
                 </exclusion>
-                <!-- BoringSSL is an optional native TLS accelerator; without it Netty uses the
-                     JDK's own TLS stack, which is what every other outbound call here already
-                     uses. Six platform classifiers at ~1.2 MB each. -->
                 <exclusion>
                     <groupId>io.netty</groupId>
                     <artifactId>netty-tcnative-boringssl-static</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
-        <!-- SFTP via JSch maintained fork -->
         <dependency>
             <groupId>com.github.mwiede</groupId>
             <artifactId>jsch</artifactId>
             <version>2.28.6</version>
         </dependency>
-        <!-- WebDAV via Sardine -->
         <dependency>
             <groupId>com.github.lookfirst</groupId>
             <artifactId>sardine</artifactId>

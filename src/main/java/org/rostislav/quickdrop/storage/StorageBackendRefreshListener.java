@@ -5,13 +5,10 @@ import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
 /**
- * Rebuilds the cached client for whichever remote storage backend is active whenever
- * settings are saved, so credential/endpoint changes take effect immediately rather than
- * on the next lazy access.
- *
- * <p>LOCAL and SFTP are deliberately not handled here: LOCAL holds no client at all, and
- * {@link SftpStorageService} opens a fresh SSH connection per operation instead of caching
- * one (see its class Javadoc), so neither needs a refresh.
+ * Rebuilds the cached client for the active remote storage backend whenever settings are
+ * saved, so credential/endpoint changes take effect immediately. LOCAL and SFTP aren't
+ * handled here: LOCAL holds no client, and {@link SftpStorageService} opens a fresh
+ * connection per operation instead of caching one.
  */
 @Component
 public class StorageBackendRefreshListener {

@@ -69,17 +69,10 @@ public class SessionService implements HttpSessionListener {
     private ConfigurableApplicationContext applicationContext;
 
     /**
-     * Applies the currently configured session lifetime to every newly created HTTP session.
-     *
-     * <p>Read live from {@link ApplicationSettingsService} rather than baked in once at
-     * startup, so a change to "Session Lifetime" in the admin settings takes effect for the
-     * very next session created, without an app restart. {@code sessionLifetime} is stored in
+     * Applies the currently configured session lifetime to every newly created session. Read
+     * live rather than baked in at startup, so a settings change applies to the next session
+     * created (already-open sessions keep their original interval). Stored setting is in
      * minutes; {@link HttpSession#setMaxInactiveInterval(int)} takes seconds.
-     *
-     * <p>Sessions already in progress keep whatever interval was set when they were created —
-     * only sessions created after the settings change pick up the new value.
-     *
-     * @param se the session event
      */
     @Override
     public void sessionCreated(HttpSessionEvent se) {

@@ -1,22 +1,20 @@
 #!/usr/bin/env python3
-"""Seeds the isolated "quickdrop-e2e" instance (port 8081, .claude/launch.json,
-application-e2e.properties) with a small set of real data via the public HTTP API --
-never by reaching into internals -- so Layer 2/3 agents (see docs/AGENTIC_TEST_PLAN.md)
-have something to probe/click through.
+"""Seeds an isolated "quickdrop-e2e" instance (see .claude/launch.json,
+application-e2eN.properties) with real data via the public HTTP API -- never by reaching
+into internals -- so it has something to probe/click through. See docs/TESTING.md.
 
-Step 0 is the important one: it re-points fileStoragePath to e2e-data/files via the
-real admin settings form, exactly as an admin would through the UI. Without it, uploads
-would land in the DB-seeded default ("files", relative to CWD) -- i.e. the real repo
-files/ directory -- which is exactly what this whole e2e setup exists to avoid.
+Redirects fileStoragePath to e2e-data/files via the real admin settings form first,
+exactly as an admin would through the UI -- otherwise uploads land in the DB-seeded
+default ("files", relative to CWD), i.e. the real repo files/ directory.
 
 Usage:
     python scripts/seed_e2e.py [--base-url http://localhost:8081] [--storage-path e2e-data/files]
                                [--admin-password admin-e2e-pw]
     (start the target server first: it does not launch quickdrop-e2e itself)
 
-Each parallel test track (see docs/AGENTIC_TEST_PLAN.md §6) should run its own instance
-on its own port with its own storage path -- pass --base-url/--storage-path matching that
-track's launch.json entry and application-e2eN.properties so tracks never share state.
+Run one instance per test track on its own port/storage path -- pass
+--base-url/--storage-path matching that track's launch.json entry and
+application-e2eN.properties so tracks never share state.
 
 Requires: requests (pip install requests if missing).
 """
@@ -55,10 +53,8 @@ class FormFieldScraper(HTMLParser):
                 return
             input_type = (attrs.get("type") or "text").lower()
             if input_type in ("checkbox", "radio"):
-                # Only emit a value when checked. An unchecked box must be OMITTED
-                # entirely (not sent as ""), so Spring's binder falls through to the
-                # Thymeleaf-generated hidden "_name" marker field and binds false --
-                # sending "" instead makes it try to parse "" as a boolean and 400s.
+                # Omit entirely when unchecked -- Spring's binder needs the Thymeleaf
+                # hidden "_name" marker to bind false; sending "" 400s instead.
                 if "checked" in attrs:
                     self.fields[name] = attrs.get("value", "on")
             else:

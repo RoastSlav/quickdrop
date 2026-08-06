@@ -18,18 +18,9 @@ import org.springframework.context.annotation.Configuration;
  */
 @Configuration
 public class MultipartConfig {
-    /**
-     * Extra bytes added on top of the max file size to cover form field overhead.
-     */
-    private static final long ADDITIONAL_REQUEST_SIZE = 1024L * 1024L * 10L; // 10 MB
+    /** Extra bytes added on top of the max file size to cover form field overhead. */
+    private static final long ADDITIONAL_REQUEST_SIZE = 1024L * 1024L * 10L;
 
-    /**
-     * Creates the multipart configuration element with limits read live from
-     * {@link ApplicationSettingsService} on every call.
-     *
-     * @param settings provides the dynamically resolved max file size
-     * @return the configured {@link MultipartConfigElement}
-     */
     @Bean
     public MultipartConfigElement multipartConfigElement(ApplicationSettingsService settings) {
         return new MultipartConfigElement(null, -1L, -1L, 0) {
@@ -46,14 +37,8 @@ public class MultipartConfig {
     }
 
     /**
-     * Raises Tomcat's {@code maxPartCount} connector limit (default 50) so that
-     * large multipart forms – such as the admin settings form with 100+ fields –
-     * are not rejected with {@code FileCountLimitExceededException}.
-     *
-     * <p>Tomcat's {@code Connector.maxPartCount} caps the file-part count allowed
-     * per multipart request, independent of {@code max-parameter-count}.
-     * The admin settings form sends 100+ multipart parts (one per field) when a
-     * logo file is attached, which exceeds the 50-part default.
+     * Raises Tomcat's {@code maxPartCount} (default 50) so the 100+-field admin settings
+     * form isn't rejected with {@code FileCountLimitExceededException} when a logo is attached.
      */
     @Bean
     public WebServerFactoryCustomizer<TomcatServletWebServerFactory> tomcatMultipartPartCountCustomizer() {

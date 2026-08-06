@@ -10,10 +10,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-/**
- * {@link RateLimitInterceptor} is a plain POJO (no Spring beans needed) -- exercised directly
- * per the test plan rather than through a {@code @SpringBootTest} context.
- */
+/** {@link RateLimitInterceptor} is a plain POJO -- exercised directly, no Spring context needed. */
 class RateLimitInterceptorTest {
 
     private final RateLimitInterceptor interceptor = new RateLimitInterceptor();

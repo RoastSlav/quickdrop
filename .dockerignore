@@ -7,8 +7,7 @@ Dockerfile
 mvnw
 mvnw.cmd
 
-# Keep local runtime data and dev tooling out of the build context. db/ and files/
-# in particular can hold real uploads on a developer machine.
+# db/ and files/ can hold real uploads on a developer machine.
 .git
 .github
 .claude

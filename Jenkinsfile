@@ -13,8 +13,6 @@ pipeline {
     stage('Build and Test') {
       steps {
         withMaven(maven: 'Maven') {
-          // 'verify' (not 'package') so the jacoco:check goal runs and hard-gates the
-          // build on the minimum line-coverage ratio configured in pom.xml.
           sh 'mvn -B clean verify'
         }
       }
@@ -22,10 +20,6 @@ pipeline {
         always {
           junit testResults: 'target/surefire-reports/*.xml', allowEmptyResults: true
 
-          // No JaCoCo/Coverage Jenkins plugin is installed on this instance (confirmed --
-          // the 'jacoco' pipeline step isn't in the available DSL steps here), so there's
-          // no native trend-graph step to call. The HTML report and badge JSON below are
-          // archived as plain build artifacts instead, which needs no plugin.
           sh '''
             set -e
             if [ -f target/site/jacoco/jacoco.csv ]; then
@@ -41,8 +35,6 @@ pipeline {
               cat coverage-badge.json
             fi
           '''
-          // archiveArtifacts isn't registered on this instance either (same DSL-step
-          // check as above) -- 'archive' is the step actually available here.
           archive 'coverage-badge.json, target/site/jacoco/**'
         }
       }
@@ -72,7 +64,6 @@ pipeline {
             env.IMAGE_LATEST   = "${env.DOCKER_REPO}:latest"
             env.IMAGE_VERSION  = "${env.DOCKER_REPO}:${verTag}"
 
-            // dev branch tag
             env.IMAGE_DEVELOP  = "${env.DOCKER_REPO}:develop"
 
             echo "POM version: ${env.APP_VERSION} | Previous: ${env.PREV_VERSION} | Changed: ${env.VERSION_CHANGED}"
@@ -142,7 +133,6 @@ pipeline {
 
               echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
 
-              # push latest + version tag
               docker buildx build \
                 --platform linux/amd64,linux/arm64 \
                 -t "${IMAGE_LATEST}" \

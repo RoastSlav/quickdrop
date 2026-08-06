@@ -11,7 +11,10 @@ import org.rostislav.quickdrop.storage.StorageBackend;
 import org.rostislav.quickdrop.support.QuickdropIntegrationTest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.CacheManager;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.crypto.bcrypt.BCrypt;
+
+import java.nio.charset.StandardCharsets;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -87,6 +90,102 @@ class ApplicationSettingsServiceTest extends QuickdropIntegrationTest {
         }
         assertEquals(1, applicationSettingsRepository.count());
         assertEquals(12, applicationSettingsService.getMaxFileLifeTime());
+    }
+
+    // -------------------------------------------------------------------------
+    // Logo upload validation (private validateLogoFile, exercised via updateApplicationSettings)
+    // -------------------------------------------------------------------------
+    // None of these reach disk: validateLogoFile() throws before updateApplicationSettings()
+    // ever creates the branding/ directory or calls transferTo(), so rejection is safe to
+    // test without touching the real filesystem or needing a @TempDir redirect.
+
+    @Test
+    void updateApplicationSettings_rejectsSvgDisguisedWithPngContentType() {
+        // The actual attack this validation exists for: an SVG payload (which can carry
+        // <script>) uploaded with a spoofed image/png Content-Type and a .png filename, so
+        // the declared MIME type and extension checks alone would both pass it through.
+        // Only the magic-byte sniff (checking the decoded body for "<svg") catches this.
+        MockMultipartFile svgAsPng = new MockMultipartFile(
+                "appLogo", "logo.png", "image/png",
+                "<svg xmlns=\"http://www.w3.org/2000/svg\"><script>alert(1)</script></svg>"
+                        .getBytes(StandardCharsets.UTF_8));
+        ApplicationSettingsViewModel vm = new ApplicationSettingsViewModel(applicationSettingsService.getApplicationSettings());
+
+        applicationSettingsService.updateApplicationSettings(vm, null, svgAsPng, false);
+
+        assertNull(applicationSettingsService.getApplicationSettings().getLogoFileName(),
+                "SVG content sniffed via magic bytes must be rejected even with a spoofed PNG content type");
+    }
+
+    @Test
+    void updateApplicationSettings_rejectsDisallowedContentType() {
+        MockMultipartFile svg = new MockMultipartFile(
+                "appLogo", "logo.svg", "image/svg+xml", "<svg></svg>".getBytes(StandardCharsets.UTF_8));
+        ApplicationSettingsViewModel vm = new ApplicationSettingsViewModel(applicationSettingsService.getApplicationSettings());
+
+        applicationSettingsService.updateApplicationSettings(vm, null, svg, false);
+
+        assertNull(applicationSettingsService.getApplicationSettings().getLogoFileName());
+    }
+
+    @Test
+    void updateApplicationSettings_rejectsSvgExtensionEvenWithAllowedContentType() {
+        // Extension check runs independently of the content-type check above -- a .svg
+        // filename is rejected even if the (also-spoofed) content type claims image/png.
+        MockMultipartFile file = new MockMultipartFile(
+                "appLogo", "logo.svg", "image/png", "not actually svg content".getBytes(StandardCharsets.UTF_8));
+        ApplicationSettingsViewModel vm = new ApplicationSettingsViewModel(applicationSettingsService.getApplicationSettings());
+
+        applicationSettingsService.updateApplicationSettings(vm, null, file, false);
+
+        assertNull(applicationSettingsService.getApplicationSettings().getLogoFileName());
+    }
+
+    @Test
+    void updateApplicationSettings_rejectsXmlDoctypeInBody() {
+        MockMultipartFile file = new MockMultipartFile(
+                "appLogo", "logo.png", "image/png",
+                "<?xml version=\"1.0\"?><!DOCTYPE html><html></html>".getBytes(StandardCharsets.UTF_8));
+        ApplicationSettingsViewModel vm = new ApplicationSettingsViewModel(applicationSettingsService.getApplicationSettings());
+
+        applicationSettingsService.updateApplicationSettings(vm, null, file, false);
+
+        assertNull(applicationSettingsService.getApplicationSettings().getLogoFileName());
+    }
+
+    @Test
+    void updateApplicationSettings_rejectsFileOverTwoMegabyteLimit() {
+        byte[] oversized = new byte[2 * 1024 * 1024 + 1];
+        MockMultipartFile file = new MockMultipartFile("appLogo", "logo.png", "image/png", oversized);
+        ApplicationSettingsViewModel vm = new ApplicationSettingsViewModel(applicationSettingsService.getApplicationSettings());
+
+        applicationSettingsService.updateApplicationSettings(vm, null, file, false);
+
+        assertNull(applicationSettingsService.getApplicationSettings().getLogoFileName());
+    }
+
+    @Test
+    void updateApplicationSettings_findingRejectedLogoAlsoDiscardsUnrelatedBundledChanges() {
+        // FINDING (not a regression guard -- documents current, arguably-surprising
+        // behavior): updateApplicationSettings() mutates its JPA entity in-memory for every
+        // field, including maxFileSize, THEN reaches the logo block, and only calls
+        // repository.save() at the very end. The catch block for a rejected logo does an
+        // early `return` before that save() -- so an admin bundling an unrelated settings
+        // change (e.g. raising max file size) with an invalid logo in the same form
+        // submission has BOTH silently discarded, with no error surfaced beyond a server log
+        // line. This test exists so a future fix (e.g. saving the non-logo fields regardless,
+        // or validating the logo before mutating the entity) has a test that must be
+        // consciously updated rather than one that just starts failing unnoticed.
+        long originalMax = applicationSettingsService.getMaxFileSize();
+        ApplicationSettingsViewModel vm = new ApplicationSettingsViewModel(applicationSettingsService.getApplicationSettings());
+        vm.setMaxFileSize(originalMax + 12_345L);
+        MockMultipartFile badLogo = new MockMultipartFile(
+                "appLogo", "logo.svg", "image/svg+xml", "<svg></svg>".getBytes(StandardCharsets.UTF_8));
+
+        applicationSettingsService.updateApplicationSettings(vm, null, badLogo, false);
+
+        assertEquals(originalMax, applicationSettingsService.getMaxFileSize(),
+                "current behavior: the unrelated maxFileSize change is discarded along with the rejected logo");
     }
 
     @Test

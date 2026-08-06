@@ -5,6 +5,7 @@ import org.rostislav.quickdrop.entity.StoredFile;
 import org.rostislav.quickdrop.entity.Upload;
 import org.rostislav.quickdrop.service.AsyncFileMergeService;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockHttpSession;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.web.servlet.MvcResult;
@@ -98,6 +99,37 @@ class FileRestControllerTest extends ControllerTestSupport {
                         .param("totalChunks", "1"))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.error").value("File uploads are currently disabled."));
+    }
+
+    @Test
+    @DirtiesContext
+    void uploadChunk_adminOnlyUploads_blocksNonAdminSession() throws Exception {
+        ensureAdminPasswordSet();
+        updateSettings(s -> s.setUploadAdminOnly(true));
+        MockMultipartFile part = new MockMultipartFile("file", "a.txt", "text/plain", "x".getBytes());
+        mockMvc.perform(multipart("/api/file/upload-chunk").file(part).with(csrf())
+                        .param("fileName", "a.txt")
+                        .param("chunkNumber", "0")
+                        .param("totalChunks", "1"))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.error").value("Uploads are restricted to administrators."));
+    }
+
+    @Test
+    @DirtiesContext
+    void uploadChunk_adminOnlyUploads_adminSessionStillAllowed() throws Exception {
+        ensureAdminPasswordSet();
+        updateSettings(s -> s.setUploadAdminOnly(true));
+        MockHttpSession session = adminSession();
+        MockMultipartFile part = new MockMultipartFile("file", "a.txt", "text/plain", "x".getBytes());
+        String uploadId = java.util.UUID.randomUUID().toString();
+        mockMvc.perform(multipart("/api/file/upload-chunk").file(part).with(csrf()).session(session)
+                        .param("fileName", "a.txt")
+                        .param("chunkNumber", "0")
+                        .param("totalChunks", "1")
+                        .param("fileSize", "1")
+                        .param("uploadId", uploadId))
+                .andExpect(status().isAccepted());
     }
 
     /**

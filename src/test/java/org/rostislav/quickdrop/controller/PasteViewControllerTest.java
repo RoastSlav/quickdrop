@@ -105,6 +105,18 @@ class PasteViewControllerTest extends ControllerTestSupport {
     }
 
     @Test
+    void editPastePage_deletedPaste_redirectsToView() throws Exception {
+        // createDeletedPaste() sets no password, so FilePasswordInterceptor lets this through
+        // (the row still exists -- deleted is a soft-delete flag, not a query filter) without
+        // needing a session; the deleted-check inside showPasteEditPage itself is what redirects.
+        ensureAdminPasswordSet();
+        Paste paste = createDeletedPaste("gone.txt", "hello");
+        mockMvc.perform(get("/file/paste/edit/" + paste.uuid))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/file/" + paste.uuid));
+    }
+
+    @Test
     void editPastePage_passwordProtectedPaste_anonymousRedirectsToPasswordPage() throws Exception {
         // FilePasswordInterceptor also covers /file/paste/edit/{uuid} and performs its own
         // (coarser) password-session check first, redirecting to the plain password page --
@@ -137,6 +149,21 @@ class PasteViewControllerTest extends ControllerTestSupport {
                         .param("title", "t").param("content", "c"))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/"));
+    }
+
+    @Test
+    @DirtiesContext
+    void createPaste_uploadPasswordDisabled_rejectsSubmittedPassword() throws Exception {
+        ensureAdminPasswordSet();
+        updateSettings(s -> s.setUploadPasswordEnabled(false));
+
+        mockMvc.perform(post("/file/paste").with(csrf())
+                        .param("title", "t").param("content", "c").param("password", "shouldnt-be-allowed"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/file/paste/new"));
+
+        assertTrue(pasteRepository.findAll().stream().noneMatch(p -> "t.txt".equals(p.name)),
+                "paste must not be created when a password was submitted with upload passwords disabled");
     }
 
     @Test
@@ -244,6 +271,42 @@ class PasteViewControllerTest extends ControllerTestSupport {
 
         String storedContent = java.nio.file.Files.readString(storageDir.resolve(paste.uuid));
         assertEquals("old content", storedContent);
+    }
+
+    @Test
+    @DirtiesContext
+    void updatePaste_pastebinDisabled_anonymousRedirectsHome() throws Exception {
+        // No password, so FilePasswordInterceptor lets this through before the pastebin
+        // check even runs -- pastebin-disabled must still gate the controller itself.
+        ensureAdminPasswordSet();
+        Paste paste = createPaste("note.txt", "old content", null, false, false);
+        updateSettings(s -> s.setPastebinEnabled(false));
+
+        mockMvc.perform(post("/file/paste/edit/" + paste.uuid).with(csrf())
+                        .param("title", "note").param("content", "attempted change").param("syntax", "text"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/"));
+
+        String storedContent = java.nio.file.Files.readString(storageDir.resolve(paste.uuid));
+        assertEquals("old content", storedContent);
+    }
+
+    @Test
+    @DirtiesContext
+    void updatePaste_uploadPasswordDisabled_rejectsSubmittedPassword() throws Exception {
+        ensureAdminPasswordSet();
+        Paste paste = createPaste("note.txt", "old content", null, false, false);
+        updateSettings(s -> s.setUploadPasswordEnabled(false));
+        MockHttpSession session = adminSession();
+
+        mockMvc.perform(post("/file/paste/edit/" + paste.uuid).with(csrf()).session(session)
+                        .param("title", "note").param("content", "new content").param("syntax", "text")
+                        .param("password", "shouldnt-be-allowed"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/file/paste/edit/" + paste.uuid));
+
+        String storedContent = java.nio.file.Files.readString(storageDir.resolve(paste.uuid));
+        assertEquals("old content", storedContent, "update must be rejected, not partially applied, when a password is submitted with upload passwords disabled");
     }
 
     @Test

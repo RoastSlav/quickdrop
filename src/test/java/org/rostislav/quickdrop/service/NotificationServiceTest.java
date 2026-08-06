@@ -201,4 +201,65 @@ class NotificationServiceTest {
 
         verify(settings, timeout(2000).times(2)).getDiscordWebhookUrl();
     }
+
+    // -------------------------------------------------------------------------
+    // notifyFileAction's per-EventType message-description switch (paste/share events)
+    // -------------------------------------------------------------------------
+    // Reaching the switch only needs the toggle + a "channel configured" check to pass --
+    // both happen synchronously before the async submit, so these don't need the dispatch
+    // to actually complete. The timeout(2000).times(2) assertion (same pattern as the
+    // UPLOAD case above) proves the async task ran without throwing, i.e. the switch arm
+    // for this EventType didn't blow up -- it doesn't assert the message text itself, since
+    // that would need intercepting the RestTemplate this service builds internally.
+    //
+    // SHARE_EXPIRE/SHARE_REVOKE are deliberately not covered here: isNotificationEventEnabled
+    // routes both to its `default -> false` arm unconditionally, so notifyFileAction returns
+    // before ever reaching this switch for those two types -- their arms in the switch below
+    // are dead code under the current wiring, not a coverage gap.
+
+    private void assertEventTypeReachesSwitchAndDispatches(EventType type) {
+        NotificationService service = newService();
+        service.notifyFileAction(someFile(), type);
+        verify(settings, timeout(2000).times(2)).getDiscordWebhookUrl();
+    }
+
+    @Test
+    void notifyFileAction_pasteCreate_reachesEventSwitchAndDispatches() {
+        when(settings.isNotifyOnPasteCreate()).thenReturn(true);
+        when(settings.isDiscordWebhookEnabled()).thenReturn(true);
+        when(settings.getDiscordWebhookUrl()).thenReturn("https://not-discord.example.com/hook");
+        assertEventTypeReachesSwitchAndDispatches(EventType.PASTE_CREATE);
+    }
+
+    @Test
+    void notifyFileAction_pasteView_reachesEventSwitchAndDispatches() {
+        when(settings.isNotifyOnPasteView()).thenReturn(true);
+        when(settings.isDiscordWebhookEnabled()).thenReturn(true);
+        when(settings.getDiscordWebhookUrl()).thenReturn("https://not-discord.example.com/hook");
+        assertEventTypeReachesSwitchAndDispatches(EventType.PASTE_VIEW);
+    }
+
+    @Test
+    void notifyFileAction_pasteEdit_reachesEventSwitchAndDispatches() {
+        when(settings.isNotifyOnPasteEdit()).thenReturn(true);
+        when(settings.isDiscordWebhookEnabled()).thenReturn(true);
+        when(settings.getDiscordWebhookUrl()).thenReturn("https://not-discord.example.com/hook");
+        assertEventTypeReachesSwitchAndDispatches(EventType.PASTE_EDIT);
+    }
+
+    @Test
+    void notifyFileAction_shareCreate_reachesEventSwitchAndDispatches() {
+        when(settings.isNotifyOnShareCreate()).thenReturn(true);
+        when(settings.isDiscordWebhookEnabled()).thenReturn(true);
+        when(settings.getDiscordWebhookUrl()).thenReturn("https://not-discord.example.com/hook");
+        assertEventTypeReachesSwitchAndDispatches(EventType.SHARE_CREATE);
+    }
+
+    @Test
+    void notifyFileAction_shareDownload_reachesEventSwitchAndDispatches() {
+        when(settings.isNotifyOnShareDownload()).thenReturn(true);
+        when(settings.isDiscordWebhookEnabled()).thenReturn(true);
+        when(settings.getDiscordWebhookUrl()).thenReturn("https://not-discord.example.com/hook");
+        assertEventTypeReachesSwitchAndDispatches(EventType.SHARE_DOWNLOAD);
+    }
 }

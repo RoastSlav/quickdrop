@@ -62,6 +62,12 @@ public class ApplicationSettingsService {
     @Autowired
     private ScheduleService scheduleService;
 
+    /** Only for the one-off initial schedule in {@link #onApplicationReady()}; routine
+     *  rescheduling is handled by {@link BackupService}'s own event listener. */
+    @Lazy
+    @Autowired
+    private BackupService backupService;
+
     /** Used only by the admin panel's "Test Connection" button -- settings-save
      *  propagation goes through each service's own {@link SettingsChangedEvent} listener. */
     @Lazy
@@ -191,6 +197,7 @@ public class ApplicationSettingsService {
     public void onApplicationReady() {
         ApplicationSettingsEntity settings = self.getApplicationSettings();
         scheduleService.updateSchedule(settings.getFileDeletionCron(), settings.getMaxFileLifeTime());
+        backupService.updateSchedule(settings.getBackupCron(), settings.isBackupScheduleEnabled());
     }
 
     /**
@@ -392,6 +399,10 @@ public class ApplicationSettingsService {
             entity.setWebDavPassword(settings.getWebDavPassword());
         }
         entity.setWebDavKeyPrefix(settings.getWebDavKeyPrefix() != null ? settings.getWebDavKeyPrefix() : "");
+
+        entity.setBackupScheduleEnabled(settings.isBackupScheduleEnabled());
+        entity.setBackupCron(settings.getBackupCron());
+        entity.setMaxBackups(settings.getMaxBackups());
 
         if (clearLogo) {
             entity.setLogoFileName(null);

@@ -32,6 +32,7 @@ build/
 ### VS Code ###
 .vscode/
 /db/
+/db-backups/
 /log/
 /files/
 /e2e-data/

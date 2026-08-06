@@ -346,6 +346,20 @@ public class ApplicationSettingsEntity {
     @Column(name = "webdav_key_prefix")
     private String webDavKeyPrefix = "";
 
+    // ── Database backups ─────────────────────────────────────────────────────
+
+    /** Whether the automatic backup schedule is active. Opt-in; "Backup Now" ignores this. */
+    @Column(name = "backup_schedule_enabled")
+    private boolean backupScheduleEnabled;
+
+    /** Spring cron expression that controls when the scheduled backup job runs. */
+    @Column(name = "backup_cron")
+    private String backupCron = "0 0 4 * * *";
+
+    /** Number of most-recent backups to retain; older ones are pruned after each backup. */
+    @Column(name = "max_backups")
+    private int maxBackups = 7;
+
     public ApplicationSettingsEntity() {
     }
 
@@ -428,6 +442,9 @@ public class ApplicationSettingsEntity {
         this.webDavUsername = settings.getWebDavUsername();
         this.webDavPassword = settings.getWebDavPassword();
         this.webDavKeyPrefix = settings.getWebDavKeyPrefix() != null ? settings.getWebDavKeyPrefix() : "";
+        this.backupScheduleEnabled = settings.isBackupScheduleEnabled();
+        this.backupCron = settings.getBackupCron() != null ? settings.getBackupCron() : "0 0 4 * * *";
+        this.maxBackups = settings.getMaxBackups() > 0 ? settings.getMaxBackups() : 7;
     }
 
     public String getAppName() {
@@ -976,5 +993,30 @@ public class ApplicationSettingsEntity {
 
     public void setWebDavKeyPrefix(String webDavKeyPrefix) {
         this.webDavKeyPrefix = webDavKeyPrefix;
+    }
+
+    // Backup getters/setters
+    public boolean isBackupScheduleEnabled() {
+        return backupScheduleEnabled;
+    }
+
+    public void setBackupScheduleEnabled(boolean backupScheduleEnabled) {
+        this.backupScheduleEnabled = backupScheduleEnabled;
+    }
+
+    public String getBackupCron() {
+        return backupCron;
+    }
+
+    public void setBackupCron(String backupCron) {
+        this.backupCron = backupCron;
+    }
+
+    public int getMaxBackups() {
+        return maxBackups;
+    }
+
+    public void setMaxBackups(int maxBackups) {
+        this.maxBackups = maxBackups;
     }
 }

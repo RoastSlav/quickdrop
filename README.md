@@ -155,6 +155,27 @@ Three automatic jobs run on configurable schedules:
 The file cleanup cron expression has a preset-button helper (hourly, daily, weekly, monthly), the input and the
 expression is validated client-side before the form can be saved.
 
+### Database Backups
+
+Manage everything from `/admin/backups`, linked from the admin dashboard and settings page.
+
+- **Scheduled backups** — opt-in, on a user-configurable cron expression (with the same preset-button helper as the
+  file cleanup job).
+- **Retention** — keep the newest N backups; older ones are pruned automatically after each backup.
+- **Backup Now** — create a backup on demand, regardless of the schedule.
+- **Upload a backup** — import a database file from elsewhere (another instance, an off-site copy)
+  so restoring isn't limited to backups this instance made itself.
+- **Drop-in restore** — backups are plain, complete SQLite `.db` files (via `VACUUM INTO`, not a raw file copy), so
+  one can also be copied over `db/quickdrop.db` by hand if the app won't even start.
+- **Download** — pull a backup off the server, so a disk/volume failure can't take out the live database and every
+  local backup at once.
+- **Restore from the UI** — pick a backup, confirm, and the app restores it and restarts. Under Docker with
+  `restart: unless-stopped` this happens automatically; a bare `java -jar` deployment with no supervisor stays
+  stopped until restarted manually — the confirmation dialog says so before you restore.
+- **Integrity check** — every candidate backup is validated (`PRAGMA quick_check`) before it's allowed to replace
+  the live database, whether it was created by the app itself or uploaded.
+- **Logged** — every backup, restore, and failure is recorded in the admin Activity log.
+
 ### Security
 
 - **Application password** — optionally require a site-wide password before anything is accessible.
@@ -205,6 +226,7 @@ docker run -d \
   -p 8080:8080 \
   --restart unless-stopped \
   -v /path/to/db:/app/db \
+  -v /path/to/db-backups:/app/db-backups \
   -v /path/to/files:/app/files \
   -v /path/to/log:/app/log \
   roastslav/quickdrop:latest
@@ -224,6 +246,7 @@ services:
       - "8080:8080"
     volumes:
       - ./data/db:/app/db
+      - ./data/db-backups:/app/db-backups
       - ./data/files:/app/files
       - ./data/log:/app/log
 ```
@@ -248,11 +271,12 @@ directory relative to where you launch the jar.
 
 If you run without volume mounts, all data lives inside the container and is lost when the container is removed.
 
-| Volume       | Contents                            |
-|--------------|-------------------------------------|
-| `/app/db`    | SQLite database (`quickdrop.db`)    |
-| `/app/files` | Uploaded files (encrypted or plain) |
-| `/app/log`   | Application log (`quickdrop.log`)   |
+| Volume            | Contents                            |
+|-------------------|--------------------------------------|
+| `/app/db`         | SQLite database (`quickdrop.db`)    |
+| `/app/db-backups` | Database backups (see [Database Backups](#database-backups)) |
+| `/app/files`      | Uploaded files (encrypted or plain) |
+| `/app/log`        | Application log (`quickdrop.log`)   |
 
 ---
 
@@ -268,6 +292,9 @@ restart needed.
 | **File storage path**              | Directory where uploaded files are saved                                                                      |
 | **Log storage path**               | Directory for the application log                                                                             |
 | **Deletion cron**                  | Spring 6-field cron expression for the cleanup job                                                            |
+| **Scheduled backups**              | Enable/disable automatic database backups                                                                     |
+| **Backup cron**                    | Spring 6-field cron expression for the backup job                                                             |
+| **Backups to keep**                | Number of most-recent backups to retain; older ones are pruned automatically                                  |
 | **Session timeout**                | HTTP session lifetime in minutes                                                                              |
 | **Encryption**                     | Enable/disable AES encryption at rest                                                                         |
 | **Upload passwords**               | Enable/disable per-file password support                                                                      |
@@ -325,6 +352,7 @@ docker run -d \
   -p 8080:8080 \
   --restart unless-stopped \
   -v /path/to/db:/app/db \
+  -v /path/to/db-backups:/app/db-backups \
   -v /path/to/files:/app/files \
   -v /path/to/log:/app/log \
   roastslav/quickdrop:latest

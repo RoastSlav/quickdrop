@@ -584,61 +584,67 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    document.querySelectorAll('#cronPresets [data-cron]').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const input = document.getElementById('fileDeletionCron');
-            if (input) {
-                input.value = btn.dataset.cron;
-                input.dispatchEvent(new Event('input'));
-                markValidity(input, '');
-            }
-        });
-    });
+    // Wires one cron field's preset buttons + live cronstrue feedback. presetsId is scoped
+    // per field (not a shared #cronPresets id) so the file-deletion and backup cron fields'
+    // preset buttons don't cross-wire into each other's input.
+    function wireCronField(presetsId, inputId, feedbackId) {
+        const input = document.getElementById(inputId);
+        const feedback = document.getElementById(feedbackId);
+        const cronLocale = window.i18n?.settings?.cron?.locale || 'en';
 
-    const cronInput = document.getElementById('fileDeletionCron');
-    const cronFeedback = document.getElementById('cronFeedback');
-    const cronLocale = window.i18n?.settings?.cron?.locale || 'en';
-
-    function updateCronFeedback() {
-        if (!cronInput || !cronFeedback) return;
-        const val = cronInput.value.trim();
-
-        document.querySelectorAll('#cronPresets [data-cron]').forEach(btn => {
-            const match = btn.dataset.cron === val;
-            btn.classList.toggle('btn-primary', match);
-            btn.classList.toggle('btn-ghost', !match);
+        document.querySelectorAll('#' + presetsId + ' [data-cron]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                if (input) {
+                    input.value = btn.dataset.cron;
+                    input.dispatchEvent(new Event('input'));
+                    markValidity(input, '');
+                }
+            });
         });
 
-        if (!val) {
-            cronFeedback.textContent = '';
-            cronInput.setCustomValidity('');
-            return;
-        }
+        function updateFeedback() {
+            if (!input || !feedback) return;
+            const val = input.value.trim();
 
-        if (!isValidSpringCron(val)) {
-            const msg = sv('cronInvalid', 'Invalid cron expression (6 fields required).');
-            cronFeedback.textContent = msg;
-            cronFeedback.style.color = 'var(--c-danger, #ef4444)';
-            cronInput.setCustomValidity(msg);
-            return;
-        }
+            document.querySelectorAll('#' + presetsId + ' [data-cron]').forEach(btn => {
+                const match = btn.dataset.cron === val;
+                btn.classList.toggle('btn-primary', match);
+                btn.classList.toggle('btn-ghost', !match);
+            });
 
-        cronInput.setCustomValidity('');
-        let desc = '';
-        if (typeof cronstrue !== 'undefined') {
-            try {
-                desc = cronstrue.toString(val, {locale: cronLocale, throwExceptionOnParseError: true});
-            } catch (e) {
-                desc = '';
+            if (!val) {
+                feedback.textContent = '';
+                input.setCustomValidity('');
+                return;
             }
+
+            if (!isValidSpringCron(val)) {
+                const msg = sv('cronInvalid', 'Invalid cron expression (6 fields required).');
+                feedback.textContent = msg;
+                feedback.style.color = 'var(--c-danger, #ef4444)';
+                input.setCustomValidity(msg);
+                return;
+            }
+
+            input.setCustomValidity('');
+            let desc = '';
+            if (typeof cronstrue !== 'undefined') {
+                try {
+                    desc = cronstrue.toString(val, {locale: cronLocale, throwExceptionOnParseError: true});
+                } catch (e) {
+                    desc = '';
+                }
+            }
+            feedback.textContent = desc;
+            feedback.style.color = 'var(--c-teal)';
         }
-        cronFeedback.textContent = desc;
-        cronFeedback.style.color = 'var(--c-teal)';
+
+        input?.addEventListener('input', updateFeedback);
+        updateFeedback();
     }
 
-    cronInput?.addEventListener('input', updateCronFeedback);
-    updateCronFeedback();
-
+    wireCronField('cronPresets', 'fileDeletionCron', 'cronFeedback');
+    wireCronField('backupCronPresets', 'backupCron', 'backupCronFeedback');
     document
         .getElementById("discordWebhookEnabled")
         ?.addEventListener("change", toggleDiscordField);

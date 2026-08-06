@@ -106,6 +106,26 @@ public enum EventType {
      */
     ADMIN_SETTINGS_CHANGE(EventCategory.ADMIN),
 
+    /**
+     * A database backup was created, scheduled or on-demand.
+     */
+    BACKUP_CREATED(EventCategory.ADMIN),
+
+    /**
+     * An admin uploaded an external file to use as a backup.
+     */
+    BACKUP_UPLOADED(EventCategory.ADMIN),
+
+    /**
+     * A database backup was restored, replacing the live database.
+     */
+    BACKUP_RESTORED(EventCategory.ADMIN),
+
+    /**
+     * A backup or restore operation failed.
+     */
+    BACKUP_FAILED(EventCategory.ADMIN),
+
     // -------------------------------------------------------------------------
     // SYSTEM events
     // -------------------------------------------------------------------------

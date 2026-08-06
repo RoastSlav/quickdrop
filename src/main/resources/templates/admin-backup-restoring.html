@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en" th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title th:text="${appName} + ' — ' + #{page.backup.restoring.title}">Restoring…</title>
+    <meta content="width=device-width, initial-scale=1" name="viewport"/>
+    <th:block th:replace="~{fragments/header :: themePreload}"></th:block>
+    <link href="https://fonts.googleapis.com" rel="preconnect"/>
+    <link crossorigin href="https://fonts.gstatic.com" rel="preconnect"/>
+    <link href="/css/tailwind.css" rel="stylesheet"/>
+    <link href="/css/custom.css" rel="stylesheet"/>
+    <link href="/images/favicon.png" rel="icon" th:href="${appLogoPath}" type="image/png"/>
+    <script src="/js/tailwindTheme.js"></script>
+</head>
+<body>
+
+<div aria-hidden="true" class="orb-field">
+    <div class="orb orb--primary"></div>
+    <div class="orb orb--teal"></div>
+</div>
+
+<main class="flex-1 hero-scene flex items-center justify-center" id="main-content" style="min-height:100vh">
+    <div class="card p-8 max-w-md mx-4 text-center animate-in">
+        <div class="w-14 h-14 rounded-2xl mx-auto mb-4 flex items-center justify-center"
+             style="background:var(--c-success-bg);color:var(--c-success-text)">
+            <svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                <path d="m4.5 12.75 6 6 9-13.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </div>
+        <h1 class="text-lg font-extrabold tracking-tight mb-2" th:text="#{page.backup.restoring.heading}">Database
+            restored</h1>
+        <p class="text-sm text-muted mb-1" th:text="#{page.backup.restoring.filename(${filename})}">Restored
+            from backup.</p>
+        <p class="text-sm text-muted" th:text="#{page.backup.restoring.body}">The app is restarting now. Under
+            Docker with a restart policy it will come back automatically in a few seconds; a bare deployment
+            with no supervisor will stay stopped until restarted manually.</p>
+    </div>
+</main>
+
+</body>
+</html>

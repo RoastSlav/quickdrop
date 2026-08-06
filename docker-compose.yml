@@ -9,6 +9,7 @@ services:
             - TZ=/etc/UTC
         volumes:
             - ./db:/app/db
+            - ./db-backups:/app/db-backups
             - ./log:/app/log
             - ./files:/app/files
         restart: unless-stopped

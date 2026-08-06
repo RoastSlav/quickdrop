@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en" th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title th:text="${appName} + ' — ' + #{page.backup.title}">Database Backups</title>
+    <meta content="width=device-width, initial-scale=1" name="viewport"/>
+    <th:block th:replace="~{fragments/header :: themePreload}"></th:block>
+    <link href="https://fonts.googleapis.com" rel="preconnect"/>
+    <link crossorigin href="https://fonts.gstatic.com" rel="preconnect"/>
+    <link href="/css/tailwind.css" rel="stylesheet"/>
+    <link href="/css/custom.css" rel="stylesheet"/>
+    <link href="/images/favicon.png" rel="icon" th:href="${appLogoPath}" type="image/png"/>
+    <script src="/js/tailwindTheme.js"></script>
+    <th:block th:replace="~{fragments/header :: scripts}"></th:block>
+</head>
+<body>
+
+<div th:replace="~{fragments/header :: header(false)}"></div>
+
+<div aria-hidden="true" class="orb-field">
+    <div class="orb orb--primary"></div>
+    <div class="orb orb--secondary"></div>
+    <div class="orb orb--teal"></div>
+</div>
+
+<main class="flex-1 hero-scene" id="main-content">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
+
+        <!-- Back -->
+        <div class="mb-6 animate-in">
+            <a class="btn btn-ghost btn-sm inline-flex items-center gap-1.5" href="/admin/dashboard">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span th:text="#{nav.admin}">Admin</span>
+            </a>
+        </div>
+
+        <!-- Title -->
+        <div class="mb-8 animate-in">
+            <h1 class="page-title-xl">
+                <span class="gradient-text" th:text="#{page.backup.title}">Database Backups</span>
+            </h1>
+            <p class="text-muted mt-2" th:text="#{page.backup.subtitle}">Back up and restore the application
+                database.</p>
+        </div>
+
+        <!-- Flash messages -->
+        <div class="alert alert-success mb-6 animate-in" th:if="${backupSuccess != null}">
+            <span th:text="#{page.backup.flash.created}">Backup created:</span> <span
+                th:text="${backupSuccess}"></span>
+        </div>
+        <div class="alert alert-danger mb-6 animate-in" th:if="${backupError != null}" th:text="${backupError}"></div>
+
+        <!-- Schedule summary -->
+        <div class="card p-6 mb-6 animate-in animate-in-delay-1">
+            <div class="flex items-center justify-between flex-wrap gap-3">
+                <div>
+                    <h2 class="font-semibold mb-1" th:text="#{page.backup.schedule.title}">Automatic Backups</h2>
+                    <p class="text-sm text-muted" th:if="${settings.backupScheduleEnabled}"
+                       th:text="#{page.backup.schedule.enabledSummary(${settings.backupCron}, ${settings.maxBackups})}">
+                        Enabled — cron, keeping N.</p>
+                    <p class="text-sm text-muted" th:unless="${settings.backupScheduleEnabled}"
+                       th:text="#{page.backup.schedule.disabledSummary}">Disabled — only manual backups are made.</p>
+                </div>
+                <a class="btn btn-ghost btn-sm flex-shrink-0" href="/admin/settings#storage"
+                   th:text="#{page.backup.schedule.configure}">Configure →</a>
+            </div>
+        </div>
+
+        <!-- Backup now -->
+        <div class="card p-6 mb-6 animate-in animate-in-delay-2">
+            <h2 class="font-semibold mb-4" th:text="#{page.backup.now.title}">Backup Now</h2>
+            <form action="/admin/backups/create" method="post">
+                <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden"/>
+                <button class="btn btn-gradient" type="submit">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M12 3v13.5m0 0-4.5-4.5m4.5 4.5 4.5-4.5M4.5 19.5h15" stroke-linecap="round"
+                              stroke-linejoin="round"/>
+                    </svg>
+                    <span th:text="#{page.backup.now.button}">Backup Now</span>
+                </button>
+            </form>
+            <p class="text-xs text-muted mt-4" th:text="#{page.backup.now.footer}">A backup is a complete,
+                standalone database file — kept up to the configured limit.</p>
+        </div>
+
+        <!-- Upload backup -->
+        <div class="card p-6 mb-6 animate-in animate-in-delay-2">
+            <h2 class="font-semibold mb-4" th:text="#{page.backup.upload.title}">Upload Backup</h2>
+            <form action="/admin/backups/upload" enctype="multipart/form-data" method="post">
+                <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden"/>
+                <div class="flex flex-wrap items-center gap-2">
+                    <input accept=".db" class="sr-only" id="backupUploadFile" name="file" type="file"/>
+                    <label class="btn btn-ghost cursor-pointer" for="backupUploadFile">
+                        <span id="backupUploadFileLabel" th:text="#{page.backup.upload.browse}">Browse</span>
+                    </label>
+                    <button class="btn btn-gradient" type="submit">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 7.5 12 3m0 0L7.5 7.5M12 3v13.5"
+                                  stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <span th:text="#{page.backup.upload.button}">Upload</span>
+                    </button>
+                </div>
+                <p class="text-xs text-muted mt-4" th:text="#{page.backup.upload.help}">Import a database file from
+                    elsewhere — it's validated the same way as any other backup before it can be restored.</p>
+            </form>
+        </div>
+
+        <!-- Backup list -->
+        <div class="card card-xl animate-in animate-in-delay-3">
+            <div class="flex items-center justify-between gap-4 mb-6">
+                <h2 class="section-title" th:text="#{page.backup.list.title}">Existing Backups</h2>
+                <span class="badge badge-primary font-mono text-sm"
+                      th:text="${#lists.size(backups)} + ' ' + #{page.dashboard.total}">0 total</span>
+            </div>
+
+            <div class="flex flex-col gap-2.5" th:if="${!#lists.isEmpty(backups)}">
+                <div class="group flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 px-4 py-3.5 rounded-2xl transition-all duration-200 hover:shadow-md"
+                     th:each="backup, iterStat : ${backups}"
+                     th:style="'animation: qd-fade-in-up 350ms var(--ease-out-expo) both; animation-delay:' + ${iterStat.index * 35} + 'ms; background: var(--c-surface-raised); border: 1px solid var(--c-border); border-left: 4px solid var(--c-teal)'">
+
+                    <div class="flex items-center gap-3 min-w-0 flex-1">
+                        <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+                             style="background:var(--c-teal-muted);color:var(--c-teal)">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.6"
+                                 viewBox="0 0 24 24">
+                                <path d="M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375"
+                                      stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </div>
+                        <div class="min-w-0 flex-1">
+                            <p class="font-bold text-sm truncate font-mono" th:text="${backup.filename}">quickdrop-2026-08-06T04-00-00.db</p>
+                            <p class="text-xs font-mono mt-0.5" style="color: var(--c-text-faint)">
+                                <span th:text="${#temporals.format(backup.createdAt, 'dd.MM.yyyy HH:mm')}">01.01.2026 04:00</span>
+                                <span class="opacity-40">·</span>
+                                <span th:text="${backup.sizeBytes / 1024} + ' KB'">120 KB</span>
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-1.5 flex-shrink-0 pl-12 sm:pl-0">
+                        <a class="btn btn-ghost btn-sm" th:href="@{/admin/backups/download/{f}(f=${backup.filename})}"
+                           th:title="#{page.backup.list.download}">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2"
+                                 viewBox="0 0 24 24">
+                                <path d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3"
+                                      stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                            <span class="hidden sm:inline" th:text="#{page.backup.list.download}">Download</span>
+                        </a>
+                        <button class="btn btn-secondary btn-sm backup-restore-btn"
+                                th:data-filename="${backup.filename}"
+                                th:data-created="${#temporals.format(backup.createdAt, 'dd.MM.yyyy HH:mm')}"
+                                th:title="#{page.backup.list.restore}" type="button">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2"
+                                 viewBox="0 0 24 24">
+                                <path d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99"
+                                      stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                            <span class="hidden sm:inline" th:text="#{page.backup.list.restore}">Restore</span>
+                        </button>
+                        <form data-delete-form method="post" th:action="@{/admin/backups/delete}">
+                            <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden"/>
+                            <input name="filename" th:value="${backup.filename}" type="hidden"/>
+                            <button class="btn btn-danger btn-sm" th:title="#{page.backup.list.delete}"
+                                    type="submit">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2"
+                                     viewBox="0 0 24 24">
+                                    <path d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"
+                                          stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                                <span class="hidden sm:inline" th:text="#{page.backup.list.delete}">Delete</span>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <p class="text-sm text-muted py-8 text-center" th:if="${#lists.isEmpty(backups)}"
+               th:text="#{page.backup.list.empty}">No backups yet.</p>
+        </div>
+
+        <!-- Restore confirmation — hidden until a Restore button is clicked -->
+        <div class="hidden mt-6 p-5 rounded-2xl animate-in" id="restoreConfirmPanel"
+             style="background:var(--c-surface-raised);border:1px solid var(--c-danger)">
+            <p class="text-sm font-semibold mb-1" id="restoreConfirmSummary"></p>
+            <p class="text-sm mb-1" style="color:var(--c-danger)" th:text="#{page.backup.restoreConfirm.overwriteWarning}">
+                This replaces the current database. Everything since this backup will be lost.</p>
+            <p class="text-sm mb-3" style="color:var(--c-danger)" th:text="#{page.backup.restoreConfirm.restartWarning}">
+                The app will restart. Under Docker with a restart policy this happens automatically; a bare
+                `java -jar` deployment with no supervisor will stay stopped until you restart it manually.</p>
+            <form id="restoreForm" method="post" th:action="@{/admin/backups/restore}">
+                <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden"/>
+                <input id="restoreFilenameInput" name="filename" type="hidden"/>
+                <div class="flex gap-2">
+                    <button class="btn btn-gradient btn-sm" style="background:var(--c-danger)" type="submit"
+                            th:text="#{page.backup.restoreConfirm.confirm}">Confirm — Restore &amp; Restart
+                    </button>
+                    <button class="btn btn-ghost btn-sm" onclick="cancelRestoreConfirm()" type="button"
+                            th:text="#{page.backup.restoreConfirm.cancel}">Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</main>
+
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    const backupI18n = {
+        deleteConfirm: /*[[#{page.backup.list.deleteConfirm}]]*/ 'Delete this backup? This cannot be undone.',
+        restoreSummary: /*[[#{page.backup.restoreConfirm.summary}]]*/ 'Restore the backup from {0}?'
+    };
+    /*]]>*/
+
+    const backupUploadFile = document.getElementById('backupUploadFile');
+    const backupUploadFileLabel = document.getElementById('backupUploadFileLabel');
+    if (backupUploadFile && backupUploadFileLabel) {
+        const defaultLabel = backupUploadFileLabel.textContent;
+        backupUploadFile.addEventListener('change', function () {
+            backupUploadFileLabel.textContent = backupUploadFile.files[0] ? backupUploadFile.files[0].name : defaultLabel;
+        });
+    }
+
+    document.querySelectorAll('[data-delete-form]').forEach(function (form) {
+        form.addEventListener('submit', function (e) {
+            if (!confirm(backupI18n.deleteConfirm)) e.preventDefault();
+        });
+    });
+
+    document.querySelectorAll('.backup-restore-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            const filename = btn.dataset.filename;
+            const created = btn.dataset.created;
+            document.getElementById('restoreFilenameInput').value = filename;
+            document.getElementById('restoreConfirmSummary').textContent =
+                backupI18n.restoreSummary.replace('{0}', created);
+            const panel = document.getElementById('restoreConfirmPanel');
+            panel.classList.remove('hidden');
+            panel.scrollIntoView({behavior: 'smooth', block: 'center'});
+        });
+    });
+
+    function cancelRestoreConfirm() {
+        document.getElementById('restoreConfirmPanel').classList.add('hidden');
+    }
+</script>
+<script src="/js/locale-switcher.js"></script>
+</body>
+</html>

@@ -239,6 +239,30 @@
                 </div>
             </a>
 
+            <!-- Backups card -->
+            <a class="card card-lg flex flex-col gap-4 transition-all duration-200 hover:shadow-xl hover:-translate-y-0.5 accent-stripe accent-stripe--emerald group"
+               href="/admin/backups" style="text-decoration:none">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
+                         style="background:var(--c-emerald-muted);color:var(--c-emerald)">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                            <path d="M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375"
+                                  stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <h2 class="text-lg font-extrabold tracking-tight" th:text="#{page.dashboard.backups}">
+                            Backups</h2>
+                        <p class="text-sm mt-0.5" style="color:var(--c-text-muted)"
+                           th:text="#{page.dashboard.backupsDesc}">Back up and restore the database</p>
+                    </div>
+                    <svg class="w-5 h-5 flex-shrink-0 transition-transform group-hover:translate-x-1" fill="none"
+                         stroke="currentColor" stroke-width="2" style="color:var(--c-text-faint)" viewBox="0 0 24 24">
+                        <path d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+            </a>
+
         </div>
     </div>
 </main>

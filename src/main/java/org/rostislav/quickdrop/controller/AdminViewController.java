@@ -262,10 +262,20 @@ public class AdminViewController {
 
         try {
             CronExpression.parse(settings.getFileDeletionCron());
-            return null;
         } catch (IllegalArgumentException ex) {
             return "invalidCron";
         }
+
+        if (settings.getMaxBackups() < 1) {
+            return "invalidMaxBackups";
+        }
+        try {
+            CronExpression.parse(settings.getBackupCron());
+        } catch (IllegalArgumentException ex) {
+            return "invalidBackupCron";
+        }
+
+        return null;
     }
 
     // Absolute paths are deliberately allowed (Docker deployments mount /app/files, and
@@ -311,6 +321,8 @@ public class AdminViewController {
             case "invalidRetention" -> "File retention must be at least 1 day";
             case "invalidStoragePath" -> "Storage path must be a relative path under the app directory";
             case "invalidCron" -> "Invalid cron expression";
+            case "invalidMaxBackups" -> "Number of backups to keep must be at least 1";
+            case "invalidBackupCron" -> "Invalid backup cron expression";
             default -> "Invalid settings";
         };
     }

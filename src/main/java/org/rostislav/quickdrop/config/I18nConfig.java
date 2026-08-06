@@ -14,6 +14,7 @@ import org.springframework.web.servlet.i18n.CookieLocaleResolver;
 import org.springframework.web.servlet.i18n.LocaleChangeInterceptor;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.Locale;
 
 /**
@@ -58,7 +59,9 @@ public class I18nConfig implements WebMvcConfigurer {
      */
     @Bean
     public LocaleResolver localeResolver() {
-        CookieLocaleResolver resolver = new CookieLocaleResolver();
+        // Cookie name is fixed via the constructor in Spring Framework 7 -- setCookieName(String)
+        // was removed. setCookieMaxAge now takes a Duration instead of a raw int of seconds.
+        CookieLocaleResolver resolver = new CookieLocaleResolver("lang");
         resolver.setDefaultLocaleFunction(request -> {
             String lang = applicationSettingsService.getDefaultLanguage();
             if (lang != null && !lang.isBlank()) {
@@ -66,8 +69,7 @@ public class I18nConfig implements WebMvcConfigurer {
             }
             return Locale.ENGLISH;
         });
-        resolver.setCookieName("lang");
-        resolver.setCookieMaxAge(24 * 60 * 60); // 24 hours
+        resolver.setCookieMaxAge(Duration.ofHours(24));
         return resolver;
     }
 

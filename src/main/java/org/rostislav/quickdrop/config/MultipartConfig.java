@@ -2,7 +2,7 @@ package org.rostislav.quickdrop.config;
 
 import jakarta.servlet.MultipartConfigElement;
 import org.rostislav.quickdrop.service.ApplicationSettingsService;
-import org.springframework.boot.web.embedded.tomcat.TomcatServletWebServerFactory;
+import org.springframework.boot.tomcat.servlet.TomcatServletWebServerFactory;
 import org.springframework.boot.web.server.WebServerFactoryCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

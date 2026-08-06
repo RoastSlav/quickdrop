@@ -52,7 +52,9 @@ public class SftpStorageService implements StorageService {
         }
         Session s = jsch.getSession(cfg.username(), cfg.host(), cfg.port());
         if (cfg.password() != null && !cfg.password().isBlank()) {
-            s.setPassword(cfg.password());
+            // setPassword(String) is deprecated in favor of setPassword(byte[]) so the
+            // password isn't held in an immutable String for the life of the JVM.
+            s.setPassword(cfg.password().getBytes(java.nio.charset.StandardCharsets.UTF_8));
         }
         if (cfg.knownHosts() == null || cfg.knownHosts().isBlank()) {
             // Fix 1: Warn loudly on every connection when host key verification is off.

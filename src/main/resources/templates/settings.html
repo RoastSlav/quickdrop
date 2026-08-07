@@ -1229,83 +1229,24 @@
                             </div>
 
                             <!-- Backups -->
-                            <section id="backupsSection">
-                                <p class="text-xs font-semibold uppercase tracking-widest mb-3"
-                                   style="color:var(--c-text-faint)"
-                                   th:text="#{page.settings.storage.backups.section}">Database Backups</p>
-
-                                <div class="alert alert-danger mb-3"
-                                     th:if="${param.error != null && param.error.contains('invalidBackupCron')}"
-                                     th:text="#{validation.cron.invalid.example}">Invalid cron expression.
+                            <!-- Schedule/retention are edited on the Backups page itself; these carry the current
+                                 values through unchanged so this form's general save doesn't reset them. -->
+                            <input th:field="*{backupScheduleEnabled}" type="hidden"/>
+                            <input th:field="*{backupCron}" type="hidden"/>
+                            <input th:field="*{maxBackups}" type="hidden"/>
+                            <div class="rounded-2xl p-4 flex items-center justify-between"
+                                 style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
+                                <div>
+                                    <p class="text-sm font-semibold"
+                                       th:text="#{page.settings.storage.backups.manageLink.title}">Manage
+                                        Backups</p>
+                                    <p class="form-hint"
+                                       th:text="#{page.settings.storage.backups.manageLink.desc}">Back up now,
+                                        download, or restore an existing backup.</p>
                                 </div>
-                                <div class="alert alert-danger mb-3"
-                                     th:if="${param.error != null && param.error.contains('invalidMaxBackups')}"
-                                     th:text="#{validation.settings.invalid}">Invalid settings value.
-                                </div>
-
-                                <div class="rounded-2xl p-4 mb-3"
-                                     style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
-                                    <label class="form-check">
-                                        <input id="backupScheduleEnabled"
-                                               th:field="*{backupScheduleEnabled}" type="checkbox"/>
-                                        <span>
-                        <span class="text-sm font-semibold" th:text="#{page.settings.storage.backups.enabled}">Enable scheduled backups</span>
-                        <span class="form-hint block mt-0.5"
-                              th:text="#{page.settings.storage.backups.enabled.help}">"Backup Now" always works regardless of this setting.</span>
-                      </span>
-                                    </label>
-                                </div>
-
-                                <div class="settings-list-item">
-                                    <div class="flex flex-col sm:flex-row gap-4 items-start">
-                                        <div class="form-row flex-1 min-w-0">
-                                            <label class="form-label" for="backupCron"
-                                                   th:text="#{page.settings.storage.backups.cron}">Backup Cron</label>
-                                            <div class="flex flex-wrap gap-1.5 mb-2" id="backupCronPresets">
-                                                <button class="btn btn-sm btn-ghost cron-preset"
-                                                        data-cron="0 0 4 * * *"
-                                                        th:text="#{page.settings.system.cron.daily2am}" type="button">
-                                                    Daily at 4 AM
-                                                </button>
-                                                <button class="btn btn-sm btn-ghost cron-preset"
-                                                        data-cron="0 0 0 * * SUN"
-                                                        th:text="#{page.settings.system.cron.weekly}" type="button">
-                                                    Weekly (Sun)
-                                                </button>
-                                                <button class="btn btn-sm btn-ghost cron-preset"
-                                                        data-cron="0 0 0 1 * *"
-                                                        th:text="#{page.settings.system.cron.monthly}" type="button">
-                                                    Monthly (1st)
-                                                </button>
-                                            </div>
-                                            <input class="form-input font-mono" id="backupCron"
-                                                   th:field="*{backupCron}" type="text"/>
-                                            <p class="text-xs mt-1.5 min-h-[1.25rem]" id="backupCronFeedback"></p>
-                                        </div>
-                                        <div class="form-row">
-                                            <label class="form-label" for="maxBackups"
-                                                   th:text="#{page.settings.storage.backups.maxBackups}">Backups to
-                                                keep</label>
-                                            <input class="form-input" id="maxBackups" min="1"
-                                                   th:field="*{maxBackups}" type="number"/>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="rounded-2xl p-4 mt-3 flex items-center justify-between"
-                                     style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
-                                    <div>
-                                        <p class="text-sm font-semibold"
-                                           th:text="#{page.settings.storage.backups.manageLink.title}">Manage
-                                            Backups</p>
-                                        <p class="form-hint"
-                                           th:text="#{page.settings.storage.backups.manageLink.desc}">Back up now,
-                                            download, or restore an existing backup.</p>
-                                    </div>
-                                    <a class="btn btn-ghost btn-sm flex-shrink-0" href="/admin/backups"
-                                       th:text="#{page.settings.storage.backups.manageLink.open}">Manage Backups →</a>
-                                </div>
-                            </section>
+                                <a class="btn btn-ghost btn-sm flex-shrink-0" href="/admin/backups"
+                                   th:text="#{page.settings.storage.backups.manageLink.open}">Manage Backups →</a>
+                            </div>
 
                         </div>
                     </div>
@@ -1460,9 +1401,7 @@
         var validPanels = ['appearance', 'features', 'files', 'security', 'notifications', 'storage', 'about'];
         var stored = sessionStorage.getItem('settingsPanel');
         var hash = window.location.hash.replace('#', '').replace('panel-', '');
-        var initial = errorParam.includes('invalidBackupCron') || errorParam.includes('invalidMaxBackups')
-            ? 'storage'
-            : errorParam.includes('invalidCron')
+        var initial = errorParam.includes('invalidCron')
             ? 'files'
             : (validPanels.includes(hash) ? hash : (stored && validPanels.includes(stored) ? stored : 'appearance'));
         switchPanel(initial);

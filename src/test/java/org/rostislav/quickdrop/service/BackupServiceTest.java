@@ -188,27 +188,26 @@ class BackupServiceTest extends QuickdropIntegrationTest {
     // -------------------------------------------------------------------------
 
     @Test
-    void restoreBackup_happyPath_replacesTargetFileAndCleansUpWalShmSidecars() throws Exception {
+    void restoreBackup_happyPath_stagesFileWithoutTouchingLiveDatabaseOrSidecars() throws Exception {
         BackupService.BackupResult created = backupService.createBackup();
         assertTrue(created.success());
 
-        Files.writeString(dbFile, "stale-live-db-content");
+        Files.writeString(dbFile, "still-live-content");
         Path walFile = Path.of(dbFile + "-wal");
         Path shmFile = Path.of(dbFile + "-shm");
-        Files.writeString(walFile, "stale-wal");
-        Files.writeString(shmFile, "stale-shm");
+        Files.writeString(walFile, "still-live-wal");
+        Files.writeString(shmFile, "still-live-shm");
 
         BackupService.BackupResult result = backupService.restoreBackup(created.message());
 
         assertTrue(result.success(), () -> "restore should succeed: " + result.message());
-        assertFalse(Files.exists(walFile), "a stale -wal sidecar must be removed so it isn't replayed against the restored file");
-        assertFalse(Files.exists(shmFile), "a stale -shm sidecar must be removed");
-        try (Connection connection = DriverManager.getConnection("jdbc:sqlite:" + dbFile.toAbsolutePath());
-             Statement statement = connection.createStatement();
-             ResultSet resultSet = statement.executeQuery("PRAGMA quick_check")) {
-            assertTrue(resultSet.next());
-            assertEquals("ok", resultSet.getString(1));
-        }
+        assertEquals("still-live-content", Files.readString(dbFile),
+                "staging must not touch the live database file -- the swap happens on next startup");
+        assertTrue(Files.exists(walFile), "staging must not touch the live -wal sidecar either");
+        assertTrue(Files.exists(shmFile), "staging must not touch the live -shm sidecar either");
+
+        Path pending = Path.of(dbFile + PendingRestoreApplier.PENDING_SUFFIX);
+        assertTrue(Files.isRegularFile(pending), "a staged file must be written for PendingRestoreApplier to pick up on next startup");
     }
 
     @Test
@@ -252,6 +251,8 @@ class BackupServiceTest extends QuickdropIntegrationTest {
         assertFalse(result.success());
         assertEquals("original-live-content", Files.readString(dbFile),
                 "a failed integrity check must never touch the live database file");
+        assertFalse(Files.exists(Path.of(dbFile + PendingRestoreApplier.PENDING_SUFFIX)),
+                "a failed integrity check must not stage anything either");
     }
 
     // -------------------------------------------------------------------------

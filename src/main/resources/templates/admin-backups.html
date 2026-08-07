@@ -50,22 +50,53 @@
             <span th:text="#{page.backup.flash.created}">Backup created:</span> <span
                 th:text="${backupSuccess}"></span>
         </div>
+        <div class="alert alert-success mb-6 animate-in" th:if="${scheduleSuccess != null}"
+             th:text="#{page.backup.schedule.saved}">Schedule updated.
+        </div>
         <div class="alert alert-danger mb-6 animate-in" th:if="${backupError != null}" th:text="${backupError}"></div>
 
-        <!-- Schedule summary -->
+        <!-- Schedule -->
         <div class="card p-6 mb-6 animate-in animate-in-delay-1">
-            <div class="flex items-center justify-between flex-wrap gap-3">
-                <div>
-                    <h2 class="font-semibold mb-1" th:text="#{page.backup.schedule.title}">Automatic Backups</h2>
-                    <p class="text-sm text-muted" th:if="${settings.backupScheduleEnabled}"
-                       th:text="#{page.backup.schedule.enabledSummary(${settings.backupCron}, ${settings.maxBackups})}">
-                        Enabled — cron, keeping N.</p>
-                    <p class="text-sm text-muted" th:unless="${settings.backupScheduleEnabled}"
-                       th:text="#{page.backup.schedule.disabledSummary}">Disabled — only manual backups are made.</p>
+            <h2 class="font-semibold mb-4" th:text="#{page.backup.schedule.title}">Automatic Backups</h2>
+            <form method="post" th:action="@{/admin/backups/schedule}">
+                <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden"/>
+                <label class="form-check mb-4">
+                    <input id="backupScheduleEnabled" name="backupScheduleEnabled"
+                           th:checked="${settings.backupScheduleEnabled}" type="checkbox" value="true"/>
+                    <span>
+                        <span class="text-sm font-semibold" th:text="#{page.settings.storage.backups.enabled}">Enable scheduled backups</span>
+                        <span class="form-hint block mt-0.5"
+                              th:text="#{page.settings.storage.backups.enabled.help}">"Backup Now" always works regardless of this setting.</span>
+                    </span>
+                </label>
+                <div class="form-row">
+                    <label class="form-label" for="backupCron"
+                           th:text="#{page.settings.storage.backups.cron}">Backup Cron</label>
+                    <div class="flex flex-wrap gap-1.5 mb-2" id="backupCronPresets">
+                        <button class="btn btn-sm btn-ghost cron-preset" data-cron="0 0 4 * * *"
+                                th:text="#{page.settings.system.cron.daily4am}" type="button">Daily at 4 AM
+                        </button>
+                        <button class="btn btn-sm btn-ghost cron-preset" data-cron="0 0 0 * * SUN"
+                                th:text="#{page.settings.system.cron.weekly}" type="button">Weekly (Sun)
+                        </button>
+                        <button class="btn btn-sm btn-ghost cron-preset" data-cron="0 0 0 1 * *"
+                                th:text="#{page.settings.system.cron.monthly}" type="button">Monthly (1st)
+                        </button>
+                    </div>
+                    <input class="form-input font-mono max-w-xs" id="backupCron" name="backupCron"
+                           th:value="${settings.backupCron}" type="text"/>
+                    <p class="text-xs mt-1.5 min-h-[1.25rem]" id="backupCronFeedback"></p>
                 </div>
-                <a class="btn btn-ghost btn-sm flex-shrink-0" href="/admin/settings#storage"
-                   th:text="#{page.backup.schedule.configure}">Configure →</a>
-            </div>
+                <div class="form-row max-w-[10rem]">
+                    <label class="form-label" for="maxBackups"
+                           th:text="#{page.settings.storage.backups.maxBackups}">Backups to keep</label>
+                    <input class="form-input" id="maxBackups" min="1" name="maxBackups"
+                           th:value="${settings.maxBackups}" type="number"/>
+                </div>
+                <button class="btn btn-gradient btn-sm mt-4" th:text="#{page.backup.schedule.save}" type="submit">
+                    Save Schedule
+                </button>
+            </form>
         </div>
 
         <!-- Backup now -->
@@ -215,6 +246,42 @@
     };
     /*]]>*/
 
+    const cronInput = document.getElementById('backupCron');
+    const cronFeedback = document.getElementById('backupCronFeedback');
+    const cronLocale = /*[[${#locale.language}]]*/ 'en';
+
+    document.querySelectorAll('#backupCronPresets [data-cron]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            cronInput.value = btn.dataset.cron;
+            updateCronFeedback();
+        });
+    });
+
+    function updateCronFeedback() {
+        const val = cronInput.value.trim();
+        document.querySelectorAll('#backupCronPresets [data-cron]').forEach(function (btn) {
+            const match = btn.dataset.cron === val;
+            btn.classList.toggle('btn-primary', match);
+            btn.classList.toggle('btn-ghost', !match);
+        });
+        if (!val || typeof cronstrue === 'undefined') {
+            cronFeedback.textContent = '';
+            return;
+        }
+        try {
+            cronFeedback.textContent = cronstrue.toString(val, {locale: cronLocale});
+            cronFeedback.style.color = '';
+        } catch (e) {
+            cronFeedback.textContent = e.toString();
+            cronFeedback.style.color = 'var(--c-danger, #ef4444)';
+        }
+    }
+
+    if (cronInput && cronFeedback) {
+        cronInput.addEventListener('input', updateCronFeedback);
+        updateCronFeedback();
+    }
+
     const backupUploadFile = document.getElementById('backupUploadFile');
     const backupUploadFileLabel = document.getElementById('backupUploadFileLabel');
     if (backupUploadFile && backupUploadFileLabel) {
@@ -247,6 +314,7 @@
         document.getElementById('restoreConfirmPanel').classList.add('hidden');
     }
 </script>
+<script src="https://cdn.jsdelivr.net/npm/cronstrue@2/dist/cronstrue-i18n.min.js"></script>
 <script src="/js/locale-switcher.js"></script>
 </body>
 </html>

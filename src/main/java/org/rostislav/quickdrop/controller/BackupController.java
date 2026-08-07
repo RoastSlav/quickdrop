@@ -1,6 +1,7 @@
 package org.rostislav.quickdrop.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
+import org.rostislav.quickdrop.model.ApplicationSettingsViewModel;
 import org.rostislav.quickdrop.model.EventType;
 import org.rostislav.quickdrop.model.RequesterInfo;
 import org.rostislav.quickdrop.service.AnalyticsService;
@@ -16,6 +17,7 @@ import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.support.CronExpression;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -34,6 +36,7 @@ import java.nio.file.Path;
  *
  * <ul>
  *   <li>{@code GET  /admin/backups}                 — backup list + schedule summary</li>
+ *   <li>{@code POST /admin/backups/schedule}         — save the backup schedule</li>
  *   <li>{@code POST /admin/backups/create}           — backup now</li>
  *   <li>{@code POST /admin/backups/upload}           — import an externally-supplied backup</li>
  *   <li>{@code POST /admin/backups/restore}          — restore, then restart</li>
@@ -76,6 +79,34 @@ public class BackupController {
         model.addAttribute("backups", backupService.listBackups());
         model.addAttribute("settings", applicationSettingsService.getApplicationSettings());
         return "admin-backups";
+    }
+
+    @PostMapping("/schedule")
+    public String saveSchedule(@RequestParam(defaultValue = "false") boolean backupScheduleEnabled,
+                               @RequestParam String backupCron, @RequestParam int maxBackups,
+                               HttpServletRequest request, RedirectAttributes redirectAttributes) {
+        if (!sessionService.hasValidAdminSession(request)) {
+            return "redirect:/admin";
+        }
+        if (maxBackups < 1) {
+            redirectAttributes.addFlashAttribute("backupError", "Number of backups to keep must be at least 1");
+            return "redirect:/admin/backups";
+        }
+        try {
+            CronExpression.parse(backupCron);
+        } catch (IllegalArgumentException ex) {
+            redirectAttributes.addFlashAttribute("backupError", "Invalid backup cron expression");
+            return "redirect:/admin/backups";
+        }
+        ApplicationSettingsViewModel vm = new ApplicationSettingsViewModel(applicationSettingsService.getApplicationSettings());
+        vm.setBackupScheduleEnabled(backupScheduleEnabled);
+        vm.setBackupCron(backupCron);
+        vm.setMaxBackups(maxBackups);
+        applicationSettingsService.updateApplicationSettings(vm, null, null, false);
+        RequesterInfo info = FileUtils.getRequesterInfo(request);
+        analyticsService.logEvent(EventType.ADMIN_SETTINGS_CHANGE, info.ipAddress(), info.userAgent());
+        redirectAttributes.addFlashAttribute("scheduleSuccess", true);
+        return "redirect:/admin/backups";
     }
 
     @PostMapping("/create")

@@ -2,6 +2,7 @@ package org.rostislav.quickdrop;
 
 import jakarta.annotation.PostConstruct;
 import org.rostislav.quickdrop.service.ApplicationSettingsService;
+import org.rostislav.quickdrop.service.PendingRestoreApplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
@@ -22,6 +23,9 @@ import java.nio.file.Path;
  *   <li>The configured file storage path — created via {@link #createFileSavePath()} after
  *       the context is ready so the settings bean is available.</li>
  * </ul>
+ *
+ * <p>Also applies any database restore staged by {@link org.rostislav.quickdrop.service.BackupService}
+ * before the Spring context (and its connection pool) exists — see {@link PendingRestoreApplier}.
  */
 @SpringBootApplication
 @EnableScheduling
@@ -40,6 +44,11 @@ public class QuickdropApplication {
             Files.createDirectories(Path.of("./db-backups"));
         } catch (Exception e) {
             logger.error("Error creating directory for database", e);
+        }
+        try {
+            PendingRestoreApplier.applyIfPending(Path.of("db", "quickdrop.db"));
+        } catch (Exception e) {
+            logger.error("Failed to apply a staged database restore; starting with the previous database instead. It remains staged and will be retried on the next restart.", e);
         }
         SpringApplication.run(QuickdropApplication.class, args);
     }

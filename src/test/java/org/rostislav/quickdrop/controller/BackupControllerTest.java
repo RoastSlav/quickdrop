@@ -56,6 +56,81 @@ class BackupControllerTest extends ControllerTestSupport {
                 .andExpect(redirectedUrl("/admin/password"));
     }
 
+    // -- POST /admin/backups/schedule --------------------------------------------
+
+    @Test
+    void saveSchedule_validValues_persistsAndRedirectsWithSuccessFlash() throws Exception {
+        MockHttpSession session = adminSession();
+
+        try {
+            mockMvc.perform(post("/admin/backups/schedule").session(session).with(csrf())
+                            .param("backupScheduleEnabled", "true")
+                            .param("backupCron", "0 30 4 * * *")
+                            .param("maxBackups", "3"))
+                    .andExpect(status().is3xxRedirection())
+                    .andExpect(redirectedUrl("/admin/backups"))
+                    .andExpect(flash().attributeExists("scheduleSuccess"));
+
+            var settings = applicationSettingsService.getApplicationSettings();
+            assertTrue(settings.isBackupScheduleEnabled());
+            assertEquals("0 30 4 * * *", settings.getBackupCron());
+            assertEquals(3, settings.getMaxBackups());
+        } finally {
+            updateSettings(s -> {
+                s.setBackupScheduleEnabled(false);
+                s.setBackupCron("0 0 4 * * *");
+                s.setMaxBackups(7);
+            });
+        }
+    }
+
+    @Test
+    void saveSchedule_invalidCron_rejectedWithErrorFlashAndDoesNotPersist() throws Exception {
+        MockHttpSession session = adminSession();
+        String before = applicationSettingsService.getApplicationSettings().getBackupCron();
+
+        mockMvc.perform(post("/admin/backups/schedule").session(session).with(csrf())
+                        .param("backupScheduleEnabled", "false")
+                        .param("backupCron", "not a cron")
+                        .param("maxBackups", "7"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(flash().attributeExists("backupError"));
+
+        assertEquals(before, applicationSettingsService.getApplicationSettings().getBackupCron());
+    }
+
+    @Test
+    void saveSchedule_zeroMaxBackups_rejectedWithErrorFlashAndDoesNotPersist() throws Exception {
+        MockHttpSession session = adminSession();
+        int before = applicationSettingsService.getApplicationSettings().getMaxBackups();
+
+        mockMvc.perform(post("/admin/backups/schedule").session(session).with(csrf())
+                        .param("backupScheduleEnabled", "false")
+                        .param("backupCron", "0 0 4 * * *")
+                        .param("maxBackups", "0"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(flash().attributeExists("backupError"));
+
+        assertEquals(before, applicationSettingsService.getApplicationSettings().getMaxBackups());
+    }
+
+    @Test
+    void saveSchedule_unauthenticated_isBlockedByAdminInterceptor() throws Exception {
+        ensureAdminPasswordSet();
+        mockMvc.perform(post("/admin/backups/schedule").with(csrf())
+                        .param("backupCron", "0 0 4 * * *").param("maxBackups", "7"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/admin/password"));
+    }
+
+    @Test
+    void saveSchedule_withoutCsrf_isForbidden() throws Exception {
+        MockHttpSession session = adminSession();
+        mockMvc.perform(post("/admin/backups/schedule").session(session)
+                        .param("backupCron", "0 0 4 * * *").param("maxBackups", "7"))
+                .andExpect(status().isForbidden());
+    }
+
     // -- POST /admin/backups/create --------------------------------------------
 
     @Test

@@ -276,10 +276,11 @@ public class BackupService {
     }
 
     /**
-     * Restores {@code filename} over the live database: validates it, clears stale
-     * {@code -wal}/{@code -shm} sidecars so they aren't replayed against the restored data, then
-     * copies the backup over {@code db/quickdrop.db}. Does not trigger a restart or log the
-     * outcome — the caller (with the request context to attribute it to) does both.
+     * Validates {@code filename} and stages it to replace the live database. The actual file
+     * swap happens on next startup, via {@link PendingRestoreApplier} — not here, since the
+     * live connection pool has {@code dbFile} and its {@code -wal}/{@code -shm} sidecars open
+     * (replacing them while they're open fails outright on Windows). Does not trigger a restart
+     * or log the outcome — the caller (with the request context to attribute it to) does both.
      *
      * @param filename the backup file to restore, as returned by {@link #listBackups()}
      * @return a result describing success or the specific validation failure
@@ -295,16 +296,12 @@ public class BackupService {
         }
 
         try {
-            Path walFile = Path.of(dbFile + "-wal");
-            Path shmFile = Path.of(dbFile + "-shm");
-            Files.deleteIfExists(walFile);
-            Files.deleteIfExists(shmFile);
-
-            Files.copy(candidate, dbFile, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-            logger.info("Database restored from backup: {}", filename);
+            Path pending = Path.of(dbFile + PendingRestoreApplier.PENDING_SUFFIX);
+            Files.copy(candidate, pending, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            logger.info("Database restore staged from backup: {}", filename);
             return new BackupResult(true, filename);
         } catch (IOException e) {
-            logger.error("Database restore failed", e);
+            logger.error("Database restore staging failed", e);
             return new BackupResult(false, e.getMessage());
         }
     }

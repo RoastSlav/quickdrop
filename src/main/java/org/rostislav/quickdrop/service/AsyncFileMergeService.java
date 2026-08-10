@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.*;
+import java.nio.file.Files;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.*;
@@ -36,6 +37,7 @@ public class AsyncFileMergeService {
     private static final long TASK_TTL_MINUTES = 60;
     // Fix 3: cap totalChunks to prevent DoS via Integer.MAX_VALUE
     private static final int MAX_TOTAL_CHUNKS = 10_000;
+    private static final String CHUNK_DIR_NAME = ".upload-chunks";
 
     private final ConcurrentMap<String, MergeTask> mergeTasks = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, Instant> abortedUploads = new ConcurrentHashMap<>();
@@ -61,6 +63,9 @@ public class AsyncFileMergeService {
     private final FileLifecycleService fileLifecycleService;
     private final UploadRepository uploadRepository;
     private final StorageService storageService;
+    /** Last staging directory actually used, so the resolution outcome is logged on change rather than per chunk. */
+    private final java.util.concurrent.atomic.AtomicReference<String> lastStagingDir =
+            new java.util.concurrent.atomic.AtomicReference<>();
 
     public AsyncFileMergeService(ApplicationSettingsService applicationSettingsService,
                                  EncryptionService encryptionService,
@@ -103,12 +108,72 @@ public class AsyncFileMergeService {
      * own {@code work/Tomcat/...} tree), not the app's working directory. A relative
      * directory here silently redirects every chunk write into that ephemeral location
      * instead of the real storage volume — {@code FileNotFoundException} on every upload.
+     *
+     * <p>Falls back to {@code java.io.tmpdir} (the long-standing behaviour, and always an
+     * existing absolute directory) if the preferred location cannot be created or written
+     * to — e.g. a read-only or restrictively-mounted volume. Staging must never be able to
+     * take uploads down entirely just because the preferred directory is unavailable.
      */
     private File resolveTempDir() {
-        File dir = new File(applicationSettingsService.getFileStoragePath(), ".upload-chunks").getAbsoluteFile();
-        //noinspection ResultOfMethodCallIgnored
-        dir.mkdirs();
-        return dir;
+        File preferred = new File(applicationSettingsService.getFileStoragePath(), CHUNK_DIR_NAME).getAbsoluteFile();
+        if (ensureUsableDirectory(preferred)) {
+            noteStagingDir(preferred, null);
+            return preferred;
+        }
+
+        File fallback = new File(System.getProperty("java.io.tmpdir"), CHUNK_DIR_NAME).getAbsoluteFile();
+        if (ensureUsableDirectory(fallback)) {
+            noteStagingDir(fallback, preferred);
+            return fallback;
+        }
+
+        // Both unusable: return the OS temp dir itself, which always exists. The write will
+        // surface a real error if even that fails, rather than us inventing a worse one.
+        File lastResort = new File(System.getProperty("java.io.tmpdir")).getAbsoluteFile();
+        noteStagingDir(lastResort, preferred);
+        return lastResort;
+    }
+
+    /**
+     * Creates {@code dir} if needed and confirms it is writable.
+     *
+     * <p>Uses {@link Files#createDirectories} rather than {@link File#mkdirs()} specifically
+     * so a failure carries the real OS-level reason (permission denied, read-only file
+     * system, no space left) instead of {@code mkdirs()}'s bare {@code false}, which
+     * previously made a broken staging directory look identical to a working one right up
+     * until every upload failed with a bare {@code FileNotFoundException}.
+     */
+    private boolean ensureUsableDirectory(File dir) {
+        try {
+            Files.createDirectories(dir.toPath());
+        } catch (IOException e) {
+            logger.error("Cannot create chunk staging directory {}: {}", dir, e.toString());
+            return false;
+        }
+        if (!dir.isDirectory()) {
+            logger.error("Chunk staging path {} exists but is not a directory", dir);
+            return false;
+        }
+        if (!dir.canWrite()) {
+            logger.error("Chunk staging directory {} is not writable", dir);
+            return false;
+        }
+        return true;
+    }
+
+    /** Logs the staging location only when it changes, so this never spams once per chunk. */
+    private void noteStagingDir(File chosen, File rejectedPreferred) {
+        String previous = lastStagingDir.getAndSet(chosen.getPath());
+        if (chosen.getPath().equals(previous)) {
+            return;
+        }
+        if (rejectedPreferred == null) {
+            logger.info("Staging upload chunks in {}", chosen);
+        } else {
+            logger.warn("Chunk staging directory {} is unusable; falling back to {}. " +
+                    "Uploads will work, but large uploads are limited by that filesystem's free space.",
+                    rejectedPreferred, chosen);
+        }
     }
 
     /**

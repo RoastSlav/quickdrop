@@ -383,4 +383,48 @@ class AsyncFileMergeServiceTest extends QuickdropIntegrationTest {
         assertEquals("Merge task failed", thrown.getMessage());
         assertInstanceOf(java.util.concurrent.ExecutionException.class, thrown.getCause());
     }
+
+    /**
+     * Regression test for a production incident: fileStoragePath defaults to the relative
+     * string "files", and MultipartFile.transferTo(File) only does a direct file copy when
+     * the destination is absolute -- for a relative File it delegates to the Servlet API's
+     * Part.write(String), which resolves relative paths against the *container's* temp/work
+     * directory (e.g. Tomcat's own work/Tomcat/... tree), not the app's working directory.
+     * A relative temp directory silently redirected every chunk write into that ephemeral
+     * location, where the .upload-chunks subdirectory never existed -- FileNotFoundException
+     * on every single chunked upload. This test constructs the service directly (not through
+     * the Spring context, which redirects storage to an already-absolute @TempDir and would
+     * never reproduce the bug) with a deliberately relative fileStoragePath, matching the
+     * real default.
+     */
+    @Test
+    void tempDirResolvesToAnAbsolutePathEvenWhenFileStoragePathIsRelative() {
+        ApplicationSettingsService settings = org.mockito.Mockito.mock(ApplicationSettingsService.class);
+        String relativePath = "target/regression-test-relative-storage-" + UUID.randomUUID();
+        org.mockito.Mockito.when(settings.getFileStoragePath()).thenReturn(relativePath);
+
+        AsyncFileMergeService service = new AsyncFileMergeService(
+                settings, null, null, null, null, org.mockito.Mockito.mock(StorageService.class));
+        try {
+            File tempDir = (File) ReflectionTestUtils.invokeMethod(service, "resolveTempDir");
+            assertNotNull(tempDir);
+            assertTrue(tempDir.isAbsolute(),
+                    "the resolved chunk-staging directory must be absolute, or " +
+                            "MultipartFile.transferTo() silently writes chunks into the servlet " +
+                            "container's temp directory instead of the configured storage volume: " + tempDir);
+        } finally {
+            deleteRecursively(new File(relativePath).getAbsoluteFile());
+        }
+    }
+
+    private static void deleteRecursively(File file) {
+        File[] children = file.listFiles();
+        if (children != null) {
+            for (File child : children) {
+                deleteRecursively(child);
+            }
+        }
+        //noinspection ResultOfMethodCallIgnored
+        file.delete();
+    }
 }

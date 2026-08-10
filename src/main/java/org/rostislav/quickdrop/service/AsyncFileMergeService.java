@@ -61,7 +61,6 @@ public class AsyncFileMergeService {
     private final FileLifecycleService fileLifecycleService;
     private final UploadRepository uploadRepository;
     private final StorageService storageService;
-    private final File tempDir;
 
     public AsyncFileMergeService(ApplicationSettingsService applicationSettingsService,
                                  EncryptionService encryptionService,
@@ -75,18 +74,41 @@ public class AsyncFileMergeService {
         this.fileLifecycleService = fileLifecycleService;
         this.uploadRepository = uploadRepository;
         this.storageService = storageService;
-        // NOT System.getProperty("java.io.tmpdir"): in a container that's typically an
-        // unmounted, often tmpfs-backed path with no relation to how much real disk space
-        // is actually available, so it can fail with ENOSPC on ordinary-sized uploads even
-        // when the configured storage volume has plenty of room. fileStoragePath is only
-        // consulted by LocalStorageService for final placement, but it's still the one
-        // local, disk-backed directory every deployment is already expected to mount
-        // (see README), so it's a safe place to stage chunks regardless of which backend
-        // is actually active.
-        this.tempDir = new File(new File(applicationSettingsService.getFileStoragePath()), ".upload-chunks");
-        //noinspection ResultOfMethodCallIgnored
-        this.tempDir.mkdirs();
         ttlSweeper.scheduleAtFixedRate(this::evictStaleTasks, TASK_TTL_MINUTES, TASK_TTL_MINUTES, TimeUnit.MINUTES);
+    }
+
+    /**
+     * Resolves the current chunk-staging directory, re-reading {@code fileStoragePath} on
+     * every call rather than caching it — the setting can change at runtime (admin edits
+     * it with no restart required) and tests redirect it per-method via a fresh
+     * {@code @TempDir}, neither of which a value computed once in the constructor would
+     * ever observe, since this service is a Spring singleton constructed exactly once.
+     * Mirrors the {@code Supplier<String>}-based live re-read {@link
+     * org.rostislav.quickdrop.storage.LocalStorageService} already uses for the same reason.
+     *
+     * <p>NOT {@code System.getProperty("java.io.tmpdir")}: in a container that's typically
+     * an unmounted, often tmpfs-backed path with no relation to how much real disk space is
+     * actually available, so it can fail with ENOSPC on ordinary-sized uploads even when the
+     * configured storage volume has plenty of room. {@code fileStoragePath} is only
+     * consulted by {@code LocalStorageService} for final placement, but it's still the one
+     * local, disk-backed directory every deployment is already expected to mount (see
+     * README), so it's a safe place to stage chunks regardless of which backend is actually
+     * active.
+     *
+     * <p>{@code getAbsoluteFile()} is required, not cosmetic: {@code fileStoragePath}
+     * defaults to the relative string {@code "files"}, and {@code MultipartFile.transferTo
+     * (File)} only does a direct file copy when the destination is absolute — for a relative
+     * {@code File} it delegates to the Servlet API's {@code Part.write(String)}, which
+     * resolves relative paths against the *container's* temp/work directory (e.g. Tomcat's
+     * own {@code work/Tomcat/...} tree), not the app's working directory. A relative
+     * directory here silently redirects every chunk write into that ephemeral location
+     * instead of the real storage volume — {@code FileNotFoundException} on every upload.
+     */
+    private File resolveTempDir() {
+        File dir = new File(applicationSettingsService.getFileStoragePath(), ".upload-chunks").getAbsoluteFile();
+        //noinspection ResultOfMethodCallIgnored
+        dir.mkdirs();
+        return dir;
     }
 
     /**
@@ -133,7 +155,7 @@ public class AsyncFileMergeService {
         // original then hits FileNotFoundException when the drain loop finally reaches it,
         // aborting the whole upload. evictStaleTasks()'s cleanup glob matches on
         // startsWith(taskKey + "_chunk_"), so the added suffix doesn't break that.
-        File savedChunk = new File(tempDir, taskKey + "_chunk_" + chunkNumber + "_" + UUID.randomUUID());
+        File savedChunk = new File(resolveTempDir(), taskKey + "_chunk_" + chunkNumber + "_" + UUID.randomUUID());
         multipartChunk.transferTo(savedChunk);
         logger.info("Chunk {} for file {} saved to {}", chunkNumber, request.fileName, savedChunk.getAbsolutePath());
 
@@ -267,7 +289,7 @@ public class AsyncFileMergeService {
         int deleted = 0;
         int failed = 0;
 
-        File[] chunkFiles = tempDir.listFiles((dir, name) -> name.startsWith(taskKey + "_chunk_"));
+        File[] chunkFiles = resolveTempDir().listFiles((dir, name) -> name.startsWith(taskKey + "_chunk_"));
         if (chunkFiles != null) {
             for (File chunkFile : chunkFiles) {
                 DeleteResult result = deleteChunkFile(chunkFile);

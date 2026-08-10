@@ -417,6 +417,35 @@ class AsyncFileMergeServiceTest extends QuickdropIntegrationTest {
         }
     }
 
+    /**
+     * A chunk-staging directory that cannot be created must never take uploads down: staging
+     * falls back to java.io.tmpdir (the long-standing pre-existing behaviour) rather than
+     * failing every upload. Simulated by pointing fileStoragePath at a path whose "parent"
+     * is an existing regular file, so creating a directory beneath it is impossible on any
+     * OS -- a portable stand-in for the read-only / out-of-space / wrong-permissions mounts
+     * that produced this failure in production.
+     */
+    @Test
+    void resolveTempDirFallsBackToSystemTempWhenTheConfiguredLocationCannotBeCreated() throws Exception {
+        File blocker = File.createTempFile("quickdrop-not-a-directory", ".tmp");
+        blocker.deleteOnExit();
+
+        ApplicationSettingsService settings = org.mockito.Mockito.mock(ApplicationSettingsService.class);
+        org.mockito.Mockito.when(settings.getFileStoragePath())
+                .thenReturn(new File(blocker, "storage").getPath());
+
+        AsyncFileMergeService service = new AsyncFileMergeService(
+                settings, null, null, null, null, org.mockito.Mockito.mock(StorageService.class));
+
+        File tempDir = (File) ReflectionTestUtils.invokeMethod(service, "resolveTempDir");
+        assertNotNull(tempDir);
+        assertTrue(tempDir.isAbsolute(), "fallback staging directory must still be absolute: " + tempDir);
+        assertTrue(tempDir.isDirectory(), "fallback staging directory must actually exist: " + tempDir);
+        assertTrue(tempDir.canWrite(), "fallback staging directory must be writable: " + tempDir);
+        assertTrue(tempDir.getPath().startsWith(new File(System.getProperty("java.io.tmpdir")).getAbsolutePath()),
+                "expected a java.io.tmpdir-based fallback, got: " + tempDir);
+    }
+
     private static void deleteRecursively(File file) {
         File[] children = file.listFiles();
         if (children != null) {

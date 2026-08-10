@@ -27,7 +27,13 @@ import org.springframework.security.web.csrf.*;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.web.filter.OncePerRequestFilter;
 
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
@@ -93,7 +99,17 @@ public class SecurityConfig {
         ).headers(headers -> headers
                 .frameOptions(HeadersConfigurer.FrameOptionsConfig::disable)
                 .contentSecurityPolicy(csp -> csp.policyDirectives("frame-ancestors *;"))
-        ).cors(Customizer.withDefaults());
+        ).cors(Customizer.withDefaults())
+        // CsrfToken resolution is deferred by default: the XSRF-TOKEN cookie is only
+        // written if something actually calls csrfToken.getToken() during the request.
+        // Our responses stream as chunked (no Content-Length), so headers commit as
+        // soon as the body starts flushing -- if the token isn't resolved until
+        // Thymeleaf reaches it deep in the page, the response is already committed
+        // and CookieCsrfTokenRepository's Set-Cookie silently never gets written,
+        // leaving the JS client with no cookie to echo back and every state-changing
+        // request (uploads included) failing CSRF validation with a 403. Force
+        // eager resolution on every request so the cookie is always written up front.
+        .addFilterAfter(new CsrfCookieFilter(), CsrfFilter.class);
 
         return http.build();
     }
@@ -160,5 +176,22 @@ public class SecurityConfig {
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
+    }
+
+    /**
+     * Forces the deferred {@link CsrfToken} to resolve on every request, guaranteeing
+     * {@link CookieCsrfTokenRepository} writes the XSRF-TOKEN cookie before the response
+     * can commit. See the comment on {@link #securityFilterChain} for why this is needed.
+     */
+    private static final class CsrfCookieFilter extends OncePerRequestFilter {
+        @Override
+        protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+                throws ServletException, IOException {
+            CsrfToken csrfToken = (CsrfToken) request.getAttribute(CsrfToken.class.getName());
+            if (csrfToken != null) {
+                csrfToken.getToken();
+            }
+            filterChain.doFilter(request, response);
+        }
     }
 }

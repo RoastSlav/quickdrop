@@ -61,7 +61,7 @@ public class AsyncFileMergeService {
     private final FileLifecycleService fileLifecycleService;
     private final UploadRepository uploadRepository;
     private final StorageService storageService;
-    private final File tempDir = new File(System.getProperty("java.io.tmpdir"));
+    private final File tempDir;
 
     public AsyncFileMergeService(ApplicationSettingsService applicationSettingsService,
                                  EncryptionService encryptionService,
@@ -75,6 +75,17 @@ public class AsyncFileMergeService {
         this.fileLifecycleService = fileLifecycleService;
         this.uploadRepository = uploadRepository;
         this.storageService = storageService;
+        // NOT System.getProperty("java.io.tmpdir"): in a container that's typically an
+        // unmounted, often tmpfs-backed path with no relation to how much real disk space
+        // is actually available, so it can fail with ENOSPC on ordinary-sized uploads even
+        // when the configured storage volume has plenty of room. fileStoragePath is only
+        // consulted by LocalStorageService for final placement, but it's still the one
+        // local, disk-backed directory every deployment is already expected to mount
+        // (see README), so it's a safe place to stage chunks regardless of which backend
+        // is actually active.
+        this.tempDir = new File(new File(applicationSettingsService.getFileStoragePath()), ".upload-chunks");
+        //noinspection ResultOfMethodCallIgnored
+        this.tempDir.mkdirs();
         ttlSweeper.scheduleAtFixedRate(this::evictStaleTasks, TASK_TTL_MINUTES, TASK_TTL_MINUTES, TimeUnit.MINUTES);
     }
 
@@ -248,28 +259,22 @@ public class AsyncFileMergeService {
     }
 
     private int cleanUpChunks(String taskKey, int totalChunks) {
+        // totalChunks is unused: chunk files are named taskKey + "_chunk_" + chunkNumber
+        // + "_" + a per-attempt random UUID (see submitChunk()'s comment on why), so an
+        // exact-name reconstruction like "taskKey + "_chunk_" + i" can never match a real
+        // file on disk and silently deletes nothing -- a prefix glob is the only naming
+        // scheme that actually works here, regardless of whether totalChunks is known.
         int deleted = 0;
         int failed = 0;
 
-        if (totalChunks > 0) {
-            for (int i = 0; i < totalChunks; i++) {
-                DeleteResult result = deleteChunkFile(new File(tempDir, taskKey + "_chunk_" + i));
+        File[] chunkFiles = tempDir.listFiles((dir, name) -> name.startsWith(taskKey + "_chunk_"));
+        if (chunkFiles != null) {
+            for (File chunkFile : chunkFiles) {
+                DeleteResult result = deleteChunkFile(chunkFile);
                 if (result == DeleteResult.DELETED) {
                     deleted++;
                 } else if (result == DeleteResult.FAILED) {
                     failed++;
-                }
-            }
-        } else {
-            File[] chunkFiles = tempDir.listFiles((dir, name) -> name.startsWith(taskKey + "_chunk_"));
-            if (chunkFiles != null) {
-                for (File chunkFile : chunkFiles) {
-                    DeleteResult result = deleteChunkFile(chunkFile);
-                    if (result == DeleteResult.DELETED) {
-                        deleted++;
-                    } else if (result == DeleteResult.FAILED) {
-                        failed++;
-                    }
                 }
             }
         }

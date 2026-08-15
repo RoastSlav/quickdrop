@@ -335,26 +335,28 @@ class FileRestControllerTest extends ControllerTestSupport {
         ensureAdminPasswordSet();
         StoredFile file = createFile("a.txt", "hello".getBytes());
         var token = createShareToken(file, LocalDate.now().minusDays(1), null);
-        mockMvc.perform(get("/api/file/download/" + token.shareToken))
+        mockMvc.perform(get("/api/file/download/" + token.code))
                 .andExpect(status().isFound())
-                .andExpect(redirectedUrl("/share/" + token.shareToken));
+                .andExpect(redirectedUrl("/share/" + token.code));
     }
 
     @Test
-    void downloadByToken_unlimitedValidToken_streamsFile() throws Exception {
+    void downloadByToken_unlimitedValidToken_streamsFile() throws Throwable {
         ensureAdminPasswordSet();
         StoredFile file = createFile("a.txt", "hello world".getBytes());
         var token = createShareToken(file, null, null);
 
         // StreamingResponseBody triggers Servlet async processing; the body is only
         // available after the async dispatch completes.
-        MvcResult result = mockMvc.perform(get("/api/file/download/" + token.shareToken))
-                .andExpect(request().asyncStarted())
-                .andReturn();
-        mockMvc.perform(asyncDispatch(result))
-                .andExpect(status().isOk())
-                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_OCTET_STREAM))
-                .andExpect(content().bytes("hello world".getBytes()));
+        retryOnMockMvcAsyncHeaderRace(() -> {
+            MvcResult result = mockMvc.perform(get("/api/file/download/" + token.code))
+                    .andExpect(request().asyncStarted())
+                    .andReturn();
+            mockMvc.perform(asyncDispatch(result))
+                    .andExpect(status().isOk())
+                    .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_OCTET_STREAM))
+                    .andExpect(content().bytes("hello world".getBytes()));
+        });
     }
 
     @Test
@@ -363,14 +365,14 @@ class FileRestControllerTest extends ControllerTestSupport {
         StoredFile file = createFile("a.txt", "hello".getBytes());
         var token = createShareToken(file, null, 1);
 
-        MvcResult first = mockMvc.perform(get("/api/file/download/" + token.shareToken))
+        MvcResult first = mockMvc.perform(get("/api/file/download/" + token.code))
                 .andExpect(request().asyncStarted())
                 .andReturn();
         mockMvc.perform(asyncDispatch(first)).andExpect(status().isOk());
 
         // Second attempt: counter is now 0 -> token invalid -> redirect.
-        mockMvc.perform(get("/api/file/download/" + token.shareToken))
+        mockMvc.perform(get("/api/file/download/" + token.code))
                 .andExpect(status().isFound())
-                .andExpect(redirectedUrl("/share/" + token.shareToken));
+                .andExpect(redirectedUrl("/share/" + token.code));
     }
 }

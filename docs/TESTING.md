@@ -50,6 +50,16 @@ the suite for the exact current count, don't trust a number in a doc.
   itself, it will hide bugs — see `CsrfTokenHandlingTest` for how to exercise the real
   masked-token/raw-cookie-token resolution path instead (load a real page, scrape the
   rendered token, submit it back through the actual header/cookie a browser would use).
+- **Never hit a live reputation feed or API from a test.** `PhishingArmyProviderTest` and
+  `UrlhausProviderTest` exercise the real parse/hash/tier-1/tier-2 matching pipeline via
+  `AbstractHashFeedProvider#loadForTest(byte[])` — a package-private hook that runs the same
+  code `refresh()` does, minus the network call — against known content written inline in the
+  test. `ReputationCheckServiceTest` mocks `ReputationProvider` directly. `SafeBrowsingProvider`
+  has no dedicated unit test for the same reason (its whole job is one live API call); if you
+  add one, mock `RestTemplate`, don't call the real endpoint. This is deliberate, not an
+  oversight — the reputation feature ships disabled by default specifically so a default test
+  run never depends on a third party being reachable, and every test in this suite should
+  preserve that.
 - **Known flaky test**: `FileViewControllerTest.downloadFile_authorizedPlainFile_streamsContent`
   occasionally throws `ConcurrentModificationException` from
   `MockHttpServletResponse`'s header map — a timing race between a `StreamingResponseBody`

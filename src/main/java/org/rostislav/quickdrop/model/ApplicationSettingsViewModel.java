@@ -5,6 +5,8 @@ import jakarta.validation.constraints.NotBlank;
 import org.rostislav.quickdrop.entity.ApplicationSettingsEntity;
 import org.rostislav.quickdrop.storage.StorageBackend;
 
+import java.time.LocalDateTime;
+
 /**
  * Form-backing model for the admin settings page.
  *
@@ -63,6 +65,27 @@ public class ApplicationSettingsViewModel {
     private boolean uploadEnabled;
     private boolean uploadAdminOnly;
     private boolean pastebinEnabled;
+    private boolean shortenerEnabled;
+    private boolean shortenerAdminOnly;
+    private int shortenerCodeLength;
+    private boolean shortenerCustomAliasEnabled;
+    private boolean shortenerCustomAliasAdminOnly;
+    private String shortenerInterstitialMode;
+    private String shortenerDomainRuleMode;
+    private String shortenerDomainRules;
+    private boolean trustedProxyEnabled;
+    private boolean shortenerClickLoggingEnabled;
+    private boolean reputationCheckEnabled;
+    private boolean reputationPhishingArmyEnabled;
+    private boolean reputationUrlhausEnabled;
+    private boolean reputationSafeBrowsingEnabled;
+    private boolean reputationFailClosed;
+    private String reputationFeedCron;
+    private String urlhausAuthKey;
+    private String safeBrowsingApiKey;
+    private LocalDateTime phishingArmyTermsAcceptedAt;
+    private LocalDateTime urlhausTermsAcceptedAt;
+    private LocalDateTime safeBrowsingTermsAcceptedAt;
     private String appName;
     private String logoFileName;
     private String defaultLanguage;
@@ -153,6 +176,27 @@ public class ApplicationSettingsViewModel {
         this.uploadEnabled = settings.isUploadEnabled();
         this.uploadAdminOnly = settings.isUploadAdminOnly();
         this.pastebinEnabled = settings.isPastebinEnabled();
+        this.shortenerEnabled = settings.isShortenerEnabled();
+        this.shortenerAdminOnly = settings.isShortenerAdminOnly();
+        this.shortenerCodeLength = settings.getShortenerCodeLength();
+        this.shortenerCustomAliasEnabled = settings.isShortenerCustomAliasEnabled();
+        this.shortenerCustomAliasAdminOnly = settings.isShortenerCustomAliasAdminOnly();
+        this.shortenerInterstitialMode = settings.getShortenerInterstitialMode();
+        this.shortenerDomainRuleMode = settings.getShortenerDomainRuleMode();
+        this.shortenerDomainRules = settings.getShortenerDomainRules();
+        this.trustedProxyEnabled = settings.isTrustedProxyEnabled();
+        this.shortenerClickLoggingEnabled = settings.isShortenerClickLoggingEnabled();
+        this.reputationCheckEnabled = settings.isReputationCheckEnabled();
+        this.reputationPhishingArmyEnabled = settings.isReputationPhishingArmyEnabled();
+        this.reputationUrlhausEnabled = settings.isReputationUrlhausEnabled();
+        this.reputationSafeBrowsingEnabled = settings.isReputationSafeBrowsingEnabled();
+        this.reputationFailClosed = settings.isReputationFailClosed();
+        this.reputationFeedCron = settings.getReputationFeedCron();
+        this.urlhausAuthKey = settings.getUrlhausAuthKey();
+        this.safeBrowsingApiKey = settings.getSafeBrowsingApiKey();
+        this.phishingArmyTermsAcceptedAt = settings.getPhishingArmyTermsAcceptedAt();
+        this.urlhausTermsAcceptedAt = settings.getUrlhausTermsAcceptedAt();
+        this.safeBrowsingTermsAcceptedAt = settings.getSafeBrowsingTermsAcceptedAt();
         this.appName = settings.getAppName();
         this.logoFileName = settings.getLogoFileName();
         this.defaultLanguage = settings.getDefaultLanguage();
@@ -491,6 +535,167 @@ public class ApplicationSettingsViewModel {
 
     public void setPastebinEnabled(boolean pastebinEnabled) {
         this.pastebinEnabled = pastebinEnabled;
+    }
+
+    public boolean isShortenerEnabled() {
+        return shortenerEnabled;
+    }
+
+    public void setShortenerEnabled(boolean shortenerEnabled) {
+        this.shortenerEnabled = shortenerEnabled;
+    }
+
+    public boolean isShortenerAdminOnly() {
+        return shortenerAdminOnly;
+    }
+
+    public void setShortenerAdminOnly(boolean shortenerAdminOnly) {
+        this.shortenerAdminOnly = shortenerAdminOnly;
+    }
+
+    public int getShortenerCodeLength() {
+        return shortenerCodeLength;
+    }
+
+    public void setShortenerCodeLength(int shortenerCodeLength) {
+        this.shortenerCodeLength = shortenerCodeLength;
+    }
+
+    public boolean isShortenerCustomAliasEnabled() {
+        return shortenerCustomAliasEnabled;
+    }
+
+    public void setShortenerCustomAliasEnabled(boolean shortenerCustomAliasEnabled) {
+        this.shortenerCustomAliasEnabled = shortenerCustomAliasEnabled;
+    }
+
+    public boolean isShortenerCustomAliasAdminOnly() {
+        return shortenerCustomAliasAdminOnly;
+    }
+
+    public void setShortenerCustomAliasAdminOnly(boolean shortenerCustomAliasAdminOnly) {
+        this.shortenerCustomAliasAdminOnly = shortenerCustomAliasAdminOnly;
+    }
+
+    public String getShortenerInterstitialMode() {
+        return shortenerInterstitialMode;
+    }
+
+    public void setShortenerInterstitialMode(String shortenerInterstitialMode) {
+        this.shortenerInterstitialMode = shortenerInterstitialMode;
+    }
+
+    public String getShortenerDomainRuleMode() {
+        return shortenerDomainRuleMode;
+    }
+
+    public void setShortenerDomainRuleMode(String shortenerDomainRuleMode) {
+        this.shortenerDomainRuleMode = shortenerDomainRuleMode;
+    }
+
+    public String getShortenerDomainRules() {
+        return shortenerDomainRules;
+    }
+
+    public void setShortenerDomainRules(String shortenerDomainRules) {
+        this.shortenerDomainRules = shortenerDomainRules;
+    }
+
+    public boolean isTrustedProxyEnabled() {
+        return trustedProxyEnabled;
+    }
+
+    public void setTrustedProxyEnabled(boolean trustedProxyEnabled) {
+        this.trustedProxyEnabled = trustedProxyEnabled;
+    }
+
+    public boolean isShortenerClickLoggingEnabled() {
+        return shortenerClickLoggingEnabled;
+    }
+
+    public void setShortenerClickLoggingEnabled(boolean shortenerClickLoggingEnabled) {
+        this.shortenerClickLoggingEnabled = shortenerClickLoggingEnabled;
+    }
+
+    public boolean isReputationCheckEnabled() {
+        return reputationCheckEnabled;
+    }
+
+    public void setReputationCheckEnabled(boolean reputationCheckEnabled) {
+        this.reputationCheckEnabled = reputationCheckEnabled;
+    }
+
+    public boolean isReputationPhishingArmyEnabled() {
+        return reputationPhishingArmyEnabled;
+    }
+
+    public void setReputationPhishingArmyEnabled(boolean reputationPhishingArmyEnabled) {
+        this.reputationPhishingArmyEnabled = reputationPhishingArmyEnabled;
+    }
+
+    public boolean isReputationUrlhausEnabled() {
+        return reputationUrlhausEnabled;
+    }
+
+    public void setReputationUrlhausEnabled(boolean reputationUrlhausEnabled) {
+        this.reputationUrlhausEnabled = reputationUrlhausEnabled;
+    }
+
+    public boolean isReputationSafeBrowsingEnabled() {
+        return reputationSafeBrowsingEnabled;
+    }
+
+    public void setReputationSafeBrowsingEnabled(boolean reputationSafeBrowsingEnabled) {
+        this.reputationSafeBrowsingEnabled = reputationSafeBrowsingEnabled;
+    }
+
+    public boolean isReputationFailClosed() {
+        return reputationFailClosed;
+    }
+
+    public void setReputationFailClosed(boolean reputationFailClosed) {
+        this.reputationFailClosed = reputationFailClosed;
+    }
+
+    public String getReputationFeedCron() {
+        return reputationFeedCron;
+    }
+
+    public void setReputationFeedCron(String reputationFeedCron) {
+        this.reputationFeedCron = reputationFeedCron;
+    }
+
+    public String getUrlhausAuthKey() {
+        return urlhausAuthKey;
+    }
+
+    public void setUrlhausAuthKey(String urlhausAuthKey) {
+        this.urlhausAuthKey = urlhausAuthKey;
+    }
+
+    public String getSafeBrowsingApiKey() {
+        return safeBrowsingApiKey;
+    }
+
+    public void setSafeBrowsingApiKey(String safeBrowsingApiKey) {
+        this.safeBrowsingApiKey = safeBrowsingApiKey;
+    }
+
+    /**
+     * Read-only in this view model — set only via {@code ApplicationSettingsService#acceptReputationProviderTerms},
+     * never through the general settings form, so enabling a provider is always a deliberate,
+     * auditable action distinct from the rest of the settings save.
+     */
+    public LocalDateTime getPhishingArmyTermsAcceptedAt() {
+        return phishingArmyTermsAcceptedAt;
+    }
+
+    public LocalDateTime getUrlhausTermsAcceptedAt() {
+        return urlhausTermsAcceptedAt;
+    }
+
+    public LocalDateTime getSafeBrowsingTermsAcceptedAt() {
+        return safeBrowsingTermsAcceptedAt;
     }
 
     public String getAppName() {

@@ -5,10 +5,9 @@ import jakarta.transaction.Transactional;
 import org.rostislav.quickdrop.entity.*;
 import org.rostislav.quickdrop.model.EventType;
 import org.rostislav.quickdrop.model.RequesterInfo;
-import org.rostislav.quickdrop.model.ShareTokenResult;
+import org.rostislav.quickdrop.model.ShortLinkResult;
 import org.rostislav.quickdrop.model.UploadRequest;
 import org.rostislav.quickdrop.repository.ActivityLogRepository;
-import org.rostislav.quickdrop.repository.ShareTokenRepository;
 import org.rostislav.quickdrop.repository.UploadRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,11 +18,9 @@ import org.springframework.stereotype.Service;
 import org.rostislav.quickdrop.storage.StorageService;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.Optional;
 
 import static org.rostislav.quickdrop.util.DataValidator.validateObjects;
-import static org.rostislav.quickdrop.util.FileUtils.generateHashedToken;
 import static org.rostislav.quickdrop.util.FileUtils.getRequesterInfo;
 
 /**
@@ -42,33 +39,30 @@ public class FileLifecycleService {
     private final UploadRepository uploadRepository;
     private final ActivityLogRepository activityLogRepository;
     private final NotificationService notificationService;
-    private final ShareTokenRepository shareTokenRepository;
+    private final ShortLinkService shortLinkService;
     private final ApplicationSettingsService applicationSettingsService;
     private final SessionService sessionService;
     private final FileDownloadService fileDownloadService;
     private final PasswordEncoder passwordEncoder;
-    private final ShareEncryptionService shareEncryptionService;
     private final StorageService storageService;
 
     public FileLifecycleService(UploadRepository uploadRepository,
                                 ActivityLogRepository activityLogRepository,
                                 NotificationService notificationService,
-                                ShareTokenRepository shareTokenRepository,
+                                ShortLinkService shortLinkService,
                                 ApplicationSettingsService applicationSettingsService,
                                 SessionService sessionService,
                                 FileDownloadService fileDownloadService,
                                 PasswordEncoder passwordEncoder,
-                                ShareEncryptionService shareEncryptionService,
                                 StorageService storageService) {
         this.uploadRepository = uploadRepository;
         this.activityLogRepository = activityLogRepository;
         this.notificationService = notificationService;
-        this.shareTokenRepository = shareTokenRepository;
+        this.shortLinkService = shortLinkService;
         this.applicationSettingsService = applicationSettingsService;
         this.sessionService = sessionService;
         this.fileDownloadService = fileDownloadService;
         this.passwordEncoder = passwordEncoder;
-        this.shareEncryptionService = shareEncryptionService;
         this.storageService = storageService;
     }
 
@@ -148,8 +142,7 @@ public class FileLifecycleService {
         notificationService.notifyFileAction(upload, EventType.DELETION);
         activityLogRepository.save(new ActivityLog(upload, EventType.DELETION, ipAddress, userAgent));
 
-        shareTokenRepository.findAllByFile(upload).forEach(fileDownloadService::deleteShareSidecar);
-        shareTokenRepository.deleteAllByFile(upload);
+        shortLinkService.purgeLinksForUpload(upload);
 
         upload.deleted = true;
         uploadRepository.save(upload);
@@ -160,7 +153,7 @@ public class FileLifecycleService {
     public void logDownload(String uuid, HttpServletRequest request) {
         Upload upload = uploadRepository.findByUUID(uuid).orElse(null);
         if (upload == null) return;
-        RequesterInfo info = getRequesterInfo(request);
+        RequesterInfo info = getRequesterInfo(request, applicationSettingsService.isTrustedProxyEnabled());
         activityLogRepository.save(new ActivityLog(upload, EventType.DOWNLOAD, info.ipAddress(), info.userAgent()));
         notificationService.notifyFileAction(upload, EventType.DOWNLOAD);
     }
@@ -283,18 +276,12 @@ public class FileLifecycleService {
      * fires a {@link EventType#SHARE_REVOKE} audit event, and removes the token record.
      */
     public void revokeShareToken(Long tokenId, HttpServletRequest request) {
-        shareTokenRepository.findById(tokenId).ifPresent(token -> {
-            fileDownloadService.deleteShareSidecar(token);
-            if (token.file != null) {
-                logHistory(token.file, request, EventType.SHARE_REVOKE);
-            }
-            shareTokenRepository.delete(token);
-            logger.info("Share token {} revoked by admin", token.shareToken);
-        });
+        shortLinkService.revokeUploadLink(tokenId)
+                .ifPresent(upload -> logHistory(upload, request, EventType.SHARE_REVOKE));
     }
 
     void logHistory(Upload upload, HttpServletRequest request, EventType eventType) {
-        RequesterInfo info = getRequesterInfo(request);
+        RequesterInfo info = getRequesterInfo(request, applicationSettingsService.isTrustedProxyEnabled());
         activityLogRepository.save(new ActivityLog(upload, eventType, info.ipAddress(), info.userAgent()));
         notificationService.notifyFileAction(upload, eventType);
     }
@@ -316,77 +303,30 @@ public class FileLifecycleService {
     /**
      * Creates (or returns an existing) share token for the file identified by {@code uuid}.
      *
-     * <p>When both {@code tokenExpirationDate} and {@code numberOfDownloads} are {@code null},
-     * an existing unlimited token for the file is reused (with a refreshed {@code createdAt})
-     * rather than minting a new one, to avoid link proliferation.
+     * <p>Delegates to {@link ShortLinkService#createUploadLink}; kept as a thin wrapper here
+     * (same name and signature as before the short-link/URL-shortener merge) so every
+     * existing caller of this method continues to work unchanged.
      *
      * @throws IllegalArgumentException if no file with the given UUID exists
      */
-    public ShareTokenEntity generateShareToken(String uuid, LocalDate tokenExpirationDate, Integer numberOfDownloads) {
-        Optional<Upload> optionalUpload = uploadRepository.findByUUID(uuid);
-        if (optionalUpload.isEmpty()) {
-            throw new IllegalArgumentException("File not found");
-        }
-        Upload upload = optionalUpload.get();
-
-        if (tokenExpirationDate == null && numberOfDownloads == null) {
-            Optional<ShareTokenEntity> existing = findUnlimitedShareToken(upload);
-            if (existing.isPresent()) {
-                ShareTokenEntity token = existing.get();
-                token.createdAt = LocalDateTime.now();
-                return shareTokenRepository.save(token);
-            }
-        }
-
-        String token = generateUniqueShareToken(upload);
-        ShareTokenEntity shareToken = new ShareTokenEntity(token, upload, tokenExpirationDate, numberOfDownloads);
-        shareTokenRepository.save(shareToken);
-        return shareToken;
+    public UploadShareLink generateShareToken(String uuid, LocalDate tokenExpirationDate, Integer numberOfDownloads) {
+        return shortLinkService.createUploadLink(uuid, tokenExpirationDate, numberOfDownloads);
     }
 
     /**
      * Creates a share token for an AES-encrypted file, then kicks off background
      * re-encryption of a sidecar copy keyed with a fresh per-share key.
      *
-     * <p>The plaintext password is read from the HTTP session on the request thread
-     * <em>before</em> the background task starts — the session must not be accessed from
-     * another thread. The token's {@code sidecarReady} flag is {@code false} until the
-     * background task completes; the caller should surface this to the UI for large files.
+     * <p>Delegates to {@link ShortLinkService#createEncryptedUploadLink}; kept as a thin
+     * wrapper here for the same reason as the overload above.
      *
      * @param sessionToken the file-session token used to retrieve the encryption password
-     * @return a {@link ShareTokenResult} containing the new token and the per-share key;
+     * @return a {@link ShortLinkResult} containing the new token and the per-share key;
      *         the key must be embedded in the share URL so the recipient can decrypt the sidecar
      * @throws IllegalArgumentException if no file with the given UUID exists
      */
-    public ShareTokenResult generateShareToken(String uuid, LocalDate tokenExpirationDate, String sessionToken, Integer numberOfDownloads) {
-        Optional<Upload> optionalUpload = uploadRepository.findByUUID(uuid);
-        if (optionalUpload.isEmpty()) {
-            throw new IllegalArgumentException("File not found");
-        }
-        Upload upload = optionalUpload.get();
-
-        if (!upload.encrypted) {
-            ShareTokenEntity shareToken = generateShareToken(uuid, tokenExpirationDate, numberOfDownloads);
-            return new ShareTokenResult(shareToken, null);
-        }
-
-        String shareKey = java.util.UUID.randomUUID().toString();
-        String token = generateUniqueShareToken(upload);
-
-        // Pre-fetch the password on the request thread — HTTP session must not be
-        // accessed from the background encryption thread.
-        String plainPassword = sessionService.getPasswordForFileSessionToken(sessionToken).getPassword();
-
-        ShareTokenEntity shareToken = new ShareTokenEntity(token, upload, tokenExpirationDate, numberOfDownloads);
-        shareToken.shareKeyHash = passwordEncoder.encode(shareKey);
-        shareToken.sidecarReady = false;
-        shareTokenRepository.save(shareToken);
-
-        shareEncryptionService.encryptSidecarAsync(upload.uuid, token, shareKey, plainPassword,
-                shareToken.getId(), shareTokenRepository);
-
-        logger.info("Share token saved; sidecar encryption submitted in background for upload: {}", upload.name);
-        return new ShareTokenResult(shareToken, shareKey);
+    public ShortLinkResult generateShareToken(String uuid, LocalDate tokenExpirationDate, String sessionToken, Integer numberOfDownloads) {
+        return shortLinkService.createEncryptedUploadLink(uuid, tokenExpirationDate, sessionToken, numberOfDownloads);
     }
 
     private Upload populateUpload(UploadRequest request, String uuid) {
@@ -416,17 +356,5 @@ public class FileLifecycleService {
             upload.passwordHash = passwordEncoder.encode(request.password);
         }
         return upload;
-    }
-
-    private String generateUniqueShareToken(Upload upload) {
-        String token;
-        do {
-            token = generateHashedToken(upload);
-        } while (shareTokenRepository.existsByShareToken(token));
-        return token;
-    }
-
-    private Optional<ShareTokenEntity> findUnlimitedShareToken(Upload upload) {
-        return shareTokenRepository.findFirstByFileAndTokenExpirationDateIsNullAndNumberOfAllowedDownloadsIsNull(upload);
     }
 }

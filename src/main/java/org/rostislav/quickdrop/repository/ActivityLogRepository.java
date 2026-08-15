@@ -90,10 +90,11 @@ public interface ActivityLogRepository extends JpaRepository<ActivityLog, Long> 
             "(:ip IS NULL OR LOWER(h.ipAddress) LIKE LOWER(CONCAT('%', :ip, '%'))) AND " +
             "(:ua IS NULL OR LOWER(h.userAgent) LIKE LOWER(CONCAT('%', :ua, '%'))) AND " +
             "(:sourceType IS NULL OR " +
-            " (:sourceType = 'system' AND h.file IS NULL) OR " +
+            " (:sourceType = 'system' AND h.file IS NULL AND h.shortLink IS NULL) OR " +
+            " (:sourceType = 'link'   AND h.shortLink IS NOT NULL) OR " +
             " (:sourceType = 'file'   AND h.file IS NOT NULL AND TYPE(h.file) = StoredFile) OR " +
             " (:sourceType = 'paste'  AND h.file IS NOT NULL AND TYPE(h.file) = Paste)) " +
-            "ORDER BY h.eventDate DESC",
+            "ORDER BY h.eventDate DESC, h.id DESC",
             countQuery = "SELECT COUNT(h) FROM ActivityLog h WHERE " +
                     "(:startDate IS NULL OR h.eventDate >= :startDate) AND " +
                     "(:endDate IS NULL OR h.eventDate <= :endDate) AND " +
@@ -101,7 +102,8 @@ public interface ActivityLogRepository extends JpaRepository<ActivityLog, Long> 
                     "(:ip IS NULL OR LOWER(h.ipAddress) LIKE LOWER(CONCAT('%', :ip, '%'))) AND " +
                     "(:ua IS NULL OR LOWER(h.userAgent) LIKE LOWER(CONCAT('%', :ua, '%'))) AND " +
                     "(:sourceType IS NULL OR " +
-                    " (:sourceType = 'system' AND h.file IS NULL) OR " +
+                    " (:sourceType = 'system' AND h.file IS NULL AND h.shortLink IS NULL) OR " +
+            " (:sourceType = 'link'   AND h.shortLink IS NOT NULL) OR " +
                     " (:sourceType = 'file'   AND h.file IS NOT NULL AND TYPE(h.file) = StoredFile) OR " +
                     " (:sourceType = 'paste'  AND h.file IS NOT NULL AND TYPE(h.file) = Paste))")
     Page<ActivityLog> findFiltered(

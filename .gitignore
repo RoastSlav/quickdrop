@@ -35,6 +35,7 @@ build/
 /db-backups/
 /log/
 /files/
+/reputation-feeds/
 /e2e-data/
 /e2e-data-2/
 /e2e-data-3/

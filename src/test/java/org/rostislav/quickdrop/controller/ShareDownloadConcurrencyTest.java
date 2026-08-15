@@ -1,7 +1,7 @@
 package org.rostislav.quickdrop.controller;
 
 import org.junit.jupiter.api.Test;
-import org.rostislav.quickdrop.entity.ShareTokenEntity;
+import org.rostislav.quickdrop.entity.UploadShareLink;
 import org.rostislav.quickdrop.entity.StoredFile;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
@@ -50,9 +50,9 @@ class ShareDownloadConcurrencyTest extends ControllerTestSupport {
         // interceptor chain rather than a mocked servlet context.
         ensureAdminPasswordSet();
         StoredFile file = createFile("race.txt", "concurrency race payload".getBytes());
-        ShareTokenEntity token = createShareToken(file, null, 1);
+        UploadShareLink token = createShareToken(file, null, 1);
 
-        List<Integer> statuses = fireConcurrentDownloads(token.shareToken, 2);
+        List<Integer> statuses = fireConcurrentDownloads(token.code, 2);
 
         // The regression this guards against is the TOCTOU race allowing MORE downloads
         // than the token permits (both requests getting 200) -- that's the only outcome
@@ -70,9 +70,9 @@ class ShareDownloadConcurrencyTest extends ControllerTestSupport {
     void concurrentDownloadsAgainstATwoDownloadTokenExactlyTwoSucceed() throws Exception {
         ensureAdminPasswordSet();
         StoredFile file = createFile("race2.txt", "concurrency race payload 2".getBytes());
-        ShareTokenEntity token = createShareToken(file, null, 2);
+        UploadShareLink token = createShareToken(file, null, 2);
 
-        List<Integer> statuses = fireConcurrentDownloads(token.shareToken, 6);
+        List<Integer> statuses = fireConcurrentDownloads(token.code, 6);
 
         // Same reasoning as the single-download test above: the invariant that matters is
         // "never more than the allowed count," not exact equality under real thread timing.

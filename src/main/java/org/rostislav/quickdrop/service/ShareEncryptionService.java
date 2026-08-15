@@ -1,6 +1,6 @@
 package org.rostislav.quickdrop.service;
 
-import org.rostislav.quickdrop.repository.ShareTokenRepository;
+import org.rostislav.quickdrop.repository.ShortLinkRepository;
 import org.rostislav.quickdrop.storage.StorageService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,7 +15,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Handles re-encryption of file sidecars for share links in a background thread pool.
  *
- * <p>On completion, flips {@link org.rostislav.quickdrop.entity.ShareTokenEntity#sidecarReady}
+ * <p>On completion, flips {@link org.rostislav.quickdrop.entity.UploadShareLink#sidecarReady}
  * to {@code true}. On failure, deletes the token.
  */
 @Service
@@ -42,9 +42,9 @@ public class ShareEncryptionService {
      * Submits a background task that decrypts the original file and re-encrypts it
      * into a sidecar at {@code {storagePath}/{uuid}-share-{token}}.
      *
-     * <p>On success: calls {@link ShareTokenRepository#markSidecarReady(Long)}.
+     * <p>On success: calls {@link ShortLinkRepository#markSidecarReady(Long)}.
      * On failure: removes any partial sidecar file and calls
-     * {@link ShareTokenRepository#deleteByIdTransactional(Long)}.
+     * {@link ShortLinkRepository#deleteByIdTransactional(Long)}.
      *
      * @param uuid          the file UUID (used to locate the AES-encrypted original)
      * @param token         the share token string (used to name the sidecar)
@@ -55,7 +55,7 @@ public class ShareEncryptionService {
      */
     public void encryptSidecarAsync(String uuid, String token, String shareKey,
                                     String plainPassword, Long tokenId,
-                                    ShareTokenRepository repo) {
+                                    ShortLinkRepository repo) {
         String sidecarKey = uuid + "-share-" + token;
         executor.submit(() -> {
             try {

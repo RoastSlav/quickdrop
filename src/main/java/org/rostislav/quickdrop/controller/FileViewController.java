@@ -304,7 +304,7 @@ public class FileViewController {
         if (!isAuthorizedToDelete(uuid, request)) {
             return "redirect:/file/" + uuid;
         }
-        RequesterInfo info = FileUtils.getRequesterInfo(request);
+        RequesterInfo info = FileUtils.getRequesterInfo(request, applicationSettingsService.isTrustedProxyEnabled());
         if (fileLifecycleService.deleteFileFromDatabaseAndFileSystem(uuid, info.ipAddress(), info.userAgent())) {
             return "redirect:/file/list";
         } else {

@@ -1,7 +1,7 @@
 package org.rostislav.quickdrop.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
-import org.rostislav.quickdrop.entity.ShareTokenEntity;
+import org.rostislav.quickdrop.entity.UploadShareLink;
 import org.rostislav.quickdrop.entity.Upload;
 import org.rostislav.quickdrop.model.FileEntityView;
 import org.rostislav.quickdrop.service.AnalyticsService;
@@ -30,7 +30,7 @@ import static org.rostislav.quickdrop.util.FileUtils.validateShareToken;
  * <ul>
  *   <li>Expired or exhausted tokens render {@code invalid-share-link}.</li>
  *   <li>Tokens whose sidecar re-encryption is still in progress
- *       ({@link org.rostislav.quickdrop.entity.ShareTokenEntity#sidecarReady} is
+ *       ({@link org.rostislav.quickdrop.entity.UploadShareLink#sidecarReady} is
  *       {@code false}) render {@code file-share-preparing} so the recipient can
  *       refresh once the file is ready.</li>
  *   <li>Valid, ready tokens render {@code file-share-view} with a download link
@@ -67,13 +67,13 @@ public class ShareViewController {
                                  @RequestParam(required = false) String key,
                                  HttpServletRequest request,
                                  Model model) {
-        Optional<ShareTokenEntity> tokenEntity = fileQueryService.getShareTokenEntityByToken(token);
+        Optional<UploadShareLink> tokenEntity = fileQueryService.getShareTokenEntityByToken(token);
 
         if (tokenEntity.isEmpty() || !validateShareToken(tokenEntity.get())) {
             return "invalid-share-link";
         }
 
-        ShareTokenEntity shareToken = tokenEntity.get();
+        UploadShareLink shareToken = tokenEntity.get();
 
         if (shareToken.shareKeyHash != null) {
             // Backward compat: accept ?key= query param from old-style links
@@ -87,7 +87,7 @@ public class ShareViewController {
                 request.getSession().setAttribute("share-key-" + token, key);
             } else {
                 // New-style: key arrives via URL fragment — client JS will POST it
-                Upload file = shareToken.file;
+                Upload file = shareToken.upload;
                 if (file == null) return "redirect:/file/list";
                 if (!shareToken.sidecarReady) {
                     model.addAttribute("fileName", file.name);
@@ -100,7 +100,7 @@ public class ShareViewController {
             }
         }
 
-        Upload file = shareToken.file;
+        Upload file = shareToken.upload;
         if (file == null) {
             return "redirect:/file/list";
         }
@@ -130,11 +130,11 @@ public class ShareViewController {
     public ResponseEntity<Map<String, String>> validateShareKey(@PathVariable String token,
                                                                 @RequestParam String key,
                                                                 HttpServletRequest request) {
-        Optional<ShareTokenEntity> tokenEntity = fileQueryService.getShareTokenEntityByToken(token);
+        Optional<UploadShareLink> tokenEntity = fileQueryService.getShareTokenEntityByToken(token);
         if (tokenEntity.isEmpty() || !validateShareToken(tokenEntity.get())) {
             return ResponseEntity.notFound().build();
         }
-        ShareTokenEntity shareToken = tokenEntity.get();
+        UploadShareLink shareToken = tokenEntity.get();
         if (shareToken.shareKeyHash == null || !passwordEncoder.matches(key, shareToken.shareKeyHash)) {
             return ResponseEntity.status(403).body(Map.of("error", "Invalid key"));
         }

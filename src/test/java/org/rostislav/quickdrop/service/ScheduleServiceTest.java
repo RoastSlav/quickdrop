@@ -1,14 +1,17 @@
 package org.rostislav.quickdrop.service;
 
 import org.junit.jupiter.api.Test;
-import org.rostislav.quickdrop.entity.ShareTokenEntity;
+import org.rostislav.quickdrop.entity.RedirectLink;
+import org.rostislav.quickdrop.entity.UploadShareLink;
 import org.rostislav.quickdrop.entity.StoredFile;
 import org.rostislav.quickdrop.repository.FileRepository;
-import org.rostislav.quickdrop.repository.ShareTokenRepository;
+import org.rostislav.quickdrop.repository.ShortLinkRepository;
 import org.rostislav.quickdrop.repository.UploadRepository;
 import org.rostislav.quickdrop.storage.StorageService;
 import org.rostislav.quickdrop.support.QuickdropIntegrationTest;
 import org.springframework.beans.factory.annotation.Autowired;
+
+import java.time.LocalDateTime;
 
 import java.time.LocalDate;
 import java.util.UUID;
@@ -28,7 +31,7 @@ class ScheduleServiceTest extends QuickdropIntegrationTest {
     @Autowired
     private UploadRepository uploadRepository;
     @Autowired
-    private ShareTokenRepository shareTokenRepository;
+    private ShortLinkRepository shareTokenRepository;
     @Autowired
     private StorageService storageService;
 
@@ -107,23 +110,23 @@ class ScheduleServiceTest extends QuickdropIntegrationTest {
     }
 
     // -------------------------------------------------------------------------
-    // cleanShareTokens
+    // cleanShortLinks
     // -------------------------------------------------------------------------
 
     @Test
-    void cleanShareTokensRemovesExpiredAndExhaustedTokensButKeepsValidOnes() {
+    void cleanShortLinksRemovesExpiredAndExhaustedTokensButKeepsValidOnes() {
         StoredFile file = persistFile(LocalDate.now(), false);
 
-        ShareTokenEntity expired = new ShareTokenEntity("exprd", file, LocalDate.now().minusDays(1), null);
-        ShareTokenEntity exhausted = new ShareTokenEntity("exhst", file, null, 0);
-        ShareTokenEntity valid = new ShareTokenEntity("valid", file, LocalDate.now().plusDays(5), 3);
-        ShareTokenEntity unlimited = new ShareTokenEntity("unlim", file, null, null);
+        UploadShareLink expired = new UploadShareLink("exprd", file, LocalDate.now().minusDays(1), null);
+        UploadShareLink exhausted = new UploadShareLink("exhst", file, null, 0);
+        UploadShareLink valid = new UploadShareLink("valid", file, LocalDate.now().plusDays(5), 3);
+        UploadShareLink unlimited = new UploadShareLink("unlim", file, null, null);
         shareTokenRepository.save(expired);
         shareTokenRepository.save(exhausted);
         shareTokenRepository.save(valid);
         shareTokenRepository.save(unlimited);
 
-        scheduleService.cleanShareTokens();
+        scheduleService.cleanShortLinks();
 
         assertTrue(shareTokenRepository.findByShareToken("exprd").isEmpty());
         assertTrue(shareTokenRepository.findByShareToken("exhst").isEmpty());
@@ -132,12 +135,41 @@ class ScheduleServiceTest extends QuickdropIntegrationTest {
     }
 
     @Test
-    void cleanShareTokensIsANoOpWhenNothingIsExpired() {
+    void cleanShortLinksIsANoOpWhenNothingIsExpired() {
         StoredFile file = persistFile(LocalDate.now(), false);
-        shareTokenRepository.save(new ShareTokenEntity("stays", file, LocalDate.now().plusDays(1), null));
+        shareTokenRepository.save(new UploadShareLink("stays", file, LocalDate.now().plusDays(1), null));
 
-        assertDoesNotThrow(() -> scheduleService.cleanShareTokens());
+        assertDoesNotThrow(() -> scheduleService.cleanShortLinks());
 
         assertTrue(shareTokenRepository.findByShareToken("stays").isPresent());
+    }
+
+    @Test
+    void cleanShortLinksRemovesExpiredAndExhaustedRedirectLinksButKeepsValidOnes() {
+        RedirectLink expired = newRedirectLink("rexprd", LocalDate.now().minusDays(1), null);
+        RedirectLink exhausted = newRedirectLink("rexhst", null, 0);
+        RedirectLink valid = newRedirectLink("rvalid", LocalDate.now().plusDays(5), 3);
+        RedirectLink unlimited = newRedirectLink("runlim", null, null);
+        shareTokenRepository.save(expired);
+        shareTokenRepository.save(exhausted);
+        shareTokenRepository.save(valid);
+        shareTokenRepository.save(unlimited);
+
+        scheduleService.cleanShortLinks();
+
+        assertTrue(shareTokenRepository.findByCode("rexprd").isEmpty());
+        assertTrue(shareTokenRepository.findByCode("rexhst").isEmpty());
+        assertTrue(shareTokenRepository.findByCode("rvalid").isPresent());
+        assertTrue(shareTokenRepository.findByCode("runlim").isPresent());
+    }
+
+    private RedirectLink newRedirectLink(String code, LocalDate expirationDate, Integer remainingUses) {
+        RedirectLink link = new RedirectLink();
+        link.code = code;
+        link.targetUrl = "https://example.com/" + code;
+        link.expirationDate = expirationDate;
+        link.remainingUses = remainingUses;
+        link.createdAt = LocalDateTime.now();
+        return link;
     }
 }

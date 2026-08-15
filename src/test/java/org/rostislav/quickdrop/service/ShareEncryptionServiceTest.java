@@ -2,10 +2,10 @@ package org.rostislav.quickdrop.service;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
-import org.rostislav.quickdrop.entity.ShareTokenEntity;
+import org.rostislav.quickdrop.entity.UploadShareLink;
 import org.rostislav.quickdrop.entity.StoredFile;
 import org.rostislav.quickdrop.repository.FileRepository;
-import org.rostislav.quickdrop.repository.ShareTokenRepository;
+import org.rostislav.quickdrop.repository.ShortLinkRepository;
 import org.rostislav.quickdrop.storage.StorageService;
 import org.rostislav.quickdrop.support.QuickdropIntegrationTest;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,7 +30,7 @@ class ShareEncryptionServiceTest extends QuickdropIntegrationTest {
     @Autowired
     private StorageService storageService;
     @Autowired
-    private ShareTokenRepository shareTokenRepository;
+    private ShortLinkRepository shareTokenRepository;
     @Autowired
     private FileRepository fileRepository;
 
@@ -51,13 +51,13 @@ class ShareEncryptionServiceTest extends QuickdropIntegrationTest {
     @Timeout(15)
     void sidecarIsGeneratedAndDecryptableWithTheShareKey() throws Exception {
         StoredFile file = persistEncryptedFile("top secret payload", "file-password");
-        ShareTokenEntity token = new ShareTokenEntity("shr01", file, null, null);
+        UploadShareLink token = new UploadShareLink("shr01", file, null, null);
         token.sidecarReady = false;
         shareTokenRepository.save(token);
         String shareKey = "share-key-123";
-        String sidecarKey = file.uuid + "-share-" + token.shareToken;
+        String sidecarKey = file.uuid + "-share-" + token.code;
 
-        shareEncryptionService.encryptSidecarAsync(file.uuid, token.shareToken, shareKey, "file-password",
+        shareEncryptionService.encryptSidecarAsync(file.uuid, token.code, shareKey, "file-password",
                 token.getId(), shareTokenRepository);
 
         assertTrue(pollUntilSidecarReady(token.getId()), "sidecar encryption should complete within the timeout");
@@ -73,13 +73,13 @@ class ShareEncryptionServiceTest extends QuickdropIntegrationTest {
     @Timeout(15)
     void sidecarRejectsTheWrongShareKey() throws Exception {
         StoredFile file = persistEncryptedFile("another payload", "file-password-2");
-        ShareTokenEntity token = new ShareTokenEntity("shr02", file, null, null);
+        UploadShareLink token = new UploadShareLink("shr02", file, null, null);
         token.sidecarReady = false;
         shareTokenRepository.save(token);
         String correctShareKey = "correct-share-key";
-        String sidecarKey = file.uuid + "-share-" + token.shareToken;
+        String sidecarKey = file.uuid + "-share-" + token.code;
 
-        shareEncryptionService.encryptSidecarAsync(file.uuid, token.shareToken, correctShareKey, "file-password-2",
+        shareEncryptionService.encryptSidecarAsync(file.uuid, token.code, correctShareKey, "file-password-2",
                 token.getId(), shareTokenRepository);
         assertTrue(pollUntilSidecarReady(token.getId()));
 
@@ -96,16 +96,16 @@ class ShareEncryptionServiceTest extends QuickdropIntegrationTest {
     @Timeout(15)
     void failedSourceDecryptionDeletesTheTokenAndAnyPartialSidecar() throws Exception {
         StoredFile file = persistEncryptedFile("payload", "real-password");
-        ShareTokenEntity token = new ShareTokenEntity("shr03", file, null, null);
+        UploadShareLink token = new UploadShareLink("shr03", file, null, null);
         token.sidecarReady = false;
         shareTokenRepository.save(token);
         Long tokenId = token.getId();
-        String sidecarKey = file.uuid + "-share-" + token.shareToken;
+        String sidecarKey = file.uuid + "-share-" + token.code;
 
         // Wrong plainPassword means decrypting the *original* file fails inside the
         // background task -- the token should be removed rather than left dangling
         // with sidecarReady stuck at false forever.
-        shareEncryptionService.encryptSidecarAsync(file.uuid, token.shareToken, "some-share-key",
+        shareEncryptionService.encryptSidecarAsync(file.uuid, token.code, "some-share-key",
                 "wrong-original-password", tokenId, shareTokenRepository);
 
         long deadline = System.currentTimeMillis() + 5000;
@@ -124,7 +124,7 @@ class ShareEncryptionServiceTest extends QuickdropIntegrationTest {
     private boolean pollUntilSidecarReady(Long tokenId) throws InterruptedException {
         long deadline = System.currentTimeMillis() + 5000;
         while (System.currentTimeMillis() < deadline) {
-            boolean ready = shareTokenRepository.findById(tokenId).map(t -> t.sidecarReady).orElse(false);
+            boolean ready = shareTokenRepository.findUploadLinkById(tokenId).map(t -> t.sidecarReady).orElse(false);
             if (ready) return true;
             Thread.sleep(50);
         }

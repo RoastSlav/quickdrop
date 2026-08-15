@@ -1,7 +1,7 @@
 package org.rostislav.quickdrop.controller;
 
 import org.junit.jupiter.api.Test;
-import org.rostislav.quickdrop.entity.ShareTokenEntity;
+import org.rostislav.quickdrop.entity.UploadShareLink;
 import org.rostislav.quickdrop.entity.StoredFile;
 import org.springframework.mock.web.MockHttpSession;
 
@@ -31,8 +31,8 @@ class ShareViewControllerTest extends ControllerTestSupport {
     void viewSharedFile_expiredToken_showsInvalidShareLink() throws Exception {
         ensureAdminPasswordSet();
         StoredFile file = createFile("a.txt", "hi".getBytes());
-        ShareTokenEntity token = createShareToken(file, java.time.LocalDate.now().minusDays(1), null);
-        mockMvc.perform(get("/share/" + token.shareToken))
+        UploadShareLink token = createShareToken(file, java.time.LocalDate.now().minusDays(1), null);
+        mockMvc.perform(get("/share/" + token.code))
                 .andExpect(status().isOk())
                 .andExpect(view().name("invalid-share-link"));
     }
@@ -41,8 +41,8 @@ class ShareViewControllerTest extends ControllerTestSupport {
     void viewSharedFile_validUnencryptedToken_showsFileShareView() throws Exception {
         ensureAdminPasswordSet();
         StoredFile file = createFile("a.txt", "hi".getBytes());
-        ShareTokenEntity token = createShareToken(file, null, null);
-        mockMvc.perform(get("/share/" + token.shareToken))
+        UploadShareLink token = createShareToken(file, null, null);
+        mockMvc.perform(get("/share/" + token.code))
                 .andExpect(status().isOk())
                 .andExpect(view().name("file-share-view"))
                 .andExpect(model().attributeExists("file", "downloadLink"));
@@ -52,11 +52,11 @@ class ShareViewControllerTest extends ControllerTestSupport {
     void viewSharedFile_keyHashToken_withoutKey_needsKeyAuth() throws Exception {
         ensureAdminPasswordSet();
         StoredFile file = createFile("secret.txt", "hi".getBytes());
-        ShareTokenEntity token = createShareToken(file, null, null);
+        UploadShareLink token = createShareToken(file, null, null);
         token.shareKeyHash = passwordEncoder.encode("the-share-key");
         shareTokenRepository.save(token);
 
-        mockMvc.perform(get("/share/" + token.shareToken))
+        mockMvc.perform(get("/share/" + token.code))
                 .andExpect(status().isOk())
                 .andExpect(view().name("file-share-view"))
                 .andExpect(model().attribute("needsKeyAuth", true));
@@ -66,11 +66,11 @@ class ShareViewControllerTest extends ControllerTestSupport {
     void viewSharedFile_keyHashToken_wrongLegacyKeyParam_showsInvalidShareLink() throws Exception {
         ensureAdminPasswordSet();
         StoredFile file = createFile("secret.txt", "hi".getBytes());
-        ShareTokenEntity token = createShareToken(file, null, null);
+        UploadShareLink token = createShareToken(file, null, null);
         token.shareKeyHash = passwordEncoder.encode("the-share-key");
         shareTokenRepository.save(token);
 
-        mockMvc.perform(get("/share/" + token.shareToken).param("key", "wrong-key"))
+        mockMvc.perform(get("/share/" + token.code).param("key", "wrong-key"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("invalid-share-link"));
     }
@@ -81,11 +81,11 @@ class ShareViewControllerTest extends ControllerTestSupport {
     void validateShareKey_correctKey_returns200AndEstablishesSession() throws Exception {
         ensureAdminPasswordSet();
         StoredFile file = createFile("secret.txt", "hi".getBytes());
-        ShareTokenEntity token = createShareToken(file, null, null);
+        UploadShareLink token = createShareToken(file, null, null);
         token.shareKeyHash = passwordEncoder.encode("the-share-key");
         shareTokenRepository.save(token);
 
-        mockMvc.perform(post("/share/" + token.shareToken + "/auth").with(csrf()).param("key", "the-share-key"))
+        mockMvc.perform(post("/share/" + token.code + "/auth").with(csrf()).param("key", "the-share-key"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("ok"));
     }
@@ -94,11 +94,11 @@ class ShareViewControllerTest extends ControllerTestSupport {
     void validateShareKey_wrongKey_returns403() throws Exception {
         ensureAdminPasswordSet();
         StoredFile file = createFile("secret.txt", "hi".getBytes());
-        ShareTokenEntity token = createShareToken(file, null, null);
+        UploadShareLink token = createShareToken(file, null, null);
         token.shareKeyHash = passwordEncoder.encode("the-share-key");
         shareTokenRepository.save(token);
 
-        mockMvc.perform(post("/share/" + token.shareToken + "/auth").with(csrf()).param("key", "wrong-key"))
+        mockMvc.perform(post("/share/" + token.code + "/auth").with(csrf()).param("key", "wrong-key"))
                 .andExpect(status().isForbidden());
     }
 

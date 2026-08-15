@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.rostislav.quickdrop.repository.ShareTokenRepository;
+import org.rostislav.quickdrop.repository.ShortLinkRepository;
 import org.rostislav.quickdrop.repository.UploadRepository;
 import org.rostislav.quickdrop.storage.*;
 
@@ -34,7 +34,7 @@ class StorageMigrationServiceTest {
     @Mock
     private UploadRepository uploadRepository;
     @Mock
-    private ShareTokenRepository shareTokenRepository;
+    private ShortLinkRepository shareTokenRepository;
     @Mock
     private LocalStorageService localStorage;
     @Mock

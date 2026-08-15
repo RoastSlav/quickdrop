@@ -2,15 +2,15 @@ package org.rostislav.quickdrop.service;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.rostislav.quickdrop.entity.ShareTokenEntity;
+import org.rostislav.quickdrop.entity.UploadShareLink;
 import org.rostislav.quickdrop.entity.StoredFile;
 import org.rostislav.quickdrop.entity.Upload;
 import org.rostislav.quickdrop.model.EventType;
-import org.rostislav.quickdrop.model.ShareTokenResult;
+import org.rostislav.quickdrop.model.ShortLinkResult;
 import org.rostislav.quickdrop.model.UploadRequest;
 import org.rostislav.quickdrop.repository.ActivityLogRepository;
 import org.rostislav.quickdrop.repository.FileRepository;
-import org.rostislav.quickdrop.repository.ShareTokenRepository;
+import org.rostislav.quickdrop.repository.ShortLinkRepository;
 import org.rostislav.quickdrop.repository.UploadRepository;
 import org.rostislav.quickdrop.storage.StorageService;
 import org.rostislav.quickdrop.model.ApplicationSettingsViewModel;
@@ -44,7 +44,7 @@ class FileLifecycleServiceTest extends QuickdropIntegrationTest {
     @Autowired
     private UploadRepository uploadRepository;
     @Autowired
-    private ShareTokenRepository shareTokenRepository;
+    private ShortLinkRepository shareTokenRepository;
     @Autowired
     private ActivityLogRepository activityLogRepository;
     @Autowired
@@ -164,14 +164,14 @@ class FileLifecycleServiceTest extends QuickdropIntegrationTest {
     @Test
     void removeFileFromDatabaseWithRequesterInfoLogsDeletionAndPurgesShareTokens() {
         StoredFile file = persistPlainFile(UUID.randomUUID().toString());
-        ShareTokenEntity token = new ShareTokenEntity(UUID.randomUUID().toString().substring(0, 8), file, null, null);
+        UploadShareLink token = new UploadShareLink(UUID.randomUUID().toString().substring(0, 8), file, null, null);
         shareTokenRepository.save(token);
 
         boolean result = fileLifecycleService.removeFileFromDatabase(file.uuid, "9.9.9.9", "JUnit-UA");
 
         assertTrue(result);
         assertEquals(1, activityLogRepository.countByFileAndType(file.uuid, EventType.DELETION));
-        List<ShareTokenEntity> remaining = shareTokenRepository.findAllByFile(uploadRepository.findByUUID(file.uuid).orElseThrow());
+        List<UploadShareLink> remaining = shareTokenRepository.findAllByFile(uploadRepository.findByUUID(file.uuid).orElseThrow());
         assertTrue(remaining.isEmpty(), "all share tokens must be purged when the file is soft-deleted");
     }
 
@@ -327,8 +327,8 @@ class FileLifecycleServiceTest extends QuickdropIntegrationTest {
     void generateShareTokenReusesExistingUnlimitedToken() {
         StoredFile file = persistPlainFile(UUID.randomUUID().toString());
 
-        ShareTokenEntity first = fileLifecycleService.generateShareToken(file.uuid, null, null);
-        ShareTokenEntity second = fileLifecycleService.generateShareToken(file.uuid, null, null);
+        UploadShareLink first = fileLifecycleService.generateShareToken(file.uuid, null, null);
+        UploadShareLink second = fileLifecycleService.generateShareToken(file.uuid, null, null);
 
         assertEquals(first.getId(), second.getId(), "an unlimited token should be reused, not duplicated");
         assertEquals(1, shareTokenRepository.findAllByFile(uploadRepository.findByUUID(file.uuid).orElseThrow()).size());
@@ -338,8 +338,8 @@ class FileLifecycleServiceTest extends QuickdropIntegrationTest {
     void generateShareTokenCreatesDistinctTokensWhenLimited() {
         StoredFile file = persistPlainFile(UUID.randomUUID().toString());
 
-        ShareTokenEntity first = fileLifecycleService.generateShareToken(file.uuid, null, 5);
-        ShareTokenEntity second = fileLifecycleService.generateShareToken(file.uuid, null, 3);
+        UploadShareLink first = fileLifecycleService.generateShareToken(file.uuid, null, 5);
+        UploadShareLink second = fileLifecycleService.generateShareToken(file.uuid, null, 3);
 
         assertNotEquals(first.getId(), second.getId());
         assertEquals(2, shareTokenRepository.findAllByFile(uploadRepository.findByUUID(file.uuid).orElseThrow()).size());
@@ -355,9 +355,9 @@ class FileLifecycleServiceTest extends QuickdropIntegrationTest {
     void generateShareTokenForPlainFileHasNoShareKey() {
         StoredFile file = persistPlainFile(UUID.randomUUID().toString());
 
-        ShareTokenResult result = fileLifecycleService.generateShareToken(file.uuid, null, (String) null, null);
+        ShortLinkResult result = fileLifecycleService.generateShareToken(file.uuid, null, (String) null, null);
 
-        assertNotNull(result.token());
+        assertNotNull(result.link());
         assertNull(result.shareKey(), "non-encrypted files must not get a per-share key");
     }
 
@@ -379,16 +379,16 @@ class FileLifecycleServiceTest extends QuickdropIntegrationTest {
         String sessionToken = UUID.randomUUID().toString();
         sessionService.addFileSessionToken(sessionToken, "file-password-1", uuid);
 
-        ShareTokenResult result = fileLifecycleService.generateShareToken(uuid, null, sessionToken, null);
+        ShortLinkResult result = fileLifecycleService.generateShareToken(uuid, null, sessionToken, null);
 
         assertNotNull(result.shareKey(), "encrypted files must get a per-share key embedded in the share URL");
-        assertNotNull(result.token().shareKeyHash);
+        assertNotNull(result.link().shareKeyHash);
 
-        String sidecarKey = uuid + "-share-" + result.token().shareToken;
+        String sidecarKey = uuid + "-share-" + result.link().code;
         long deadline = System.currentTimeMillis() + 5000;
         boolean ready = false;
         while (System.currentTimeMillis() < deadline) {
-            ready = shareTokenRepository.findById(result.token().getId()).map(t -> t.sidecarReady).orElse(false);
+            ready = shareTokenRepository.findUploadLinkById(result.link().getId()).map(t -> t.sidecarReady).orElse(false);
             if (ready) break;
             Thread.sleep(50);
         }
@@ -403,7 +403,7 @@ class FileLifecycleServiceTest extends QuickdropIntegrationTest {
     @Test
     void revokeShareTokenDeletesRowAndLogsRevoke() {
         StoredFile file = persistPlainFile(UUID.randomUUID().toString());
-        ShareTokenEntity token = fileLifecycleService.generateShareToken(file.uuid, null, null);
+        UploadShareLink token = fileLifecycleService.generateShareToken(file.uuid, null, null);
 
         fileLifecycleService.revokeShareToken(token.getId(), new MockHttpServletRequest());
 

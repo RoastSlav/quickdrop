@@ -21,7 +21,7 @@ import java.util.concurrent.TimeUnit;
  * rather than here, so a settings change takes effect for the next session created without
  * an app restart.
  *
- * <p>Three interceptors are registered in priority order:
+ * <p>Interceptors are registered in priority order:
  * <ol>
  *   <li>{@link AdminPasswordSetupInterceptor} — redirects every request to the
  *       first-time setup page until an admin password has been configured.</li>
@@ -29,6 +29,9 @@ import java.util.concurrent.TimeUnit;
  *       {@code /file/history/*} behind an admin session token.</li>
  *   <li>{@link FilePasswordInterceptor} — enforces per-file password requirements
  *       on the {@code /file/**} routes.</li>
+ *   <li>{@link RateLimitInterceptor} — sliding-window request limiting on
+ *       password/login endpoints, {@code /share/**}, and the link-shortener's
+ *       create and resolve routes.</li>
  * </ol>
  *
  * <p>The {@code /branding/**} resource handler maps to the {@code branding/}
@@ -72,7 +75,7 @@ public class WebConfig implements WebMvcConfigurer {
                 .excludePathPatterns("/file/upload", "/file/list", "/file/password", "/file/password/**", "/file/history/*", "/file/search", "/file/paste", "/file/paste/new");
 
         registry.addInterceptor(rateLimitInterceptor)
-                .addPathPatterns("/file/password", "/admin/password", "/share/**");
+                .addPathPatterns("/file/password", "/admin/password", "/share/**", "/api/link", "/s/**");
     }
 
     /**

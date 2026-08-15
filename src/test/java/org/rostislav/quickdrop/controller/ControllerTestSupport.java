@@ -1,14 +1,15 @@
 package org.rostislav.quickdrop.controller;
 
+import org.junit.jupiter.api.function.Executable;
 import org.rostislav.quickdrop.entity.ApplicationSettingsEntity;
 import org.rostislav.quickdrop.entity.Paste;
-import org.rostislav.quickdrop.entity.ShareTokenEntity;
+import org.rostislav.quickdrop.entity.UploadShareLink;
 import org.rostislav.quickdrop.entity.StoredFile;
 import org.rostislav.quickdrop.entity.Upload;
 import org.rostislav.quickdrop.repository.ApplicationSettingsRepository;
 import org.rostislav.quickdrop.repository.FileRepository;
 import org.rostislav.quickdrop.repository.PasteRepository;
-import org.rostislav.quickdrop.repository.ShareTokenRepository;
+import org.rostislav.quickdrop.repository.ShortLinkRepository;
 import org.rostislav.quickdrop.service.ApplicationSettingsService;
 import org.rostislav.quickdrop.service.AsyncFileMergeService;
 import org.rostislav.quickdrop.service.SessionService;
@@ -22,6 +23,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.time.LocalDate;
+import java.util.ConcurrentModificationException;
 import java.util.UUID;
 import java.util.function.Consumer;
 
@@ -43,7 +45,7 @@ abstract class ControllerTestSupport extends QuickdropIntegrationTest {
     @Autowired
     protected PasteRepository pasteRepository;
     @Autowired
-    protected ShareTokenRepository shareTokenRepository;
+    protected ShortLinkRepository shareTokenRepository;
     @Autowired
     protected ApplicationSettingsService applicationSettingsService;
     @Autowired
@@ -178,9 +180,35 @@ abstract class ControllerTestSupport extends QuickdropIntegrationTest {
         return pasteRepository.save(paste);
     }
 
-    protected ShareTokenEntity createShareToken(Upload upload, LocalDate expiry, Integer downloads) {
+    protected UploadShareLink createShareToken(Upload upload, LocalDate expiry, Integer downloads) {
         String token = UUID.randomUUID().toString().replace("-", "").substring(0, 10);
-        ShareTokenEntity entity = new ShareTokenEntity(token, upload, expiry, downloads);
+        UploadShareLink entity = new UploadShareLink(token, upload, expiry, downloads);
         return shareTokenRepository.save(entity);
+    }
+
+    /**
+     * Retries {@code test} up to 3 times when it throws {@link ConcurrentModificationException}.
+     *
+     * <p>Testing an async {@code StreamingResponseBody} endpoint with {@code asyncDispatch()}
+     * races the executor thread writing the body against Spring Security's
+     * {@code HeaderWriterFilter} finishing the response on the main thread -- both mutate
+     * {@code MockHttpServletResponse}'s header map, which isn't thread-safe. This is a
+     * documented MockMvc-only limitation (spring-projects/spring-framework#31543, closed as
+     * "not planned" since a real {@code HttpServletResponse} is unaffected), and the
+     * maintainers' own recommended workaround is to retry.
+     *
+     * <p>Only safe to wrap around an idempotent request -- e.g. not a limited-use share-token
+     * download, since the counter decrement happens before the point where this race can occur
+     * and would already be spent on a retry.
+     */
+    protected static void retryOnMockMvcAsyncHeaderRace(Executable test) throws Throwable {
+        for (int attempt = 1; ; attempt++) {
+            try {
+                test.execute();
+                return;
+            } catch (ConcurrentModificationException e) {
+                if (attempt >= 3) throw e;
+            }
+        }
     }
 }

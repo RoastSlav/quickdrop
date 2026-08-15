@@ -1,6 +1,6 @@
 package org.rostislav.quickdrop.service;
 
-import org.rostislav.quickdrop.repository.ShareTokenRepository;
+import org.rostislav.quickdrop.repository.ShortLinkRepository;
 import org.rostislav.quickdrop.repository.UploadRepository;
 import org.rostislav.quickdrop.storage.*;
 import org.slf4j.Logger;
@@ -46,16 +46,16 @@ public class StorageMigrationService {
     ) {}
 
     private final UploadRepository uploadRepository;
-    private final ShareTokenRepository shareTokenRepository;
+    private final ShortLinkRepository shortLinkRepository;
     public StorageMigrationService(UploadRepository uploadRepository,
-                                   ShareTokenRepository shareTokenRepository,
+                                   ShortLinkRepository shortLinkRepository,
                                    LocalStorageService localStorage,
                                    S3StorageService s3Storage,
                                    AzureBlobStorageService azureStorage,
                                    SftpStorageService sftpStorage,
                                    WebDavStorageService webDavStorage) {
         this.uploadRepository = uploadRepository;
-        this.shareTokenRepository = shareTokenRepository;
+        this.shortLinkRepository = shortLinkRepository;
         Map<StorageBackend, StorageService> map = new EnumMap<>(StorageBackend.class);
         map.put(StorageBackend.LOCAL, localStorage);
         map.put(StorageBackend.S3, s3Storage);
@@ -168,7 +168,7 @@ public class StorageMigrationService {
         keys.addAll(uploadRepository.findAllActiveUuids());
         // Encrypted share sidecars — use a native JOIN query so orphaned tokens
         // (share_token rows whose upload was deleted) are skipped safely.
-        keys.addAll(shareTokenRepository.findShareSidecarKeys());
+        keys.addAll(shortLinkRepository.findShareSidecarKeys());
         return keys;
     }
 

@@ -4,10 +4,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.rostislav.quickdrop.entity.ShareTokenEntity;
+import org.rostislav.quickdrop.entity.UploadShareLink;
 import org.rostislav.quickdrop.entity.StoredFile;
 import org.rostislav.quickdrop.repository.ActivityLogRepository;
-import org.rostislav.quickdrop.repository.ShareTokenRepository;
+import org.rostislav.quickdrop.repository.ShortLinkRepository;
 import org.rostislav.quickdrop.repository.UploadRepository;
 import org.rostislav.quickdrop.storage.StorageService;
 import org.springframework.http.ResponseEntity;
@@ -42,7 +42,7 @@ class FileDownloadServiceTest {
     @Mock
     private SvgRasterizationService svgRasterizationService;
     @Mock
-    private ShareTokenRepository shareTokenRepository;
+    private ShortLinkRepository shareTokenRepository;
     @Mock
     private ActivityLogRepository activityLogRepository;
     @Mock
@@ -317,14 +317,14 @@ class FileDownloadServiceTest {
     void streamFileByShareToken_storageDown_returnsNull() {
         when(storageHealthService.isStorageDown()).thenReturn(true);
 
-        assertNull(newService().streamFileByShareToken(new ShareTokenEntity(), request()));
+        assertNull(newService().streamFileByShareToken(new UploadShareLink(), request()));
         verifyNoInteractions(shareTokenRepository);
     }
 
     @Test
     void streamFileByShareToken_expiredToken_returnsNull() {
         StoredFile upload = file("u", "f.txt", false);
-        ShareTokenEntity token = new ShareTokenEntity("tok", upload, LocalDate.now().minusDays(1), null);
+        UploadShareLink token = new UploadShareLink("tok", upload, LocalDate.now().minusDays(1), null);
         when(storageHealthService.isStorageDown()).thenReturn(false);
 
         assertNull(newService().streamFileByShareToken(token, request()));
@@ -334,7 +334,7 @@ class FileDownloadServiceTest {
     @Test
     void streamFileByShareToken_limitedDownloadsExhaustedConcurrently_returnsNull() {
         StoredFile upload = file("u", "f.txt", false);
-        ShareTokenEntity token = new ShareTokenEntity("tok", upload, null, 1);
+        UploadShareLink token = new UploadShareLink("tok", upload, null, 1);
         when(storageHealthService.isStorageDown()).thenReturn(false);
         when(shareTokenRepository.decrementDownloadCount(any())).thenReturn(0);
 
@@ -345,7 +345,7 @@ class FileDownloadServiceTest {
     @Test
     void streamFileByShareToken_sidecarMissing_deletesTokenReturnsNull() {
         StoredFile upload = file("u5", "f.txt", true);
-        ShareTokenEntity token = new ShareTokenEntity("tok", upload, null, null);
+        UploadShareLink token = new UploadShareLink("tok", upload, null, null);
         token.shareKeyHash = "hash";
         when(storageHealthService.isStorageDown()).thenReturn(false);
         when(storageService.exists("u5-share-tok")).thenReturn(false);
@@ -357,7 +357,7 @@ class FileDownloadServiceTest {
     @Test
     void streamFileByShareToken_noSessionKey_returnsNull() {
         StoredFile upload = file("u6", "f.txt", true);
-        ShareTokenEntity token = new ShareTokenEntity("tok", upload, null, null);
+        UploadShareLink token = new UploadShareLink("tok", upload, null, null);
         token.shareKeyHash = "hash";
         when(storageHealthService.isStorageDown()).thenReturn(false);
         when(storageService.exists("u6-share-tok")).thenReturn(true);
@@ -369,7 +369,7 @@ class FileDownloadServiceTest {
     @Test
     void streamFileByShareToken_withKeyAuth_streamsDecryptsAndCleansUp() throws Exception {
         StoredFile upload = file("u7", "f.txt", true);
-        ShareTokenEntity token = new ShareTokenEntity("tok", upload, null, 1);
+        UploadShareLink token = new UploadShareLink("tok", upload, null, 1);
         token.shareKeyHash = "hash";
         when(storageHealthService.isStorageDown()).thenReturn(false);
         when(shareTokenRepository.decrementDownloadCount(any())).thenReturn(1);
@@ -380,8 +380,8 @@ class FileDownloadServiceTest {
         // decrementDownloadCount() is an atomic DB UPDATE that doesn't mutate this in-memory
         // entity, so simulate the post-decrement DB row (0 remaining) via a fresh instance --
         // exhausted, so post-stream cleanup must delete the token.
-        ShareTokenEntity refetched = new ShareTokenEntity("tok", upload, null, 0);
-        when(shareTokenRepository.findById(any())).thenReturn(java.util.Optional.of(refetched));
+        UploadShareLink refetched = new UploadShareLink("tok", upload, null, 0);
+        when(shareTokenRepository.findUploadLinkById(any())).thenReturn(java.util.Optional.of(refetched));
 
         MockHttpServletRequest req = request();
         req.getSession().setAttribute("share-key-tok", "share-key");
@@ -402,7 +402,7 @@ class FileDownloadServiceTest {
     @Test
     void streamFileByShareToken_legacyDecryptedSidecar_streamsFromLegacyKey() throws Exception {
         StoredFile upload = file("u8", "f.txt", true);
-        ShareTokenEntity token = new ShareTokenEntity("tok", upload, null, null);
+        UploadShareLink token = new UploadShareLink("tok", upload, null, null);
         when(storageHealthService.isStorageDown()).thenReturn(false);
         when(storageService.exists("u8-decrypted")).thenReturn(true);
         when(storageService.getInputStream("u8-decrypted")).thenReturn(new ByteArrayInputStream("legacy".getBytes()));
@@ -420,7 +420,7 @@ class FileDownloadServiceTest {
     @Test
     void streamFileByShareToken_legacyNoSidecar_streamsFromMainKey() throws Exception {
         StoredFile upload = file("u9", "f.txt", false);
-        ShareTokenEntity token = new ShareTokenEntity("tok", upload, null, null);
+        UploadShareLink token = new UploadShareLink("tok", upload, null, null);
         when(storageHealthService.isStorageDown()).thenReturn(false);
         when(storageService.exists("u9-decrypted")).thenReturn(false);
         when(storageService.getInputStream("u9")).thenReturn(new ByteArrayInputStream("main".getBytes()));
@@ -438,7 +438,7 @@ class FileDownloadServiceTest {
 
     @Test
     void deleteShareSidecar_noHash_isNoOp() {
-        ShareTokenEntity token = new ShareTokenEntity("tok", file("u", "f.txt", false), null, null);
+        UploadShareLink token = new UploadShareLink("tok", file("u", "f.txt", false), null, null);
 
         newService().deleteShareSidecar(token);
 
@@ -447,7 +447,7 @@ class FileDownloadServiceTest {
 
     @Test
     void deleteShareSidecar_deletesWhenPresent() {
-        ShareTokenEntity token = new ShareTokenEntity("tok", file("u10", "f.txt", true), null, null);
+        UploadShareLink token = new UploadShareLink("tok", file("u10", "f.txt", true), null, null);
         token.shareKeyHash = "hash";
         when(storageService.delete("u10-share-tok")).thenReturn(true);
 
@@ -458,7 +458,7 @@ class FileDownloadServiceTest {
 
     @Test
     void deleteShareSidecar_logsWarningButDoesNotThrowOnFailure() {
-        ShareTokenEntity token = new ShareTokenEntity("tok", file("u11", "f.txt", true), null, null);
+        UploadShareLink token = new UploadShareLink("tok", file("u11", "f.txt", true), null, null);
         token.shareKeyHash = "hash";
         when(storageService.delete("u11-share-tok")).thenReturn(false);
 

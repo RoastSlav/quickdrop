@@ -20,6 +20,10 @@ public enum EventCategory {
      */
     SHARE,
     /**
+     * Events involving general-purpose short links (redirect links, {@code /s/{code}}).
+     */
+    SHORTLINK,
+    /**
      * Admin authentication and configuration events.
      */
     ADMIN,

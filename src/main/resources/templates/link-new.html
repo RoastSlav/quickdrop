@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en" th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(~{::title}, ~{::head-extra})}">
+    <title th:text="#{page.linkNew.title.browser(${appName})}">Shorten a Link — QuickDrop</title>
+    <th:block th:fragment="head-extra">
+        <meta name="_csrf" th:content="${_csrf.token}"/>
+    </th:block>
+</head>
+<body>
+
+<th:block th:replace="~{fragments/layout :: chrome(false)}"></th:block>
+
+<main class="flex-1 hero-scene" id="main-content">
+    <div class="page-wrap page-wrap-tight">
+
+        <div class="text-center mb-8 animate-in">
+            <h1 class="page-title-xl mb-2" th:text="#{page.linkNew.title}">Shorten a Link</h1>
+            <p class="page-subtitle" th:text="#{page.linkNew.subtitle}">Paste a long URL and get a short,
+                shareable link with a QR code.</p>
+        </div>
+
+        <!-- Security notice: only lists protections that are actually active -->
+        <div class="flex items-start gap-3 p-4 rounded-xl mb-6 animate-in"
+             style="background: var(--c-indigo-muted); border: 1px solid color-mix(in srgb, var(--c-indigo) 30%, transparent)"
+             th:if="${reputationCheckEnabled or shortenerInterstitialMode != 'NEVER' or shortenerDomainRuleMode != 'OFF'}">
+            <svg class="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="1.8"
+                 style="color:var(--c-indigo)" viewBox="0 0 24 24">
+                <path d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z"
+                      stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <div>
+                <p class="text-sm font-semibold" style="color: var(--c-indigo)"
+                   th:text="#{page.linkNew.notice.title}">Links are checked before they're shared</p>
+                <p class="text-xs mt-0.5" style="color: var(--c-text-muted)"
+                   th:text="#{page.linkNew.notice.safety}">
+                    We check destinations for unsafe patterns and block links that point into a private network.</p>
+                <p class="text-xs mt-0.5" style="color: var(--c-text-muted)"
+                   th:if="${reputationCheckEnabled}"
+                   th:text="#{page.linkNew.notice.reputation}">
+                    Destinations are checked against threat-intelligence sources.</p>
+                <p class="text-xs mt-0.5" style="color: var(--c-text-muted)"
+                   th:if="${shortenerInterstitialMode != 'NEVER'}"
+                   th:text="#{page.linkNew.notice.interstitial}">
+                    Anyone opening your link sees where it goes before they continue.</p>
+                <p class="text-xs mt-0.5" style="color: var(--c-text-muted)"
+                   th:if="${shortenerDomainRuleMode != 'OFF'}"
+                   th:text="#{page.linkNew.notice.domainRules}">
+                    Links to some domains are restricted by the administrator.</p>
+            </div>
+        </div>
+
+        <div class="card card-xl animate-in animate-in-delay-1">
+
+            <!-- Create form -->
+            <form class="flex flex-col gap-4" id="linkForm">
+                <div class="form-row">
+                    <label class="form-label" for="targetUrl" th:text="#{page.linkNew.urlLabel}">Destination
+                        URL</label>
+                    <input autocomplete="off" class="form-input" id="targetUrl" name="url" required
+                           th:placeholder="#{page.linkNew.urlPlaceholder}" type="text"/>
+                </div>
+
+                <div class="form-row">
+                    <label class="form-label" for="daysValid" th:text="#{page.fileView.daysValid}">Days valid</label>
+                    <input class="form-input form-input-mono" id="daysValid" min="0" type="number" value=""/>
+                    <label class="form-check mt-1">
+                        <input checked id="noExpiration" type="checkbox"/>
+                        <span class="text-sm" th:text="#{page.fileView.noExpiration}">No expiration</span>
+                    </label>
+                </div>
+
+                <div class="form-row">
+                    <label class="form-label" for="allowedUsesCount"
+                           th:text="#{page.linkNew.allowedUses}">Allowed uses</label>
+                    <input class="form-input form-input-mono" id="allowedUsesCount" min="0" type="number" value=""/>
+                    <label class="form-check mt-1">
+                        <input checked id="unlimitedUses" type="checkbox"/>
+                        <span class="text-sm" th:text="#{page.linkNew.unlimitedUses}">Unlimited uses</span>
+                    </label>
+                </div>
+
+                <div class="form-row">
+                    <label class="form-label" for="customAlias" th:text="#{page.linkNew.aliasLabel}">Custom alias
+                        (optional)</label>
+                    <input autocomplete="off" class="form-input form-input-mono" id="customAlias"
+                           th:placeholder="#{page.linkNew.aliasPlaceholder}" type="text"/>
+                    <p class="form-hint" th:text="#{page.linkNew.aliasHint}">Leave blank for a random code.</p>
+                </div>
+
+                <button class="btn btn-gradient btn-lg justify-center" id="submitButton" type="submit">
+                    <span th:text="#{page.linkNew.submitButton}">Shorten</span>
+                </button>
+
+                <p class="text-sm text-center hidden" id="formError" style="color:var(--c-danger)"></p>
+            </form>
+
+            <!-- Result panel -->
+            <div class="hidden flex-col items-center gap-4 mt-2" id="resultPanel">
+                <hr class="divider divider-soft w-full" style="margin:0"/>
+                <p class="text-xs font-semibold uppercase tracking-widest"
+                   style="color:var(--c-text-faint)" th:text="#{page.linkNew.resultLabel}">Your short link</p>
+                <img alt="" class="rounded-lg" height="150" id="resultQr" width="150"
+                     th:alt="#{page.linkNew.qrAlt}"/>
+                <div class="flex gap-2 w-full">
+                    <input class="form-input form-input-mono flex-1 min-w-0" id="resultLink" readonly type="text"/>
+                    <button class="btn btn-ghost btn-sm shrink-0" id="copyResultButton" type="button"
+                            th:text="#{button.copy}">Copy
+                    </button>
+                </div>
+                <button class="btn btn-ghost btn-sm" id="createAnotherButton" type="button"
+                        th:text="#{page.linkNew.createAnother}">Create another link
+                </button>
+            </div>
+        </div>
+    </div>
+</main>
+
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    window.i18n = window.i18n || {};
+    window.i18n.linkNew = {
+        errorGeneric: /*[[#{page.linkNew.errorGeneric}]]*/ "Couldn't create the link. Please try again.",
+        copied: /*[[#{notification.copied}]]*/ 'Copied',
+        copy: /*[[#{button.copy}]]*/ 'Copy'
+    };
+    /*]]>*/
+</script>
+<script src="/js/link-new.js"></script>
+<th:block th:replace="~{fragments/layout :: pageScripts}"></th:block>
+</body>
+</html>

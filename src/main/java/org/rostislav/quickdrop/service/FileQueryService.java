@@ -1,14 +1,15 @@
 package org.rostislav.quickdrop.service;
 
 import jakarta.servlet.http.HttpServletRequest;
-import org.rostislav.quickdrop.entity.ShareTokenEntity;
+import org.rostislav.quickdrop.entity.RedirectLink;
+import org.rostislav.quickdrop.entity.UploadShareLink;
 import org.rostislav.quickdrop.entity.StoredFile;
 import org.rostislav.quickdrop.entity.Upload;
 import org.rostislav.quickdrop.model.FileEntityView;
 import org.rostislav.quickdrop.model.FileSession;
 import org.rostislav.quickdrop.model.UploadRequest;
 import org.rostislav.quickdrop.repository.FileRepository;
-import org.rostislav.quickdrop.repository.ShareTokenRepository;
+import org.rostislav.quickdrop.repository.ShortLinkRepository;
 import org.rostislav.quickdrop.repository.UploadRepository;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
@@ -38,7 +39,7 @@ import static org.rostislav.quickdrop.util.DataValidator.safeNumber;
 public class FileQueryService {
     private final UploadRepository uploadRepository;
     private final FileRepository fileRepository;
-    private final ShareTokenRepository shareTokenRepository;
+    private final ShortLinkRepository shortLinkRepository;
     private final PasswordEncoder passwordEncoder;
     private final ApplicationSettingsService applicationSettingsService;
     private final SessionService sessionService;
@@ -46,14 +47,14 @@ public class FileQueryService {
 
     public FileQueryService(UploadRepository uploadRepository,
                             FileRepository fileRepository,
-                            ShareTokenRepository shareTokenRepository,
+                            ShortLinkRepository shortLinkRepository,
                             PasswordEncoder passwordEncoder,
                             ApplicationSettingsService applicationSettingsService,
                             SessionService sessionService,
                             StorageService storageService) {
         this.uploadRepository = uploadRepository;
         this.fileRepository = fileRepository;
-        this.shareTokenRepository = shareTokenRepository;
+        this.shortLinkRepository = shortLinkRepository;
         this.passwordEncoder = passwordEncoder;
         this.applicationSettingsService = applicationSettingsService;
         this.sessionService = sessionService;
@@ -141,6 +142,19 @@ public class FileQueryService {
         return safeNumber(fileRepository.totalFileSizeForFilesOnly());
     }
 
+    /**
+     * Counts non-deleted, non-permanent uploads whose scheduled deletion falls within
+     * {@code withinDays} from now, so the admin dashboard can warn before files vanish.
+     *
+     * @param maxFileLifeDays retention window from settings, in days
+     * @param withinDays      how far ahead to look
+     * @return number of uploads expiring in that window (includes any already overdue)
+     */
+    public long countFilesExpiringWithin(long maxFileLifeDays, int withinDays) {
+        long age = Math.max(0, maxFileLifeDays - withinDays);
+        return uploadRepository.countUploadsExpiringBefore(LocalDate.now().minusDays(age));
+    }
+
     public long getFileCount() {
         return fileRepository.countFiles();
     }
@@ -161,8 +175,8 @@ public class FileQueryService {
         return fileRepository.searchDeletedFilesWithDownloadCounts(query, pageable);
     }
 
-    public Optional<ShareTokenEntity> getShareTokenEntityByToken(String token) {
-        return shareTokenRepository.findByShareToken(token);
+    public Optional<UploadShareLink> getShareTokenEntityByToken(String token) {
+        return shortLinkRepository.findByShareToken(token);
     }
 
     /**
@@ -174,9 +188,27 @@ public class FileQueryService {
      * @param unlimited when {@code true}, includes only tokens with an unlimited download allowance
      * @param query     optional name/UUID fragment; {@code null} returns all matching records
      */
-    public Page<ShareTokenEntity> getFilteredShareTokens(LocalDate today, Boolean isPaste, boolean noExpiry,
+    public Page<UploadShareLink> getFilteredShareTokens(LocalDate today, Boolean isPaste, boolean noExpiry,
                                                          boolean unlimited, String query, Pageable pageable) {
-        return shareTokenRepository.findFiltered(today, isPaste, noExpiry, unlimited, query, pageable);
+        return shortLinkRepository.findFiltered(today, isPaste, noExpiry, unlimited, query, pageable);
+    }
+
+    /**
+     * Counts active links of each kind, for labelling the admin Links tabs.
+     *
+     * @return {@code [shareLinks, redirectLinks]}
+     */
+    public long[] countActiveLinksByKind() {
+        LocalDate today = LocalDate.now();
+        return new long[]{
+                shortLinkRepository.countActiveShareLinks(today),
+                shortLinkRepository.countActiveRedirectLinks(today)
+        };
+    }
+
+    public Page<RedirectLink> getFilteredRedirectLinks(LocalDate today, boolean noExpiry,
+                                                        boolean unlimited, String query, Pageable pageable) {
+        return shortLinkRepository.findFilteredRedirectLinks(today, noExpiry, unlimited, query, pageable);
     }
 
     public boolean fileExistsInFileSystem(String uuid) {

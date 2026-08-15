@@ -75,6 +75,7 @@
                     Files</a>
                 <a class="nav-link" data-nav-match="/file/paste" href="/file/paste/new"
                    th:text="#{nav.pastebin}">Pastebin</a>
+                <a class="nav-link" data-nav-match="/link/new" href="/link/new" th:text="#{nav.shortener}">Shorten Link</a>
                 <a class="nav-link" data-nav-match="/admin/dashboard" href="/admin/dashboard" th:text="#{nav.admin}">Admin</a>
                 <form action="/admin/logout" class="contents" method="post" th:if="${hasAdminSession or hasAppSession}">
                     <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden"/>
@@ -95,6 +96,10 @@
                    href="/file/paste/new"
                    th:if="${isPastebinEnabled or hasAdminSession}"
                    th:text="#{nav.pastebin}">Pastebin</a>
+                <a class="nav-link" data-nav-match="/link/new"
+                   href="/link/new"
+                   th:if="${isShortenerEnabled or hasAdminSession}"
+                   th:text="#{nav.shortener}">Shorten Link</a>
                 <a class="nav-link" data-nav-match="/admin"
                    href="/admin/dashboard"
                    th:if="${isAdminDashboardButtonEnabled}"
@@ -207,6 +212,8 @@
             <a class="nav-link" data-nav-match="/file/list" href="/file/list" th:text="#{nav.viewFiles}">View Files</a>
             <a class="nav-link" data-nav-match="/file/paste" href="/file/paste/new"
                th:text="#{nav.pastebin}">Pastebin</a>
+            <a class="nav-link" data-nav-match="/link/new" href="/link/new"
+               th:text="#{nav.shortener}">Shorten Link</a>
             <a class="nav-link" data-nav-match="/admin/dashboard" href="/admin/dashboard"
                th:text="#{nav.admin}">Admin</a>
             <form action="/admin/logout" method="post" th:if="${hasAdminSession or hasAppSession}">
@@ -226,6 +233,9 @@
             <a class="nav-link" data-nav-match="/file/paste" href="/file/paste/new"
                th:if="${isPastebinEnabled or hasAdminSession}"
                th:text="#{nav.pastebin}">Pastebin</a>
+            <a class="nav-link" data-nav-match="/link/new" href="/link/new"
+               th:if="${isShortenerEnabled or hasAdminSession}"
+               th:text="#{nav.shortener}">Shorten Link</a>
             <a class="nav-link" data-nav-match="/admin" href="/admin/dashboard"
                th:if="${isAdminDashboardButtonEnabled}"
                th:text="#{nav.admin}">Admin</a>

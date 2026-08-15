@@ -232,6 +232,43 @@ class AdminViewControllerTest extends ControllerTestSupport {
                 .andExpect(status().isBadRequest());
     }
 
+    // -- POST /admin/settings/accept-reputation-terms ------------------------
+
+    @Test
+    @org.springframework.test.annotation.DirtiesContext
+    void acceptReputationTerms_knownProvider_enablesItAndReturns200() throws Exception {
+        MockHttpSession session = adminSession();
+        mockMvc.perform(post("/admin/settings/accept-reputation-terms").session(session).with(csrf())
+                        .param("provider", "phishing_army"))
+                .andExpect(status().isOk());
+
+        assertTrue(applicationSettingsService.isReputationPhishingArmyEnabled());
+    }
+
+    @Test
+    void acceptReputationTerms_unknownProvider_returns400() throws Exception {
+        MockHttpSession session = adminSession();
+        mockMvc.perform(post("/admin/settings/accept-reputation-terms").session(session).with(csrf())
+                        .param("provider", "not-a-real-provider"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void acceptReputationTerms_withoutCsrf_isForbidden() throws Exception {
+        MockHttpSession session = adminSession();
+        mockMvc.perform(post("/admin/settings/accept-reputation-terms").session(session)
+                        .param("provider", "phishing_army"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void acceptReputationTerms_withoutAdminSession_redirectsToLogin() throws Exception {
+        mockMvc.perform(post("/admin/settings/accept-reputation-terms").with(csrf())
+                        .param("provider", "phishing_army"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/admin/password"));
+    }
+
     /**
      * Settings validation regression (docs/test-reports/security-probes.md SEV-2):
      * out-of-range numeric settings and storage paths outside the app directory were
@@ -422,17 +459,34 @@ class AdminViewControllerTest extends ControllerTestSupport {
                 .andExpect(status().isForbidden());
     }
 
-    // -- GET /admin/share-links, POST /admin/share-links/revoke/{id} -----------
+    // -- GET /admin/links, POST /admin/links/revoke-share/{id}, /revoke-redirect/{id} -----------
 
     @Test
     void shareLinksPage_withAdminSession_returns200() throws Exception {
         MockHttpSession session = adminSession();
         StoredFile file = createFile("a.txt", "x".getBytes());
         createShareToken(file, null, null);
-        mockMvc.perform(get("/admin/share-links").session(session))
+        mockMvc.perform(get("/admin/links").session(session))
                 .andExpect(status().isOk())
-                .andExpect(view().name("admin-share-links"))
+                .andExpect(view().name("admin-links"))
                 .andExpect(model().attributeExists("tokensPage"));
+    }
+
+    @Test
+    void legacyShareLinksUrl_redirectsToMergedLinksPage() throws Exception {
+        MockHttpSession session = adminSession();
+        mockMvc.perform(get("/admin/share-links").session(session))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/admin/links"));
+    }
+
+    @Test
+    void redirectLinksTab_withAdminSession_returns200() throws Exception {
+        MockHttpSession session = adminSession();
+        mockMvc.perform(get("/admin/links").session(session).param("kind", "redirect"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("admin-links"))
+                .andExpect(model().attributeExists("redirectLinksPage"));
     }
 
     @Test
@@ -440,9 +494,9 @@ class AdminViewControllerTest extends ControllerTestSupport {
         MockHttpSession session = adminSession();
         StoredFile file = createFile("a.txt", "x".getBytes());
         var token = createShareToken(file, null, null);
-        mockMvc.perform(post("/admin/share-links/revoke/" + token.getId()).session(session).with(csrf()))
+        mockMvc.perform(post("/admin/links/revoke-share/" + token.getId()).session(session).with(csrf()))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/admin/share-links"));
+                .andExpect(redirectedUrl("/admin/links"));
         assertTrue(shareTokenRepository.findById(token.getId()).isEmpty());
     }
 

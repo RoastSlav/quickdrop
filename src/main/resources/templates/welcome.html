@@ -1,25 +1,11 @@
 <!DOCTYPE html>
 <html lang="en" th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8"/>
+<head th:replace="~{fragments/layout :: head(~{::title}, ~{})}">
     <title th:text="#{page.welcome.title.browser(${appName})}">Welcome — QuickDrop</title>
-    <meta content="width=device-width, initial-scale=1" name="viewport"/>
-    <th:block th:replace="~{fragments/header :: themePreload}"></th:block>
-    <link href="https://fonts.googleapis.com" rel="preconnect"/>
-    <link crossorigin href="https://fonts.gstatic.com" rel="preconnect"/>
-    <link href="/css/tailwind.css" rel="stylesheet"/>
-    <link href="/css/custom.css" rel="stylesheet"/>
-    <link href="/images/favicon.png" rel="icon" th:href="${appLogoPath}" type="image/png"/>
-    <script src="/js/tailwindTheme.js"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
 </head>
 <body>
 
-<!-- Floating orbs -->
-<div aria-hidden="true" class="orb-field">
-    <div class="orb orb--primary"></div>
-    <div class="orb orb--secondary"></div>
-</div>
+<th:block th:replace="~{fragments/layout :: orbs}"></th:block>
 
 <!-- top-right controls (no nav on setup page) -->
 <div class="fixed top-4 right-4 flex items-center gap-2 z-20">
@@ -173,7 +159,7 @@
             document.getElementById('themeToggle')?.addEventListener('click', () => setTimeout(sync, 0));
         })();
     </script>
-    <script src="/js/locale-switcher.js"></script>
+<th:block th:replace="~{fragments/layout :: pageScripts}"></th:block>
 </main>
 </body>
 </html>

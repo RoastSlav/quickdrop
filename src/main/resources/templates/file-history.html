@@ -1,55 +1,40 @@
 <!DOCTYPE html>
 <html lang="en" th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8"/>
-    <meta content="width=device-width, initial-scale=1" name="viewport"/>
-    <th:block th:replace="~{fragments/header :: themePreload}"></th:block>
+<head th:replace="~{fragments/layout :: head(~{::title}, ~{::head-extra})}">
     <title th:text="#{page.history.title.browser(${appName})}">History — QuickDrop</title>
-    <link href="https://fonts.googleapis.com" rel="preconnect"/>
-    <link crossorigin href="https://fonts.gstatic.com" rel="preconnect"/>
-    <link href="/css/tailwind.css" rel="stylesheet"/>
-    <link href="/css/custom.css" rel="stylesheet"/>
-    <link href="/images/favicon.png" rel="icon" th:href="${appLogoPath}" type="image/png"/>
-    <script src="/js/tailwindTheme.js"></script>
-    <script src="/js/counter.js"></script>
-    <th:block th:replace="~{fragments/header :: scripts}"></th:block>
+    <th:block th:fragment="head-extra">
+        <script src="/js/counter.js"></script>
+    </th:block>
 </head>
 <body>
 
-<div th:replace="~{fragments/header :: header(true)}"></div>
-
-<!-- Floating orbs -->
-<div aria-hidden="true" class="orb-field">
-    <div class="orb orb--primary"></div>
-    <div class="orb orb--secondary"></div>
-</div>
+<th:block th:replace="~{fragments/layout :: chrome(true)}"></th:block>
 
 <main class="flex-1 hero-scene" id="main-content">
-    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
+    <div class="page-wrap page-wrap-narrow">
 
-        <!-- Back button -->
-        <div class="mb-6 animate-in">
-            <a class="btn btn-ghost btn-sm inline-flex items-center gap-1.5" href="/admin/files">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-                <span th:text="#{nav.admin}">Admin</span>
-            </a>
-        </div>
-
-        <!-- Hero header -->
-        <div class="text-center mb-10 animate-in">
-      <span class="section-eyebrow inline-flex items-center gap-2 mb-3">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--c-primary)"
-             viewBox="0 0 24 24"><path d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" stroke-linecap="round"
-                                       stroke-linejoin="round"/></svg>
-        <span th:text="#{page.history.title}">History</span>
-      </span>
-            <h1 class="page-title-xl mb-2">
-                <span class="gradient-text break-all" th:text="${file.name}">File Name</span>
-            </h1>
-            <p class="text-sm" style="color:var(--c-text-muted)"
-               th:text="${file.description ?: #messages.msg('page.history.noDescription')}">Description</p>
+        <div class="page-header page-header--bar animate-in">
+            <div class="page-header-main">
+                <a class="page-header-back" href="/admin/files">
+                    <svg aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                        <path d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <span th:text="#{nav.admin}">Admin</span>
+                </a>
+                <span class="section-eyebrow inline-flex items-center gap-1.5">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2"
+                         style="color:var(--c-primary)" viewBox="0 0 24 24">
+                        <path d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" stroke-linecap="round"
+                              stroke-linejoin="round"/>
+                    </svg>
+                    <span th:text="#{page.history.title}">History</span>
+                </span>
+                <h1 class="page-header-title">
+                    <span class="gradient-text break-all" th:text="${file.name}">File Name</span>
+                </h1>
+                <p class="page-header-sub"
+                   th:text="${file.description ?: #messages.msg('page.history.noDescription')}">Description</p>
+            </div>
         </div>
 
         <!-- Stats row -->
@@ -133,6 +118,6 @@
     </div>
 </main>
 
-<script src="/js/locale-switcher.js"></script>
+<th:block th:replace="~{fragments/layout :: pageScripts}"></th:block>
 </body>
 </html>

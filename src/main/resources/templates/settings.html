@@ -1,44 +1,33 @@
 <!DOCTYPE html>
 <html lang="en" th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8"/>
-    <meta content="width=device-width, initial-scale=1" name="viewport"/>
-    <th:block th:replace="~{fragments/header :: themePreload}"></th:block>
+<head th:replace="~{fragments/layout :: head(~{::title}, ~{::head-extra})}">
     <title th:text="#{page.settings.title.browser(${appName})}">Settings — QuickDrop</title>
-    <link href="https://fonts.googleapis.com" rel="preconnect"/>
-    <link crossorigin href="https://fonts.gstatic.com" rel="preconnect"/>
-    <link href="/css/tailwind.css" rel="stylesheet"/>
-    <link href="/css/custom.css" rel="stylesheet"/>
-    <link href="/images/favicon.png" rel="icon" th:href="${appLogoPath}" type="image/png"/>
-    <script src="/js/tailwindTheme.js"></script>
-    <script src="/js/metadata.js"></script>
-    <th:block th:replace="~{fragments/header :: scripts}"></th:block>
+    <th:block th:fragment="head-extra">
+        <meta name="_csrf" th:content="${_csrf.token}"/>
+        <script src="/js/metadata.js"></script>
+    </th:block>
 </head>
 <body>
 
-<div th:replace="~{fragments/header :: header(true)}"></div>
-
-<div aria-hidden="true" class="orb-field">
-    <div class="orb orb--primary"></div>
-    <div class="orb orb--secondary"></div>
-</div>
+<th:block th:replace="~{fragments/layout :: chrome(true)}"></th:block>
 
 <main class="flex-1 hero-scene" id="main-content">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-10">
+    <div class="page-wrap">
 
-        <!-- Top bar -->
-        <div class="flex items-center gap-3 mb-8 animate-in">
-            <a class="btn btn-ghost btn-sm inline-flex items-center gap-1.5 flex-shrink-0" href="/admin/dashboard">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-                <span th:text="#{nav.admin}">Admin</span>
-            </a>
-            <span class="h-4 w-px flex-shrink-0" style="background:var(--c-border)"></span>
-            <h1 class="text-xl font-extrabold tracking-tight flex-1">
-                <span th:text="#{page.settings.adminTitle}">Settings</span>
-            </h1>
-            <button class="settings-save-top btn btn-gradient btn-sm items-center gap-2" form="settingsForm"
+        <div class="page-header page-header--bar animate-in">
+            <div class="page-header-main">
+                <a class="page-header-back" href="/admin/dashboard">
+                    <svg aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                        <path d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <span th:text="#{nav.admin}">Admin</span>
+                </a>
+                <h1 class="page-header-title">
+                    <span class="gradient-text" th:text="#{page.settings.adminTitle}">Settings</span>
+                </h1>
+            </div>
+            <div class="page-header-actions">
+    <button class="settings-save-top btn btn-gradient btn-sm items-center gap-2" form="settingsForm"
                     type="submit">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0 1 11.186 0Z"
@@ -46,6 +35,7 @@
                 </svg>
                 <span th:text="#{page.settings.save}">Save Settings</span>
             </button>
+            </div>
         </div>
 
         <!-- Sidebar + Panels layout -->
@@ -103,7 +93,7 @@
                     <button class="sn-btn flex-shrink-0" data-panel="notifications"
                             onclick="switchPanel('notifications')" type="button">
                         <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.8"
-                             style="color:var(--c-amber)" viewBox="0 0 24 24">
+                             style="color:var(--c-warning-text)" viewBox="0 0 24 24">
                             <path d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0"
                                   stroke-linecap="round" stroke-linejoin="round"/>
                         </svg>
@@ -152,7 +142,7 @@
                             <div class="panel-header"
                                  style="border-bottom:1px solid var(--c-border);padding-bottom:1rem">
                                 <div class="panel-header-icon"
-                                     style="background:var(--c-primary-muted);color:var(--c-primary)">
+                                     style="background:var(--c-primary-muted);color:var(--c-primary-badge-text)">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8"
                                          viewBox="0 0 24 24">
                                         <path d="M9.53 16.122a3 3 0 0 0-5.78 1.128 2.25 2.25 0 0 1-2.4 2.245 4.5 4.5 0 0 0 8.4-2.245c0-.399-.078-.78-.22-1.128Zm0 0a15.998 15.998 0 0 0 3.388-1.62m-5.043-.025a15.994 15.994 0 0 1 1.622-3.395m3.42 3.42a15.995 15.995 0 0 0 4.764-4.648l3.876-5.814a1.151 1.151 0 0 0-1.597-1.597L14.146 6.32a15.996 15.996 0 0 0-4.649 4.763m3.42 3.42a6.776 6.776 0 0 0-3.42-3.42"
@@ -232,12 +222,10 @@
 
                             <!-- File Uploads -->
                             <section>
-                                <p class="text-xs font-semibold uppercase tracking-widest mb-3"
-                                   style="color:var(--c-text-faint)"
+                                <p class="settings-section-label"
                                    th:text="#{page.settings.features.uploads.section}">File Uploads</p>
                                 <div class="flex flex-col gap-3">
-                                    <div class="rounded-2xl p-4"
-                                         style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
+                                    <div class="rounded-2xl p-4" style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
                                         <label class="form-check">
                                             <input id="uploadEnabled" onchange="syncUploadEnabled()"
 
@@ -248,8 +236,7 @@
                       </span>
                                         </label>
                                     </div>
-                                    <div class="rounded-2xl p-4" id="uploadAdminOnlyRow"
-                                         style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
+                                    <div class="rounded-2xl p-4" id="uploadAdminOnlyRow" style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
                                         <label class="form-check">
                                             <input id="uploadAdminOnly"
                                                    th:field="*{uploadAdminOnly}" type="checkbox"/>
@@ -264,11 +251,9 @@
 
                             <!-- Pastebin -->
                             <section>
-                                <p class="text-xs font-semibold uppercase tracking-widest mb-3"
-                                   style="color:var(--c-text-faint)"
+                                <p class="settings-section-label"
                                    th:text="#{page.settings.system.pastebin}">Pastebin</p>
-                                <div class="rounded-2xl p-4"
-                                     style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
+                                <div class="rounded-2xl p-4" style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
                                     <label class="form-check">
                                         <input id="pastebinEnabled" onchange="syncDefaultHomePageOptions()"
 
@@ -283,12 +268,10 @@
 
                             <!-- File Discovery -->
                             <section>
-                                <p class="text-xs font-semibold uppercase tracking-widest mb-3"
-                                   style="color:var(--c-text-faint)"
+                                <p class="settings-section-label"
                                    th:text="#{page.settings.features.discovery.section}">File Discovery</p>
                                 <div class="flex flex-col gap-3">
-                                    <div class="rounded-2xl p-4"
-                                         style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
+                                    <div class="rounded-2xl p-4" style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
                                         <label class="form-check">
                                             <input id="fileListPageEnabled" onchange="syncDefaultHomePageOptions()"
 
@@ -325,12 +308,10 @@
 
                             <!-- Share Links -->
                             <section>
-                                <p class="text-xs font-semibold uppercase tracking-widest mb-3"
-                                   style="color:var(--c-text-faint)"
+                                <p class="settings-section-label"
                                    th:text="#{page.settings.features.shareLinks.section}">Share Links</p>
                                 <div class="flex flex-col gap-3">
-                                    <div class="rounded-2xl p-4"
-                                         style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
+                                    <div class="rounded-2xl p-4" style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
                                         <label class="form-check">
                                             <input id="shareLinksEnabled" onchange="syncShareLinkSettings()"
 
@@ -342,8 +323,7 @@
                       </span>
                                         </label>
                                     </div>
-                                    <div class="rounded-2xl p-4" id="simplifiedShareLinksRow"
-                                         style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
+                                    <div class="rounded-2xl p-4" id="simplifiedShareLinksRow" style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
                                         <label class="form-check">
                                             <input id="simplifiedShareLinks" onchange="syncShareLinkSettings()"
 
@@ -358,13 +338,269 @@
                                 </div>
                             </section>
 
+                            <!-- Link Shortener -->
+                            <section>
+                                <p class="settings-section-label"
+                                   th:text="#{page.settings.features.shortener.section}">Link Shortener</p>
+                                <div class="flex flex-col gap-3">
+                                    <div class="rounded-2xl p-4" style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
+                                        <label class="form-check">
+                                            <input id="shortenerEnabled" onchange="syncShortenerSettings()"
+                                                   th:field="*{shortenerEnabled}" type="checkbox"/>
+                                            <span>
+                        <span class="text-sm font-semibold" th:text="#{page.settings.features.shortener.enabled}">Enable link shortener</span>
+                        <span class="form-hint block mt-0.5"
+                              th:text="#{page.settings.features.shortener.enabled.help}">Let users turn any web address into a short, shareable link with a QR code.</span>
+                      </span>
+                                        </label>
+                                    </div>
+                                    <div class="rounded-2xl p-4" id="shortenerAdminOnlyRow" style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
+                                        <label class="form-check">
+                                            <input id="shortenerAdminOnly" onchange="syncShortenerSettings()"
+                                                   th:field="*{shortenerAdminOnly}" type="checkbox"/>
+                                            <span>
+                        <span class="text-sm font-semibold" th:text="#{page.settings.features.shortener.adminOnly}">Restrict to administrators</span>
+                        <span class="form-hint block mt-0.5"
+                              th:text="#{page.settings.features.shortener.adminOnly.help}">Only admin sessions may create new short links.</span>
+                      </span>
+                                        </label>
+                                    </div>
+                                    <div class="rounded-2xl p-4" id="shortenerCustomAliasEnabledRow" style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
+                                        <label class="form-check">
+                                            <input id="shortenerCustomAliasEnabled" onchange="syncShortenerSettings()"
+                                                   th:field="*{shortenerCustomAliasEnabled}" type="checkbox"/>
+                                            <span>
+                        <span class="text-sm font-semibold" th:text="#{page.settings.features.shortener.customAliasEnabled}">Allow custom aliases</span>
+                        <span class="form-hint block mt-0.5"
+                              th:text="#{page.settings.features.shortener.customAliasEnabled.help}">Let users request a memorable code (e.g. /s/my-link) instead of a random one.</span>
+                      </span>
+                                        </label>
+                                    </div>
+                                    <div class="rounded-2xl p-4" id="shortenerCustomAliasAdminOnlyRow" style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
+                                        <label class="form-check">
+                                            <input id="shortenerCustomAliasAdminOnly" onchange="syncShortenerSettings()"
+                                                   th:field="*{shortenerCustomAliasAdminOnly}" type="checkbox"/>
+                                            <span>
+                        <span class="text-sm font-semibold" th:text="#{page.settings.features.shortener.customAliasAdminOnly}">Restrict custom aliases to administrators</span>
+                        <span class="form-hint block mt-0.5"
+                              th:text="#{page.settings.features.shortener.customAliasAdminOnly.help}">A self-chosen alias can impersonate a real destination (e.g. /s/paypal-login); a random code cannot.</span>
+                      </span>
+                                        </label>
+                                    </div>
+                                    <div class="rounded-2xl p-4" id="shortenerInterstitialModeRow" style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
+                                        <div class="form-row">
+                                            <label class="form-label" for="shortenerInterstitialMode"
+                                                   th:text="#{page.settings.features.shortener.interstitialMode}">Destination
+                                                preview page</label>
+                                            <select class="form-input" id="shortenerInterstitialMode"
+                                                    th:field="*{shortenerInterstitialMode}">
+                                                <option th:text="#{page.settings.features.shortener.interstitialMode.nonAdmin}"
+                                                        value="NON_ADMIN">Show except for admins
+                                                </option>
+                                                <option th:text="#{page.settings.features.shortener.interstitialMode.always}"
+                                                        value="ALWAYS">Always show
+                                                </option>
+                                                <option th:text="#{page.settings.features.shortener.interstitialMode.never}"
+                                                        value="NEVER">Never show
+                                                </option>
+                                            </select>
+                                            <p class="form-hint"
+                                               th:text="#{page.settings.features.shortener.interstitialMode.help}">
+                                                Show visitors where a short link leads before continuing.</p>
+                                        </div>
+                                    </div>
+                                    <div class="rounded-2xl p-4" style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
+                                        <div class="form-row">
+                                            <label class="form-label" for="shortenerDomainRuleMode"
+                                                   th:text="#{page.settings.features.shortener.domainRuleMode}">Destination
+                                                domain rules</label>
+                                            <select class="form-input" id="shortenerDomainRuleMode"
+                                                    onchange="syncShortenerSettings()"
+                                                    th:field="*{shortenerDomainRuleMode}">
+                                                <option th:text="#{page.settings.features.shortener.domainRuleMode.off}"
+                                                        value="OFF">No restrictions
+                                                </option>
+                                                <option th:text="#{page.settings.features.shortener.domainRuleMode.blocklist}"
+                                                        value="BLOCKLIST">Block listed domains
+                                                </option>
+                                                <option th:text="#{page.settings.features.shortener.domainRuleMode.allowlist}"
+                                                        value="ALLOWLIST">Only allow listed domains
+                                                </option>
+                                            </select>
+                                            <p class="form-hint"
+                                               th:text="#{page.settings.features.shortener.domainRuleMode.help}">
+                                                Restrict which domains short links are allowed to point to.</p>
+                                        </div>
+                                        <div class="mt-3" id="shortenerDomainRulesRow">
+                                            <label class="form-label" for="shortenerDomainRules"
+                                                   th:text="#{page.settings.features.shortener.domainRules}">Domains
+                                                (one per line)</label>
+                                            <textarea class="form-input font-mono" id="shortenerDomainRules" rows="4"
+                                                      th:field="*{shortenerDomainRules}"
+                                                      th:placeholder="#{page.settings.features.shortener.domainRules.placeholder}"></textarea>
+                                        </div>
+                                    </div>
+                                    <div class="rounded-2xl p-4" style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
+                                        <label class="form-check">
+                                            <input id="shortenerClickLoggingEnabled"
+                                                   th:field="*{shortenerClickLoggingEnabled}" type="checkbox"/>
+                                            <span>
+                        <span class="text-sm font-semibold" th:text="#{page.settings.features.shortener.clickLoggingEnabled}">Log link visits</span>
+                        <span class="form-hint block mt-0.5"
+                              th:text="#{page.settings.features.shortener.clickLoggingEnabled.help}">Record each short-link visit in the activity log. The link's own use counters always update regardless.</span>
+                      </span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <!-- Threat Intelligence (reputation checking) -->
+                            <section id="reputationSection">
+                                <p class="settings-section-label"
+                                   th:text="#{page.settings.features.reputation.section}">Threat Intelligence</p>
+                                <div class="flex flex-col gap-3">
+                                    <div class="rounded-2xl p-4" style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
+                                        <label class="form-check">
+                                            <input id="reputationCheckEnabled" onchange="syncReputationSettings()"
+                                                   th:field="*{reputationCheckEnabled}" type="checkbox"/>
+                                            <span>
+                        <span class="text-sm font-semibold" th:text="#{page.settings.features.reputation.masterEnabled}">Enable reputation checking</span>
+                        <span class="form-hint block mt-0.5"
+                              th:text="#{page.settings.features.reputation.masterEnabled.help}">Check redirect-link destinations against third-party threat intelligence before allowing them.</span>
+                      </span>
+                                        </label>
+                                    </div>
+
+                                    <!-- Phishing Army -->
+                                    <div class="rounded-2xl p-4" id="reputationPhishingArmyRow" style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
+                                        <div class="flex flex-wrap items-center justify-between gap-3">
+                                            <label class="form-check" th:if="${settings.phishingArmyTermsAcceptedAt != null}">
+                                                <input id="reputationPhishingArmyEnabled"
+                                                       th:field="*{reputationPhishingArmyEnabled}" type="checkbox"/>
+                                                <span>
+                          <span class="text-sm font-semibold" th:text="#{page.settings.features.reputation.phishingArmy.name}">Phishing Army</span>
+                          <span class="form-hint block mt-0.5" th:text="#{page.settings.features.reputation.phishingArmy.description}">Domain blocklist, checked locally.</span>
+                        </span>
+                                            </label>
+                                            <div th:unless="${settings.phishingArmyTermsAcceptedAt != null}">
+                                                <span class="text-sm font-semibold" th:text="#{page.settings.features.reputation.phishingArmy.name}">Phishing Army</span>
+                                                <span class="form-hint block mt-0.5" th:text="#{page.settings.features.reputation.phishingArmy.description}">Domain blocklist, checked locally.</span>
+                                            </div>
+                                            <span class="text-xs font-mono" style="color:var(--c-text-faint)"
+                                                  th:if="${settings.phishingArmyTermsAcceptedAt != null}"
+                                                  th:text="#{page.settings.features.reputation.accepted(${#temporals.format(settings.phishingArmyTermsAcceptedAt, 'dd.MM.yyyy')})}">Terms accepted 01.01.2025</span>
+                                            <button class="btn btn-secondary btn-sm" data-open-reputation-modal="phishingArmy"
+                                                    th:unless="${settings.phishingArmyTermsAcceptedAt != null}" type="button"
+                                                    th:text="#{page.settings.features.reputation.enableButton}">Enable…
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <!-- URLhaus -->
+                                    <div class="rounded-2xl p-4" id="reputationUrlhausRow" style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
+                                        <div class="flex flex-wrap items-center justify-between gap-3">
+                                            <label class="form-check" th:if="${settings.urlhausTermsAcceptedAt != null}">
+                                                <input id="reputationUrlhausEnabled"
+                                                       th:field="*{reputationUrlhausEnabled}" type="checkbox"/>
+                                                <span>
+                          <span class="text-sm font-semibold" th:text="#{page.settings.features.reputation.urlhaus.name}">URLhaus</span>
+                          <span class="form-hint block mt-0.5" th:text="#{page.settings.features.reputation.urlhaus.description}">Live malware-URL dataset, checked locally.</span>
+                        </span>
+                                            </label>
+                                            <div th:unless="${settings.urlhausTermsAcceptedAt != null}">
+                                                <span class="text-sm font-semibold" th:text="#{page.settings.features.reputation.urlhaus.name}">URLhaus</span>
+                                                <span class="form-hint block mt-0.5" th:text="#{page.settings.features.reputation.urlhaus.description}">Live malware-URL dataset, checked locally.</span>
+                                            </div>
+                                            <span class="text-xs font-mono" style="color:var(--c-text-faint)"
+                                                  th:if="${settings.urlhausTermsAcceptedAt != null}"
+                                                  th:text="#{page.settings.features.reputation.accepted(${#temporals.format(settings.urlhausTermsAcceptedAt, 'dd.MM.yyyy')})}">Terms accepted 01.01.2025</span>
+                                            <button class="btn btn-secondary btn-sm" data-open-reputation-modal="urlhaus"
+                                                    th:unless="${settings.urlhausTermsAcceptedAt != null}" type="button"
+                                                    th:text="#{page.settings.features.reputation.enableButton}">Enable…
+                                            </button>
+                                        </div>
+                                        <div class="form-row mt-3" style="max-width:24rem">
+                                            <label class="form-label" for="urlhausAuthKey"
+                                                   th:text="#{page.settings.features.reputation.urlhaus.authKey}">URLhaus Auth-Key</label>
+                                            <input autocomplete="off" class="form-input font-mono" id="urlhausAuthKey"
+                                                   th:field="*{urlhausAuthKey}" type="password"/>
+                                        </div>
+                                    </div>
+
+                                    <!-- Google Safe Browsing -->
+                                    <div class="rounded-2xl p-4" id="reputationSafeBrowsingRow" style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
+                                        <div class="flex flex-wrap items-center justify-between gap-3">
+                                            <label class="form-check" th:if="${settings.safeBrowsingTermsAcceptedAt != null}">
+                                                <input id="reputationSafeBrowsingEnabled"
+                                                       th:field="*{reputationSafeBrowsingEnabled}" type="checkbox"/>
+                                                <span>
+                          <span class="text-sm font-semibold" th:text="#{page.settings.features.reputation.safeBrowsing.name}">Google Safe Browsing</span>
+                          <span class="form-hint block mt-0.5" th:text="#{page.settings.features.reputation.safeBrowsing.description}">Queried live; only a truncated hash of the destination is ever sent.</span>
+                        </span>
+                                            </label>
+                                            <div th:unless="${settings.safeBrowsingTermsAcceptedAt != null}">
+                                                <span class="text-sm font-semibold" th:text="#{page.settings.features.reputation.safeBrowsing.name}">Google Safe Browsing</span>
+                                                <span class="form-hint block mt-0.5" th:text="#{page.settings.features.reputation.safeBrowsing.description}">Queried live; only a truncated hash of the destination is ever sent.</span>
+                                            </div>
+                                            <span class="text-xs font-mono" style="color:var(--c-text-faint)"
+                                                  th:if="${settings.safeBrowsingTermsAcceptedAt != null}"
+                                                  th:text="#{page.settings.features.reputation.accepted(${#temporals.format(settings.safeBrowsingTermsAcceptedAt, 'dd.MM.yyyy')})}">Terms accepted 01.01.2025</span>
+                                            <button class="btn btn-secondary btn-sm" data-open-reputation-modal="safeBrowsing"
+                                                    th:unless="${settings.safeBrowsingTermsAcceptedAt != null}" type="button"
+                                                    th:text="#{page.settings.features.reputation.enableButton}">Enable…
+                                            </button>
+                                        </div>
+                                        <div class="form-row mt-3" style="max-width:24rem">
+                                            <label class="form-label" for="safeBrowsingApiKey"
+                                                   th:text="#{page.settings.features.reputation.safeBrowsing.apiKey}">Safe Browsing API key</label>
+                                            <input autocomplete="off" class="form-input font-mono" id="safeBrowsingApiKey"
+                                                   th:field="*{safeBrowsingApiKey}" type="password"/>
+                                        </div>
+                                    </div>
+
+                                    <div class="rounded-2xl p-4" id="reputationFailClosedRow" style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
+                                        <label class="form-check">
+                                            <input id="reputationFailClosed" th:field="*{reputationFailClosed}" type="checkbox"/>
+                                            <span>
+                        <span class="text-sm font-semibold" th:text="#{page.settings.features.reputation.failClosed}">Block on provider failure</span>
+                        <span class="form-hint block mt-0.5"
+                              th:text="#{page.settings.features.reputation.failClosed.help}">If a provider can't complete its check (feed unavailable, API down), block the link instead of allowing it through.</span>
+                      </span>
+                                        </label>
+                                    </div>
+
+                                    <div class="rounded-2xl p-4" id="reputationFeedCronRow" style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
+                                        <div class="form-row" style="max-width:24rem">
+                                            <label class="form-label" for="reputationFeedCron"
+                                                   th:text="#{page.settings.features.reputation.feedCron}">Feed refresh schedule</label>
+                                            <input class="form-input font-mono" id="reputationFeedCron" required
+                                                   th:field="*{reputationFeedCron}" type="text"/>
+                                            <p class="form-hint" th:text="#{page.settings.features.reputation.feedCron.help}">
+                                                Cron expression for the Phishing Army / URLhaus feed refresh. Google Safe Browsing is queried live and has no feed.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <!-- Reputation-provider licence modals (one parameterised fragment, three calls) -->
+                            <div th:replace="~{fragments/reputation :: licenceModal('phishingArmy', 'phishing_army',
+                                 'page.settings.features.reputation.phishingArmy.name',
+                                 'page.settings.features.reputation.phishingArmy.licence',
+                                 'page.settings.features.reputation.phishingArmy.description')}"></div>
+                            <div th:replace="~{fragments/reputation :: licenceModal('urlhaus', 'urlhaus',
+                                 'page.settings.features.reputation.urlhaus.name',
+                                 'page.settings.features.reputation.urlhaus.licence',
+                                 'page.settings.features.reputation.urlhaus.description')}"></div>
+                            <div th:replace="~{fragments/reputation :: licenceModal('safeBrowsing', 'safe_browsing',
+                                 'page.settings.features.reputation.safeBrowsing.name',
+                                 'page.settings.features.reputation.safeBrowsing.licence',
+                                 'page.settings.features.reputation.safeBrowsing.description')}"></div>
+
                             <!-- Navigation -->
                             <section>
-                                <p class="text-xs font-semibold uppercase tracking-widest mb-3"
-                                   style="color:var(--c-text-faint)"
+                                <p class="settings-section-label"
                                    th:text="#{page.settings.features.navigation.section}">Navigation</p>
-                                <div class="rounded-2xl p-4"
-                                     style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
+                                <div class="rounded-2xl p-4" style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
                                     <label class="form-check">
                                         <input id="adminDashboardButtonEnabled"
                                                th:field="*{adminDashboardButtonEnabled}" type="checkbox"/>
@@ -410,8 +646,7 @@
 
                             <!-- Limits & Storage -->
                             <section>
-                                <p class="text-xs font-semibold uppercase tracking-widest mb-3"
-                                   style="color:var(--c-text-faint)"
+                                <p class="settings-section-label"
                                    th:text="#{page.settings.files.storage.section}">Limits &amp; Storage</p>
                                 <div class="settings-list">
                                     <div class="settings-pair">
@@ -495,12 +730,10 @@
 
                             <!-- Upload Options -->
                             <section id="uploadOptionsSection">
-                                <p class="text-xs font-semibold uppercase tracking-widest mb-3"
-                                   style="color:var(--c-text-faint)"
+                                <p class="settings-section-label"
                                    th:text="#{page.settings.files.uploadOptions.section}">Upload Options</p>
                                 <div class="flex flex-col gap-3">
-                                    <div class="rounded-2xl p-4"
-                                         style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
+                                    <div class="rounded-2xl p-4" style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
                                         <label class="form-check">
                                             <input id="uploadPasswordEnabled" onchange="syncUploadPasswordSetting()"
 
@@ -512,8 +745,7 @@
                       </span>
                                         </label>
                                     </div>
-                                    <div class="rounded-2xl p-4" id="encryptionEnabledRow"
-                                         style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
+                                    <div class="rounded-2xl p-4" id="encryptionEnabledRow" style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
                                         <label class="form-check">
                                             <input id="encryptionEnabled"
                                                    th:field="*{encryptionEnabled}" type="checkbox"/>
@@ -523,8 +755,7 @@
                       </span>
                                         </label>
                                     </div>
-                                    <div class="rounded-2xl p-4"
-                                         style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
+                                    <div class="rounded-2xl p-4" style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
                                         <label class="form-check">
                                             <input id="metadataStrippingEnabled"
                                                    th:field="*{metadataStrippingEnabled}" type="checkbox"/>
@@ -541,8 +772,7 @@
 
                             <!-- File Viewing -->
                             <section>
-                                <p class="text-xs font-semibold uppercase tracking-widest mb-3"
-                                   style="color:var(--c-text-faint)"
+                                <p class="settings-section-label"
                                    th:text="#{page.settings.files.viewing.section}">File Viewing</p>
                                 <div class="settings-pair">
                                     <div class="settings-list-item">
@@ -570,8 +800,7 @@
 
                             <!-- Permissions -->
                             <section>
-                                <p class="text-xs font-semibold uppercase tracking-widest mb-3"
-                                   style="color:var(--c-text-faint)"
+                                <p class="settings-section-label"
                                    th:text="#{page.settings.files.permissions.section}">Permissions</p>
                                 <div class="settings-pair">
                                     <div class="settings-list-item">
@@ -627,11 +856,9 @@
 
                             <!-- Application Access -->
                             <section>
-                                <p class="text-xs font-semibold uppercase tracking-widest mb-3"
-                                   style="color:var(--c-text-faint)"
+                                <p class="settings-section-label"
                                    th:text="#{page.settings.security.appAccess.section}">Application Access</p>
-                                <div class="rounded-2xl p-4"
-                                     style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
+                                <div class="rounded-2xl p-4" style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
                                     <label class="form-check mb-3">
                                         <input id="appPasswordEnabled" onclick="togglePasswordField()"
                                                th:field="*{appPasswordEnabled}"
@@ -650,13 +877,27 @@
                                 </div>
                             </section>
 
+                            <!-- Network -->
+                            <section>
+                                <p class="settings-section-label"
+                                   th:text="#{page.settings.security.network.section}">Network</p>
+                                <div class="rounded-2xl p-4" style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
+                                    <label class="form-check">
+                                        <input id="trustedProxyEnabled" th:field="*{trustedProxyEnabled}"
+                                               type="checkbox"/>
+                                        <span>
+                      <span class="text-sm font-semibold" th:text="#{page.settings.security.trustedProxyEnabled}">Trust reverse proxy headers</span>
+                      <span class="form-hint block mt-0.5" th:text="#{page.settings.security.trustedProxyEnabled.help}">Only enable this if QuickDrop runs behind a real reverse proxy. It governs which client IP is used for the activity log and rate limiting (X-Forwarded-For / X-Real-IP); enabling it without a real proxy in front lets any visitor spoof their logged IP and bypass rate limits.</span>
+                    </span>
+                                    </label>
+                                </div>
+                            </section>
+
                             <!-- Admin Access -->
                             <section>
-                                <p class="text-xs font-semibold uppercase tracking-widest mb-3"
-                                   style="color:var(--c-text-faint)"
+                                <p class="settings-section-label"
                                    th:text="#{page.settings.security.adminAccess.section}">Admin Access</p>
-                                <div class="rounded-2xl p-4"
-                                     style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
+                                <div class="rounded-2xl p-4" style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
                                     <div class="form-row" style="max-width:20rem">
                                         <label class="form-label" for="adminPassword"
                                                th:text="#{page.settings.security.adminPassword}">Admin Password</label>
@@ -672,11 +913,9 @@
 
                             <!-- Session -->
                             <section>
-                                <p class="text-xs font-semibold uppercase tracking-widest mb-3"
-                                   style="color:var(--c-text-faint)"
+                                <p class="settings-section-label"
                                    th:text="#{page.settings.security.session.section}">Session</p>
-                                <div class="rounded-2xl p-4"
-                                     style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
+                                <div class="rounded-2xl p-4" style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
                                     <div class="form-row" style="max-width:14rem">
                                         <label class="form-label" for="sessionLifeTime"
                                                th:text="#{page.settings.system.sessionLifetimeMinutes}">Session Lifetime
@@ -714,8 +953,7 @@
                             <div class="flex flex-col gap-4 mt-6">
 
                                 <!-- Discord -->
-                                <div class="rounded-2xl p-4 flex flex-col gap-3"
-                                     style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
+                                <div class="rounded-2xl p-4 flex flex-col gap-3" style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
                                     <div class="flex items-start gap-3">
                                         <input id="discordWebhookEnabled"
                                                class="check-align accent-amber"
@@ -748,8 +986,7 @@
                                 </div>
 
                                 <!-- Email -->
-                                <div class="rounded-2xl p-4 flex flex-col gap-3"
-                                     style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
+                                <div class="rounded-2xl p-4 flex flex-col gap-3" style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
                                     <div class="flex items-start gap-3">
                                         <input id="emailNotificationsEnabled"
                                                class="check-align accent-amber"
@@ -834,8 +1071,7 @@
                                 </div>
 
                                 <!-- Batch -->
-                                <div class="rounded-2xl p-4 flex flex-col gap-3" id="notificationBatchRow"
-                                     style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
+                                <div class="rounded-2xl p-4 flex flex-col gap-3" id="notificationBatchRow" style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
                                     <div class="flex items-start gap-3">
                                         <input id="notificationBatchEnabled"
                                                class="check-align accent-amber"
@@ -858,8 +1094,7 @@
                                 </div>
 
                                 <!-- Event Filters -->
-                                <div class="rounded-2xl p-4 flex flex-col gap-3"
-                                     style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
+                                <div class="rounded-2xl p-4 flex flex-col gap-3" style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
                                     <p class="text-sm font-semibold"
                                        th:text="#{page.settings.notifications.events.title}">Event Filters</p>
                                     <p class="form-hint" th:text="#{page.settings.notifications.events.help}">Choose
@@ -933,7 +1168,7 @@
                 <div class="settings-panel hidden" id="panel-storage">
                     <div class="card card-lg">
                         <div class="panel-header" style="border-bottom:1px solid var(--c-border);padding-bottom:1rem">
-                            <div class="panel-header-icon" style="background:var(--c-teal-muted);color:var(--c-teal)">
+                            <div class="panel-header-icon" style="background:var(--c-teal-muted);color:var(--c-teal-badge-text)">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
                                     <path d="M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375m16.5 0v3.75m-16.5-3.75v3.75m16.5 0v3.75C20.25 16.153 16.556 18 12 18s-8.25-1.847-8.25-4.125v-3.75m16.5 0c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125" stroke-linecap="round" stroke-linejoin="round"/>
                                 </svg>
@@ -1054,8 +1289,7 @@
                             <!-- Azure Blob Storage fields -->
                             <div id="azureFields"
                                  th:classappend="${settings.storageBackend?.name() != 'AZURE' ? ' hidden' : ''}">
-                                <div class="rounded-2xl p-4 flex flex-col gap-4"
-                                     style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
+                                <div class="rounded-2xl p-4 flex flex-col gap-4" style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
                                     <div class="form-row">
                                         <label class="form-label" for="azureConnectionString"
                                                th:text="#{page.settings.storage.azure.connectionString}">Connection
@@ -1097,8 +1331,7 @@
                             <!-- SFTP fields -->
                             <div id="sftpFields"
                                  th:classappend="${settings.storageBackend?.name() != 'SFTP' ? ' hidden' : ''}">
-                                <div class="rounded-2xl p-4 flex flex-col gap-4"
-                                     style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
+                                <div class="rounded-2xl p-4 flex flex-col gap-4" style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
                                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <div class="form-row">
                                             <label class="form-label" for="sftpHost"
@@ -1170,8 +1403,7 @@
                             <!-- WebDAV fields -->
                             <div id="webdavFields"
                                  th:classappend="${settings.storageBackend?.name() != 'WEBDAV' ? ' hidden' : ''}">
-                                <div class="rounded-2xl p-4 flex flex-col gap-4"
-                                     style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
+                                <div class="rounded-2xl p-4 flex flex-col gap-4" style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
                                     <div class="form-row">
                                         <label class="form-label" for="webDavUrl"
                                                th:text="#{page.settings.storage.webdav.url}">WebDAV URL</label>
@@ -1234,8 +1466,7 @@
                             <input th:field="*{backupScheduleEnabled}" type="hidden"/>
                             <input th:field="*{backupCron}" type="hidden"/>
                             <input th:field="*{maxBackups}" type="hidden"/>
-                            <div class="rounded-2xl p-4 flex items-center justify-between"
-                                 style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
+                            <div class="rounded-2xl p-4 flex items-center justify-between" style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
                                 <div>
                                     <p class="text-sm font-semibold"
                                        th:text="#{page.settings.storage.backups.manageLink.title}">Manage
@@ -1474,6 +1705,7 @@
         .settings-layout {
             flex-direction: row;
             align-items: flex-start;
+            justify-content: center;
         }
 
         .settings-sidebar {
@@ -1549,12 +1781,39 @@
     .settings-content {
         flex: 1;
         min-width: 0;
+        /* Wider than the old ~760px, but capped: a checkbox row with a description
+           stretched across 1290px is a worse read, not a better one. */
+        max-width: 68rem;
     }
+
+    /* The licence-acceptance dialog uses the shared .modal component (tailwind-input.css). */
 </style>
 
-<script src="/js/toast.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/cronstrue@2/dist/cronstrue-i18n.min.js"></script>
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    window.QD_REPUTATION_I18N = {
+        saveFirstTitle: /*[[#{page.settings.reputation.saveFirstTitle}]]*/ 'Save your settings first?',
+        saveFirstBody: /*[[#{page.settings.reputation.saveFirstBody}]]*/ 'Enabling this provider reloads the page.',
+        saveFirstConfirm: /*[[#{page.settings.reputation.saveFirstConfirm}]]*/ 'Save and enable',
+        saveFailed: /*[[#{page.settings.reputation.saveFailed}]]*/ 'Could not save settings.',
+        enableFailed: /*[[#{page.settings.reputation.enableFailed}]]*/ 'Could not enable this provider.'
+    };
+    window.QD_DIRTY_I18N = {
+        unsaved: /*[[#{settings.unsaved}]]*/ 'You have unsaved changes.',
+        save: /*[[#{settings.unsaved.save}]]*/ 'Save',
+        discard: /*[[#{settings.unsaved.discard}]]*/ 'Discard',
+        discardTitle: /*[[#{settings.unsaved.discardTitle}]]*/ 'Discard changes?',
+        discardBody: /*[[#{settings.unsaved.discardBody}]]*/ 'Your unsaved changes will be lost.',
+        leaveTitle: /*[[#{settings.unsaved.leaveTitle}]]*/ 'Leave without saving?',
+        leaveBody: /*[[#{settings.unsaved.leaveBody}]]*/ 'Your unsaved changes will be lost.',
+        leave: /*[[#{settings.unsaved.leave}]]*/ 'Leave'
+    };
+    /*]]>*/
+</script>
+<script src="/js/dirty-guard.js"></script>
 <script src="/js/settings.js"></script>
-<script src="/js/locale-switcher.js"></script>
+<script src="/js/reputation-settings.js"></script>
+<th:block th:replace="~{fragments/layout :: pageScripts}"></th:block>
 </body>
 </html>

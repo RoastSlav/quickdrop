@@ -1,48 +1,30 @@
 <!DOCTYPE html>
 <html lang="en" th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8"/>
+<head th:replace="~{fragments/layout :: head(~{::title}, ~{::head-extra})}">
     <title th:text="#{page.adminFiles.title.browser(${appName})}">Files — Admin</title>
-    <meta content="width=device-width, initial-scale=1" name="viewport"/>
-    <th:block th:replace="~{fragments/header :: themePreload}"></th:block>
-    <link href="https://fonts.googleapis.com" rel="preconnect"/>
-    <link crossorigin href="https://fonts.gstatic.com" rel="preconnect"/>
-    <link href="/css/tailwind.css" rel="stylesheet"/>
-    <link href="/css/custom.css" rel="stylesheet"/>
-    <link href="/images/favicon.png" rel="icon" th:href="${appLogoPath}" type="image/png"/>
-    <script src="/js/tailwindTheme.js"></script>
-    <script src="/js/toast.js"></script>
-    <script src="/js/counter.js"></script>
-    <th:block th:replace="~{fragments/header :: scripts}"></th:block>
+    <th:block th:fragment="head-extra">
+        <script src="/js/counter.js"></script>
+    </th:block>
 </head>
 <body>
 
-<div th:replace="~{fragments/header :: header(false)}"></div>
-
-<div aria-hidden="true" class="orb-field">
-    <div class="orb orb--primary"></div>
-    <div class="orb orb--secondary"></div>
-    <div class="orb orb--teal"></div>
-</div>
+<th:block th:replace="~{fragments/layout :: chrome(true)}"></th:block>
 
 <main class="flex-1 hero-scene" id="main-content">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
+    <div class="page-wrap">
 
-        <!-- Back -->
-        <div class="mb-6 animate-in">
-            <a class="btn btn-ghost btn-sm inline-flex items-center gap-1.5" href="/admin/dashboard">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-                <span th:text="#{nav.admin}">Admin</span>
-            </a>
-        </div>
-
-        <!-- Hero header -->
-        <div class="flex flex-wrap items-center justify-between gap-4 mb-8 animate-in">
-            <h1 class="page-title-xl">
-                <span class="gradient-text" th:text="#{page.adminFiles.title}">Files</span>
-            </h1>
+        <div class="page-header page-header--bar animate-in">
+            <div class="page-header-main">
+                <a class="page-header-back" href="/admin/dashboard">
+                    <svg aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                        <path d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <span th:text="#{nav.admin}">Back</span>
+                </a>
+                <h1 class="page-header-title">
+                    <span class="gradient-text" th:text="#{page.adminFiles.title}">Title</span>
+                </h1>
+            </div>
         </div>
 
         <!-- Stats row -->
@@ -86,8 +68,8 @@
                           th:text="${filesPage.totalElements} + ' ' + #{page.dashboard.total}">0 total</span>
                 </div>
 
-                <!-- Active / Deleted tabs -->
-                <div class="flex gap-1.5">
+                <!-- Active / Deleted tabs + row density -->
+                <div class="flex gap-1.5 items-center flex-wrap">
                     <a class="btn btn-sm"
                        th:classappend="${!showDeleted} ? ' btn-primary' : ' btn-ghost'"
                        th:href="@{/admin/files(size=${pageSize},query=${query})}"
@@ -96,9 +78,19 @@
                        th:classappend="${showDeleted} ? ' btn-primary' : ' btn-ghost'"
                        th:href="@{/admin/files(deleted=true,size=${pageSize},query=${query})}"
                        th:text="#{page.adminFiles.tab.deleted}">Deleted</a>
+                    <button aria-pressed="false" class="btn btn-ghost btn-sm ml-1"
+                            data-density-toggle="fileSectionWrapper"
+                            th:title="#{page.adminFiles.density}" type="button">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2"
+                             viewBox="0 0 24 24">
+                            <path d="M3.75 5.25h16.5m-16.5 4.5h16.5m-16.5 4.5h16.5m-16.5 4.5h16.5"
+                                  stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <span class="hidden sm:inline" th:text="#{page.adminFiles.density}">Compact</span>
+                    </button>
                 </div>
 
-                <form action="/admin/files" class="flex flex-col sm:flex-row gap-3" id="adminSearchForm" method="get">
+                <form action="/admin/files" class="search-row" id="adminSearchForm" method="get">
                     <input name="page" type="hidden" value="0"/>
                     <input name="size" th:value="${pageSize}" type="hidden"/>
                     <input name="deleted" th:value="${showDeleted}" type="hidden"/>
@@ -115,7 +107,7 @@
                                placeholder="Search by name, description, or UUID…"
                                th:placeholder="#{page.dashboard.search.placeholder}"
                                th:value="${query}" type="text"/>
-                        <span class="kbd hidden sm:inline">/</span>
+                        <span class="kbd kbd-hint hidden sm:inline">/</span>
                     </div>
                     <button class="btn btn-primary" type="submit">
                         <span th:text="#{button.search}">Search</span>
@@ -151,7 +143,7 @@
                         <div class="flex items-center gap-3 min-w-0 flex-1">
                             <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
                                  data-file-icon
-                                 th:style="${file.deleted} ? 'background:var(--c-rose-muted);color:var(--c-rose)' : (${file.keepIndefinitely and file.hidden} ? 'background:var(--c-rose-muted);color:var(--c-rose)' : (${file.keepIndefinitely} ? 'background:var(--c-teal-muted);color:var(--c-teal)' : (${file.hidden} ? 'background:var(--c-rose-muted);color:var(--c-rose)' : 'background:var(--c-primary-muted);color:var(--c-primary)')))">
+                                 th:style="${file.deleted} ? 'background:var(--c-rose-muted);color:var(--c-rose-badge-text)' : (${file.keepIndefinitely and file.hidden} ? 'background:var(--c-rose-muted);color:var(--c-rose-badge-text)' : (${file.keepIndefinitely} ? 'background:var(--c-teal-muted);color:var(--c-teal-badge-text)' : (${file.hidden} ? 'background:var(--c-rose-muted);color:var(--c-rose-badge-text)' : 'background:var(--c-primary-muted);color:var(--c-primary-badge-text)')))">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.6"
                                      viewBox="0 0 24 24">
                                     <path d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z"
@@ -189,9 +181,9 @@
                                 <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden"/>
                                 <input name="keepIndefinitely" type="hidden" value="false"/>
                                 <input name="source" type="hidden" value="files"/>
-                                <div class="flex flex-col items-center gap-0.5">
-                  <span class="text-[0.6rem] font-black uppercase tracking-widest" style="color:var(--c-teal)"
-                        th:text="#{page.dashboard.keepShort}">Keep</span>
+                                <div class="row-toggle">
+                                    <span class="row-toggle-label" style="color:var(--c-teal-badge-text)"
+                                          th:text="#{page.dashboard.keepShort}">Keep</span>
                                     <label class="toggle toggle--teal">
                                         <input name="keepIndefinitely" th:checked="${file.keepIndefinitely}"
                                                type="checkbox" value="true"/>
@@ -204,9 +196,9 @@
                                 <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden"/>
                                 <input name="hidden" type="hidden" value="false"/>
                                 <input name="source" type="hidden" value="files"/>
-                                <div class="flex flex-col items-center gap-0.5">
-                  <span class="text-[0.6rem] font-black uppercase tracking-widest" style="color:var(--c-rose)"
-                        th:text="#{page.dashboard.hideShort}">Hide</span>
+                                <div class="row-toggle">
+                                    <span class="row-toggle-label" style="color:var(--c-rose-badge-text)"
+                                          th:text="#{page.dashboard.hideShort}">Hide</span>
                                     <label class="toggle toggle--rose">
                                         <input name="hidden" th:checked="${file.hidden}" type="checkbox" value="true"/>
                                         <span class="toggle-slider"></span>
@@ -215,7 +207,7 @@
                             </form>
                         </div>
 
-                        <!-- Actions -->
+                        <!-- Actions: primary inline, the rest behind one menu -->
                         <div class="flex items-center gap-1.5 flex-shrink-0 pl-12 sm:pl-0">
                             <a class="btn btn-soft-primary btn-sm" th:href="@{/file/{uuid}(uuid=${file.uuid})}"
                                th:title="#{button.view}">
@@ -228,37 +220,53 @@
                                 </svg>
                                 <span class="hidden sm:inline" th:text="#{button.view}">View</span>
                             </a>
-                            <a class="btn btn-ghost btn-sm" th:href="@{/file/history/{uuid}(uuid=${file.uuid})}"
-                               th:title="#{button.history}">
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2"
-                                     viewBox="0 0 24 24">
-                                    <path d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" stroke-linecap="round"
-                                          stroke-linejoin="round"/>
-                                </svg>
-                                <span class="hidden sm:inline" th:text="#{button.history}">History</span>
-                            </a>
-                            <th:block th:if="${!file.deleted}">
-                                <a class="btn btn-ghost btn-sm" th:href="@{/file/download/{uuid}(uuid=${file.uuid})}"
-                                   th:title="#{button.download}">
-                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2"
+
+                            <div class="row-menu">
+                                <button aria-expanded="false" aria-haspopup="menu" class="btn btn-ghost btn-sm"
+                                        data-row-menu-trigger th:title="#{page.adminFiles.moreActions}" type="button">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5"
                                          viewBox="0 0 24 24">
-                                        <path d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-6-6-3 3m0 0-3-3m3 3V3"
+                                        <path d="M6.75 12h.008v.008H6.75V12Zm5.25 0h.008v.008H12V12Zm5.25 0h.008v.008h-.008V12Z"
                                               stroke-linecap="round" stroke-linejoin="round"/>
                                     </svg>
-                                </a>
-                                <form data-delete-form method="post" style="display:contents"
-                                      th:action="@{/admin/delete/{uuid}(uuid=${file.uuid})}">
-                                    <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden"/>
-                                    <input name="source" type="hidden" value="files"/>
-                                    <button class="btn btn-danger btn-sm" th:title="#{button.delete}" type="submit">
-                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2"
-                                             viewBox="0 0 24 24">
-                                            <path d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"
+                                </button>
+                                <div class="row-menu-panel" role="menu">
+                                    <a class="row-menu-item" role="menuitem"
+                                       th:href="@{/file/history/{uuid}(uuid=${file.uuid})}">
+                                        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                            <path d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
                                                   stroke-linecap="round" stroke-linejoin="round"/>
                                         </svg>
-                                    </button>
-                                </form>
-                            </th:block>
+                                        <span th:text="#{button.history}">History</span>
+                                    </a>
+                                    <th:block th:if="${!file.deleted}">
+                                        <a class="row-menu-item" role="menuitem"
+                                           th:href="@{/file/download/{uuid}(uuid=${file.uuid})}">
+                                            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                                <path d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-6-6-3 3m0 0-3-3m3 3V3"
+                                                      stroke-linecap="round" stroke-linejoin="round"/>
+                                            </svg>
+                                            <span th:text="#{button.download}">Download</span>
+                                        </a>
+                                        <div class="row-menu-sep"></div>
+                                        <form data-delete-form method="post" style="display:contents"
+                                              th:action="@{/admin/delete/{uuid}(uuid=${file.uuid})}">
+                                            <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}"
+                                                   type="hidden"/>
+                                            <input name="source" type="hidden" value="files"/>
+                                            <button class="row-menu-item row-menu-item--danger" role="menuitem"
+                                                    type="submit">
+                                                <svg fill="none" stroke="currentColor" stroke-width="2"
+                                                     viewBox="0 0 24 24">
+                                                    <path d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"
+                                                          stroke-linecap="round" stroke-linejoin="round"/>
+                                                </svg>
+                                                <span th:text="#{button.delete}">Delete</span>
+                                            </button>
+                                        </form>
+                                    </th:block>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -311,13 +319,15 @@
     /*<![CDATA[*/
     window.i18n = window.i18n || {};
     window.i18n.common = Object.assign({}, window.i18n.common || {}, {
-        deleteFailed: /*[[#{notification.delete.failed}]]*/ 'Delete failed. Please try again.'
+        deleteFailed: /*[[#{notification.delete.failed}]]*/ 'Delete failed. Please try again.',
+        toggleFailed: /*[[#{notification.toggle.failed}]]*/ 'Could not save that change. Please try again.'
     });
     window.i18n.dashboard = {deleteConfirm: /*[[#{page.dashboard.deleteConfirm}]]*/ 'Are you sure you want to delete this file? This action cannot be undone.'};
     /*]]>*/
 </script>
 <script src="/js/spa.js"></script>
 <script src="/js/admin-files.js"></script>
-<script src="/js/locale-switcher.js"></script>
+<script>QD.initDensity("fileSectionWrapper");</script>
+<th:block th:replace="~{fragments/layout :: pageScripts}"></th:block>
 </body>
 </html>

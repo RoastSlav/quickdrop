@@ -1,60 +1,46 @@
 <!DOCTYPE html>
 <html lang="en" th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8"/>
-    <meta content="width=device-width, initial-scale=1" name="viewport"/>
-    <th:block th:replace="~{fragments/header :: themePreload}"></th:block>
+<head th:replace="~{fragments/layout :: head(~{::title}, ~{::head-extra})}">
     <title th:text="#{page.adminPasteHistory.title.browser(${appName})}">Paste History — Admin</title>
-    <link href="https://fonts.googleapis.com" rel="preconnect"/>
-    <link crossorigin href="https://fonts.gstatic.com" rel="preconnect"/>
-    <link href="/css/tailwind.css" rel="stylesheet"/>
-    <link href="/css/custom.css" rel="stylesheet"/>
-    <link href="/images/favicon.png" rel="icon" th:href="${appLogoPath}" type="image/png"/>
-    <script src="/js/tailwindTheme.js"></script>
-    <script src="/js/counter.js"></script>
-    <th:block th:replace="~{fragments/header :: scripts}"></th:block>
+    <th:block th:fragment="head-extra">
+        <script src="/js/counter.js"></script>
+    </th:block>
 </head>
 <body>
 
-<div th:replace="~{fragments/header :: header(true)}"></div>
-
-<div aria-hidden="true" class="orb-field">
-    <div class="orb orb--primary"></div>
-    <div class="orb orb--secondary"></div>
-</div>
+<th:block th:replace="~{fragments/layout :: chrome(true)}"></th:block>
 
 <main class="flex-1 hero-scene" id="main-content">
-    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
+    <div class="page-wrap page-wrap-narrow">
 
-        <!-- Back -->
-        <div class="mb-6 animate-in">
-            <a class="btn btn-ghost btn-sm inline-flex items-center gap-1.5" href="/admin/pastes">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-                <span th:text="#{page.adminPastes.title}">Pastes</span>
-            </a>
-        </div>
-
-        <!-- Hero header -->
-        <div class="text-center mb-10 animate-in">
-      <span class="section-eyebrow inline-flex items-center gap-2 mb-3">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--c-primary)"
-             viewBox="0 0 24 24">
-          <path d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-        <span th:text="#{page.adminPasteHistory.title}">Paste History</span>
-      </span>
-            <h1 class="page-title-xl mb-2">
-        <span class="gradient-text break-all"
-              th:text="${#strings.isEmpty(paste.name) ? #messages.msg('page.pasteView.untitled') : paste.name}">Paste</span>
-            </h1>
-            <div class="flex items-center justify-center gap-2 mt-2">
-                <span class="badge font-mono text-xs" style="background:var(--c-indigo-muted);color:var(--c-indigo)"
+        <div class="page-header page-header--bar animate-in">
+            <div class="page-header-main">
+                <a class="page-header-back" href="/admin/pastes">
+                    <svg aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                        <path d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <span th:text="#{page.adminPastes.title}">Pastes</span>
+                </a>
+                <span class="section-eyebrow inline-flex items-center gap-1.5">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2"
+                         style="color:var(--c-primary)" viewBox="0 0 24 24">
+                        <path d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" stroke-linecap="round"
+                              stroke-linejoin="round"/>
+                    </svg>
+                    <span th:text="#{page.adminPasteHistory.title}">Paste History</span>
+                </span>
+                <h1 class="page-header-title">
+                    <span class="gradient-text break-all"
+                          th:text="${#strings.isEmpty(paste.name) ? #messages.msg('page.pasteView.untitled') : paste.name}">Paste</span>
+                </h1>
+            </div>
+            <div class="page-header-actions">
+                <span class="badge font-mono"
+                      style="background:var(--c-indigo-muted);color:var(--c-indigo-badge-text)"
                       th:if="${paste.isMarkdown}" th:text="#{page.adminPastes.markdown}">Markdown</span>
-                <span class="badge badge-neutral font-mono text-xs" th:if="${!paste.isMarkdown}"
+                <span class="badge badge-neutral font-mono" th:if="${!paste.isMarkdown}"
                       th:text="#{page.adminPastes.plainText}">Plain Text</span>
-                <span class="badge badge-neutral font-mono text-xs" th:if="${paste.passwordProtected}">🔒</span>
+                <span class="badge badge-neutral font-mono" th:if="${paste.passwordProtected}">🔒</span>
             </div>
         </div>
 
@@ -136,6 +122,6 @@
     </div>
 </main>
 
-<script src="/js/locale-switcher.js"></script>
+<th:block th:replace="~{fragments/layout :: pageScripts}"></th:block>
 </body>
 </html>

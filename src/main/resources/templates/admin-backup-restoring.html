@@ -1,23 +1,11 @@
 <!DOCTYPE html>
 <html lang="en" th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8"/>
+<head th:replace="~{fragments/layout :: head(~{::title}, ~{})}">
     <title th:text="${appName} + ' — ' + #{page.backup.restoring.title}">Restoring…</title>
-    <meta content="width=device-width, initial-scale=1" name="viewport"/>
-    <th:block th:replace="~{fragments/header :: themePreload}"></th:block>
-    <link href="https://fonts.googleapis.com" rel="preconnect"/>
-    <link crossorigin href="https://fonts.gstatic.com" rel="preconnect"/>
-    <link href="/css/tailwind.css" rel="stylesheet"/>
-    <link href="/css/custom.css" rel="stylesheet"/>
-    <link href="/images/favicon.png" rel="icon" th:href="${appLogoPath}" type="image/png"/>
-    <script src="/js/tailwindTheme.js"></script>
 </head>
 <body>
 
-<div aria-hidden="true" class="orb-field">
-    <div class="orb orb--primary"></div>
-    <div class="orb orb--teal"></div>
-</div>
+<th:block th:replace="~{fragments/layout :: orbs}"></th:block>
 
 <main class="flex-1 hero-scene flex items-center justify-center" id="main-content" style="min-height:100vh">
     <div class="card p-8 max-w-md mx-4 text-center animate-in">
@@ -37,5 +25,6 @@
     </div>
 </main>
 
+<th:block th:replace="~{fragments/layout :: pageScripts}"></th:block>
 </body>
 </html>

@@ -29,8 +29,13 @@
         const form = e.target.closest('form[data-delete-form]');
         if (!form) return;
         e.preventDefault();
-        if (!confirm(DELETE_MSG)) return;
-        QD.deleteWithAnimation(form, form.closest('[data-uuid]'));
+        window.confirmAction({
+            body: DELETE_MSG,
+            confirmLabel: window.QD_CONFIRM_I18N?.delete,
+            tone: 'danger'
+        }).then(ok => {
+            if (ok) QD.deleteWithAnimation(form, form.closest('[data-uuid]'));
+        });
     });
 
     QD.bindSearchShortcut('pasteSearch');

@@ -30,10 +30,12 @@ async function updateCheckboxState(event, checkbox) {
             body: new FormData(checkbox.form)
         });
         if (!res.ok && !res.redirected) throw new Error(res.status);
+        window.QD?.flashSaved(checkbox.closest('.toggle'));
     } catch {
         checkbox.checked = !checkbox.checked;
         if (hiddenField) hiddenField.value = checkbox.checked;
         updateFileViewBadges(checkbox.name, checkbox.checked);
+        window.notify(getI18nStr('toggleFailed', 'Could not save that change. Please try again.'));
     }
 }
 
@@ -253,7 +255,7 @@ function copyShareLink() {
 
 function createShareLink() {
     if (!isShareLinksEnabled()) {
-        alert(getI18nStr('shareDisabled', 'Share links are disabled by the administrator.'));
+        window.notify(getI18nStr('shareDisabled', 'Share links are disabled by the administrator.'), 'warning');
         return;
     }
 
@@ -271,7 +273,7 @@ function createShareLink() {
     );
 
     if (!noExpiration.checked && !isNaN(daysValid) && daysValid < 0) {
-        alert(getI18nStr('daysValidNonNegative', 'Days valid cannot be negative.'));
+        window.notify(getI18nStr('daysValidNonNegative', 'Days valid cannot be negative.'));
         return;
     }
 
@@ -280,7 +282,7 @@ function createShareLink() {
         !isNaN(allowedNumberOfDownloads) &&
         allowedNumberOfDownloads < 0
     ) {
-        alert(getI18nStr('allowedDownloadsNonNegative', 'Allowed downloads cannot be negative.'));
+        window.notify(getI18nStr('allowedDownloadsNonNegative', 'Allowed downloads cannot be negative.'));
         return;
     }
 
@@ -312,7 +314,7 @@ function createShareLink() {
             console.error(error);
             const msg = error?.message || getI18nStr('shareGenerateFailed', 'Failed to generate share link.');
             announceShareStatus(msg);
-            alert(msg);
+            window.notify(msg);
         })
         .finally(() => {
             if (spinner) {
@@ -335,12 +337,12 @@ function announceShareStatus(message) {
 
 function updateShareLink(link) {
     const shareLinkInput = document.getElementById("shareLink");
-    const canvas = document.getElementById("shareQRCode");
+    const qrImage = document.getElementById("shareQRCode");
     const qrContainer = document.getElementById("shareQRCodeContainer");
     const copyRow = document.getElementById("shareCopyRow");
     const divider = document.getElementById("shareDivider");
 
-    if (!shareLinkInput || !canvas || !qrContainer) {
+    if (!shareLinkInput || !qrImage || !qrContainer) {
         return;
     }
 
@@ -354,16 +356,18 @@ function updateShareLink(link) {
         announceShareStatus("Share link generated.");
     }
 
-    const ctx = canvas.getContext("2d");
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
     if (!link) {
         qrContainer.classList.add("hidden");
+        qrImage.removeAttribute("src");
         return;
     }
 
     qrContainer.classList.remove("hidden");
-    QRCode.toCanvas(canvas, link, {width: 150, height: 150});
+    // The share link is always /share/{code} (or, once the general shortener resolver
+    // exists, /{prefix}/{code}) -- either way the code is the last path segment, so this
+    // works without needing generateShareLink() to separately thread the code through.
+    const code = new URL(link, window.location.origin).pathname.split("/").filter(Boolean).pop();
+    qrImage.src = `/api/link/${encodeURIComponent(code)}/qr.svg?size=150`;
 }
 
 function toggleExpirationLimit() {
@@ -404,7 +408,6 @@ document.addEventListener("DOMContentLoaded", () => {
     renderFolderTree();
     setupDownloadPreparingMessage();
     setupPreviewInit();
-    setupDeleteConfirm();
     if (window.hljs && typeof window.hljs.highlightAll === "function") {
         window.hljs.highlightAll();
     }
@@ -490,7 +493,7 @@ async function initPreview() {
         attachDownloadOverride(fileName);
     } catch (e) {
         if (status) {
-            status.textContent = "Preview unavailable.";
+            status.textContent = getI18nStr('previewUnavailable', 'Preview unavailable.');
             status.className = "text-sm text-red-600 dark:text-red-400";
         }
     }
@@ -581,11 +584,11 @@ function renderJsonPreview(container, text) {
     toolbar.className = "preview-toolbar";
     const formattedBtn = document.createElement("button");
     formattedBtn.type = "button";
-    formattedBtn.textContent = "Formatted";
+    formattedBtn.textContent = getI18nStr('jsonFormatted', 'Formatted');
     formattedBtn.className = "preview-toggle-button active";
     const treeBtn = document.createElement("button");
     treeBtn.type = "button";
-    treeBtn.textContent = "Tree";
+    treeBtn.textContent = getI18nStr('jsonTree', 'Tree');
     treeBtn.className = "preview-toggle-button";
     toolbar.append(formattedBtn, treeBtn);
 
@@ -650,7 +653,7 @@ function renderCsvPreview(container, text, extension) {
     if (!rows.length) {
         const empty = document.createElement("div");
         empty.className = "text-sm text-gray-600 dark:text-gray-300";
-        empty.textContent = "No rows to display.";
+        empty.textContent = getI18nStr('csvNoRows', 'No rows to display.');
         container.appendChild(empty);
         return;
     }
@@ -784,28 +787,6 @@ function attachDownloadOverride(fileName) {
     );
 }
 
-function setupDeleteConfirm() {
-    const startBtn = document.getElementById("deleteStartBtn");
-    const confirmBtn = document.getElementById("deleteConfirmBtn");
-    const cancelBtn = document.getElementById("deleteCancelBtn");
-    if (!startBtn || !confirmBtn || !cancelBtn) return;
-
-    const showConfirm = () => {
-        startBtn.classList.add("hidden");
-        confirmBtn.classList.remove("hidden");
-        cancelBtn.classList.remove("hidden");
-    };
-
-    const reset = () => {
-        startBtn.classList.remove("hidden");
-        confirmBtn.classList.add("hidden");
-        cancelBtn.classList.add("hidden");
-    };
-
-    startBtn.addEventListener("click", showConfirm);
-    cancelBtn.addEventListener("click", reset);
-}
-
 async function ensurePreviewReady() {
     if (previewFetched && previewBlob) return;
     if (previewReadyPromise) {
@@ -846,7 +827,7 @@ function renderFolderTree() {
     const manifestScript = document.getElementById("folderManifestData");
     const folderName = treeEl.dataset.folderName || getI18nStr('folderFallbackName', 'folder');
     if (!manifestScript || !manifestScript.textContent) {
-        treeEl.textContent = "No manifest available.";
+        treeEl.textContent = getI18nStr('folderNoManifest', 'No manifest available.');
         return;
     }
 
@@ -855,7 +836,7 @@ function renderFolderTree() {
         entries = JSON.parse(manifestScript.textContent);
     } catch (e) {
         console.warn("Folder manifest parse failed", e);
-        treeEl.textContent = "Unable to render folder contents.";
+        treeEl.textContent = getI18nStr('folderRenderFailed', 'Unable to render folder contents.');
         return;
     }
 

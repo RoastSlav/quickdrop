@@ -33,8 +33,13 @@
         const form = e.target.closest('form[data-delete-form]');
         if (!form) return;
         e.preventDefault();
-        if (!confirm(DELETE_MSG)) return;
-        QD.deleteWithAnimation(form, form.closest('[data-uuid]'));
+        window.confirmAction({
+            body: DELETE_MSG,
+            confirmLabel: window.QD_CONFIRM_I18N?.delete,
+            tone: 'danger'
+        }).then(ok => {
+            if (ok) QD.deleteWithAnimation(form, form.closest('[data-uuid]'));
+        });
     });
 
     function refreshCardStyle(card) {
@@ -75,6 +80,7 @@
         try {
             const res = await fetch(form.action, {method: 'POST', body: new FormData(form)});
             if (!res.ok && !res.redirected) throw new Error(res.status);
+            window.QD?.flashSaved(checkbox.closest('.toggle'));
         } catch {
             checkbox.checked = !checkbox.checked;
             if (hiddenField) hiddenField.value = checkbox.checked;
@@ -83,6 +89,8 @@
                 else card.dataset.isHidden = checkbox.checked;
                 refreshCardStyle(card);
             }
+            window.notify(window.i18n?.common?.toggleFailed
+                || 'Could not save that change. Please try again.');
         }
     }
 

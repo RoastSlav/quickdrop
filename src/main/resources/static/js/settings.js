@@ -163,6 +163,61 @@ function syncShareLinkSettings() {
     }
 }
 
+function syncShortenerSettings() {
+    const shortenerEnabledCb = document.getElementById("shortenerEnabled");
+    const customAliasEnabledCb = document.getElementById("shortenerCustomAliasEnabled");
+    const domainRuleModeSelect = document.getElementById("shortenerDomainRuleMode");
+
+    const enabled = Boolean(shortenerEnabledCb?.checked);
+    const customAliasEnabled = Boolean(customAliasEnabledCb?.checked);
+
+    // Rows that only matter when the shortener itself is on.
+    [
+        ["shortenerAdminOnlyRow", "shortenerAdminOnly"],
+        ["shortenerCustomAliasEnabledRow", "shortenerCustomAliasEnabled"],
+    ].forEach(([rowId, inputId]) => {
+        const row = document.getElementById(rowId);
+        const input = document.getElementById(inputId);
+        if (row) {
+            row.classList.toggle("opacity-60", !enabled);
+            row.classList.toggle("cursor-not-allowed", !enabled);
+        }
+        if (input) {
+            input.disabled = !enabled;
+            if (!enabled) input.checked = false;
+        }
+    });
+
+    // Custom-alias-admin-only additionally needs the shortener AND custom aliases enabled.
+    const aliasAdminRow = document.getElementById("shortenerCustomAliasAdminOnlyRow");
+    const aliasAdminInput = document.getElementById("shortenerCustomAliasAdminOnly");
+    const aliasAdminActive = enabled && customAliasEnabled;
+    if (aliasAdminRow) {
+        aliasAdminRow.classList.toggle("opacity-60", !aliasAdminActive);
+        aliasAdminRow.classList.toggle("cursor-not-allowed", !aliasAdminActive);
+    }
+    if (aliasAdminInput) {
+        aliasAdminInput.disabled = !aliasAdminActive;
+        if (!aliasAdminActive) aliasAdminInput.checked = false;
+    }
+
+    // Interstitial mode and domain rules (below) are deliberately NOT gated by
+    // shortenerEnabled: both still apply when an existing redirect link is resolved
+    // (LinkGuard.checkForRedirect runs the domain check, and the resolver still shows/skips
+    // the interstitial) even after an admin disables new-link creation -- see the
+    // shortenerEnabled gating note on ShortLinkViewController#newLinkForm.
+
+    // Domain rules textarea only matters once a mode other than "OFF" is selected.
+    const domainRulesRow = document.getElementById("shortenerDomainRulesRow");
+    const domainRulesInput = document.getElementById("shortenerDomainRules");
+    const domainRulesActive = domainRuleModeSelect?.value !== "OFF";
+    if (domainRulesRow) {
+        domainRulesRow.classList.toggle("opacity-60", !domainRulesActive);
+        domainRulesRow.classList.toggle("cursor-not-allowed", !domainRulesActive);
+    }
+    if (domainRulesInput) domainRulesInput.disabled = !domainRulesActive;
+}
+
 function togglePreviewSizeField() {
     const previewEnabled = document.getElementById("previewEnabled");
     const sizeInput = document.getElementById("maxPreviewSizeBytes");
@@ -556,6 +611,7 @@ document.addEventListener("DOMContentLoaded", function () {
     updateBatchAvailability();
     syncUploadEnabled();
     syncShareLinkSettings();
+    syncShortenerSettings();
     togglePreviewSizeField();
     syncDefaultHomePageOptions();
 
@@ -563,6 +619,22 @@ document.addEventListener("DOMContentLoaded", function () {
         'form[method="post"][action="/admin/save"]'
     );
     if (form) {
+        // Settings commits explicitly — never on change. The guard warns before the
+        // page is left with pending edits and clears itself once a save succeeds.
+        const dirtyGuard = window.QDDirty?.watch(form) || null;
+
+        // Other settings-page scripts (reputation provider enable) navigate away on
+        // their own. They need to be able to ask whether the form has pending edits,
+        // commit them, and stand down the guard before reloading.
+        window.QDSettings = {
+            isDirty: () => !!dirtyGuard && dirtyGuard.isDirty(),
+            save: async () => {
+                await saveSettings(getCsrfToken());
+                dirtyGuard?.markClean();
+            },
+            standDownGuard: () => dirtyGuard?.markClean()
+        };
+
         form.addEventListener("submit", async (e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -570,6 +642,7 @@ document.addEventListener("DOMContentLoaded", function () {
             saveBtns.forEach(b => (b.disabled = true));
             try {
                 await saveSettings(getCsrfToken());
+                dirtyGuard?.markClean();
                 window.toast?.("Settings saved", "success");
             } catch (err) {
                 window.toast?.(

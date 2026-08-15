@@ -23,8 +23,8 @@
         requestAnimationFrame(tick);
     }
 
-    function init() {
-        document.querySelectorAll('[data-counter-target]').forEach((el) => {
+    function init(root) {
+        (root || document).querySelectorAll('[data-counter-target]').forEach((el) => {
             const target = Number(el.getAttribute('data-counter-target'));
             if (!Number.isFinite(target)) return;
             const suffix = el.getAttribute('data-counter-suffix') || '';
@@ -46,6 +46,9 @@
             animate(el, 0, target, 1100, formatter);
         });
     }
+
+    // Exposed so swapped-in content can re-run the count-up (see spa.js).
+    window.QDCounters = init;
 
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', init);

@@ -1,46 +1,27 @@
 <!DOCTYPE html>
 <html lang="en" th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8"/>
+<head th:replace="~{fragments/layout :: head(~{::title}, ~{})}">
     <title th:text="#{page.adminActivity.title.browser(${appName})}">Activity — Admin</title>
-    <meta content="width=device-width, initial-scale=1" name="viewport"/>
-    <th:block th:replace="~{fragments/header :: themePreload}"></th:block>
-    <link href="https://fonts.googleapis.com" rel="preconnect"/>
-    <link crossorigin href="https://fonts.gstatic.com" rel="preconnect"/>
-    <link href="/css/tailwind.css" rel="stylesheet"/>
-    <link href="/css/custom.css" rel="stylesheet"/>
-    <link href="/images/favicon.png" rel="icon" th:href="${appLogoPath}" type="image/png"/>
-    <script src="/js/tailwindTheme.js"></script>
-    <th:block th:replace="~{fragments/header :: scripts}"></th:block>
 </head>
 <body>
 
-<div th:replace="~{fragments/header :: header(false)}"></div>
-
-<div aria-hidden="true" class="orb-field">
-    <div class="orb orb--primary"></div>
-    <div class="orb orb--secondary"></div>
-    <div class="orb orb--teal"></div>
-</div>
+<th:block th:replace="~{fragments/layout :: chrome(true)}"></th:block>
 
 <main class="flex-1 hero-scene" id="main-content">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
+    <div class="page-wrap">
 
-        <!-- Back -->
-        <div class="mb-6 animate-in">
-            <a class="btn btn-ghost btn-sm inline-flex items-center gap-1.5" href="/admin/dashboard">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-                <span th:text="#{nav.admin}">Admin</span>
-            </a>
-        </div>
-
-        <!-- Hero header -->
-        <div class="flex flex-wrap items-center justify-between gap-4 mb-8 animate-in">
-            <h1 class="page-title-xl">
-                <span class="gradient-text" th:text="#{page.adminActivity.title}">Activity</span>
-            </h1>
+        <div class="page-header page-header--bar animate-in">
+            <div class="page-header-main">
+                <a class="page-header-back" href="/admin/dashboard">
+                    <svg aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                        <path d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <span th:text="#{nav.admin}">Back</span>
+                </a>
+                <h1 class="page-header-title">
+                    <span class="gradient-text" th:text="#{page.adminActivity.title}">Title</span>
+                </h1>
+            </div>
         </div>
 
         <!-- Filter + results (SPA-swappable) -->
@@ -100,6 +81,12 @@
                                         th:classappend="${sourceType == 'paste'} ? ' btn-primary' : ' btn-ghost'"
                                         th:text="#{page.adminActivity.type.paste}"
                                         type="button">Paste
+                                </button>
+                                <button class="btn btn-sm"
+                                        data-sourcetype="link"
+                                        th:classappend="${sourceType == 'link'} ? ' btn-primary' : ' btn-ghost'"
+                                        th:text="#{page.adminActivity.type.link}"
+                                        type="button">Link
                                 </button>
                                 <button class="btn btn-sm"
                                         data-sourcetype="system"
@@ -242,7 +229,7 @@
                                     <th:block th:if="${entry.file != null and !entry.file.paste}">
                                         <div class="flex items-center gap-1.5 min-w-0">
                                             <span class="shrink-0 rounded px-1 py-0.5 font-bold uppercase leading-none"
-                                                  style="font-size:0.6rem;background:var(--c-primary-muted);color:var(--c-primary)"
+                                                  style="font-size:var(--fs-3xs);background:var(--c-primary-muted);color:var(--c-primary-badge-text)"
                                                   th:text="#{page.adminActivity.type.file}">File</span>
                                             <a class="font-medium truncate hover:underline text-sm"
                                                th:href="@{/file/{uuid}(uuid=${entry.file.uuid})}"
@@ -254,7 +241,7 @@
                                     <th:block th:if="${entry.file != null and entry.file.paste}">
                                         <div class="flex items-center gap-1.5 min-w-0">
                                             <span class="shrink-0 rounded px-1 py-0.5 font-bold uppercase leading-none"
-                                                  style="font-size:0.6rem;background:var(--c-indigo-muted,var(--c-secondary-muted));color:var(--c-indigo,var(--c-secondary))"
+                                                  style="font-size:var(--fs-3xs);background:var(--c-indigo-muted,var(--c-secondary-muted));color:var(--c-indigo,var(--c-secondary))"
                                                   th:text="#{page.adminActivity.type.paste}">Paste</span>
                                             <a class="font-medium truncate hover:underline text-sm"
                                                th:href="@{/file/{uuid}(uuid=${entry.file.uuid})}"
@@ -262,16 +249,30 @@
                                                th:title="${entry.file.name}">paste</a>
                                         </div>
                                     </th:block>
-                                    <!-- System (no associated file) -->
-                                    <th:block th:if="${entry.file == null}">
+                                    <!-- Short link. Must be tested before the plain "system" case:
+                                         these rows also have no file, so without this they showed
+                                         as "System" with no hint of which link was involved. -->
+                                    <th:block th:if="${entry.file == null and entry.shortLink != null}">
+                                        <div class="flex items-center gap-1.5 min-w-0">
+                                            <span class="shrink-0 rounded px-1 py-0.5 font-bold uppercase leading-none"
+                                                  style="font-size:var(--fs-3xs);background:var(--c-teal-muted);color:var(--c-teal-badge-text)"
+                                                  th:text="#{page.adminActivity.type.link}">Link</span>
+                                            <a class="font-medium truncate hover:underline text-sm font-mono"
+                                               th:href="@{/admin/links(kind='redirect',query=${entry.shortLink.code})}"
+                                               th:text="${entry.shortLink.code}"
+                                               th:title="${entry.shortLink.code}">abc12</a>
+                                        </div>
+                                    </th:block>
+                                    <!-- System (no associated file or link) -->
+                                    <th:block th:if="${entry.file == null and entry.shortLink == null}">
                                         <span class="shrink-0 rounded px-1 py-0.5 font-bold uppercase leading-none"
-                                              style="font-size:0.6rem;background:var(--c-amber-muted,color-mix(in srgb,var(--c-amber,#f59e0b) 15%,transparent));color:var(--c-amber,#f59e0b)"
+                                              style="font-size:var(--fs-3xs);background:var(--c-amber-muted,color-mix(in srgb,var(--c-amber,#f59e0b) 15%,transparent));color:var(--c-amber,#f59e0b)"
                                               th:text="#{page.adminActivity.type.system}">System</span>
                                     </th:block>
                                 </td>
                                 <td class="py-2.5 px-3">
                             <span class="badge font-mono text-xs"
-                                  th:classappend="${cat == 'ADMIN' or cat == 'SYSTEM'} ? 'badge-warning' : (${cat == 'SHARE'} ? 'badge-teal' : (${cat == 'PASTE'} ? '' : (${entry.eventType.name() == 'DELETION'} ? 'badge-danger' : 'badge-primary')))"
+                                  th:classappend="${cat == 'ADMIN' or cat == 'SYSTEM'} ? 'badge-amber' : (${cat == 'SHARE' or cat == 'SHORTLINK'} ? 'badge-teal' : (${cat == 'PASTE'} ? '' : (${entry.eventType.name() == 'DELETION'} ? 'badge-danger' : 'badge-primary')))"
                                   th:style="${cat == 'PASTE'} ? 'background:var(--c-indigo-muted,var(--c-secondary-muted));color:var(--c-indigo,var(--c-secondary))' : (${cat == 'ADMIN' or cat == 'SYSTEM'} ? 'background:var(--c-amber-muted,color-mix(in srgb,var(--c-amber,#f59e0b) 15%,transparent));color:var(--c-amber,#f59e0b)' : '')"
                                   th:text="#{page.history.actionType.__${entry.eventType.name().toLowerCase()}__}"
                                   th:with="cat=${entry.eventType.category.name()}">upload</span>
@@ -341,7 +342,7 @@
 
 <script src="/js/spa.js"></script>
 <script src="/js/admin-activity.js"></script>
-<script src="/js/locale-switcher.js"></script>
+<th:block th:replace="~{fragments/layout :: pageScripts}"></th:block>
 <script>
     document.querySelectorAll('[data-sourcetype]').forEach(function (btn) {
         btn.addEventListener('click', function () {

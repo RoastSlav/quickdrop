@@ -1,42 +1,26 @@
 <!DOCTYPE html>
 <html lang="en" th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8"/>
+<head th:replace="~{fragments/layout :: head(~{::title}, ~{::head-extra})}">
     <title th:text="#{page.upload.title.browser(${appName})}">Upload — QuickDrop</title>
-    <meta content="width=device-width, initial-scale=1" name="viewport"/>
-    <th:block th:replace="~{fragments/header :: themePreload}"></th:block>
-    <link href="https://fonts.googleapis.com" rel="preconnect"/>
-    <link crossorigin href="https://fonts.gstatic.com" rel="preconnect"/>
-    <link href="/css/tailwind.css" rel="stylesheet"/>
-    <link href="/css/custom.css" rel="stylesheet"/>
-    <link href="/images/favicon.png" rel="icon" th:href="${appLogoPath}" type="image/png"/>
-    <script src="/js/tailwindTheme.js"></script>
-    <script src="/js/toast.js"></script>
-    <script src="/js/metadata.js"></script>
-    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.14.1/dist/cdn.min.js"></script>
-    <th:block th:replace="~{fragments/header :: scripts}"></th:block>
+    <th:block th:fragment="head-extra">
+        <script src="/js/metadata.js"></script>
+        <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+        <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.14.1/dist/cdn.min.js"></script>
+    </th:block>
 </head>
 <body>
 
-<div th:replace="~{fragments/header :: header(false)}"></div>
-
-<!-- Floating orbs -->
-<div aria-hidden="true" class="orb-field">
-    <div class="orb orb--primary"></div>
-    <div class="orb orb--secondary"></div>
-</div>
+<th:block th:replace="~{fragments/layout :: chrome(false)}"></th:block>
 
 <main class="flex-1 hero-scene" id="main-content">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
+    <div class="page-wrap">
 
         <!-- Two-column layout: hero left, form right -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-start">
-
-            <!-- ── Left: Visual hero ─────────────────────────────────────── -->
-            <div class="flex flex-col gap-6 lg:sticky lg:top-24 animate-in">
-                <div>
+        <div class="upload-grid">
+            <div class="upload-aside animate-in">
+            <header class="upload-head">
+                <div class="upload-head-text">
                     <h1 class="page-title-xl">
                         <span class="gradient-text" th:text="#{page.upload.title}">Upload a File or Folder</span>
                     </h1>
@@ -44,30 +28,30 @@
                         Accepted: any file type
                     </p>
                 </div>
+            </header>
 
-                <!-- Oversized spec readout -->
-                <div class="grid grid-cols-2 gap-3 mt-2">
-                    <div class="stat-hero stat-hero--primary">
-                        <span class="stat-hero-label" th:text="#{page.upload.maxSizeLabel}">Max Size</span>
-                        <span class="stat-hero-value maxFileSize" th:text="${maxFileSize}">1 GB</span>
+            <!-- Limits and guarantees, as one compact strip instead of a half-empty column -->
+            <div class="upload-facts">
+                    <div class="upload-facts-stats">
+                        <div class="stat-hero stat-hero--primary">
+                            <span class="stat-hero-label" th:text="#{page.upload.maxSizeLabel}">Max Size</span>
+                            <span class="stat-hero-value maxFileSize" th:text="${maxFileSize}">1 GB</span>
+                        </div>
+                        <div class="stat-hero stat-hero--teal">
+                            <span class="stat-hero-label" th:text="#{page.upload.retentionLabel}">Retention</span>
+                            <span class="stat-hero-value">
+                  <span class="maxFileLifeTime" th:text="${maxFileLifeTime}">30</span><span class="text-lg">d</span>
+                </span>
+                            <span class="stat-hero-sub" th:if="${!isKeepIndefinitelyAdminOnly}"
+                                  th:text="#{page.upload.retention.standard(${maxFileLifeTime})}">
+                  Files are deleted after 30 days unless "Keep indefinitely" is selected.
+                </span>
+                            <span class="stat-hero-sub" th:if="${isKeepIndefinitelyAdminOnly}"
+                                  th:text="#{page.upload.retention.adminOnly(${maxFileLifeTime})}">
+                  Files are deleted after 30 days.
+                </span>
+                        </div>
                     </div>
-                    <div class="stat-hero stat-hero--teal">
-                        <span class="stat-hero-label" th:text="#{page.upload.retentionLabel}">Retention</span>
-                        <span class="stat-hero-value">
-              <span class="maxFileLifeTime" th:text="${maxFileLifeTime}">30</span><span class="text-lg">d</span>
-            </span>
-                        <span class="stat-hero-sub" th:if="${!isKeepIndefinitelyAdminOnly}"
-                              th:text="#{page.upload.retention.standard(${maxFileLifeTime})}">
-              Files are deleted after 30 days unless "Keep indefinitely" is selected.
-            </span>
-                        <span class="stat-hero-sub" th:if="${isKeepIndefinitelyAdminOnly}"
-                              th:text="#{page.upload.retention.adminOnly(${maxFileLifeTime})}">
-              Files are deleted after 30 days.
-            </span>
-                    </div>
-                </div>
-
-                <!-- Encryption notice -->
                 <div class="flex items-center gap-3 p-4 rounded-xl"
                      style="background: var(--c-indigo-muted); border: 1px solid color-mix(in srgb, var(--c-indigo) 30%, transparent)"
                      th:if="${isEncryptionEnabled and uploadPasswordEnabled}">
@@ -79,7 +63,7 @@
                               stroke-linejoin="round"/>
                     </svg>
                     <div>
-                        <p class="text-sm font-semibold" style="color: var(--c-indigo)"
+                        <p class="text-sm font-semibold" style="color: var(--c-indigo-badge-text)"
                            th:text="#{page.upload.encryptionEnabled}">
                             File encryption enabled</p>
                         <p class="text-xs mt-0.5" style="color: var(--c-text-muted)"
@@ -87,8 +71,6 @@
                             Password-protected files are automatically encrypted.</p>
                     </div>
                 </div>
-
-                <!-- Metadata stripping notice -->
                 <div class="flex items-center gap-3 p-4 rounded-xl"
                      style="background: var(--c-emerald-muted); border: 1px solid color-mix(in srgb, var(--c-emerald) 30%, transparent)"
                      th:if="${isMetadataStrippingEnabled}">
@@ -110,9 +92,9 @@
                     </div>
                 </div>
             </div>
+            </div>
 
-            <!-- ── Right: Upload form ────────────────────────────────────── -->
-            <div class="animate-in animate-in-delay-1">
+        <div class="upload-form-card animate-in animate-in-delay-1">
                 <!-- Storage down banner -->
                 <div class="alert alert-danger flex items-center gap-3 mb-4" role="alert" th:if="${s3Down}">
                     <svg aria-hidden="true" class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor"
@@ -120,7 +102,7 @@
                         <path d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z"
                               stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
-                    <span>Uploads are temporarily unavailable due to a service configuration issue. Please try again later.</span>
+                    <span th:text="#{alert.uploadsUnavailable}">Uploads are temporarily unavailable.</span>
                 </div>
                 <div class="card-glass card-xl flex flex-col gap-6" style="padding: 2rem">
 
@@ -215,7 +197,7 @@
                           stroke-linecap="round"
                           stroke-linejoin="round"/></svg>
                   <span th:text="#{page.upload.security.title}">Security &amp; retention</span>
-                  <span class="badge badge-neutral text-[0.65rem]"
+                  <span class="badge badge-neutral text-[0.75rem]"
                         th:attr="data-text-open=#{page.upload.security.isOpen},data-text-configure=#{page.upload.security.configure}"
                         x-text="open ? $el.dataset.textOpen : $el.dataset.textConfigure"></span>
                 </span>
@@ -276,7 +258,7 @@
                                             th:placeholder="#{form.password.optional}"
                                             type="password"
                                     />
-                                    <p class="form-hint" id="passwordlessWarning" style="color:var(--c-amber)"
+                                    <p class="form-hint" id="passwordlessWarning" style="color:var(--c-warning-text)"
                                        th:text="#{page.upload.passwordless.warning}">
                                         Without a password you won't be able to edit, delete, or manage this file after
                                         uploading.
@@ -300,7 +282,7 @@
                                     id="uploadWarningDetails"
                                     type="button"
                             >
-                                <span aria-hidden="true">&#9656;</span> Technical info
+                                <span aria-hidden="true">&#9656;</span> <span th:text="#{page.upload.technicalInfo}">Technical info</span>
                             </button>
                             <div
                                     class="hidden mt-2 max-h-28 overflow-y-auto text-xs rounded-lg border px-3 py-2 w-full"
@@ -381,6 +363,6 @@
     /*]]>*/
 </script>
 <script src="/js/upload.js" type="module"></script>
-<script src="/js/locale-switcher.js"></script>
+<th:block th:replace="~{fragments/layout :: pageScripts}"></th:block>
 </body>
 </html>

@@ -1,35 +1,19 @@
 <!DOCTYPE html>
 <html lang="en" th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8"/>
-    <meta name="_csrf" th:content="${_csrf.token}"/>
+<head th:replace="~{fragments/layout :: head(~{::title}, ~{::head-extra})}">
     <title th:text="#{page.fileView.title.browser(${appName})}">File — QuickDrop</title>
-    <meta content="width=device-width, initial-scale=1" name="viewport"/>
-    <th:block th:replace="~{fragments/header :: themePreload}"></th:block>
-    <link href="https://fonts.googleapis.com" rel="preconnect"/>
-    <link crossorigin href="https://fonts.gstatic.com" rel="preconnect"/>
-    <link href="/css/tailwind.css" rel="stylesheet"/>
-    <link href="/css/custom.css" rel="stylesheet"/>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css" rel="stylesheet"/>
-    <link href="/images/favicon.png" rel="icon" th:href="${appLogoPath}" type="image/png"/>
-    <script src="/js/tailwindTheme.js"></script>
-    <script src="/js/toast.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.4.4/build/qrcode.min.js"></script>
-    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
-    <th:block th:replace="~{fragments/header :: scripts}"></th:block>
+    <th:block th:fragment="head-extra">
+        <meta name="_csrf" th:content="${_csrf.token}"/>
+        <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css" rel="stylesheet"/>
+        <script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    </th:block>
 </head>
 <body>
 
-<div th:replace="~{fragments/header :: header(false)}"></div>
-
-<!-- Floating orbs -->
-<div aria-hidden="true" class="orb-field">
-    <div class="orb orb--primary"></div>
-    <div class="orb orb--secondary"></div>
-</div>
+<th:block th:replace="~{fragments/layout :: chrome(false)}"></th:block>
 
 <main class="flex-1 hero-scene" id="main-content">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
+    <div class="page-wrap">
 
         <span hidden id="fileUuid" th:text="${file.uuid}"></span>
         <span hidden id="downloadLink" th:text="${downloadLink}"></span>
@@ -53,7 +37,7 @@
 
                 <!-- File info -->
                 <div class="min-w-0 flex-1">
-                    <span class="section-eyebrow mb-1 block">File</span>
+                    <span class="section-eyebrow mb-1 block" th:text="#{page.fileView.kind}">File</span>
                     <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight break-all leading-tight"
                         th:text="${file.name}">Filename</h1>
                     <p class="mt-2 text-sm" style="color: var(--c-text-muted)"
@@ -126,11 +110,17 @@
         </div>
 
         <!-- ── Content grid ──────────────────────────────────────────── -->
-        <div th:class="${!isShareLinksEnabled or isDeleted} ? 'flex flex-col gap-6' : 'grid grid-cols-1 lg:grid-cols-3 gap-6 items-start'">
+        <!-- Three columns only when a preview will actually render; otherwise the info
+             card and Share share the row evenly, so neither ends up as a tall box of air.
+             items-start keeps each card at its content height instead of stretching. -->
+        <div th:class="${!isShareLinksEnabled or isDeleted} ? 'flex flex-col gap-6'
+                       : (${hasPreview} ? 'grid grid-cols-1 md:grid-cols-3 gap-6 items-start'
+                                        : 'grid grid-cols-1 md:grid-cols-2 gap-6 items-start')"
+             th:with="hasPreview=${isPreviewEnabled and (isPreviewableImage or isPreviewableText or isPreviewablePdf)}">
 
             <!-- ── Main column ────────────────────────────────────────── -->
             <section class="flex flex-col gap-6"
-                     th:classappend="${!isShareLinksEnabled or isDeleted} ? 'w-full' : 'lg:col-span-2'">
+                     th:classappend="${!isShareLinksEnabled or isDeleted} ? 'w-full' : (${hasPreview} ? 'md:col-span-2' : '')">
 
                 <!-- Deleted notice (admin-only view) -->
                 <div class="card card-lg animate-in animate-in-delay-1"
@@ -143,26 +133,22 @@
 
                 <div class="card card-lg flex flex-col gap-6 animate-in animate-in-delay-1" id="fileInfoCard">
 
-                    <!-- Metadata grid -->
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div class="p-4 rounded-xl"
-                             style="background: var(--c-surface-raised); border: 1px solid var(--c-border)">
-              <span class="section-eyebrow block mb-1"
-                    th:text="${file.keepIndefinitely} ? #{page.fileView.uploadedAt} : #{page.fileView.uploadedRenewedAt}">Uploaded</span>
-                            <span class="font-mono text-lg font-bold"
+                    <!-- Metadata -->
+                    <div class="meta-grid">
+                        <div class="meta-item">
+                            <span class="meta-label"
+                                  th:text="${file.keepIndefinitely} ? #{page.fileView.uploadedAt} : #{page.fileView.uploadedRenewedAt}">Uploaded</span>
+                            <span class="meta-value"
                                   th:text="${#temporals.format(file.uploadDate, 'dd.MM.yyyy')}">01.01.2025</span>
-                            <p class="text-xs mt-1" style="color: var(--c-text-faint)"
-                               th:if="${file.keepIndefinitely == false}">
+                            <p class="meta-note" th:if="${file.keepIndefinitely == false}">
                                 <span th:text="#{page.fileView.retention.beforeDays}">Kept for</span>
                                 <span th:text="${maxFileLifeTime}">30</span>
                                 <span th:text="#{page.fileView.retention.afterDays}">days after this date.</span>
                             </p>
                         </div>
-                        <div class="p-4 rounded-xl"
-                             style="background: var(--c-surface-raised); border: 1px solid var(--c-border)">
-                            <span class="section-eyebrow block mb-1"
-                                  th:text="#{page.fileView.fileSize}">File Size</span>
-                            <span class="font-mono text-lg font-bold" th:text="${fileSize}">—</span>
+                        <div class="meta-item">
+                            <span class="meta-label" th:text="#{page.fileView.fileSize}">File Size</span>
+                            <span class="meta-value" th:text="${fileSize}">—</span>
                         </div>
                     </div>
 
@@ -226,22 +212,15 @@
                     </div>
 
                     <!-- Delete -->
-                    <form class="flex gap-2 items-center pt-2" method="post"
+                    <form class="flex gap-2 items-center pt-2" data-confirm method="post"
                           style="border-top: 1px solid var(--c-border)"
                           th:action="@{/file/delete/{uuid}(uuid=${file.uuid})}"
+                          th:attr="data-confirm-body=#{page.dashboard.deleteConfirm},data-confirm-label=#{button.delete}"
                           th:if="${file.passwordHash != null and !isDeleted}"
-                          x-data="{ confirming: false }">
+                          data-confirm-tone="danger">
                         <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden"/>
-                        <button @click.prevent="confirming = true" class="btn btn-rose" id="deleteStartBtn"
-                                th:text="#{page.fileView.deleteFile}" type="button"
-                                x-show="!confirming">Delete File
-                        </button>
-                        <button class="btn btn-danger" id="deleteConfirmBtn" th:text="#{button.confirm}"
-                                type="submit" x-cloak x-show="confirming">Confirm
-                        </button>
-                        <button @click.prevent="confirming = false" class="btn btn-ghost" id="deleteCancelBtn"
-                                th:text="#{button.cancel}" type="button" x-cloak
-                                x-show="confirming">Cancel
+                        <button class="btn btn-rose" id="deleteStartBtn"
+                                th:text="#{page.fileView.deleteFile}" type="submit">Delete File
                         </button>
                     </form>
                 </div>
@@ -273,7 +252,7 @@
             </section>
 
             <!-- ── Sidebar ────────────────────────────────────────────── -->
-            <aside class="lg:col-span-1 flex flex-col gap-5" th:if="${isShareLinksEnabled and !isDeleted}">
+            <aside class="md:col-span-1 flex flex-col gap-5" th:if="${isShareLinksEnabled and !isDeleted}">
 
                 <!-- Share panel -->
                 <div class="card card-lg flex flex-col gap-4 animate-in animate-in-delay-2 accent-stripe accent-stripe--gradient"
@@ -368,7 +347,8 @@
                     <div class="text-center hidden p-3 rounded-xl"
                          id="shareQRCodeContainer"
                          style="background: var(--c-surface-raised); border: 1px solid var(--c-border)">
-                        <canvas class="mx-auto rounded-lg" height="150" id="shareQRCode" width="150"></canvas>
+                        <img alt="" class="mx-auto rounded-lg" height="150" id="shareQRCode"
+                             th:alt="#{page.fileView.qrAlt}" width="150"/>
                     </div>
                 </div>
             </aside>
@@ -393,6 +373,7 @@
         openInNewTab:                /*[[#{page.fileView.preview.openInNewTab}]]*/ 'Open {0} in a new tab',
         csvShowingFirst:             /*[[#{page.fileView.preview.csvShowingFirst}]]*/ 'Showing first {0} rows out of {1}.',
         deleteConfirm:               /*[[#{page.dashboard.deleteConfirm}]]*/ 'Are you sure you want to delete this file? This action cannot be undone.',
+        toggleFailed:                /*[[#{notification.toggle.failed}]]*/ 'Could not save that change. Please try again.',
         shareDisabled:               /*[[#{page.fileView.shareDisabled}]]*/ 'Share links are disabled by the administrator.',
         daysValidNonNegative:        /*[[#{page.fileView.daysValidNonNegative}]]*/ 'Days valid cannot be negative.',
         allowedDownloadsNonNegative: /*[[#{page.fileView.allowedDownloadsNonNegative}]]*/ 'Allowed downloads cannot be negative.',
@@ -405,6 +386,6 @@
     /*]]>*/
 </script>
 <script src="/js/fileView.js"></script>
-<script src="/js/locale-switcher.js"></script>
+<th:block th:replace="~{fragments/layout :: pageScripts}"></th:block>
 </body>
 </html>

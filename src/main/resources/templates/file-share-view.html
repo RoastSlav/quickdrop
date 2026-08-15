@@ -1,29 +1,15 @@
 <!DOCTYPE html>
 <html lang="en" th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8"/>
+<head th:replace="~{fragments/layout :: head(~{::title}, ~{::head-extra})}">
     <title th:text="#{page.share.title.browser(${appName})}">Shared File — QuickDrop</title>
-    <meta content="width=device-width, initial-scale=1" name="viewport"/>
-    <th:block th:replace="~{fragments/header :: themePreload}"></th:block>
-    <link href="https://fonts.googleapis.com" rel="preconnect"/>
-    <link crossorigin href="https://fonts.gstatic.com" rel="preconnect"/>
-    <link href="/css/tailwind.css" rel="stylesheet"/>
-    <link href="/css/custom.css" rel="stylesheet"/>
-    <link href="/images/favicon.png" rel="icon" th:href="${appLogoPath}" type="image/png"/>
-    <script src="/js/tailwindTheme.js"></script>
-    <th:block th:replace="~{fragments/header :: scripts}"></th:block>
-    <meta name="_csrf" th:content="${_csrf.token}"/>
-    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+    <th:block th:fragment="head-extra">
+        <meta name="_csrf" th:content="${_csrf.token}"/>
+        <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+    </th:block>
 </head>
 <body>
 
-<div th:replace="~{fragments/header :: header(false)}"></div>
-
-<!-- Floating orbs -->
-<div aria-hidden="true" class="orb-field">
-    <div class="orb orb--primary"></div>
-    <div class="orb orb--secondary"></div>
-</div>
+<th:block th:replace="~{fragments/layout :: chrome(false)}"></th:block>
 
 <main class="gate-page hero-scene" id="main-content" style="min-height: calc(100vh - var(--nav-h, 4rem))">
 
@@ -86,13 +72,13 @@
 
             <!-- Shown only when fragment key auth fails -->
             <p class="text-sm text-center mt-3 hidden" id="keyErrorMsg"
-               style="color:var(--c-danger, #ef4444)">Invalid or missing access key.</p>
+               style="color:var(--c-danger, #ef4444)" th:text="#{page.share.keyError}">Invalid or missing access key.</p>
         </div>
     </div>
 
 </main>
 
-<script src="/js/locale-switcher.js"></script>
+<th:block th:replace="~{fragments/layout :: pageScripts}"></th:block>
 <script th:if="${needsKeyAuth}" th:inline="javascript">
     (function () {
         const token = /*[[${downloadLink.substring(downloadLink.lastIndexOf('/') + 1)}]]*/ '';

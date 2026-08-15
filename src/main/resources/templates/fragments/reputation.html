@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!--
+  Licence-acceptance modal for one reputation provider. Parameterised rather than repeated
+  three times inline in settings.html: the three providers differ only in their identifiers
+  and which message keys they read, so the markup, the accept-checkbox wiring and the
+  confirm-button contract stay in exactly one place.
+
+  modalKey   - camelCase key used for the element id and the data-open-reputation-modal
+               attribute the settings page's "Enable..." button targets (e.g. "phishingArmy")
+  providerId - snake_case id POSTed to /admin/settings/accept-reputation-terms, and matched
+               by ApplicationSettingsService#acceptReputationProviderTerms (e.g. "phishing_army")
+  nameKey / licenceKey / descriptionKey - message keys for this provider's copy
+-->
+<div th:fragment="licenceModal(modalKey, providerId, nameKey, licenceKey, descriptionKey)"
+     class="modal-overlay hidden"
+     th:attr="data-reputation-modal=${modalKey}"
+     th:id="'reputationModal-' + ${modalKey}">
+    <div class="modal" role="dialog" aria-modal="true"
+         th:attr="aria-labelledby='reputationModalTitle-' + ${modalKey}">
+        <h3 class="text-lg font-bold mb-2" th:id="'reputationModalTitle-' + ${modalKey}"
+            th:text="#{__${nameKey}__}">Provider</h3>
+        <p class="text-sm mb-3" style="color:var(--c-text-muted)" th:text="#{__${licenceKey}__}">Licence terms.</p>
+        <p class="text-xs font-semibold uppercase tracking-widest mb-1" style="color:var(--c-text-faint)"
+           th:text="#{page.settings.features.reputation.modal.whatLeaves}">What leaves this instance:</p>
+        <p class="text-sm mb-4" th:text="#{__${descriptionKey}__}">What this provider does.</p>
+        <label class="form-check items-center gap-2 text-sm mb-4 cursor-pointer select-none">
+            <input data-reputation-accept-checkbox type="checkbox"/>
+            <span th:text="#{page.settings.features.reputation.modal.accept}">I have read and accept these terms</span>
+        </label>
+        <div class="flex justify-end gap-2">
+            <button class="btn btn-ghost btn-sm" data-close-reputation-modal type="button"
+                    th:text="#{page.settings.features.reputation.modal.cancel}">Cancel</button>
+            <button class="btn btn-primary btn-sm" disabled type="button"
+                    th:attr="data-confirm-reputation-modal=${providerId}"
+                    th:text="#{page.settings.features.reputation.modal.confirm}">Enable</button>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

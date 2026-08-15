@@ -1,239 +1,74 @@
 <!DOCTYPE html>
 <html lang="en" th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8"/>
+<head th:replace="~{fragments/layout :: head(~{::title}, ~{::head-extra})}">
     <title th:text="#{page.paste.title.browser(${appName})}">Pastebin — QuickDrop</title>
-    <meta content="width=device-width, initial-scale=1" name="viewport"/>
-    <th:block th:replace="~{fragments/header :: themePreload}"></th:block>
-    <link href="https://fonts.googleapis.com" rel="preconnect"/>
-    <link crossorigin href="https://fonts.gstatic.com" rel="preconnect"/>
-    <link href="/css/tailwind.css" rel="stylesheet"/>
-    <link href="/css/custom.css" rel="stylesheet"/>
-    <link href="https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.css" rel="stylesheet"/>
-    <link href="/images/favicon.png" rel="icon" th:href="${appLogoPath}" type="image/png"/>
-    <script src="/js/tailwindTheme.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <script src="/js/dompurify.min.js"></script>
-    <th:block th:replace="~{fragments/header :: scripts}"></th:block>
-    <style>
-        .editor-wrapper .CodeMirror {
-            min-height: 22rem;
-            height: auto;
-            border-radius: 0 0 1rem 1rem;
-            border: 1px solid var(--c-border-strong);
-            border-top: none;
-            background-color: var(--c-surface);
-            color: var(--c-text);
-            font-family: 'JetBrains Mono', ui-monospace, 'Cascadia Code', 'Fira Code', monospace;
-        }
-
-        .editor-wrapper .editor-preview,
-        .editor-wrapper .editor-preview-side {
-            font-size: 1rem;
-            line-height: 1.6;
-            background-color: var(--c-surface);
-            color: var(--c-text);
-        }
-
-        .editor-wrapper .CodeMirror-cursor {
-            border-left-color: var(--c-text);
-        }
-
-        .editor-wrapper .manual-preview-pane {
-            display: none;
-            max-height: 72vh;
-            overflow: auto;
-            border: 1px solid var(--c-border-strong);
-            border-radius: 1rem;
-            background-color: var(--c-surface);
-            padding: 1.5rem;
-            color: var(--c-text);
-        }
-
-        .editor-wrapper.manual-preview-active .manual-preview-pane {
-            display: block;
-        }
-
-        .editor-wrapper.manual-preview-active .EasyMDEContainer .CodeMirror,
-        .editor-wrapper.manual-preview-active .EasyMDEContainer .editor-statusbar {
-            display: none !important;
-        }
-
-        .markdown-content h1, .markdown-content h2, .markdown-content h3,
-        .markdown-content h4, .markdown-content h5, .markdown-content h6 {
-            margin-top: 1.25rem;
-            margin-bottom: .75rem;
-            font-weight: 700;
-            line-height: 1.25;
-        }
-
-        .markdown-content h1 {
-            font-size: 1.875rem;
-        }
-
-        .markdown-content h2 {
-            font-size: 1.5rem;
-        }
-
-        .markdown-content h3 {
-            font-size: 1.25rem;
-        }
-
-        .markdown-content p, .markdown-content ul, .markdown-content ol,
-        .markdown-content pre, .markdown-content blockquote, .markdown-content table {
-            margin: .75rem 0;
-        }
-
-        .markdown-content ul {
-            list-style: disc;
-            padding-left: 1.25rem;
-        }
-
-        .markdown-content ol {
-            list-style: decimal;
-            padding-left: 1.25rem;
-        }
-
-        .markdown-content code {
-            background-color: var(--c-surface-raised);
-            border-radius: .25rem;
-            padding: .1rem .3rem;
-            font-family: 'JetBrains Mono', ui-monospace, monospace;
-        }
-
-        .markdown-content pre {
-            background-color: var(--c-surface-raised);
-            border-radius: .5rem;
-            overflow: auto;
-            padding: .75rem;
-        }
-
-        .markdown-content pre code {
-            background: transparent;
-            padding: 0;
-        }
-
-        .markdown-content hr {
-            border: 0;
-            border-top: 1px solid var(--c-border-strong);
-            margin: 1rem 0;
-        }
-
-        .markdown-content a {
-            color: var(--c-primary);
-            text-decoration: underline;
-        }
-
-        .markdown-content blockquote {
-            border-left: 3px solid var(--c-primary);
-            padding-left: .75rem;
-            color: var(--c-text-muted);
-        }
-
-        .custom-editor-toolbar {
-            display: flex;
-            flex-wrap: wrap;
-            gap: .375rem;
-            border: 1px solid var(--c-border-strong);
-            border-bottom: none;
-            border-radius: 1rem 1rem 0 0;
-            padding: .625rem .875rem;
-            background-color: var(--c-surface-raised);
-        }
-
-        .custom-editor-toolbar button {
-            border: 1px solid var(--c-border-strong);
-            border-radius: .5rem;
-            background-color: var(--c-surface);
-            color: var(--c-text);
-            font-size: .9rem;
-            font-weight: 600;
-            line-height: 1;
-            padding: .375rem .5rem;
-            min-width: 2rem;
-            min-height: 2rem;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all .2s;
-        }
-
-        .custom-editor-toolbar button svg {
-            width: 1rem;
-            height: 1rem;
-            display: block;
-        }
-
-        .custom-editor-toolbar button:hover {
-            background-color: var(--c-primary-muted);
-            border-color: var(--c-primary);
-            color: var(--c-primary);
-        }
-
-        .custom-editor-toolbar button[aria-pressed="true"] {
-            background: var(--g-brand);
-            border-color: transparent;
-            color: #fff;
-        }
-
-        .preview-tool-button {
-            margin-left: auto;
-            gap: .35rem;
-            padding: .375rem .75rem;
-        }
-    </style>
+    <th:block th:fragment="head-extra">
+        <link href="https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.css" rel="stylesheet"/>
+        <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+        <script src="/js/dompurify.min.js"></script>
+    </th:block>
 </head>
 <body>
 
-<div th:replace="~{fragments/header :: header(false)}"></div>
+<th:block th:replace="~{fragments/layout :: chrome(false)}"></th:block>
 
-<!-- Floating orbs -->
-<div aria-hidden="true" class="orb-field">
-    <div class="orb orb--primary"></div>
-    <div class="orb orb--secondary"></div>
-</div>
+<main class="paste-shell" id="main-content">
+    <form class="paste-form" id="pasteForm" method="post" th:action="${pasteFormAction}"
+          x-data="{ options: false }">
+        <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden"/>
 
-<main class="flex-1 hero-scene" id="main-content">
-    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
-
-        <!-- Hero -->
-        <div class="text-center mb-8 animate-in">
-            <h1 class="page-title-xl">
-                <span class="gradient-text" th:text="${isEditMode} ? #{page.paste.editTitle} : #{page.paste.newTitle}">New Paste</span>
-            </h1>
+        <!-- Bar: the paste's own name, plus the two controls you always need. -->
+        <div class="paste-bar">
+            <label class="sr-only" for="pasteTitle" th:text="#{page.paste.field.title}">Title</label>
+            <input class="paste-title" id="pasteTitle" maxlength="255" name="title" required
+                   placeholder="Untitled paste" th:placeholder="#{page.paste.title.placeholder}"
+                   th:value="${pasteTitle}" type="text"/>
+            <div class="paste-bar-actions">
+                <button :aria-expanded="options ? 'true' : 'false'" @click="options = !options"
+                        aria-controls="pasteOptions" class="btn btn-ghost btn-sm" type="button">
+                    <svg aria-hidden="true" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8"
+                         viewBox="0 0 24 24">
+                        <path d="M10.343 3.94c.09-.542.56-.94 1.11-.94h1.093c.55 0 1.02.398 1.11.94l.149.894c.07.424.384.764.78.93.398.164.855.142 1.205-.108l.737-.527a1.125 1.125 0 0 1 1.45.12l.773.774c.39.389.44 1.002.12 1.45l-.527.737c-.25.35-.272.806-.107 1.204.165.397.505.71.93.78l.893.15c.543.09.94.559.94 1.109v1.094c0 .55-.397 1.02-.94 1.11l-.893.149c-.425.07-.765.383-.93.78-.165.398-.143.854.107 1.204l.527.738c.32.447.269 1.06-.12 1.45l-.774.773a1.125 1.125 0 0 1-1.449.12l-.738-.527c-.35-.25-.806-.272-1.203-.107-.397.165-.71.505-.781.929l-.149.894c-.09.542-.56.94-1.11.94h-1.094c-.55 0-1.019-.398-1.11-.94l-.148-.894c-.071-.424-.384-.764-.781-.93-.398-.164-.854-.142-1.204.108l-.738.527c-.447.32-1.06.269-1.45-.12l-.773-.774a1.125 1.125 0 0 1-.12-1.45l.527-.737c.25-.35.273-.806.108-1.204-.165-.397-.505-.71-.93-.78l-.894-.15c-.542-.09-.94-.56-.94-1.109v-1.094c0-.55.398-1.02.94-1.11l.894-.149c.424-.07.765-.383.93-.78.165-.398.143-.854-.108-1.204l-.526-.738a1.125 1.125 0 0 1 .12-1.45l.773-.773a1.125 1.125 0 0 1 1.45-.12l.737.527c.35.25.807.272 1.204.107.397-.165.71-.505.78-.929l.15-.894Z"
+                              stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <span th:text="#{page.paste.options}">Options</span>
+                </button>
+                <button class="btn btn-primary btn-sm" id="savePasteButton" th:disabled="${s3Down}"
+                        th:text="${isEditMode} ? #{page.paste.saveChanges} : #{page.paste.save}"
+                        type="submit">Save
+                </button>
+            </div>
         </div>
 
-        <!-- Editor card -->
-        <div class="card-glass card-xl animate-in animate-in-delay-1" style="padding: 2rem">
-            <form class="flex flex-col gap-5" id="pasteForm" method="post" th:action="${pasteFormAction}">
-                <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden"/>
+        <!-- Everything that is not writing lives here, one keystroke away. -->
+        <div class="paste-options" id="pasteOptions" x-cloak x-show="options">
+            <div class="paste-options-grid">
 
-                <div class="alert alert-danger" th:if="${pasteError != null}" th:text="${pasteError}"></div>
-
-                <!-- Title + mode -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div class="form-row">
-                        <label class="form-label" th:text="#{page.paste.field.title}">Title</label>
-                        <input class="form-input" maxlength="255" name="title" placeholder="example-note" required
-                               th:value="${pasteTitle}" type="text"/>
-                    </div>
-                    <div class="form-row">
-                        <label class="form-label" for="syntax" th:text="#{page.paste.field.mode}">Mode</label>
-                        <select class="form-input" id="syntax" name="syntax">
-                            <option th:selected="${pasteSyntax != 'markdown'}" th:text="#{page.paste.mode.text}"
-                                    value="text">Plain Text (.txt)
-                            </option>
-                            <option th:selected="${pasteSyntax == 'markdown'}" th:text="#{page.paste.mode.markdown}"
-                                    value="markdown">Markdown (.md)
-                            </option>
-                        </select>
-                    </div>
+                <div class="form-row">
+                    <label class="form-label" for="syntax" th:text="#{page.paste.field.mode}">Mode</label>
+                    <select class="form-input" id="syntax" name="syntax">
+                        <option th:selected="${pasteSyntax != 'markdown'}" th:text="#{page.paste.mode.text}"
+                                value="text">Plain Text (.txt)
+                        </option>
+                        <option th:selected="${pasteSyntax == 'markdown'}" th:text="#{page.paste.mode.markdown}"
+                                value="markdown">Markdown (.md)
+                        </option>
+                    </select>
                 </div>
 
-                <!-- Editor controls -->
-                <div class="flex flex-wrap items-center gap-4 text-sm p-3 rounded-xl"
-                     style="background: var(--c-surface-raised); border: 1px solid var(--c-border)">
+                <div class="form-row">
+                    <label class="form-label" for="fontSizeSelect" th:text="#{page.paste.fontSize}">Font size</label>
+                    <select class="form-input" id="fontSizeSelect">
+                        <option value="12px">12</option>
+                        <option selected value="14px">14</option>
+                        <option value="16px">16</option>
+                        <option value="18px">18</option>
+                    </select>
+                </div>
+
+                <div class="form-row">
+                    <span class="form-label" th:text="#{page.paste.editorSettings}">Editor</span>
                     <label class="form-check">
                         <input id="lineNumbersToggle" type="checkbox"/>
                         <span th:text="#{page.paste.lineNumbers}">Line numbers</span>
@@ -242,174 +77,68 @@
                         <input checked id="wordWrapToggle" type="checkbox"/>
                         <span th:text="#{page.paste.wordWrap}">Word wrap</span>
                     </label>
-                    <div class="flex items-center gap-2">
-                        <span class="text-sm" th:text="#{page.paste.fontSize}">Font size</span>
-                        <select class="form-input" id="fontSizeSelect" style="width:auto;padding:.25rem .5rem">
-                            <option value="12px">12</option>
-                            <option selected value="14px">14</option>
-                            <option value="16px">16</option>
-                            <option value="18px">18</option>
-                        </select>
-                    </div>
                 </div>
 
-                <!-- Editor -->
-                <div class="editor-wrapper">
-                    <div class="custom-editor-toolbar" id="customEditorToolbar">
-                        <button aria-label="Bold" data-action="bold" title="Bold" type="button">
-                            <svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
-                                 stroke-width="2" viewBox="0 0 24 24">
-                                <path d="M6 4h7a4 4 0 1 1 0 8H6z"/>
-                                <path d="M6 12h8a4 4 0 1 1 0 8H6z"/>
-                            </svg>
-                        </button>
-                        <button aria-label="Italic" data-action="italic" title="Italic" type="button">
-                            <svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
-                                 stroke-width="2" viewBox="0 0 24 24">
-                                <line x1="19" x2="10" y1="4" y2="4"/>
-                                <line x1="14" x2="5" y1="20" y2="20"/>
-                                <line x1="15" x2="9" y1="4" y2="20"/>
-                            </svg>
-                        </button>
-                        <button aria-label="Heading" data-action="heading" title="Heading" type="button">
-                            <svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
-                                 stroke-width="2" viewBox="0 0 24 24">
-                                <path d="M5 4v16"/>
-                                <path d="M19 4v16"/>
-                                <path d="M5 12h14"/>
-                            </svg>
-                        </button>
-                        <button aria-label="Quote" data-action="quote" title="Quote" type="button">
-                            <svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
-                                 stroke-width="2" viewBox="0 0 24 24">
-                                <path d="M8 17H5a2 2 0 0 1-2-2v-3a6 6 0 0 1 6-6h1"/>
-                                <path d="M19 17h-3a2 2 0 0 1-2-2v-3a6 6 0 0 1 6-6h1"/>
-                            </svg>
-                        </button>
-                        <button aria-label="Bulleted list" data-action="unordered-list" title="Bulleted list"
-                                type="button">
-                            <svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
-                                 stroke-width="2" viewBox="0 0 24 24">
-                                <line x1="9" x2="20" y1="6" y2="6"/>
-                                <line x1="9" x2="20" y1="12" y2="12"/>
-                                <line x1="9" x2="20" y1="18" y2="18"/>
-                                <circle cx="4" cy="6" r="1"/>
-                                <circle cx="4" cy="12" r="1"/>
-                                <circle cx="4" cy="18" r="1"/>
-                            </svg>
-                        </button>
-                        <button aria-label="Numbered list" data-action="ordered-list" title="Numbered list"
-                                type="button">
-                            <svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
-                                 stroke-width="2" viewBox="0 0 24 24">
-                                <line x1="9" x2="20" y1="6" y2="6"/>
-                                <line x1="9" x2="20" y1="12" y2="12"/>
-                                <line x1="9" x2="20" y1="18" y2="18"/>
-                                <path d="M4 7V5l-1 1"/>
-                                <path d="M3 11h2l-2 3h2"/>
-                                <path d="M3 17c0-.7.5-1.2 1.2-1.2H5v2.4"/>
-                            </svg>
-                        </button>
-                        <button aria-label="Insert link" data-action="link" title="Insert link" type="button">
-                            <svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
-                                 stroke-width="2" viewBox="0 0 24 24">
-                                <path d="M10 13a5 5 0 0 1 0-7l1.5-1.5a5 5 0 0 1 7 7L17 13"/>
-                                <path d="M14 11a5 5 0 0 1 0 7L12.5 19.5a5 5 0 0 1-7-7L7 11"/>
-                            </svg>
-                        </button>
-                        <button aria-label="Insert image" data-action="image" title="Insert image" type="button">
-                            <svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
-                                 stroke-width="2" viewBox="0 0 24 24">
-                                <rect height="16" rx="2" width="18" x="3" y="4"/>
-                                <circle cx="8.5" cy="9" r="1.5"/>
-                                <path d="M21 16l-4.5-4.5L7 21"/>
-                            </svg>
-                        </button>
-                        <button aria-label="Insert table" data-action="table" title="Insert table" type="button">
-                            <svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
-                                 stroke-width="2" viewBox="0 0 24 24">
-                                <rect height="16" rx="2" width="18" x="3" y="4"/>
-                                <path d="M3 10h18"/>
-                                <path d="M9 4v16"/>
-                                <path d="M15 4v16"/>
-                            </svg>
-                        </button>
-                        <button aria-label="Code block" data-action="code" title="Code block" type="button">
-                            <svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
-                                 stroke-width="2" viewBox="0 0 24 24">
-                                <polyline points="8 6 2 12 8 18"/>
-                                <polyline points="16 6 22 12 16 18"/>
-                            </svg>
-                        </button>
-                        <button aria-label="Horizontal rule" data-action="hr" title="Horizontal rule" type="button">
-                            <svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
-                                 stroke-width="2" viewBox="0 0 24 24">
-                                <line x1="3" x2="21" y1="12" y2="12"/>
-                            </svg>
-                        </button>
-                        <button aria-label="Preview" aria-pressed="false" class="preview-tool-button"
-                                data-action="preview"
-                                id="previewToolButton" title="Preview" type="button">
-                            <svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
-                                 stroke-width="2" viewBox="0 0 24 24">
-                                <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/>
-                                <circle cx="12" cy="12" r="3"/>
-                            </svg>
-                            <span th:text="#{page.paste.preview}">Preview</span>
-                        </button>
+                    <!-- Password: settable on create; on edit, a non-blank value changes it but a
+                         blank field leaves the CURRENT password state untouched (a password field
+                         can never be pre-filled with the real value, so "blank = remove" would
+                         silently strip protection any time someone edits content without retyping
+                         the password -- see PasteService#updatePaste). The editOnly *scope* is
+                         fixed at creation and not editable here, so that sub-section stays
+                         create-only. -->
+                    <div class="form-row" id="passwordSection" th:if="${uploadPasswordEnabled}">
+                        <label class="form-label" for="password" th:text="#{page.paste.password.label}">Password
+                            (optional)</label>
+                        <input class="form-input" id="password" name="password"
+                               placeholder="Set password to protect this paste"
+                               th:placeholder="${isEditMode} ? #{page.paste.password.placeholder.edit} : #{page.paste.password.placeholder}"
+                               type="password"/>
+                        <p class="form-hint"
+                           th:text="${isEditMode} ? #{page.paste.password.help.edit} : #{page.paste.password.help}">Leave
+                            empty to remove password protection.</p>
+
+                        <!-- Password scope: shown only when password field has text (create mode only) -->
+                        <div class="flex flex-col gap-2 mt-3 p-3 rounded-xl" id="editOnlySection"
+                             th:if="${!isEditMode}"
+                             style="background:var(--c-surface-raised);border:1px solid var(--c-border);display:none">
+                            <p class="text-sm font-semibold" th:text="#{page.paste.field.editOnly}">Password scope</p>
+                            <label class="form-check">
+                                <input checked id="editOnly_viewAndEdit" name="editOnly" type="radio" value="false"/>
+                                <span class="text-sm" th:text="#{page.paste.editOnly.viewAndEdit}">Password required for viewing and editing</span>
+                            </label>
+                            <label class="form-check">
+                                <input id="editOnly_editOnly" name="editOnly" type="radio" value="true"/>
+                                <span class="text-sm" th:text="#{page.paste.editOnly.editOnly}">Password required for editing only (content is publicly visible)</span>
+                            </label>
+                        </div>
                     </div>
-                    <textarea id="content" name="content" placeholder="Write your text here…"
-                              th:placeholder="#{page.paste.content.placeholder}" th:text="${pasteContent}"></textarea>
-                    <div class="manual-preview-pane markdown-content" id="manualPreviewPane"></div>
-                </div>
 
-                <!-- Password: settable on create; on edit, a non-blank value changes it but a
-                     blank field leaves the CURRENT password state untouched (a password field
-                     can never be pre-filled with the real value, so "blank = remove" would
-                     silently strip protection any time someone edits content without retyping
-                     the password -- see PasteService#updatePaste). The editOnly *scope* is
-                     fixed at creation and not editable here, so that sub-section stays
-                     create-only. -->
-                <div class="form-row" id="passwordSection" th:if="${uploadPasswordEnabled}">
-                    <label class="form-label" for="password" th:text="#{page.paste.password.label}">Password
-                        (optional)</label>
-                    <input class="form-input" id="password" name="password"
-                           placeholder="Set password to protect this paste"
-                           th:placeholder="${isEditMode} ? #{page.paste.password.placeholder.edit} : #{page.paste.password.placeholder}"
-                           type="password"/>
-                    <p class="form-hint"
-                       th:text="${isEditMode} ? #{page.paste.password.help.edit} : #{page.paste.password.help}">Leave
-                        empty to remove password protection.</p>
-
-                    <!-- Password scope: shown only when password field has text (create mode only) -->
-                    <div class="flex flex-col gap-2 mt-3 p-3 rounded-xl" id="editOnlySection"
-                         th:if="${!isEditMode}"
-                         style="background:var(--c-surface-raised);border:1px solid var(--c-border);display:none">
-                        <p class="text-sm font-semibold" th:text="#{page.paste.field.editOnly}">Password scope</p>
-                        <label class="form-check">
-                            <input checked id="editOnly_viewAndEdit" name="editOnly" type="radio" value="false"/>
-                            <span class="text-sm" th:text="#{page.paste.editOnly.viewAndEdit}">Password required for viewing and editing</span>
+                    <!-- Immutable toggle -->
+                    <div class="flex items-center gap-3 p-3 rounded-xl"
+                         style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
+                        <label class="toggle-switch">
+                            <input class="sr-only" id="immutableToggle" name="immutable"
+                                   th:checked="${isImmutable}" type="checkbox" value="true"/>
+                            <span class="toggle-track"><span class="toggle-thumb"></span></span>
                         </label>
-                        <label class="form-check">
-                            <input id="editOnly_editOnly" name="editOnly" type="radio" value="true"/>
-                            <span class="text-sm" th:text="#{page.paste.editOnly.editOnly}">Password required for editing only (content is publicly visible)</span>
-                        </label>
+                        <div>
+                            <p class="text-sm font-semibold" th:text="#{page.paste.field.immutable}">Lock paste (immutable)</p>
+                            <p class="text-xs" style="color:var(--c-text-muted)" th:text="#{page.paste.field.immutable.help}">Once saved, the paste content can no longer be edited.</p>
+                        </div>
                     </div>
-                </div>
 
-                <!-- Immutable toggle -->
-                <div class="flex items-center gap-3 p-3 rounded-xl"
-                     style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
-                    <label class="toggle-switch">
-                        <input class="sr-only" id="immutableToggle" name="immutable"
-                               th:checked="${isImmutable}" type="checkbox" value="true"/>
-                        <span class="toggle-track"><span class="toggle-thumb"></span></span>
+                    <div class="form-row" th:if="${canUseKeepIndefinitely}">
+                    <span class="form-label" th:text="#{form.keepIndefinitely}">Keep indefinitely</span>
+                    <label class="toggle">
+                        <input name="keepIndefinitely" th:checked="${keepIndefinitely}" type="checkbox" value="true"/>
+                        <span class="toggle-slider"></span>
                     </label>
-                    <div>
-                        <p class="text-sm font-semibold" th:text="#{page.paste.field.immutable}">Lock paste (immutable)</p>
-                        <p class="text-xs" style="color:var(--c-text-muted)" th:text="#{page.paste.field.immutable.help}">Once saved, the paste content can no longer be edited.</p>
-                    </div>
                 </div>
+            </div>
+        </div>
+
+        <div class="alert alert-danger paste-flash" th:if="${pasteError != null}" th:text="${pasteError}"></div>
+
 
                 <!-- Storage down banner -->
                 <div class="alert alert-danger flex items-center gap-3" role="alert" th:if="${s3Down}">
@@ -418,26 +147,119 @@
                         <path d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z"
                               stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
-                    <span>Pastes are temporarily unavailable due to a service configuration issue. Please try again later.</span>
-                </div>
+                    <span th:text="#{alert.pastesUnavailable}">Pastes are temporarily unavailable.</span>
+        </div>
 
-                <!-- Save row: toggle left, button right -->
-                <div class="flex items-center gap-4 pt-2">
-                    <label class="toggle-switch" th:if="${canUseKeepIndefinitely}">
-                        <input class="sr-only" name="keepIndefinitely" th:checked="${keepIndefinitely}" type="checkbox"
-                               value="true"/>
-                        <span class="toggle-track"><span class="toggle-thumb"></span></span>
-                        <span class="text-sm" th:text="#{form.keepIndefinitely}">Keep indefinitely</span>
-                    </label>
-                    <button class="btn btn-gradient btn-lg ml-auto" id="savePasteButton"
-                            th:disabled="${s3Down}"
-                            th:text="${isEditMode} ? #{page.paste.saveChanges} : #{page.paste.save}"
-                            type="submit">Save Paste
+        <!-- Editor fills whatever is left. -->
+        <div class="editor-wrapper paste-editor">
+                <div class="custom-editor-toolbar" id="customEditorToolbar">
+                    <button aria-label="Bold" data-action="bold" title="Bold" type="button">
+                        <svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                             stroke-width="2" viewBox="0 0 24 24">
+                            <path d="M6 4h7a4 4 0 1 1 0 8H6z"/>
+                            <path d="M6 12h8a4 4 0 1 1 0 8H6z"/>
+                        </svg>
+                    </button>
+                    <button aria-label="Italic" data-action="italic" title="Italic" type="button">
+                        <svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                             stroke-width="2" viewBox="0 0 24 24">
+                            <line x1="19" x2="10" y1="4" y2="4"/>
+                            <line x1="14" x2="5" y1="20" y2="20"/>
+                            <line x1="15" x2="9" y1="4" y2="20"/>
+                        </svg>
+                    </button>
+                    <button aria-label="Heading" data-action="heading" title="Heading" type="button">
+                        <svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                             stroke-width="2" viewBox="0 0 24 24">
+                            <path d="M5 4v16"/>
+                            <path d="M19 4v16"/>
+                            <path d="M5 12h14"/>
+                        </svg>
+                    </button>
+                    <button aria-label="Quote" data-action="quote" title="Quote" type="button">
+                        <svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                             stroke-width="2" viewBox="0 0 24 24">
+                            <path d="M8 17H5a2 2 0 0 1-2-2v-3a6 6 0 0 1 6-6h1"/>
+                            <path d="M19 17h-3a2 2 0 0 1-2-2v-3a6 6 0 0 1 6-6h1"/>
+                        </svg>
+                    </button>
+                    <button aria-label="Bulleted list" data-action="unordered-list" title="Bulleted list"
+                            type="button">
+                        <svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                             stroke-width="2" viewBox="0 0 24 24">
+                            <line x1="9" x2="20" y1="6" y2="6"/>
+                            <line x1="9" x2="20" y1="12" y2="12"/>
+                            <line x1="9" x2="20" y1="18" y2="18"/>
+                            <circle cx="4" cy="6" r="1"/>
+                            <circle cx="4" cy="12" r="1"/>
+                            <circle cx="4" cy="18" r="1"/>
+                        </svg>
+                    </button>
+                    <button aria-label="Numbered list" data-action="ordered-list" title="Numbered list"
+                            type="button">
+                        <svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                             stroke-width="2" viewBox="0 0 24 24">
+                            <line x1="9" x2="20" y1="6" y2="6"/>
+                            <line x1="9" x2="20" y1="12" y2="12"/>
+                            <line x1="9" x2="20" y1="18" y2="18"/>
+                            <path d="M4 7V5l-1 1"/>
+                            <path d="M3 11h2l-2 3h2"/>
+                            <path d="M3 17c0-.7.5-1.2 1.2-1.2H5v2.4"/>
+                        </svg>
+                    </button>
+                    <button aria-label="Insert link" data-action="link" title="Insert link" type="button">
+                        <svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                             stroke-width="2" viewBox="0 0 24 24">
+                            <path d="M10 13a5 5 0 0 1 0-7l1.5-1.5a5 5 0 0 1 7 7L17 13"/>
+                            <path d="M14 11a5 5 0 0 1 0 7L12.5 19.5a5 5 0 0 1-7-7L7 11"/>
+                        </svg>
+                    </button>
+                    <button aria-label="Insert image" data-action="image" title="Insert image" type="button">
+                        <svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                             stroke-width="2" viewBox="0 0 24 24">
+                            <rect height="16" rx="2" width="18" x="3" y="4"/>
+                            <circle cx="8.5" cy="9" r="1.5"/>
+                            <path d="M21 16l-4.5-4.5L7 21"/>
+                        </svg>
+                    </button>
+                    <button aria-label="Insert table" data-action="table" title="Insert table" type="button">
+                        <svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                             stroke-width="2" viewBox="0 0 24 24">
+                            <rect height="16" rx="2" width="18" x="3" y="4"/>
+                            <path d="M3 10h18"/>
+                            <path d="M9 4v16"/>
+                            <path d="M15 4v16"/>
+                        </svg>
+                    </button>
+                    <button aria-label="Code block" data-action="code" title="Code block" type="button">
+                        <svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                             stroke-width="2" viewBox="0 0 24 24">
+                            <polyline points="8 6 2 12 8 18"/>
+                            <polyline points="16 6 22 12 16 18"/>
+                        </svg>
+                    </button>
+                    <button aria-label="Horizontal rule" data-action="hr" title="Horizontal rule" type="button">
+                        <svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                             stroke-width="2" viewBox="0 0 24 24">
+                            <line x1="3" x2="21" y1="12" y2="12"/>
+                        </svg>
+                    </button>
+                    <button aria-label="Preview" aria-pressed="false" class="preview-tool-button"
+                            data-action="preview"
+                            id="previewToolButton" title="Preview" type="button">
+                        <svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                             stroke-width="2" viewBox="0 0 24 24">
+                            <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/>
+                            <circle cx="12" cy="12" r="3"/>
+                        </svg>
+                        <span th:text="#{page.paste.preview}">Preview</span>
                     </button>
                 </div>
-            </form>
+                <textarea id="content" name="content" placeholder="Write your text here…"
+                          th:placeholder="#{page.paste.content.placeholder}" th:text="${pasteContent}"></textarea>
+                <div class="manual-preview-pane markdown-content" id="manualPreviewPane"></div>
         </div>
-    </div>
+    </form>
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.js"></script>
@@ -562,7 +384,7 @@
         textarea.value = editor.value();
         if (!val) {
             e.preventDefault();
-            alert(emptyPasteMessage);
+            window.notify(emptyPasteMessage);
             editor.codemirror.focus();
             return;
         }
@@ -587,6 +409,6 @@
         syncEditOnlyVisibility();
     }
 </script>
-<script src="/js/locale-switcher.js"></script>
+<th:block th:replace="~{fragments/layout :: pageScripts}"></th:block>
 </body>
 </html>

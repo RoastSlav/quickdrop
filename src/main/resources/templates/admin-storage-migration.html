@@ -1,48 +1,28 @@
 <!DOCTYPE html>
 <html lang="en" th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8"/>
+<head th:replace="~{fragments/layout :: head(~{::title}, ~{})}">
     <title th:text="${appName} + ' — ' + #{page.migration.title}">Storage Migration</title>
-    <meta content="width=device-width, initial-scale=1" name="viewport"/>
-    <th:block th:replace="~{fragments/header :: themePreload}"></th:block>
-    <link href="https://fonts.googleapis.com" rel="preconnect"/>
-    <link crossorigin href="https://fonts.gstatic.com" rel="preconnect"/>
-    <link href="/css/tailwind.css" rel="stylesheet"/>
-    <link href="/css/custom.css" rel="stylesheet"/>
-    <link href="/images/favicon.png" rel="icon" th:href="${appLogoPath}" type="image/png"/>
-    <script src="/js/tailwindTheme.js"></script>
-    <th:block th:replace="~{fragments/header :: scripts}"></th:block>
 </head>
 <body>
 
-<div th:replace="~{fragments/header :: header(false)}"></div>
-
-<div aria-hidden="true" class="orb-field">
-    <div class="orb orb--primary"></div>
-    <div class="orb orb--secondary"></div>
-    <div class="orb orb--teal"></div>
-</div>
+<th:block th:replace="~{fragments/layout :: chrome(true)}"></th:block>
 
 <main class="flex-1 hero-scene" id="main-content">
-    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
+    <div class="page-wrap page-wrap-medium">
 
-        <!-- Back -->
-        <div class="mb-6 animate-in">
-            <a class="btn btn-ghost btn-sm inline-flex items-center gap-1.5" href="/admin/dashboard">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-                <span th:text="#{nav.admin}">Admin</span>
-            </a>
-        </div>
-
-        <!-- Title -->
-        <div class="mb-8 animate-in">
-            <h1 class="page-title-xl">
-                <span class="gradient-text" th:text="#{page.migration.title}">Storage Migration</span>
-            </h1>
-            <p class="text-muted mt-2" th:text="#{page.migration.subtitle}">Copy all files between any two storage
-                backends.</p>
+        <div class="page-header page-header--bar animate-in">
+            <div class="page-header-main">
+                <a class="page-header-back" href="/admin/dashboard">
+                    <svg aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                        <path d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <span th:text="#{nav.admin}">Back</span>
+                </a>
+                <h1 class="page-header-title">
+                    <span class="gradient-text" th:text="#{page.migration.title}">Title</span>
+                </h1>
+                <p class="page-header-sub" th:text="#{page.migration.subtitle}">Subtitle</p>
+            </div>
         </div>
 
         <!-- Backend overview card — one column per backend -->
@@ -139,7 +119,7 @@
 
             </div>
 
-            <p class="text-xs mt-3" id="testRequiredHint" style="color:var(--c-amber)"
+            <p class="text-xs mt-3" id="testRequiredHint" style="color:var(--c-warning-text)"
                th:if="${state.status.name() != 'RUNNING'}"
                th:text="#{page.migration.testHint}">Test source and destination before starting.</p>
         </div>
@@ -230,21 +210,6 @@
                           th:unless="${state.status.name() == 'RUNNING'}">Start Migration</span>
                 </button>
 
-                <!-- Confirmation step — shown after preflight -->
-                <div class="hidden mt-4 p-4 rounded-xl" id="confirmPanel"
-                     style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
-                    <p class="text-sm font-semibold mb-1" id="confirmSummary"></p>
-                    <p class="text-xs text-muted mb-3" th:text="#{page.migration.confirm.sourceNote}">The source will
-                        not be deleted.</p>
-                    <div class="flex gap-2">
-                        <button class="btn btn-gradient btn-sm" onclick="submitMigration()" th:text="#{page.migration.confirm.start}"
-                                type="button">Confirm — Start
-                        </button>
-                        <button class="btn btn-ghost btn-sm" onclick="cancelConfirm()" th:text="#{page.migration.confirm.cancel}"
-                                type="button">Cancel
-                        </button>
-                    </div>
-                </div>
             </form>
 
             <p class="text-xs text-muted mt-4" th:text="#{page.migration.start.footer}">
@@ -326,7 +291,9 @@
         notConfigured:   /*[[#{page.migration.test.notConfigured}]]*/ 'Configure in Settings first',
         confirmMsg:      /*[[#{page.migration.confirm.message}]]*/ 'Copy {0} file(s) from {1}.',
         notCfgAlert:     /*[[#{page.migration.notConfiguredAlert}]]*/ 'One or more backends are not configured.',
-        fallbackConfirm: /*[[#{page.migration.confirm.fallback}]]*/ 'Start migration {0}? The source will not be deleted. Proceed?'
+        fallbackConfirm: /*[[#{page.migration.confirm.fallback}]]*/ 'Start migration {0}? The source will not be deleted. Proceed?',
+        sourceNote:      /*[[#{page.migration.confirm.sourceNote}]]*/ 'The source will not be deleted.',
+        confirmStart:    /*[[#{page.migration.confirm.start}]]*/ 'Confirm — Start'
     };
 
     // Map backend key → result element id
@@ -429,35 +396,33 @@
         const dest = document.getElementById('destSelect').value;
 
         if (backendConfigured[source] === false || backendConfigured[dest] === false) {
-            alert(i18n.notCfgAlert);
+            window.notify(i18n.notCfgAlert, 'warning');
             return;
         }
 
         const label = source + ' → ' + dest;
+
+        // Preflight only supplies the file count for the prompt; if it fails we still
+        // offer the same dialog, just without a count.
         fetch('/admin/api/migration-preflight')
             .then(r => r.json())
-            .then(data => {
-                const summary = document.getElementById('confirmSummary');
-                const count = data.count != null ? data.count : '?';
-                summary.textContent = i18n.confirmMsg.replace('{0}', count).replace('{1}', label);
-                document.getElementById('confirmPanel').classList.remove('hidden');
-                document.getElementById('startBtn').disabled = true;
-            })
-            .catch(() => {
-                const ok = window.confirm(i18n.fallbackConfirm.replace('{0}', label));
-                if (ok) document.getElementById('migrationForm').submit();
-            });
+            .then(data => confirmStart(label, data.count != null ? data.count : '?'))
+            .catch(() => confirmStart(label, null));
     }
 
-    function submitMigration() {
-        document.getElementById('migrationForm').submit();
-    }
-
-    function cancelConfirm() {
-        document.getElementById('confirmPanel').classList.add('hidden');
-        updateStartBtn();
+    function confirmStart(label, count) {
+        window.confirmAction({
+            title: i18n.confirmStart,
+            body: count === null
+                ? i18n.fallbackConfirm.replace('{0}', label)
+                : [i18n.confirmMsg.replace('{0}', count).replace('{1}', label), i18n.sourceNote],
+            confirmLabel: i18n.confirmStart,
+            tone: 'warning'
+        }).then(function (ok) {
+            if (ok) document.getElementById('migrationForm').submit();
+        });
     }
 </script>
-<script src="/js/locale-switcher.js"></script>
+<th:block th:replace="~{fragments/layout :: pageScripts}"></th:block>
 </body>
 </html>

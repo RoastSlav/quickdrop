@@ -61,6 +61,19 @@ public interface UploadRepository extends JpaRepository<Upload, Long> {
     List<Upload> getUploadsForDeletion(@Param("thresholdDate") LocalDate thresholdDate);
 
     /**
+     * Counts uploads that will be auto-deleted on or before {@code thresholdDate}.
+     *
+     * <p>Same predicate as {@link #getUploadsForDeletion(LocalDate)} but returns only the
+     * count, so the admin dashboard can surface "expiring soon" without loading every
+     * matching entity.
+     *
+     * @param thresholdDate uploads older than this date are counted
+     * @return number of uploads due for deletion before the given date
+     */
+    @Query("SELECT COUNT(u) FROM Upload u WHERE u.keepIndefinitely = false AND u.deleted = false AND u.uploadDate < :thresholdDate")
+    long countUploadsExpiringBefore(@Param("thresholdDate") LocalDate thresholdDate);
+
+    /**
      * Returns only the UUID strings of all non-deleted uploads.
      *
      * <p>Use this instead of {@link #findAll()} when only the UUID is needed (e.g. storage

@@ -16,6 +16,7 @@ import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.rostislav.quickdrop.entity.ApplicationSettingsEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.support.CronExpression;
 import org.springframework.stereotype.Controller;
@@ -28,7 +29,12 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.util.List;
 import java.nio.file.Path;
+
+import static org.rostislav.quickdrop.util.FileUtils.formatFileSize;
 
 /**
  * Admin UI for database backups: schedule overview, on-demand backup, and per-backup
@@ -51,6 +57,7 @@ import java.nio.file.Path;
 @RequestMapping("/admin/backups")
 public class BackupController {
     private static final Logger logger = LoggerFactory.getLogger(BackupController.class);
+
 
     /** Gives the browser time to receive the restore-success response before the process exits. */
     private static final long RESTART_DELAY_MILLIS = 2000;
@@ -76,9 +83,37 @@ public class BackupController {
         if (!sessionService.hasValidAdminSession(request)) {
             return "redirect:/admin";
         }
-        model.addAttribute("backups", backupService.listBackups());
-        model.addAttribute("settings", applicationSettingsService.getApplicationSettings());
+        List<BackupService.BackupInfo> backups = backupService.listBackups();
+        ApplicationSettingsEntity settings = applicationSettingsService.getApplicationSettings();
+        model.addAttribute("backups", backups);
+        model.addAttribute("settings", settings);
+
+        // Lead with what an admin actually needs to know: how much is stored, how old the
+        // newest one is, and when the next automatic run happens.
+        model.addAttribute("backupTotalSize",
+                formatFileSize(backups.stream().mapToLong(BackupService.BackupInfo::sizeBytes).sum()));
+        model.addAttribute("newestBackupAt",
+                backups.stream().map(BackupService.BackupInfo::createdAt).max(Instant::compareTo).orElse(null));
+        model.addAttribute("nextScheduledRun", nextScheduledRun(settings));
         return "admin-backups";
+    }
+
+    /**
+     * Next automatic backup time, or {@code null} when the schedule is off or the cron
+     * expression will not fire again. Rendered as plain text on the page.
+     */
+    private LocalDateTime nextScheduledRun(ApplicationSettingsEntity settings) {
+        if (settings == null || !settings.isBackupScheduleEnabled()) {
+            return null;
+        }
+        try {
+            CronExpression cron = CronExpression.parse(settings.getBackupCron());
+            return cron.next(LocalDateTime.now());
+        } catch (IllegalArgumentException e) {
+            // An invalid cron is surfaced by the schedule form's own validation; the summary
+            // simply shows nothing rather than blowing up the whole page.
+            return null;
+        }
     }
 
     @PostMapping("/schedule")
@@ -103,7 +138,7 @@ public class BackupController {
         vm.setBackupCron(backupCron);
         vm.setMaxBackups(maxBackups);
         applicationSettingsService.updateApplicationSettings(vm, null, null, false);
-        RequesterInfo info = FileUtils.getRequesterInfo(request);
+        RequesterInfo info = FileUtils.getRequesterInfo(request, applicationSettingsService.isTrustedProxyEnabled());
         analyticsService.logEvent(EventType.ADMIN_SETTINGS_CHANGE, info.ipAddress(), info.userAgent());
         redirectAttributes.addFlashAttribute("scheduleSuccess", true);
         return "redirect:/admin/backups";
@@ -114,7 +149,7 @@ public class BackupController {
         if (!sessionService.hasValidAdminSession(request)) {
             return "redirect:/admin";
         }
-        RequesterInfo info = FileUtils.getRequesterInfo(request);
+        RequesterInfo info = FileUtils.getRequesterInfo(request, applicationSettingsService.isTrustedProxyEnabled());
         BackupService.BackupResult result = backupService.createBackup();
         if (result.success()) {
             analyticsService.logEvent(EventType.BACKUP_CREATED, info.ipAddress(), info.userAgent());
@@ -132,7 +167,7 @@ public class BackupController {
         if (!sessionService.hasValidAdminSession(request)) {
             return "redirect:/admin";
         }
-        RequesterInfo info = FileUtils.getRequesterInfo(request);
+        RequesterInfo info = FileUtils.getRequesterInfo(request, applicationSettingsService.isTrustedProxyEnabled());
         BackupService.BackupResult result = backupService.uploadBackup(file);
         if (result.success()) {
             analyticsService.logEvent(EventType.BACKUP_UPLOADED, info.ipAddress(), info.userAgent());
@@ -151,7 +186,7 @@ public class BackupController {
         if (!sessionService.hasValidAdminSession(request)) {
             return "redirect:/admin";
         }
-        RequesterInfo info = FileUtils.getRequesterInfo(request);
+        RequesterInfo info = FileUtils.getRequesterInfo(request, applicationSettingsService.isTrustedProxyEnabled());
         BackupService.BackupResult result = backupService.restoreBackup(filename);
         if (result.success()) {
             analyticsService.logEvent(EventType.BACKUP_RESTORED, info.ipAddress(), info.userAgent());

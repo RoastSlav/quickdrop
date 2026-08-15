@@ -182,7 +182,7 @@ public class PasteService {
         String fileName = sanitizePasteFileName(title, syntax);
         byte[] contentBytes = (content == null ? "" : content).getBytes(StandardCharsets.UTF_8);
         validatePasteSize(contentBytes);
-        RequesterInfo requesterInfo = getRequesterInfo(request);
+        RequesterInfo requesterInfo = getRequesterInfo(request, applicationSettingsService.isTrustedProxyEnabled());
 
         UploadRequest uploadRequest = new UploadRequest(
                 null,
@@ -322,7 +322,7 @@ public class PasteService {
 
         pasteRepository.save(paste);
 
-        RequesterInfo info = getRequesterInfo(request);
+        RequesterInfo info = getRequesterInfo(request, applicationSettingsService.isTrustedProxyEnabled());
         activityLogRepository.save(new ActivityLog(paste, EventType.PASTE_EDIT, info.ipAddress(), info.userAgent()));
         return paste;
     }
@@ -368,7 +368,7 @@ public class PasteService {
     public void logPasteView(String uuid, HttpServletRequest request) {
         Paste paste = pasteRepository.findByUUID(uuid).orElse(null);
         if (paste == null) return;
-        RequesterInfo info = getRequesterInfo(request);
+        RequesterInfo info = getRequesterInfo(request, applicationSettingsService.isTrustedProxyEnabled());
         activityLogRepository.save(new ActivityLog(paste, EventType.PASTE_VIEW, info.ipAddress(), info.userAgent()));
     }
 

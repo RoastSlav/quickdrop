@@ -38,6 +38,14 @@ public class ActivityLog {
     private Upload file;
 
     /**
+     * The short link (redirect or upload-share) this event is associated with, or
+     * {@code null} for events not tied to a short link.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "short_link_id", nullable = true)
+    private ShortLink shortLink;
+
+    /**
      * Category of the event.
      */
     @Enumerated(EnumType.STRING)
@@ -99,6 +107,22 @@ public class ActivityLog {
         this.eventDate = LocalDateTime.now();
     }
 
+    /**
+     * Convenience constructor for {@link EventCategory#SHORTLINK} events.
+     *
+     * @param shortLink the short link (redirect or upload-share) the event occurred on
+     * @param eventType category of the event
+     * @param ipAddress requester IP address, or {@code null} for system-triggered events
+     * @param userAgent requester User-Agent header value, or {@code null} for system-triggered events
+     */
+    public ActivityLog(ShortLink shortLink, EventType eventType, String ipAddress, String userAgent) {
+        this.shortLink = shortLink;
+        this.eventType = eventType;
+        this.ipAddress = ipAddress;
+        this.userAgent = userAgent;
+        this.eventDate = LocalDateTime.now();
+    }
+
     public Long getId() {
         return id;
     }
@@ -109,6 +133,14 @@ public class ActivityLog {
 
     public void setFile(Upload file) {
         this.file = file;
+    }
+
+    public ShortLink getShortLink() {
+        return shortLink;
+    }
+
+    public void setShortLink(ShortLink shortLink) {
+        this.shortLink = shortLink;
     }
 
     public EventType getEventType() {

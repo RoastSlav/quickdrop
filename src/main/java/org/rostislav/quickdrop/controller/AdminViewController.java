@@ -47,6 +47,12 @@ import static org.rostislav.quickdrop.util.FileUtils.*;
 @Controller
 @RequestMapping("/admin")
 public class AdminViewController {
+
+    /** How far ahead the dashboard warns about files due for auto-deletion. */
+    private static final int EXPIRING_SOON_WINDOW_DAYS = 7;
+
+    /** Number of activity-log entries shown in the dashboard feed. */
+    private static final int RECENT_ACTIVITY_LIMIT = 6;
     private static final Logger logger = LoggerFactory.getLogger(AdminViewController.class);
     private final ApplicationSettingsService applicationSettingsService;
     private final AnalyticsService analyticsService;
@@ -56,6 +62,7 @@ public class AdminViewController {
     private final SessionService sessionService;
     private final SystemInfoService systemInfoService;
     private final NotificationService notificationService;
+    private final ShortLinkService shortLinkService;
 
     public AdminViewController(ApplicationSettingsService applicationSettingsService,
                                AnalyticsService analyticsService,
@@ -64,7 +71,8 @@ public class AdminViewController {
                                PasteService pasteService,
                                SessionService sessionService,
                                SystemInfoService systemInfoService,
-                               NotificationService notificationService) {
+                               NotificationService notificationService,
+                               ShortLinkService shortLinkService) {
         this.applicationSettingsService = applicationSettingsService;
         this.analyticsService = analyticsService;
         this.fileQueryService = fileQueryService;
@@ -73,12 +81,18 @@ public class AdminViewController {
         this.sessionService = sessionService;
         this.systemInfoService = systemInfoService;
         this.notificationService = notificationService;
+        this.shortLinkService = shortLinkService;
     }
 
     @GetMapping("/dashboard")
     public String getDashboardPage(Model model) {
         AnalyticsDataView analytics = analyticsService.getAnalytics();
         model.addAttribute("analytics", analytics);
+        // Signal, not just counters: what is about to happen, and what just happened.
+        model.addAttribute("expiringSoonCount", fileQueryService.countFilesExpiringWithin(
+                applicationSettingsService.getMaxFileLifeTime(), EXPIRING_SOON_WINDOW_DAYS));
+        model.addAttribute("expiringSoonDays", EXPIRING_SOON_WINDOW_DAYS);
+        model.addAttribute("recentActivity", analyticsService.getRecentActivity(RECENT_ACTIVITY_LIMIT));
         model.addAttribute("isAdminDashboardPage", true);
         return "dashboard";
     }
@@ -208,7 +222,7 @@ public class AdminViewController {
         if (adminPassword != null && !adminPassword.isBlank()) {
             applicationSettingsService.setAdminPassword(adminPassword);
         }
-        RequesterInfo info = FileUtils.getRequesterInfo(request);
+        RequesterInfo info = FileUtils.getRequesterInfo(request, applicationSettingsService.isTrustedProxyEnabled());
         analyticsService.logEvent(EventType.ADMIN_SETTINGS_CHANGE, info.ipAddress(), info.userAgent());
         return "redirect:settings";
     }
@@ -228,9 +242,30 @@ public class AdminViewController {
         if (adminPassword != null && !adminPassword.isBlank()) {
             applicationSettingsService.setAdminPassword(adminPassword);
         }
-        RequesterInfo info = FileUtils.getRequesterInfo(request);
+        RequesterInfo info = FileUtils.getRequesterInfo(request, applicationSettingsService.isTrustedProxyEnabled());
         analyticsService.logEvent(EventType.ADMIN_SETTINGS_CHANGE, info.ipAddress(), info.userAgent());
         return ResponseEntity.ok("Settings saved");
+    }
+
+    /**
+     * Accepts a reputation provider's licence terms and enables it in one step — the only
+     * path that can turn a provider on (see {@link ApplicationSettingsService#acceptReputationProviderTerms}).
+     * Called by the licence-acceptance modal on the settings page, not by the general
+     * settings-save form.
+     *
+     * @param provider one of {@code "phishing_army"}, {@code "urlhaus"}, {@code "safe_browsing"}
+     * @return 200 on success, 400 if {@code provider} isn't recognised
+     */
+    @PostMapping("/settings/accept-reputation-terms")
+    @ResponseBody
+    public ResponseEntity<String> acceptReputationTerms(@RequestParam String provider, HttpServletRequest request) {
+        boolean accepted = applicationSettingsService.acceptReputationProviderTerms(provider);
+        if (!accepted) {
+            return ResponseEntity.badRequest().body("Unknown provider");
+        }
+        RequesterInfo info = FileUtils.getRequesterInfo(request, applicationSettingsService.isTrustedProxyEnabled());
+        analyticsService.logEvent(EventType.ADMIN_SETTINGS_CHANGE, info.ipAddress(), info.userAgent());
+        return ResponseEntity.ok("Accepted");
     }
 
     /**
@@ -319,7 +354,7 @@ public class AdminViewController {
     @PostMapping("/password")
     public String checkAdminPassword(@RequestParam String password, HttpServletRequest request) {
         String adminPasswordHash = applicationSettingsService.getAdminPasswordHash();
-        RequesterInfo info = FileUtils.getRequesterInfo(request);
+        RequesterInfo info = FileUtils.getRequesterInfo(request, applicationSettingsService.isTrustedProxyEnabled());
 
         if (adminPasswordHash == null || adminPasswordHash.isBlank()) {
             return "redirect:/admin/setup";
@@ -346,7 +381,7 @@ public class AdminViewController {
 
     @PostMapping("/logout")
     public String logout(HttpServletRequest request) {
-        RequesterInfo info = FileUtils.getRequesterInfo(request);
+        RequesterInfo info = FileUtils.getRequesterInfo(request, applicationSettingsService.isTrustedProxyEnabled());
         analyticsService.logEvent(EventType.ADMIN_LOGOUT, info.ipAddress(), info.userAgent());
         sessionService.invalidateAdminSession(request);
         HttpSession session = request.getSession(false);
@@ -386,7 +421,7 @@ public class AdminViewController {
     public Object deleteFile(@PathVariable String uuid,
                              @RequestParam(defaultValue = "files") String source,
                              HttpServletRequest request) {
-        RequesterInfo info = FileUtils.getRequesterInfo(request);
+        RequesterInfo info = FileUtils.getRequesterInfo(request, applicationSettingsService.isTrustedProxyEnabled());
         boolean deleted = fileLifecycleService.deleteFileFromDatabaseAndFileSystem(uuid, info.ipAddress(), info.userAgent());
         if (isAjaxRequest(request)) {
             return deleted
@@ -405,51 +440,59 @@ public class AdminViewController {
      * @return a safe, whitelisted sub-path segment
      */
     private static String safeAdminSource(String source) {
-        return java.util.Set.of("files", "pastes", "share-links").contains(source) ? source : "files";
+        return java.util.Set.of("files", "pastes", "links").contains(source) ? source : "files";
     }
 
     /**
-     * Displays the active share links admin page with search, filters, sort, and pagination.
+     * Legacy URL: existing bookmarks/links to the pre-merge share-links page land on the
+     * merged {@code /admin/links} page instead (defaulting to the upload-share-links tab).
+     */
+    @GetMapping("/share-links")
+    public String redirectLegacyShareLinksPage() {
+        return "redirect:/admin/links";
+    }
+
+    /**
+     * Displays the merged short-links admin page — upload-share links and general-purpose
+     * redirect links, switchable via {@code kind} — with search, filters, sort, and pagination.
      *
+     * @param kind      {@code "share"} (default) for upload-share links, {@code "redirect"}
+     *                  for URL-shortener links
      * @param page      zero-based page index (default 0)
      * @param size      page size, clamped to [1, 100] (default 20)
-     * @param query     optional search string matched against file name and token string
-     * @param type      optional type filter: {@code "file"}, {@code "paste"}, or omitted for all
-     * @param noExpiry  when {@code true} show only tokens with no expiry date
-     * @param unlimited when {@code true} show only tokens with no download cap
-     * @param sortBy    sort field: {@code "created"} (default), {@code "name"},
+     * @param query     optional search string matched against file name/token (share) or
+     *                  destination URL/code (redirect)
+     * @param type      share-links-only: optional type filter {@code "file"}, {@code "paste"},
+     *                  or omitted for all
+     * @param noExpiry  when {@code true} show only links with no expiry date
+     * @param unlimited when {@code true} show only links with no use cap
+     * @param sortBy    sort field: {@code "created"} (default), {@code "name"} (share only),
      *                  {@code "expiry"}, {@code "downloads"}
      * @param sortDir   sort direction: {@code "desc"} (default) or {@code "asc"}
      * @param model     Spring MVC model
-     * @return the {@code admin-share-links} template name
+     * @return the {@code admin-links} template name
      */
-    @GetMapping("/share-links")
-    public String getShareLinksPage(@RequestParam(name = "page", defaultValue = "0") int page,
-                                    @RequestParam(name = "size", defaultValue = "20") int size,
-                                    @RequestParam(required = false) String query,
-                                    @RequestParam(required = false) String type,
-                                    @RequestParam(defaultValue = "false") boolean noExpiry,
-                                    @RequestParam(defaultValue = "false") boolean unlimited,
-                                    @RequestParam(defaultValue = "created") String sortBy,
-                                    @RequestParam(defaultValue = "desc") String sortDir,
-                                    Model model) {
+    @GetMapping("/links")
+    public String getLinksPage(@RequestParam(defaultValue = "share") String kind,
+                               @RequestParam(name = "page", defaultValue = "0") int page,
+                               @RequestParam(name = "size", defaultValue = "20") int size,
+                               @RequestParam(required = false) String query,
+                               @RequestParam(required = false) String type,
+                               @RequestParam(defaultValue = "false") boolean noExpiry,
+                               @RequestParam(defaultValue = "false") boolean unlimited,
+                               @RequestParam(defaultValue = "created") String sortBy,
+                               @RequestParam(defaultValue = "desc") String sortDir,
+                               Model model) {
         int pageNumber = clampPage(page);
         int pageSize = clampSize(size);
+        String trimmedQuery = (query == null || query.isBlank()) ? null : query;
+        boolean isRedirect = "redirect".equals(kind);
 
-        Boolean isPaste = switch (type != null ? type : "") {
-            case "file" -> false;
-            case "paste" -> true;
-            default -> null;
-        };
-
-        Sort sort = buildShareSort(sortBy, sortDir);
-
-        Page<ShareTokenEntity> tokensPage = fileQueryService.getFilteredShareTokens(
-                LocalDate.now(), isPaste, noExpiry, unlimited,
-                (query == null || query.isBlank()) ? null : query,
-                PageRequest.of(pageNumber, pageSize, sort));
-
-        model.addAttribute("tokensPage", tokensPage);
+        model.addAttribute("kind", isRedirect ? "redirect" : "share");
+        // Both counts, so the kind tabs can say how many of each exist before you switch.
+        long[] linkCounts = fileQueryService.countActiveLinksByKind();
+        model.addAttribute("shareLinkCount", linkCounts[0]);
+        model.addAttribute("redirectLinkCount", linkCounts[1]);
         model.addAttribute("pageSize", pageSize);
         model.addAttribute("query", query == null ? "" : query);
         model.addAttribute("type", type == null ? "" : type);
@@ -457,12 +500,31 @@ public class AdminViewController {
         model.addAttribute("unlimited", unlimited);
         model.addAttribute("sortBy", sortBy);
         model.addAttribute("sortDir", sortDir);
-        model.addAttribute("totalActive", tokensPage.getTotalElements());
-        return "admin-share-links";
+
+        if (isRedirect) {
+            Sort sort = buildRedirectLinkSort(sortBy, sortDir);
+            Page<RedirectLink> redirectLinksPage = fileQueryService.getFilteredRedirectLinks(
+                    LocalDate.now(), noExpiry, unlimited, trimmedQuery, PageRequest.of(pageNumber, pageSize, sort));
+            model.addAttribute("redirectLinksPage", redirectLinksPage);
+            model.addAttribute("totalActive", redirectLinksPage.getTotalElements());
+        } else {
+            Boolean isPaste = switch (type != null ? type : "") {
+                case "file" -> false;
+                case "paste" -> true;
+                default -> null;
+            };
+            Sort sort = buildShareSort(sortBy, sortDir);
+            Page<UploadShareLink> tokensPage = fileQueryService.getFilteredShareTokens(
+                    LocalDate.now(), isPaste, noExpiry, unlimited, trimmedQuery, PageRequest.of(pageNumber, pageSize, sort));
+            model.addAttribute("tokensPage", tokensPage);
+            model.addAttribute("totalActive", tokensPage.getTotalElements());
+        }
+
+        return "admin-links";
     }
 
     /**
-     * Builds a {@link Sort} for the share-links page from the user-supplied field name
+     * Builds a {@link Sort} for the share-links tab from the user-supplied field name
      * and direction string.
      *
      * @param sortBy  field token: {@code "created"}, {@code "name"}, {@code "expiry"},
@@ -473,24 +535,56 @@ public class AdminViewController {
     private Sort buildShareSort(String sortBy, String sortDir) {
         Sort.Direction dir = "asc".equalsIgnoreCase(sortDir) ? Sort.Direction.ASC : Sort.Direction.DESC;
         return switch (sortBy) {
-            case "name" -> Sort.by(dir, "file.name");
-            case "expiry" -> Sort.by(dir, "tokenExpirationDate");
-            case "downloads" -> Sort.by(dir, "numberOfAllowedDownloads");
+            case "name" -> Sort.by(dir, "upload.name");
+            case "expiry" -> Sort.by(dir, "expirationDate");
+            case "downloads" -> Sort.by(dir, "remainingUses");
             default -> Sort.by(dir, "createdAt").and(Sort.by(Sort.Direction.DESC, "id"));
         };
     }
 
     /**
-     * Revokes a share token by ID and redirects back to the share links page.
+     * Builds a {@link Sort} for the redirect-links tab. No {@code "name"} option — redirect
+     * links have no associated upload to name-sort by; unrecognised values (including
+     * {@code "name"} itself) fall back to the {@code "created"} default.
+     *
+     * @param sortBy  field token: {@code "created"}, {@code "expiry"}, or {@code "downloads"}
+     * @param sortDir {@code "asc"} or {@code "desc"}
+     * @return the resolved {@link Sort}
+     */
+    private Sort buildRedirectLinkSort(String sortBy, String sortDir) {
+        Sort.Direction dir = "asc".equalsIgnoreCase(sortDir) ? Sort.Direction.ASC : Sort.Direction.DESC;
+        return switch (sortBy) {
+            case "expiry" -> Sort.by(dir, "expirationDate");
+            case "downloads" -> Sort.by(dir, "remainingUses");
+            default -> Sort.by(dir, "createdAt").and(Sort.by(Sort.Direction.DESC, "id"));
+        };
+    }
+
+    /**
+     * Revokes an upload-share token by ID and redirects back to the merged links page.
      *
      * @param id      database ID of the share token to revoke
      * @param request the HTTP request (for history log IP/user-agent metadata)
-     * @return redirect to {@code /admin/share-links}
+     * @return redirect to {@code /admin/links}
      */
-    @PostMapping("/share-links/revoke/{id}")
+    @PostMapping("/links/revoke-share/{id}")
     public String revokeShareToken(@PathVariable Long id, HttpServletRequest request) {
         fileLifecycleService.revokeShareToken(id, request);
-        return "redirect:/admin/share-links";
+        return "redirect:/admin/links";
+    }
+
+    /**
+     * Revokes a redirect (URL-shortener) link by ID and redirects back to the redirect-links tab.
+     *
+     * @param id      database ID of the redirect link to revoke
+     * @param request the HTTP request (for the audit-log admin IP)
+     * @return redirect to {@code /admin/links?kind=redirect}
+     */
+    @PostMapping("/links/revoke-redirect/{id}")
+    public String revokeRedirectLink(@PathVariable Long id, HttpServletRequest request) {
+        RequesterInfo info = FileUtils.getRequesterInfo(request, applicationSettingsService.isTrustedProxyEnabled());
+        shortLinkService.revokeRedirectLink(id, info.ipAddress());
+        return "redirect:/admin/links?kind=redirect";
     }
 
     /**

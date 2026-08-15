@@ -78,6 +78,36 @@ public enum EventType {
     SHARE_REVOKE(EventCategory.SHARE),
 
     // -------------------------------------------------------------------------
+    // SHORTLINK events (redirect links -- the general URL shortener)
+    // -------------------------------------------------------------------------
+
+    /**
+     * A redirect (URL-shortener) link was created.
+     */
+    SHORTLINK_CREATE(EventCategory.SHORTLINK),
+
+    /**
+     * A short link (redirect or upload-share) was resolved by a visitor.
+     */
+    SHORTLINK_VISIT(EventCategory.SHORTLINK),
+
+    /**
+     * A redirect link was manually revoked by an admin.
+     */
+    SHORTLINK_REVOKE(EventCategory.SHORTLINK),
+
+    /**
+     * A redirect link was removed by the scheduled cleanup (expired or use-limit exhausted).
+     */
+    SHORTLINK_EXPIRE(EventCategory.SHORTLINK),
+
+    /**
+     * A short-link creation or resolve was blocked by {@link org.rostislav.quickdrop.service.LinkGuard}
+     * (unsafe destination, private-network target, or a reputation-feed match).
+     */
+    SHORTLINK_BLOCKED(EventCategory.SHORTLINK),
+
+    // -------------------------------------------------------------------------
     // ADMIN events
     // -------------------------------------------------------------------------
 

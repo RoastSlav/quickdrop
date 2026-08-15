@@ -2,11 +2,12 @@ package org.rostislav.quickdrop.service;
 
 import jakarta.servlet.http.HttpServletRequest;
 import org.rostislav.quickdrop.entity.ActivityLog;
-import org.rostislav.quickdrop.entity.ShareTokenEntity;
+import org.rostislav.quickdrop.entity.ShortLink;
+import org.rostislav.quickdrop.entity.UploadShareLink;
 import org.rostislav.quickdrop.entity.Upload;
 import org.rostislav.quickdrop.model.EventType;
 import org.rostislav.quickdrop.repository.ActivityLogRepository;
-import org.rostislav.quickdrop.repository.ShareTokenRepository;
+import org.rostislav.quickdrop.repository.ShortLinkRepository;
 import org.rostislav.quickdrop.repository.UploadRepository;
 import org.rostislav.quickdrop.storage.StorageService;
 import org.slf4j.Logger;
@@ -42,7 +43,7 @@ public class FileDownloadService {
     private final ApplicationSettingsService applicationSettingsService;
     private final EncryptionService encryptionService;
     private final SvgRasterizationService svgRasterizationService;
-    private final ShareTokenRepository shareTokenRepository;
+    private final ShortLinkRepository shortLinkRepository;
     private final ActivityLogRepository activityLogRepository;
     private final NotificationService notificationService;
     private final FileQueryService fileQueryService;
@@ -53,7 +54,7 @@ public class FileDownloadService {
                                ApplicationSettingsService applicationSettingsService,
                                EncryptionService encryptionService,
                                SvgRasterizationService svgRasterizationService,
-                               ShareTokenRepository shareTokenRepository,
+                               ShortLinkRepository shortLinkRepository,
                                ActivityLogRepository activityLogRepository,
                                NotificationService notificationService,
                                FileQueryService fileQueryService,
@@ -63,7 +64,7 @@ public class FileDownloadService {
         this.applicationSettingsService = applicationSettingsService;
         this.encryptionService = encryptionService;
         this.svgRasterizationService = svgRasterizationService;
-        this.shareTokenRepository = shareTokenRepository;
+        this.shortLinkRepository = shortLinkRepository;
         this.activityLogRepository = activityLogRepository;
         this.notificationService = notificationService;
         this.fileQueryService = fileQueryService;
@@ -205,7 +206,7 @@ public class FileDownloadService {
      * @return the streaming body, or {@code null} if the token is invalid or the sidecar is missing
      */
     @CacheEvict(value = {"adminFiles", "analytics"}, allEntries = true)
-    public StreamingResponseBody streamFileByShareToken(ShareTokenEntity shareTokenEntity, HttpServletRequest request) {
+    public StreamingResponseBody streamFileByShareToken(UploadShareLink shareTokenEntity, HttpServletRequest request) {
         if (storageHealthService.isStorageDown()) {
             logger.info("Share download rejected: storage backend is unreachable");
             return null;
@@ -219,28 +220,28 @@ public class FileDownloadService {
         // requests both pass the SELECT-based validateShareToken() check above and both
         // stream the full file, since the counter was previously only decremented in a
         // finally block after streaming already completed (a TOCTOU race).
-        if (shareTokenEntity.numberOfAllowedDownloads != null) {
-            int claimed = shareTokenRepository.decrementDownloadCount(shareTokenEntity.getId());
+        if (shareTokenEntity.remainingUses != null) {
+            int claimed = shortLinkRepository.decrementDownloadCount(shareTokenEntity.getId());
             if (claimed == 0) {
                 // Exhausted by a concurrent request between validateShareToken() and here.
                 return null;
             }
         }
 
-        Upload upload = shareTokenEntity.file;
+        Upload upload = shareTokenEntity.upload;
 
         if (shareTokenEntity.shareKeyHash != null) {
-            String sidecarKey = upload.uuid + "-share-" + shareTokenEntity.shareToken;
+            String sidecarKey = upload.uuid + "-share-" + shareTokenEntity.code;
             if (!storageService.exists(sidecarKey)) {
-                logger.warn("Sidecar missing for token {}, deleting broken token", shareTokenEntity.shareToken);
-                shareTokenRepository.deleteByIdTransactional(shareTokenEntity.getId());
+                logger.warn("Sidecar missing for token {}, deleting broken token", shareTokenEntity.code);
+                shortLinkRepository.deleteByIdTransactional(shareTokenEntity.getId());
                 return null;
             }
             // Enforce key auth server-side: if the session has no validated key the
             // caller has not gone through the /share/{token}/auth flow — refuse download.
-            String shareKey = (String) request.getSession().getAttribute("share-key-" + shareTokenEntity.shareToken);
+            String shareKey = (String) request.getSession().getAttribute("share-key-" + shareTokenEntity.code);
             if (shareKey == null) {
-                logger.warn("Share download blocked: no session key for token {}", shareTokenEntity.shareToken);
+                logger.warn("Share download blocked: no session key for token {}", shareTokenEntity.code);
                 return null;
             }
             logHistory(upload, request, EventType.SHARE_DOWNLOAD);
@@ -291,9 +292,9 @@ public class FileDownloadService {
      * <p>No-op for tokens without a {@code shareKeyHash} — unencrypted shares have no sidecar.
      * Called on token expiry, revocation, or download exhaustion.
      */
-    public void deleteShareSidecar(ShareTokenEntity token) {
-        if (token.shareKeyHash == null || token.file == null) return;
-        String sidecarKey = token.file.uuid + "-share-" + token.shareToken;
+    public void deleteShareSidecar(UploadShareLink token) {
+        if (token.shareKeyHash == null || token.upload == null) return;
+        String sidecarKey = token.upload.uuid + "-share-" + token.code;
         if (!storageService.delete(sidecarKey)) {
             logger.warn("Failed to delete share sidecar: {}", sidecarKey);
         } else {
@@ -330,19 +331,19 @@ public class FileDownloadService {
                 .body(responseBody);
     }
 
-    private void updateShareTokenAfterDownload(ShareTokenEntity shareTokenEntity, Upload upload) {
+    private void updateShareTokenAfterDownload(UploadShareLink shareTokenEntity, Upload upload) {
         // The download slot itself is claimed atomically BEFORE streaming, in
         // streamFileByShareToken() -- this method now only handles post-stream cleanup:
         // deleting the token/sidecar once it's exhausted or expired. Re-fetch so the
         // cleanup decision is based on the DB-authoritative value (the pre-stream claim
         // may have just decremented it).
-        if (shareTokenEntity.numberOfAllowedDownloads != null) {
-            shareTokenEntity = shareTokenRepository.findById(shareTokenEntity.getId())
+        if (shareTokenEntity.remainingUses != null) {
+            shareTokenEntity = shortLinkRepository.findUploadLinkById(shareTokenEntity.getId())
                     .orElse(shareTokenEntity);
         }
         if (!validateShareToken(shareTokenEntity)) {
             deleteShareSidecar(shareTokenEntity);
-            shareTokenRepository.deleteByIdTransactional(shareTokenEntity.getId());
+            shortLinkRepository.deleteByIdTransactional(shareTokenEntity.getId());
         }
         logger.info("Share token updated. Upload streamed successfully: {}", upload.name);
     }
@@ -352,7 +353,7 @@ public class FileDownloadService {
     }
 
     private void logHistory(Upload upload, HttpServletRequest request, EventType eventType) {
-        var info = getRequesterInfo(request);
+        var info = getRequesterInfo(request, applicationSettingsService.isTrustedProxyEnabled());
         activityLogRepository.save(new ActivityLog(upload, eventType, info.ipAddress(), info.userAgent()));
         notificationService.notifyFileAction(upload, eventType);
     }

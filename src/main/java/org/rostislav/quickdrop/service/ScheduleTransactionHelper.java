@@ -1,7 +1,11 @@
 package org.rostislav.quickdrop.service;
 
-import org.rostislav.quickdrop.entity.ShareTokenEntity;
-import org.rostislav.quickdrop.repository.ShareTokenRepository;
+import org.rostislav.quickdrop.entity.ActivityLog;
+import org.rostislav.quickdrop.entity.RedirectLink;
+import org.rostislav.quickdrop.entity.UploadShareLink;
+import org.rostislav.quickdrop.model.EventType;
+import org.rostislav.quickdrop.repository.ActivityLogRepository;
+import org.rostislav.quickdrop.repository.ShortLinkRepository;
 import org.rostislav.quickdrop.repository.UploadRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,15 +27,18 @@ public class ScheduleTransactionHelper {
     private static final Logger logger = LoggerFactory.getLogger(ScheduleTransactionHelper.class);
 
     private final FileLifecycleService fileLifecycleService;
-    private final ShareTokenRepository shareTokenRepository;
+    private final ShortLinkRepository shortLinkRepository;
     private final UploadRepository uploadRepository;
+    private final ActivityLogRepository activityLogRepository;
 
     public ScheduleTransactionHelper(FileLifecycleService fileLifecycleService,
-                                     ShareTokenRepository shareTokenRepository,
-                                     UploadRepository uploadRepository) {
+                                     ShortLinkRepository shortLinkRepository,
+                                     UploadRepository uploadRepository,
+                                     ActivityLogRepository activityLogRepository) {
         this.fileLifecycleService = fileLifecycleService;
-        this.shareTokenRepository = shareTokenRepository;
+        this.shortLinkRepository = shortLinkRepository;
         this.uploadRepository = uploadRepository;
+        this.activityLogRepository = activityLogRepository;
     }
 
     /**
@@ -58,8 +65,24 @@ public class ScheduleTransactionHelper {
      * @param tokens share token entities to delete
      */
     @Transactional
-    public void deleteExpiredShareTokens(List<ShareTokenEntity> tokens) {
-        shareTokenRepository.deleteAll(tokens);
+    public void deleteExpiredShareTokens(List<UploadShareLink> tokens) {
+        shortLinkRepository.deleteAll(tokens);
+    }
+
+    /**
+     * Removes all expired/exhausted redirect links within a single transaction, writing a
+     * {@code SHORTLINK_EXPIRE} audit-log row for each first (system-triggered: no IP/user-agent).
+     *
+     * <p>Unlike {@link #deleteExpiredShareTokens}, this logs per link — redirect links have
+     * no associated {@code Upload} to carry history on, so the activity log is the only
+     * place an admin can see that a given link expired.
+     *
+     * @param links redirect link entities to log and delete
+     */
+    @Transactional
+    public void deleteExpiredRedirectLinks(List<RedirectLink> links) {
+        links.forEach(link -> activityLogRepository.save(new ActivityLog(link, EventType.SHORTLINK_EXPIRE, null, null)));
+        shortLinkRepository.deleteAll(links);
     }
 
     /**

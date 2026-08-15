@@ -22,6 +22,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalDateTime;
 
 import static org.rostislav.quickdrop.util.FileUtils.formatFileSize;
 
@@ -137,6 +138,22 @@ public class ApplicationSettingsService {
             defaults.setUploadEnabled(true);
             defaults.setUploadAdminOnly(false);
             defaults.setPastebinEnabled(true);
+            defaults.setShortenerEnabled(true);
+            defaults.setShortenerAdminOnly(false);
+            defaults.setShortenerCodeLength(5);
+            defaults.setShortenerCustomAliasEnabled(true);
+            defaults.setShortenerCustomAliasAdminOnly(true);
+            defaults.setShortenerInterstitialMode("NON_ADMIN");
+            defaults.setShortenerDomainRuleMode("OFF");
+            defaults.setShortenerDomainRules("");
+            defaults.setTrustedProxyEnabled(false);
+            defaults.setShortenerClickLoggingEnabled(true);
+            defaults.setReputationCheckEnabled(false);
+            defaults.setReputationPhishingArmyEnabled(false);
+            defaults.setReputationUrlhausEnabled(false);
+            defaults.setReputationSafeBrowsingEnabled(false);
+            defaults.setReputationFailClosed(false);
+            defaults.setReputationFeedCron("0 0 4 * * *");
             defaults.setAppName("QuickDrop");
             defaults.setLogoFileName(null);
             defaults.setDefaultLanguage("en");
@@ -182,6 +199,18 @@ public class ApplicationSettingsService {
         }
         if (settings.getFileStoragePath() == null || settings.getFileStoragePath().isBlank()) {
             settings.setFileStoragePath("files");
+            dirty = true;
+        }
+        if (settings.getShortenerCodeLength() <= 0) {
+            settings.setShortenerCodeLength(5);
+            dirty = true;
+        }
+        if (settings.getShortenerInterstitialMode() == null || settings.getShortenerInterstitialMode().isBlank()) {
+            settings.setShortenerInterstitialMode("NON_ADMIN");
+            dirty = true;
+        }
+        if (settings.getShortenerDomainRuleMode() == null || settings.getShortenerDomainRuleMode().isBlank()) {
+            settings.setShortenerDomainRuleMode("OFF");
             dirty = true;
         }
         if (dirty) {
@@ -340,6 +369,46 @@ public class ApplicationSettingsService {
         }
         entity.setSimplifiedShareLinks(shareLinksEnabled && settings.isSimplifiedShareLinks());
         entity.setPastebinEnabled(settings.isPastebinEnabled());
+        boolean shortenerEnabled = settings.isShortenerEnabled();
+        entity.setShortenerEnabled(shortenerEnabled);
+        entity.setShortenerAdminOnly(shortenerEnabled && settings.isShortenerAdminOnly());
+        entity.setShortenerCodeLength(settings.getShortenerCodeLength() > 0 ? settings.getShortenerCodeLength() : 5);
+        boolean shortenerCustomAliasEnabled = shortenerEnabled && settings.isShortenerCustomAliasEnabled();
+        entity.setShortenerCustomAliasEnabled(shortenerCustomAliasEnabled);
+        entity.setShortenerCustomAliasAdminOnly(shortenerCustomAliasEnabled && settings.isShortenerCustomAliasAdminOnly());
+        String interstitialMode = settings.getShortenerInterstitialMode();
+        entity.setShortenerInterstitialMode(
+                java.util.Set.of("ALWAYS", "NEVER", "NON_ADMIN").contains(interstitialMode == null ? "" : interstitialMode)
+                        ? interstitialMode : "NON_ADMIN");
+        String domainRuleMode = settings.getShortenerDomainRuleMode();
+        entity.setShortenerDomainRuleMode(
+                java.util.Set.of("OFF", "BLOCKLIST", "ALLOWLIST").contains(domainRuleMode == null ? "" : domainRuleMode)
+                        ? domainRuleMode : "OFF");
+        entity.setShortenerDomainRules(settings.getShortenerDomainRules() != null ? settings.getShortenerDomainRules() : "");
+        entity.setTrustedProxyEnabled(settings.isTrustedProxyEnabled());
+        entity.setShortenerClickLoggingEnabled(settings.isShortenerClickLoggingEnabled());
+        entity.setReputationCheckEnabled(settings.isReputationCheckEnabled());
+        entity.setReputationFailClosed(settings.isReputationFailClosed());
+        String reputationFeedCron = settings.getReputationFeedCron();
+        entity.setReputationFeedCron(reputationFeedCron != null && !reputationFeedCron.isBlank() ? reputationFeedCron : "0 0 4 * * *");
+        entity.setUrlhausAuthKey(settings.getUrlhausAuthKey());
+        entity.setSafeBrowsingApiKey(settings.getSafeBrowsingApiKey());
+        // Each provider can only be (re-)enabled through #acceptReputationProviderTerms, never
+        // through this general settings save -- turning it off here also clears the acceptance
+        // timestamp, so re-enabling later always re-prompts for licence acceptance, per the
+        // "off then back on re-prompts" requirement.
+        entity.setReputationPhishingArmyEnabled(settings.isReputationPhishingArmyEnabled() && entity.getPhishingArmyTermsAcceptedAt() != null);
+        if (!entity.isReputationPhishingArmyEnabled()) {
+            entity.setPhishingArmyTermsAcceptedAt(null);
+        }
+        entity.setReputationUrlhausEnabled(settings.isReputationUrlhausEnabled() && entity.getUrlhausTermsAcceptedAt() != null);
+        if (!entity.isReputationUrlhausEnabled()) {
+            entity.setUrlhausTermsAcceptedAt(null);
+        }
+        entity.setReputationSafeBrowsingEnabled(settings.isReputationSafeBrowsingEnabled() && entity.getSafeBrowsingTermsAcceptedAt() != null);
+        if (!entity.isReputationSafeBrowsingEnabled()) {
+            entity.setSafeBrowsingTermsAcceptedAt(null);
+        }
         String requestedAppName = settings.getAppName();
         entity.setAppName((requestedAppName == null || requestedAppName.isBlank()) ? "QuickDrop" : requestedAppName.trim());
         entity.setDefaultLanguage(settings.getDefaultLanguage() != null && !settings.getDefaultLanguage().isBlank() ? settings.getDefaultLanguage() : "en");
@@ -797,6 +866,180 @@ public class ApplicationSettingsService {
      */
     public boolean isPastebinEnabled() {
         return self.getApplicationSettings().isPastebinEnabled();
+    }
+
+    /**
+     * @return {@code true} if the link-shortener feature is enabled
+     */
+    public boolean isShortenerEnabled() {
+        return self.getApplicationSettings().isShortenerEnabled();
+    }
+
+    /**
+     * @return {@code true} if redirect-link creation is restricted to admin sessions
+     */
+    public boolean isShortenerAdminOnly() {
+        ApplicationSettingsEntity s = self.getApplicationSettings();
+        return s.isShortenerEnabled() && s.isShortenerAdminOnly();
+    }
+
+    /**
+     * @return the random code length for newly-generated short links
+     */
+    public int getShortenerCodeLength() {
+        return self.getApplicationSettings().getShortenerCodeLength();
+    }
+
+    /**
+     * @return {@code true} if custom aliases are enabled (implies the shortener itself is enabled)
+     */
+    public boolean isShortenerCustomAliasEnabled() {
+        ApplicationSettingsEntity s = self.getApplicationSettings();
+        return s.isShortenerEnabled() && s.isShortenerCustomAliasEnabled();
+    }
+
+    /**
+     * @return {@code true} if only admin sessions may request a custom alias
+     */
+    public boolean isShortenerCustomAliasAdminOnly() {
+        ApplicationSettingsEntity s = self.getApplicationSettings();
+        return s.isShortenerCustomAliasEnabled() && s.isShortenerCustomAliasAdminOnly();
+    }
+
+    /**
+     * @return {@code "ALWAYS"}, {@code "NEVER"}, or {@code "NON_ADMIN"}
+     */
+    public String getShortenerInterstitialMode() {
+        return self.getApplicationSettings().getShortenerInterstitialMode();
+    }
+
+    /**
+     * @return {@code "OFF"}, {@code "BLOCKLIST"}, or {@code "ALLOWLIST"}
+     */
+    public String getShortenerDomainRuleMode() {
+        return self.getApplicationSettings().getShortenerDomainRuleMode();
+    }
+
+    /**
+     * @return newline-separated domain list consulted per {@link #getShortenerDomainRuleMode()}
+     */
+    public String getShortenerDomainRules() {
+        return self.getApplicationSettings().getShortenerDomainRules();
+    }
+
+    /**
+     * @return {@code true} if {@code X-Forwarded-For}/{@code X-Real-IP} headers should be
+     *         trusted for client-IP resolution — only when a real reverse proxy is confirmed
+     *         to be in front of this instance
+     */
+    public boolean isTrustedProxyEnabled() {
+        return self.getApplicationSettings().isTrustedProxyEnabled();
+    }
+
+    /**
+     * @return {@code true} if resolving a short link should write an audit-log row —
+     *         the link's own use counters update regardless of this setting
+     */
+    public boolean isShortenerClickLoggingEnabled() {
+        return self.getApplicationSettings().isShortenerClickLoggingEnabled();
+    }
+
+    /**
+     * @return {@code true} if any reputation-provider check should run at all — the master
+     *         switch; individual provider flags below only take effect when this is also on
+     */
+    public boolean isReputationCheckEnabled() {
+        return self.getApplicationSettings().isReputationCheckEnabled();
+    }
+
+    /**
+     * @return {@code true} if the Phishing Army domain blocklist should be checked (licence
+     *         already accepted, since this can only be {@code true} via {@link #acceptReputationProviderTerms})
+     */
+    public boolean isReputationPhishingArmyEnabled() {
+        return self.getApplicationSettings().isReputationPhishingArmyEnabled();
+    }
+
+    /**
+     * @return {@code true} if the URLhaus online-malware-URL dataset should be checked
+     */
+    public boolean isReputationUrlhausEnabled() {
+        return self.getApplicationSettings().isReputationUrlhausEnabled();
+    }
+
+    /**
+     * @return {@code true} if Google Safe Browsing {@code hashes.search} should be queried
+     */
+    public boolean isReputationSafeBrowsingEnabled() {
+        return self.getApplicationSettings().isReputationSafeBrowsingEnabled();
+    }
+
+    /**
+     * @return {@code true} if a reputation-provider failure should block link
+     *         creation/resolution instead of allowing it (fail closed instead of fail open)
+     */
+    public boolean isReputationFailClosed() {
+        return self.getApplicationSettings().isReputationFailClosed();
+    }
+
+    /**
+     * @return cron expression for the scheduled Phishing Army / URLhaus feed refresh
+     */
+    public String getReputationFeedCron() {
+        return self.getApplicationSettings().getReputationFeedCron();
+    }
+
+    /**
+     * @return the configured URLhaus Auth-Key, or {@code null}/blank if not set
+     */
+    public String getUrlhausAuthKey() {
+        return self.getApplicationSettings().getUrlhausAuthKey();
+    }
+
+    /**
+     * @return the configured Google Safe Browsing API key, or {@code null}/blank if not set
+     */
+    public String getSafeBrowsingApiKey() {
+        return self.getApplicationSettings().getSafeBrowsingApiKey();
+    }
+
+    /**
+     * Accepts a reputation provider's licence terms and enables it in one atomic step, so a
+     * provider can never end up enabled without a recorded acceptance. This is the *only* path
+     * that can turn a provider on — the general settings save (see
+     * {@link #updateApplicationSettings}) can only turn one off (which also clears the
+     * acceptance timestamp, forcing this method to run again before it can be re-enabled).
+     *
+     * @param providerId one of {@code "phishing_army"}, {@code "urlhaus"}, {@code "safe_browsing"}
+     * @return {@code true} if {@code providerId} was recognised and the provider is now enabled
+     */
+    @Caching(evict = {
+            @CacheEvict(value = "applicationSettings", allEntries = true, beforeInvocation = true),
+            @CacheEvict(value = "applicationSettings", allEntries = true)
+    })
+    public boolean acceptReputationProviderTerms(String providerId) {
+        ApplicationSettingsEntity entity = applicationSettingsRepository.findById(1L).orElseThrow();
+        LocalDateTime now = LocalDateTime.now();
+        switch (providerId == null ? "" : providerId) {
+            case "phishing_army" -> {
+                entity.setReputationPhishingArmyEnabled(true);
+                entity.setPhishingArmyTermsAcceptedAt(now);
+            }
+            case "urlhaus" -> {
+                entity.setReputationUrlhausEnabled(true);
+                entity.setUrlhausTermsAcceptedAt(now);
+            }
+            case "safe_browsing" -> {
+                entity.setReputationSafeBrowsingEnabled(true);
+                entity.setSafeBrowsingTermsAcceptedAt(now);
+            }
+            default -> {
+                return false;
+            }
+        }
+        applicationSettingsRepository.save(entity);
+        eventPublisher.publishEvent(new SettingsChangedEvent(entity));
+        return true;
     }
 
     /**

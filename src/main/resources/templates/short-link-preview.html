@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en" th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(~{::title}, ~{})}">
+    <title th:text="#{page.shortLinkPreview.title.browser(${appName})}">You're leaving QuickDrop — QuickDrop</title>
+</head>
+<body>
+
+<th:block th:replace="~{fragments/layout :: chrome(false)}"></th:block>
+
+<main class="gate-page hero-scene" id="main-content" style="min-height: calc(100vh - var(--nav-h, 4rem))">
+
+    <div class="w-full max-w-md animate-in">
+
+        <div class="gate-icon mx-auto mb-6"
+             style="background:color-mix(in srgb,var(--c-amber) 15%,transparent);color:var(--c-amber);width:5rem;height:5rem">
+            <svg class="w-10 h-10" fill="none" stroke="currentColor" stroke-width="1.4" viewBox="0 0 24 24">
+                <path d="M13.5 10.5V6.75a4.5 4.5 0 1 1 9 0v3.75M3.75 21.75h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H3.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z"
+                      stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </div>
+
+        <div class="text-center mb-6">
+            <p class="section-eyebrow mb-2" th:text="#{page.shortLinkPreview.eyebrow}">Leaving QuickDrop</p>
+            <h1 class="text-2xl font-extrabold tracking-tight mb-2" th:text="#{page.shortLinkPreview.title}">This
+                short link goes to</h1>
+        </div>
+
+        <div class="gate-card animate-in animate-in-delay-1">
+
+            <!--
+              max-h + overflow-y-auto, not just break-all: the destination length is chosen by
+              whoever created the link, and URLs are allowed up to 2048 characters. Unbounded,
+              a long one grows this box to ~1000px and pushes the Continue button below the fold
+              on a phone -- burying the page's primary action behind ~2 screens of scrolling.
+              Capping the box keeps the full URL inspectable (it scrolls) while keeping Continue
+              on screen regardless of what the link creator put in.
+            -->
+            <div class="rounded-xl px-4 py-3 mb-6 break-all font-mono text-sm overflow-y-auto"
+                 style="background:var(--c-surface-raised);border:1px solid var(--c-border);max-height:12rem"
+                 th:text="${displayUrl}">example.com/some/page
+            </div>
+
+            <a class="btn btn-gradient btn-lg w-full justify-center"
+               rel="noopener noreferrer"
+               th:href="@{/{prefix}/{code}/go(prefix=${prefix},code=${code})}">
+                <span th:text="#{page.shortLinkPreview.continueButton}">Continue</span>
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M17.25 8.25 21 12m0 0-3.75 3.75M21 12H3" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </a>
+
+            <p class="text-xs text-center mt-4" style="color:var(--c-text-faint)"
+               th:text="#{page.shortLinkPreview.notice}">
+                We checked this destination for known threats, but always make sure you trust where a link is
+                taking you.
+            </p>
+        </div>
+    </div>
+
+</main>
+
+<th:block th:replace="~{fragments/layout :: pageScripts}"></th:block>
+</body>
+</html>

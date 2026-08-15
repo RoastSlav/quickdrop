@@ -46,7 +46,8 @@ public class GlobalControllerAdvice {
      *       {@code isEncryptionEnabled}, {@code uploadPasswordEnabled}, {@code isPreviewEnabled},
      *       {@code isMetadataStrippingEnabled}, {@code isSimplifiedShareLinksEnabled},
      *       {@code isShareLinksEnabled}, {@code isUploadEnabled}, {@code isUploadAdminOnly},
-     *       {@code isPastebinEnabled}</li>
+     *       {@code isPastebinEnabled}, {@code isShortenerEnabled}, {@code isShortenerAdminOnly},
+     *       {@code canUseShortener}</li>
      *   <li>Session state: {@code hasAdminSession}, {@code hasAppSession}</li>
      *   <li>Permission flags: {@code canUseKeepIndefinitely}, {@code canHideFromList},
      *       {@code isKeepIndefinitelyAdminOnly}, {@code isHideFromListAdminOnly}</li>
@@ -65,6 +66,8 @@ public class GlobalControllerAdvice {
         boolean hasAppSession = request.getUserPrincipal() != null;
         boolean keepIndefinitelyAdminOnly = applicationSettingsService.isKeepIndefinitelyAdminOnly();
         boolean hideFromListAdminOnly = applicationSettingsService.isHideFromListAdminOnly();
+        boolean shortenerEnabled = applicationSettingsService.isShortenerEnabled();
+        boolean shortenerAdminOnly = applicationSettingsService.isShortenerAdminOnly();
 
         model.addAttribute("isFileListPageEnabled", applicationSettingsService.isFileListPageEnabled());
         model.addAttribute("isAppPasswordSet", applicationSettingsService.isAppPasswordEnabled());
@@ -78,6 +81,9 @@ public class GlobalControllerAdvice {
         model.addAttribute("isUploadEnabled", applicationSettingsService.isUploadEnabled());
         model.addAttribute("isUploadAdminOnly", applicationSettingsService.isUploadAdminOnly());
         model.addAttribute("isPastebinEnabled", applicationSettingsService.isPastebinEnabled());
+        model.addAttribute("isShortenerEnabled", shortenerEnabled);
+        model.addAttribute("isShortenerAdminOnly", shortenerAdminOnly);
+        model.addAttribute("canUseShortener", shortenerEnabled && (!shortenerAdminOnly || hasAdminSession));
         model.addAttribute("appName", applicationSettingsService.getAppName());
         model.addAttribute("appLogoPath", applicationSettingsService.getLogoPath());
         model.addAttribute("hasAdminSession", hasAdminSession);

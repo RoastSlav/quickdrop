@@ -1,9 +1,9 @@
 package org.rostislav.quickdrop.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
-import org.rostislav.quickdrop.entity.ShareTokenEntity;
+import org.rostislav.quickdrop.entity.UploadShareLink;
 import org.rostislav.quickdrop.entity.Upload;
-import org.rostislav.quickdrop.model.ShareTokenResult;
+import org.rostislav.quickdrop.model.ShortLinkResult;
 import org.rostislav.quickdrop.model.UploadRequest;
 import org.rostislav.quickdrop.service.*;
 import org.rostislav.quickdrop.util.FileUtils;
@@ -253,20 +253,20 @@ public class FileRestController {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
                         .body(Map.of("message", "Invalid file session."));
             }
-            ShareTokenResult result = fileLifecycleService.generateShareToken(uuid, expirationDate, sessionToken, numberOfDownloads);
-            tokenString = result.token().shareToken;
+            ShortLinkResult result = fileLifecycleService.generateShareToken(uuid, expirationDate, sessionToken, numberOfDownloads);
+            tokenString = result.link().code;
             sharePath = FileUtils.getSharePath(tokenString);
             if (result.shareKey() != null) {
                 // Use URL fragment so the key is never sent to the server in HTTP requests
                 sharePath += "#key=" + URLEncoder.encode(result.shareKey(), StandardCharsets.UTF_8);
             }
             // Warn the creator only for large files; small files encrypt quickly in the background
-            if (!result.token().sidecarReady && fileEntity.size >= 50L * 1024 * 1024) {
+            if (!result.link().sidecarReady && fileEntity.size >= 50L * 1024 * 1024) {
                 preparingMessage = true;
             }
         } else {
-            ShareTokenEntity token = fileLifecycleService.generateShareToken(uuid, expirationDate, numberOfDownloads);
-            tokenString = token.shareToken;
+            UploadShareLink token = fileLifecycleService.generateShareToken(uuid, expirationDate, numberOfDownloads);
+            tokenString = token.code;
             sharePath = FileUtils.getSharePath(tokenString);
         }
         fileLifecycleService.logShareCreate(fileEntity, request);
@@ -284,7 +284,7 @@ public class FileRestController {
      * exhausted, or the sidecar file has been removed — in the missing-sidecar case the
      * broken token is deleted first so the share page renders the invalid view. Returns
      * 503 when the token is valid but the sidecar re-encryption is still running in the
-     * background ({@link org.rostislav.quickdrop.entity.ShareTokenEntity#sidecarReady}
+     * background ({@link org.rostislav.quickdrop.entity.UploadShareLink#sidecarReady}
      * is {@code false}). On success the response carries
      * {@code Content-Disposition: attachment} so browsers prompt a save dialog.
      *
@@ -295,18 +295,18 @@ public class FileRestController {
     @GetMapping("/download/{token}")
     public ResponseEntity<StreamingResponseBody> downloadFile(@PathVariable String token, HttpServletRequest request) {
         try {
-            Optional<ShareTokenEntity> shareTokenEntity = fileQueryService.getShareTokenEntityByToken(token);
+            Optional<UploadShareLink> shareTokenEntity = fileQueryService.getShareTokenEntityByToken(token);
             if (shareTokenEntity.isEmpty() || !validateShareToken(shareTokenEntity.get())) {
                 return ResponseEntity.status(HttpStatus.FOUND)
                         .location(URI.create("/share/" + token))
                         .build();
             }
 
-            ShareTokenEntity tokenEntity = shareTokenEntity.get();
+            UploadShareLink tokenEntity = shareTokenEntity.get();
             if (!tokenEntity.sidecarReady) {
                 return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build();
             }
-            Upload fileEntity = tokenEntity.file;
+            Upload fileEntity = tokenEntity.upload;
             StreamingResponseBody responseBody = fileDownloadService.streamFileByShareToken(tokenEntity, request);
 
             if (responseBody == null) {

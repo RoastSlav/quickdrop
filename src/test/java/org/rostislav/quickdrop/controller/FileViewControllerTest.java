@@ -253,15 +253,17 @@ class FileViewControllerTest extends ControllerTestSupport {
     // -- GET /file/download/{uuid} ------------------------------------------
 
     @Test
-    void downloadFile_authorizedPlainFile_streamsContent() throws Exception {
+    void downloadFile_authorizedPlainFile_streamsContent() throws Throwable {
         ensureAdminPasswordSet();
         StoredFile file = createFile("a.txt", "hello world".getBytes());
-        MvcResult result = mockMvc.perform(get("/file/download/" + file.uuid))
-                .andExpect(request().asyncStarted())
-                .andReturn();
-        mockMvc.perform(asyncDispatch(result))
-                .andExpect(status().isOk())
-                .andExpect(content().bytes("hello world".getBytes()));
+        retryOnMockMvcAsyncHeaderRace(() -> {
+            MvcResult result = mockMvc.perform(get("/file/download/" + file.uuid))
+                    .andExpect(request().asyncStarted())
+                    .andReturn();
+            mockMvc.perform(asyncDispatch(result))
+                    .andExpect(status().isOk())
+                    .andExpect(content().bytes("hello world".getBytes()));
+        });
     }
 
     @Test

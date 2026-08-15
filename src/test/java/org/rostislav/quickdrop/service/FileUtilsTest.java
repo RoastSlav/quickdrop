@@ -3,7 +3,7 @@ package org.rostislav.quickdrop.service;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.rostislav.quickdrop.entity.ShareTokenEntity;
+import org.rostislav.quickdrop.entity.UploadShareLink;
 import org.rostislav.quickdrop.entity.StoredFile;
 import org.rostislav.quickdrop.entity.Upload;
 import org.rostislav.quickdrop.util.FileUtils;
@@ -215,61 +215,37 @@ class FileUtilsTest {
     }
 
     @Test
-    void generateHashedTokenIsFiveBase62Characters() {
-        Upload upload = fileWithUuid(java.util.UUID.randomUUID().toString());
-        upload.size = 12345;
-        upload.uploadDate = LocalDate.now();
-
-        String token = FileUtils.generateHashedToken(upload);
-
-        assertEquals(5, token.length());
-        assertTrue(token.matches("[0-9A-Za-z]{5}"), "token should be base-62: " + token);
-    }
-
-    @Test
-    void generateHashedTokenIsNotConstantAcrossCalls() {
-        Upload upload = fileWithUuid(java.util.UUID.randomUUID().toString());
-        upload.size = 100;
-        upload.uploadDate = LocalDate.now();
-
-        String first = FileUtils.generateHashedToken(upload);
-        String second = FileUtils.generateHashedToken(upload);
-
-        assertNotEquals(first, second, "token generation includes randomness/nanoTime and should not repeat");
-    }
-
-    @Test
     void validateShareTokenNullIsInvalid() {
         assertFalse(FileUtils.validateShareToken(null));
     }
 
     @Test
     void validateShareTokenNoConstraintsIsValid() {
-        ShareTokenEntity token = new ShareTokenEntity("abcde", fileWithUuid("u1"), null, null);
+        UploadShareLink token = new UploadShareLink("abcde", fileWithUuid("u1"), null, null);
         assertTrue(FileUtils.validateShareToken(token));
     }
 
     @Test
     void validateShareTokenExpiredTodayIsInvalid() {
-        ShareTokenEntity token = new ShareTokenEntity("abcde", fileWithUuid("u1"), LocalDate.now(), null);
+        UploadShareLink token = new UploadShareLink("abcde", fileWithUuid("u1"), LocalDate.now(), null);
         assertFalse(FileUtils.validateShareToken(token), "a token expiring today should be considered expired");
     }
 
     @Test
     void validateShareTokenFutureExpiryIsValid() {
-        ShareTokenEntity token = new ShareTokenEntity("abcde", fileWithUuid("u1"), LocalDate.now().plusDays(1), null);
+        UploadShareLink token = new UploadShareLink("abcde", fileWithUuid("u1"), LocalDate.now().plusDays(1), null);
         assertTrue(FileUtils.validateShareToken(token));
     }
 
     @Test
     void validateShareTokenExhaustedDownloadsIsInvalid() {
-        ShareTokenEntity token = new ShareTokenEntity("abcde", fileWithUuid("u1"), null, 0);
+        UploadShareLink token = new UploadShareLink("abcde", fileWithUuid("u1"), null, 0);
         assertFalse(FileUtils.validateShareToken(token));
     }
 
     @Test
     void validateShareTokenRemainingDownloadsIsValid() {
-        ShareTokenEntity token = new ShareTokenEntity("abcde", fileWithUuid("u1"), null, 3);
+        UploadShareLink token = new UploadShareLink("abcde", fileWithUuid("u1"), null, 3);
         assertTrue(FileUtils.validateShareToken(token));
     }
 

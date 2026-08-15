@@ -7,6 +7,7 @@ import org.rostislav.quickdrop.repository.ActivityLogRepository;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
@@ -47,6 +48,21 @@ public class AnalyticsService {
      *
      * @return cached analytics view-model
      */
+    /**
+     * Most recent activity-log entries, newest first.
+     *
+     * <p>Deliberately not cached: the dashboard feed is meant to reflect what just
+     * happened, and the {@code analytics} cache is only evicted on file mutations.
+     *
+     * @param limit maximum number of entries to return
+     * @return recent activity entries
+     */
+    public List<ActivityLog> getRecentActivity(int limit) {
+        return activityLogRepository
+                .findFiltered(null, null, null, null, null, null, PageRequest.of(0, limit))
+                .getContent();
+    }
+
     @Cacheable("analytics")
     public AnalyticsDataView getAnalytics() {
         long totalDownloads = activityLogRepository.countByEventTypeIn(List.of(DOWNLOAD, SHARE_DOWNLOAD));

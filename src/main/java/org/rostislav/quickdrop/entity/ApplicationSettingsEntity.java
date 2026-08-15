@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import org.rostislav.quickdrop.model.ApplicationSettingsViewModel;
 import org.rostislav.quickdrop.storage.StorageBackend;
 
+import java.time.LocalDateTime;
+
 /**
  * Persistent store for all application-wide configuration.
  *
@@ -203,6 +205,139 @@ public class ApplicationSettingsEntity {
      * Whether the Pastebin feature is available.
      */
     private boolean pastebinEnabled;
+
+    /**
+     * When {@code true}, the link-shortener feature (redirect links, {@code /link/new},
+     * {@code /s/{code}}) is available.
+     */
+    private boolean shortenerEnabled = true;
+
+    /**
+     * When {@code true}, only admin sessions may create redirect links.
+     */
+    private boolean shortenerAdminOnly;
+
+    /**
+     * Random code length for newly-generated short links (both redirect and upload-share).
+     * Existing codes of a different length keep working — lookup is by exact match.
+     */
+    private int shortenerCodeLength = 5;
+
+    /**
+     * When {@code true}, users may request a human-chosen alias instead of a random code.
+     */
+    private boolean shortenerCustomAliasEnabled = true;
+
+    /**
+     * When {@code true}, only admin sessions may request a custom alias — a self-chosen
+     * slug (e.g. {@code /s/paypal-login}) is the primary phishing-impersonation risk a
+     * random code doesn't have, so this defaults on even though the feature itself is open.
+     */
+    private boolean shortenerCustomAliasAdminOnly = true;
+
+    /**
+     * Controls when the "you're leaving QuickDrop" interstitial is shown before a redirect
+     * link resolves: {@code ALWAYS}, {@code NEVER}, or {@code NON_ADMIN} (skip only for
+     * admin sessions).
+     */
+    private String shortenerInterstitialMode = "NON_ADMIN";
+
+    /**
+     * Destination domain policy for new redirect links: {@code OFF}, {@code BLOCKLIST}
+     * (reject domains in {@link #shortenerDomainRules}), or {@code ALLOWLIST} (reject any
+     * domain not listed).
+     */
+    private String shortenerDomainRuleMode = "OFF";
+
+    /**
+     * Newline-separated domain list consulted per {@link #shortenerDomainRuleMode}.
+     */
+    private String shortenerDomainRules = "";
+
+    /**
+     * When {@code true}, {@code X-Forwarded-For}/{@code X-Real-IP} request headers are
+     * trusted for client-IP resolution (activity log attribution, rate limiting). Defaults
+     * to {@code false} — trusting these headers unconditionally lets a direct client spoof
+     * its logged IP and defeat rate limiting by rotating the header per request. Only turn
+     * this on when a real reverse proxy sits in front of the app.
+     */
+    private boolean trustedProxyEnabled;
+
+    /**
+     * When {@code true}, resolving a short link (either type) writes an audit-log row.
+     * The link's own use counters always update regardless of this setting — it only
+     * controls whether individual visits show up on the activity log.
+     */
+    private boolean shortenerClickLoggingEnabled = true;
+
+    /**
+     * Master switch for threat-intelligence reputation checking on redirect-link
+     * creation/resolution. Individual provider flags below only take effect when this
+     * is also on.
+     */
+    private boolean reputationCheckEnabled;
+
+    /**
+     * When {@code true} (and its licence has been accepted, see {@link #phishingArmyTermsAcceptedAt}),
+     * destinations are checked against the Phishing Army domain blocklist (CC BY-NC 4.0).
+     */
+    private boolean reputationPhishingArmyEnabled;
+
+    /**
+     * When {@code true} (and its licence has been accepted, see {@link #urlhausTermsAcceptedAt}),
+     * destinations are checked against the abuse.ch URLhaus online-malware-URL dataset.
+     */
+    private boolean reputationUrlhausEnabled;
+
+    /**
+     * When {@code true} (and its licence has been accepted, see {@link #safeBrowsingTermsAcceptedAt}),
+     * destinations are checked against Google Safe Browsing v5 {@code hashes.search} — only a
+     * truncated hash of the URL ever leaves the instance, never the URL itself.
+     */
+    private boolean reputationSafeBrowsingEnabled;
+
+    /**
+     * When {@code true}, a reputation-provider failure (feed stale/unreachable, API error)
+     * blocks link creation/resolution instead of allowing it. Defaults to {@code false}
+     * (fail open) so a third-party outage cannot take down the whole shortener feature.
+     */
+    private boolean reputationFailClosed;
+
+    /**
+     * Cron expression for the scheduled Phishing Army / URLhaus feed refresh. Google Safe
+     * Browsing has no feed to refresh — it is queried live per lookup, with its own
+     * response-cache duration honoured separately.
+     */
+    private String reputationFeedCron = "0 0 4 * * *";
+
+    /**
+     * Free Auth-Key from {@code auth.abuse.ch}, required by URLhaus's API. {@code null}/blank
+     * disables the URLhaus feed regardless of {@link #reputationUrlhausEnabled}.
+     */
+    private String urlhausAuthKey;
+
+    /**
+     * Free API key for Google Safe Browsing v5. {@code null}/blank disables the Safe Browsing
+     * check regardless of {@link #reputationSafeBrowsingEnabled}.
+     */
+    private String safeBrowsingApiKey;
+
+    /**
+     * When the admin last accepted Phishing Army's licence terms in the settings UI, or
+     * {@code null} if never accepted (or accepted then revoked by disabling and re-enabling).
+     */
+    private LocalDateTime phishingArmyTermsAcceptedAt;
+
+    /**
+     * When the admin last accepted URLhaus's licence terms, or {@code null} if never accepted.
+     */
+    private LocalDateTime urlhausTermsAcceptedAt;
+
+    /**
+     * When the admin last accepted Google Safe Browsing's licence terms, or {@code null} if
+     * never accepted.
+     */
+    private LocalDateTime safeBrowsingTermsAcceptedAt;
 
     /**
      * Custom application name displayed in the UI (defaults to "QuickDrop").
@@ -773,6 +908,174 @@ public class ApplicationSettingsEntity {
 
     public void setPastebinEnabled(boolean pastebinEnabled) {
         this.pastebinEnabled = pastebinEnabled;
+    }
+
+    public boolean isShortenerEnabled() {
+        return shortenerEnabled;
+    }
+
+    public void setShortenerEnabled(boolean shortenerEnabled) {
+        this.shortenerEnabled = shortenerEnabled;
+    }
+
+    public boolean isShortenerAdminOnly() {
+        return shortenerAdminOnly;
+    }
+
+    public void setShortenerAdminOnly(boolean shortenerAdminOnly) {
+        this.shortenerAdminOnly = shortenerAdminOnly;
+    }
+
+    public int getShortenerCodeLength() {
+        return shortenerCodeLength;
+    }
+
+    public void setShortenerCodeLength(int shortenerCodeLength) {
+        this.shortenerCodeLength = shortenerCodeLength;
+    }
+
+    public boolean isShortenerCustomAliasEnabled() {
+        return shortenerCustomAliasEnabled;
+    }
+
+    public void setShortenerCustomAliasEnabled(boolean shortenerCustomAliasEnabled) {
+        this.shortenerCustomAliasEnabled = shortenerCustomAliasEnabled;
+    }
+
+    public boolean isShortenerCustomAliasAdminOnly() {
+        return shortenerCustomAliasAdminOnly;
+    }
+
+    public void setShortenerCustomAliasAdminOnly(boolean shortenerCustomAliasAdminOnly) {
+        this.shortenerCustomAliasAdminOnly = shortenerCustomAliasAdminOnly;
+    }
+
+    public String getShortenerInterstitialMode() {
+        return shortenerInterstitialMode;
+    }
+
+    public void setShortenerInterstitialMode(String shortenerInterstitialMode) {
+        this.shortenerInterstitialMode = shortenerInterstitialMode;
+    }
+
+    public String getShortenerDomainRuleMode() {
+        return shortenerDomainRuleMode;
+    }
+
+    public void setShortenerDomainRuleMode(String shortenerDomainRuleMode) {
+        this.shortenerDomainRuleMode = shortenerDomainRuleMode;
+    }
+
+    public String getShortenerDomainRules() {
+        return shortenerDomainRules;
+    }
+
+    public void setShortenerDomainRules(String shortenerDomainRules) {
+        this.shortenerDomainRules = shortenerDomainRules;
+    }
+
+    public boolean isTrustedProxyEnabled() {
+        return trustedProxyEnabled;
+    }
+
+    public void setTrustedProxyEnabled(boolean trustedProxyEnabled) {
+        this.trustedProxyEnabled = trustedProxyEnabled;
+    }
+
+    public boolean isShortenerClickLoggingEnabled() {
+        return shortenerClickLoggingEnabled;
+    }
+
+    public void setShortenerClickLoggingEnabled(boolean shortenerClickLoggingEnabled) {
+        this.shortenerClickLoggingEnabled = shortenerClickLoggingEnabled;
+    }
+
+    public boolean isReputationCheckEnabled() {
+        return reputationCheckEnabled;
+    }
+
+    public void setReputationCheckEnabled(boolean reputationCheckEnabled) {
+        this.reputationCheckEnabled = reputationCheckEnabled;
+    }
+
+    public boolean isReputationPhishingArmyEnabled() {
+        return reputationPhishingArmyEnabled;
+    }
+
+    public void setReputationPhishingArmyEnabled(boolean reputationPhishingArmyEnabled) {
+        this.reputationPhishingArmyEnabled = reputationPhishingArmyEnabled;
+    }
+
+    public boolean isReputationUrlhausEnabled() {
+        return reputationUrlhausEnabled;
+    }
+
+    public void setReputationUrlhausEnabled(boolean reputationUrlhausEnabled) {
+        this.reputationUrlhausEnabled = reputationUrlhausEnabled;
+    }
+
+    public boolean isReputationSafeBrowsingEnabled() {
+        return reputationSafeBrowsingEnabled;
+    }
+
+    public void setReputationSafeBrowsingEnabled(boolean reputationSafeBrowsingEnabled) {
+        this.reputationSafeBrowsingEnabled = reputationSafeBrowsingEnabled;
+    }
+
+    public boolean isReputationFailClosed() {
+        return reputationFailClosed;
+    }
+
+    public void setReputationFailClosed(boolean reputationFailClosed) {
+        this.reputationFailClosed = reputationFailClosed;
+    }
+
+    public String getReputationFeedCron() {
+        return reputationFeedCron;
+    }
+
+    public void setReputationFeedCron(String reputationFeedCron) {
+        this.reputationFeedCron = reputationFeedCron;
+    }
+
+    public String getUrlhausAuthKey() {
+        return urlhausAuthKey;
+    }
+
+    public void setUrlhausAuthKey(String urlhausAuthKey) {
+        this.urlhausAuthKey = urlhausAuthKey;
+    }
+
+    public String getSafeBrowsingApiKey() {
+        return safeBrowsingApiKey;
+    }
+
+    public void setSafeBrowsingApiKey(String safeBrowsingApiKey) {
+        this.safeBrowsingApiKey = safeBrowsingApiKey;
+    }
+
+    public LocalDateTime getPhishingArmyTermsAcceptedAt() {
+        return phishingArmyTermsAcceptedAt;
+    }
+
+    public void setPhishingArmyTermsAcceptedAt(LocalDateTime phishingArmyTermsAcceptedAt) {
+        this.phishingArmyTermsAcceptedAt = phishingArmyTermsAcceptedAt;
+    }
+
+    public LocalDateTime getUrlhausTermsAcceptedAt() {
+        return urlhausTermsAcceptedAt;
+    }
+
+    public void setUrlhausTermsAcceptedAt(LocalDateTime urlhausTermsAcceptedAt) {
+        this.urlhausTermsAcceptedAt = urlhausTermsAcceptedAt;
+    }
+
+    public LocalDateTime getSafeBrowsingTermsAcceptedAt() {
+        return safeBrowsingTermsAcceptedAt;
+    }
+
+    public void setSafeBrowsingTermsAcceptedAt(LocalDateTime safeBrowsingTermsAcceptedAt) {
+        this.safeBrowsingTermsAcceptedAt = safeBrowsingTermsAcceptedAt;
     }
 
     public boolean isNotifyOnUpload() {

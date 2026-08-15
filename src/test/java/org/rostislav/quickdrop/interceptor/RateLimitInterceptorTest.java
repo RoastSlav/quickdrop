@@ -1,6 +1,7 @@
 package org.rostislav.quickdrop.interceptor;
 
 import org.junit.jupiter.api.Test;
+import org.rostislav.quickdrop.service.ApplicationSettingsService;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 
@@ -9,11 +10,22 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
-/** {@link RateLimitInterceptor} is a plain POJO -- exercised directly, no Spring context needed. */
+/**
+ * {@link RateLimitInterceptor} is exercised directly against a mocked {@link ApplicationSettingsService}
+ * with {@code trustedProxyEnabled=false}, so it resolves the client address from
+ * {@link MockHttpServletRequest#getRemoteAddr()} exactly like the pre-refactor no-arg version did.
+ */
 class RateLimitInterceptorTest {
 
-    private final RateLimitInterceptor interceptor = new RateLimitInterceptor();
+    private final ApplicationSettingsService applicationSettingsService = mock(ApplicationSettingsService.class);
+    private final RateLimitInterceptor interceptor = new RateLimitInterceptor(applicationSettingsService);
+
+    RateLimitInterceptorTest() {
+        when(applicationSettingsService.isTrustedProxyEnabled()).thenReturn(false);
+    }
 
     private MockHttpServletRequest requestFor(String uri, String remoteAddr) {
         MockHttpServletRequest request = new MockHttpServletRequest("POST", uri);

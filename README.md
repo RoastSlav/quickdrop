@@ -114,6 +114,32 @@ restart required for configuration changes.
 - **Share link event logging** — creating a share token, downloading via a share link, token expiry, and admin
   revocation are all recorded in the file's history log.
 
+### Link Shortener
+
+A general-purpose URL shortener (`/link/new`) built on the same short-code infrastructure as share links — file and
+paste share links are one type of short link; plain redirect links are another.
+
+- **Shorten any URL** — paste a link, get back a short `/s/{code}` link and a QR code, no file involved.
+- **Custom aliases** — request a memorable code (`/s/my-link`) instead of a random one; restricted to admins by
+  default, since a self-chosen alias can impersonate a real destination in a way a random code can't.
+- **Expiry & use limits** — same optional expiry date and use-count cap as share links.
+- **Destination checks** — every destination is validated before the link is created, and re-validated on every visit:
+  only `http`/`https` are accepted, and links can't point at loopback, link-local, or private-network addresses (e.g.
+  cloud metadata endpoints). Admins can additionally configure a domain allow- or blocklist.
+- **Threat-intelligence checking (opt-in)** — destinations can additionally be checked against
+  [Phishing Army](https://phishing.army/) (domain blocklist), [URLhaus](https://urlhaus.abuse.ch/) (live malware-URL
+  dataset), and/or Google Safe Browsing (hash-prefix lookup — only a truncated hash of the destination is ever sent,
+  never the URL). All three ship disabled and each requires the admin to accept its licence terms in the settings UI
+  before it turns on, since Phishing Army and Safe Browsing are non-commercial-use licences distinct from QuickDrop's
+  own MIT license.
+- **Preview page** — by default, non-admin visitors see where a link leads before continuing; admins skip straight
+  through. Configurable to always show, never show, or the default admin-skips behavior.
+- **Open by default** — like uploads, available to every visitor unless an admin restricts it, with its own
+  enable/disable and admin-only toggles independent of file share links.
+- **Visit logging** — creating a redirect link, each visit, admin revocation, expiry, and any blocked destination are
+  all recorded in the admin activity log; per-visit logging (not the link's own use counters, which always update) can
+  be turned off independently.
+
 ### Admin Dashboard
 
 The admin area is protected by a separate password and lives at `/admin`.
@@ -123,7 +149,7 @@ The admin area is protected by a separate password and lives at `/admin`.
 | **Overview**    | Aggregate stats: total downloads, storage used, average file size, paste counts and view totals                                    |
 | **Files**       | Paginated list with search, per-file download counts, delete / hide / extend / keep-indefinitely actions                           |
 | **Pastes**      | Paginated list with search, per-paste view counts, same actions                                                                    |
-| **Share Links** | Paginated list of all active share tokens with file name, token string, expiry, remaining downloads, and a per-token Revoke button |
+| **Links**       | Merged share-link / redirect-link admin page (`/admin/links`, tab-switchable) — paginated list with search, expiry, remaining uses, and a per-link Revoke button |
 | **Activity**    | Global event log across all files and pastes; filterable by date range, event type, IP address, and user agent                     |
 | **Settings**    | All configuration in one form, applied without restarting                                                                          |
 
@@ -309,6 +335,19 @@ restart needed.
 | **Share links**                    | Enable/disable share token generation                                                                         |
 | **Simplified share links**         | Generate unlimited, no-expiry share links only                                                                |
 | **Pastebin**                       | Enable/disable the pastebin feature                                                                           |
+| **Link shortener**                 | Enable/disable general URL shortening at `/link/new`                                                          |
+| **Link shortener (admin only)**    | Restrict short-link creation to admin sessions                                                                |
+| **Custom aliases**                 | Enable/disable human-chosen link codes                                                                        |
+| **Custom aliases (admin only)**    | Restrict custom aliases to admin sessions (default: on)                                                       |
+| **Destination preview page**       | Always show, never show, or show except for admins (default)                                                  |
+| **Destination domain rules**       | Off, block listed domains, or only allow listed domains                                                       |
+| **Reputation checking**            | Master switch for third-party threat-intelligence checks on redirect-link destinations                       |
+| **Phishing Army / URLhaus / Safe Browsing** | Per-provider enable, each gated behind an in-app licence-acceptance step (see Threat-intelligence checking above) |
+| **Reputation fail-closed**         | Block a link instead of allowing it through when a provider check can't complete (default: fail open)         |
+| **Reputation feed refresh**        | Cron expression for the Phishing Army / URLhaus feed refresh (Safe Browsing is queried live, no feed)         |
+| **URLhaus Auth-Key / Safe Browsing API key** | Credentials for the two API-backed providers                                                        |
+| **Link visit logging**             | Record each short-link visit in the activity log (link use counters always update regardless)                |
+| **Trusted reverse proxy**          | Honor `X-Forwarded-For`/`X-Real-IP` for client-IP resolution — only enable behind a real reverse proxy        |
 | **App password**                   | Optional site-wide access password                                                                            |
 | **App name**                       | Custom application display name                                                                               |
 | **Logo**                           | Custom logo image (replaces the default favicon)                                                              |

@@ -1,9 +1,10 @@
 package org.rostislav.quickdrop.service;
 
 import jakarta.annotation.PreDestroy;
-import org.rostislav.quickdrop.entity.ShareTokenEntity;
+import org.rostislav.quickdrop.entity.RedirectLink;
+import org.rostislav.quickdrop.entity.UploadShareLink;
 import org.rostislav.quickdrop.entity.Upload;
-import org.rostislav.quickdrop.repository.ShareTokenRepository;
+import org.rostislav.quickdrop.repository.ShortLinkRepository;
 import org.rostislav.quickdrop.repository.UploadRepository;
 import org.rostislav.quickdrop.storage.StorageService;
 import org.slf4j.Logger;
@@ -34,8 +35,8 @@ import java.util.concurrent.ScheduledFuture;
  *     <ul>
  *       <li>03:00 daily — {@link #cleanDatabaseFromDeletedFiles()}: soft-deletes records
  *           for uploads whose physical file no longer exists on disk (e.g. manually removed).</li>
- *       <li>03:30 daily — {@link #cleanShareTokens()}: purges expired or exhausted
- *           share tokens.</li>
+ *       <li>03:30 daily — {@link #cleanShortLinks()}: purges expired or exhausted
+ *           short links (upload-share and redirect).</li>
  *     </ul>
  *   </li>
  * </ol>
@@ -48,7 +49,7 @@ public class ScheduleService {
     private final FileQueryService fileQueryService;
     private final FileDownloadService fileDownloadService;
     private final ThreadPoolTaskScheduler taskScheduler = new ThreadPoolTaskScheduler();
-    private final ShareTokenRepository shareTokenRepository;
+    private final ShortLinkRepository shortLinkRepository;
     private final ApplicationSettingsService applicationSettingsService;
     private final StorageService storageService;
     private final ScheduleTransactionHelper scheduleTransactionHelper;
@@ -68,7 +69,7 @@ public class ScheduleService {
                            FileLifecycleService fileLifecycleService,
                            FileQueryService fileQueryService,
                            FileDownloadService fileDownloadService,
-                           ShareTokenRepository shareTokenRepository,
+                           ShortLinkRepository shortLinkRepository,
                            ApplicationSettingsService applicationSettingsService,
                            StorageService storageService,
                            ScheduleTransactionHelper scheduleTransactionHelper) {
@@ -78,7 +79,7 @@ public class ScheduleService {
         this.fileDownloadService = fileDownloadService;
         taskScheduler.setPoolSize(1);
         taskScheduler.initialize();
-        this.shareTokenRepository = shareTokenRepository;
+        this.shortLinkRepository = shortLinkRepository;
         this.applicationSettingsService = applicationSettingsService;
         this.storageService = storageService;
         this.scheduleTransactionHelper = scheduleTransactionHelper;
@@ -214,7 +215,7 @@ public class ScheduleService {
             String uuid = key.replace("-decrypted", "");
             uploadRepository.findByUUID(uuid).ifPresentOrElse(
                     file -> {
-                        if (!shareTokenRepository.existsValidTokenForFile(file, LocalDate.now())) {
+                        if (!shortLinkRepository.existsValidTokenForFile(file, LocalDate.now())) {
                             storageService.delete(key);
                             logger.info("Deleted legacy decrypted sidecar: {}", key);
                         }
@@ -234,9 +235,9 @@ public class ScheduleService {
     }
 
     /**
-     * Deletes share tokens that have either passed their expiry date or exhausted
-     * their download allowance, and removes their associated re-encrypted sidecars.
-     * Runs daily at 03:30.
+     * Deletes short links (both upload-share and redirect) that have either passed their
+     * expiry date or exhausted their use allowance. Upload-share links also have their
+     * associated re-encrypted sidecars removed. Runs daily at 03:30.
      *
      * <p>DB rows are deleted first (inside a transaction via the helper) so that a
      * crash after the DB delete but before any sidecar cleanup leaves orphaned sidecars
@@ -244,16 +245,24 @@ public class ScheduleService {
      * daily {@link #cleanDatabaseFromDeletedFiles()} scan.
      */
     @Scheduled(cron = "0 30 3 * * *")
-    public void cleanShareTokens() {
-        logger.info("Cleaning invalid share tokens");
-        List<ShareTokenEntity> toDelete = shareTokenRepository.getShareTokenEntitiesForDeletion(LocalDate.now());
-        if (!toDelete.isEmpty()) {
-            toDelete.forEach(token -> fileDownloadService.deleteShareSidecar(token));
+    public void cleanShortLinks() {
+        logger.info("Cleaning invalid short links");
+        List<UploadShareLink> expiredShareLinks = shortLinkRepository.getShareTokenEntitiesForDeletion(LocalDate.now());
+        if (!expiredShareLinks.isEmpty()) {
+            expiredShareLinks.forEach(token -> fileDownloadService.deleteShareSidecar(token));
             // Delete DB rows inside a transaction, then handle any sidecar cleanup.
-            scheduleTransactionHelper.deleteExpiredShareTokens(toDelete);
-            logger.info("Deleted {} invalid share tokens", toDelete.size());
+            scheduleTransactionHelper.deleteExpiredShareTokens(expiredShareLinks);
+            logger.info("Deleted {} invalid upload-share links", expiredShareLinks.size());
         } else {
-            logger.debug("No invalid share tokens found");
+            logger.debug("No invalid upload-share links found");
+        }
+
+        List<RedirectLink> expiredRedirectLinks = shortLinkRepository.getRedirectLinksForDeletion(LocalDate.now());
+        if (!expiredRedirectLinks.isEmpty()) {
+            scheduleTransactionHelper.deleteExpiredRedirectLinks(expiredRedirectLinks);
+            logger.info("Deleted {} invalid redirect links", expiredRedirectLinks.size());
+        } else {
+            logger.debug("No invalid redirect links found");
         }
     }
 }

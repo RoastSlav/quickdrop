@@ -407,4 +407,70 @@ class ApplicationSettingsServiceTest extends QuickdropIntegrationTest {
             }
         }
     }
+
+    // -------------------------------------------------------------------------
+    // Reputation-provider licence acceptance
+    // -------------------------------------------------------------------------
+
+    private void resetReputationState() {
+        ApplicationSettingsEntity entity = applicationSettingsRepository.findById(1L).orElseThrow();
+        entity.setReputationPhishingArmyEnabled(false);
+        entity.setPhishingArmyTermsAcceptedAt(null);
+        applicationSettingsRepository.save(entity);
+        var cache = cacheManager.getCache("applicationSettings");
+        if (cache != null) {
+            cache.clear();
+        }
+    }
+
+    @Test
+    void acceptReputationProviderTermsEnablesTheProviderAndStampsATimestamp() {
+        try {
+            boolean accepted = applicationSettingsService.acceptReputationProviderTerms("phishing_army");
+
+            assertTrue(accepted);
+            ApplicationSettingsEntity entity = applicationSettingsRepository.findById(1L).orElseThrow();
+            assertTrue(entity.isReputationPhishingArmyEnabled());
+            assertNotNull(entity.getPhishingArmyTermsAcceptedAt());
+        } finally {
+            resetReputationState();
+        }
+    }
+
+    @Test
+    void acceptReputationProviderTermsReturnsFalseForAnUnknownProvider() {
+        assertFalse(applicationSettingsService.acceptReputationProviderTerms("not-a-real-provider"));
+    }
+
+    @Test
+    void settingsSaveCannotEnableAProviderWithoutPriorAcceptance() {
+        // Simulates a raw POST bypassing the licence modal entirely -- the server must not
+        // trust a bare "enabled=true" from the form without a recorded acceptance behind it.
+        ApplicationSettingsViewModel vm = new ApplicationSettingsViewModel(applicationSettingsService.getApplicationSettings());
+        vm.setReputationPhishingArmyEnabled(true);
+
+        applicationSettingsService.updateApplicationSettings(vm, null, null, false);
+
+        assertFalse(applicationSettingsService.isReputationPhishingArmyEnabled(),
+                "enabling via the general settings save must be ignored without a prior acceptReputationProviderTerms call");
+    }
+
+    @Test
+    void disablingAProviderViaSettingsSaveClearsItsAcceptedTimestampSoReEnablingReprompts() {
+        try {
+            applicationSettingsService.acceptReputationProviderTerms("phishing_army");
+            assertNotNull(applicationSettingsRepository.findById(1L).orElseThrow().getPhishingArmyTermsAcceptedAt());
+
+            ApplicationSettingsViewModel vm = new ApplicationSettingsViewModel(applicationSettingsService.getApplicationSettings());
+            vm.setReputationPhishingArmyEnabled(false);
+            applicationSettingsService.updateApplicationSettings(vm, null, null, false);
+
+            ApplicationSettingsEntity entity = applicationSettingsRepository.findById(1L).orElseThrow();
+            assertFalse(entity.isReputationPhishingArmyEnabled());
+            assertNull(entity.getPhishingArmyTermsAcceptedAt(),
+                    "disabling must clear the acceptance timestamp so re-enabling later re-prompts for the licence");
+        } finally {
+            resetReputationState();
+        }
+    }
 }

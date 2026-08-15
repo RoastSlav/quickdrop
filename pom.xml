@@ -152,6 +152,28 @@
             <version>1.19</version>
         </dependency>
         <dependency>
+            <!-- Pre-existing gap: PNGTranscoder writes through Batik's own
+                 ImageWriterRegistry/SPI framework, not plain javax.imageio directly, and
+                 that registry has no PNG writer without batik-codec on the classpath, so
+                 SvgRasterizationService#rasterizeToPng failed every real call with
+                 "Could not write PNG file because no WriteAdapter is available". This went
+                 unnoticed because every existing test mocks rasterizeToPng rather than
+                 exercising it; QrCodeService's tests (which call it for real) are what
+                 surfaced it. -->
+            <groupId>org.apache.xmlgraphics</groupId>
+            <artifactId>batik-codec</artifactId>
+            <version>1.19</version>
+        </dependency>
+        <dependency>
+            <!-- QR code encoding for share/short links (QrCodeService). Only zxing-core, not
+                 zxing-javase — the module matrix is hand-rendered to SVG so no AWT dependency
+                 is pulled in for code generation; PNG output reuses the already-hardened
+                 SvgRasterizationService instead of zxing's own (AWT-based) image writer. -->
+            <groupId>com.google.zxing</groupId>
+            <artifactId>core</artifactId>
+            <version>3.5.3</version>
+        </dependency>
+        <dependency>
             <groupId>com.azure</groupId>
             <artifactId>azure-storage-blob</artifactId>
             <version>12.35.0</version>

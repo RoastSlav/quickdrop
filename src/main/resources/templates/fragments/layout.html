@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<!--
+  Shared page shell. Before this fragment existed every template hand-copied the same
+  ~13-line <head>, its own orb-field block (some with two orbs, some with three) and,
+  on admin pages, its own inlined "Back to Admin" link. Those three things now live
+  here exactly once.
+
+  Fragments:
+    head(pageTitle, extra) — the whole <head>. `pageTitle` is a fragment expression for
+                             the page's own <title> element (pass ~{::title}); `extra` is
+                             a fragment expression for page-specific assets, or ~{} for none.
+    chrome(isAdminNav)     — skip link + nav header + background orbs, in that order.
+    backLink(href, label)  — the "← <label>" button admin sub-pages put above their title.
+    pageScripts            — the site-wide end-of-body scripts every page loads.
+
+  Alpine and htmx ship in the base head for every page rather than being opt-in per page,
+  so a page cannot silently lose its behaviour by forgetting the include.
+
+  `extra` is emitted BEFORE Alpine core on purpose: Alpine plugins have to register
+  before the core script initialises, and upload.html's head-extra carries
+  @alpinejs/collapse. Both are deferred, so they execute in document order.
+-->
+
+<head th:fragment="head(pageTitle, extra)">
+    <meta charset="UTF-8"/>
+    <meta content="width=device-width, initial-scale=1" name="viewport"/>
+    <title th:replace="${pageTitle}">QuickDrop</title>
+
+    <th:block th:replace="~{fragments/header :: themePreload}"></th:block>
+
+    <link href="https://fonts.googleapis.com" rel="preconnect"/>
+    <link crossorigin href="https://fonts.gstatic.com" rel="preconnect"/>
+    <link href="/css/tailwind.css" rel="stylesheet"/>
+    <link href="/css/custom.css" rel="stylesheet"/>
+    <link href="/images/favicon.png" rel="icon" th:href="${appLogoPath}" type="image/png"/>
+
+    <script src="/js/tailwindTheme.js"></script>
+    <script src="/js/toast.js"></script>
+    <!-- Must precede confirm.js: it reads these defaults once at load. -->
+    <script th:inline="javascript">
+        // Copy for scripts that run site-wide (spa.js) rather than on one page.
+        window.QD_I18N = {
+            navigationFailed: /*[[#{notification.navigationFailed}]]*/ 'Navigation failed. Please try again.'
+        };
+        window.QD_CONFIRM_I18N = {
+            title: /*[[#{confirm.defaultTitle}]]*/ 'Are you sure?',
+            confirm: /*[[#{button.confirm}]]*/ 'Confirm',
+            cancel: /*[[#{button.cancel}]]*/ 'Cancel',
+            // Action verbs reused by several pages' confirm buttons, translated once here
+            // instead of in each page's own i18n blob.
+            'delete': /*[[#{button.delete}]]*/ 'Delete',
+            revoke: /*[[#{page.adminShareLinks.revoke}]]*/ 'Revoke'
+        };
+    </script>
+    <script src="/js/confirm.js"></script>
+
+    <link as="image" rel="preload" th:href="${appLogoPath}"/>
+
+    <th:block th:replace="${extra}"></th:block>
+
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.3/dist/htmx.min.js"></script>
+</head>
+
+<!-- Skip link, nav and background orbs. The skip link has to precede the header so it is
+     the document's first focusable element; it used to sit outside header.html's fragment
+     boundary, which meant th:replace never picked it up and no page ever rendered it. -->
+<th:block th:fragment="chrome(isAdminNav)">
+    <a class="skip-link" href="#main-content" th:text="#{nav.skipToContent}">Skip to main content</a>
+    <div th:replace="~{fragments/header :: header(${isAdminNav})}"></div>
+    <div aria-hidden="true" class="orb-field">
+        <div class="orb orb--primary"></div>
+        <div class="orb orb--secondary"></div>
+        <div class="orb orb--teal"></div>
+    </div>
+</th:block>
+
+<!-- Background orbs for pages that render no nav (gates, interstitials). -->
+<th:block th:fragment="orbs">
+    <div aria-hidden="true" class="orb-field">
+        <div class="orb orb--primary"></div>
+        <div class="orb orb--secondary"></div>
+        <div class="orb orb--teal"></div>
+    </div>
+</th:block>
+
+<div th:fragment="backLink(href, label)" class="mb-6 animate-in">
+    <a class="btn btn-ghost btn-sm inline-flex items-center gap-1.5" th:href="${href}">
+        <svg aria-hidden="true" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2"
+             viewBox="0 0 24 24">
+            <path d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span th:text="${label}">Back</span>
+    </a>
+</div>
+
+<th:block th:fragment="pageScripts">
+    <script src="/js/locale-switcher.js"></script>
+</th:block>
+
+</body>
+</html>

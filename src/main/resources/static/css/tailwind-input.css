@@ -28,8 +28,8 @@
 
     /* ── Text ─────────────────────────────────────────────────────────── */
     --c-text: #1a2332;
-    --c-text-muted: #5a6b7a;
-    --c-text-faint: #8a9ba8;
+    --c-text-muted: #4d5c69;
+    --c-text-faint: #5a6b7a;
     --c-text-placeholder: #8a9ba8;
 
     /* ── Nav ──────────────────────────────────────────────────────────── */
@@ -44,7 +44,7 @@
     --c-primary: #0BA8C4;
     --c-primary-hover: #0990A8;
     --c-primary-muted: #d8f5fb;
-    --c-primary-fg: #ffffff;
+    --c-primary-fg: #0e0d0e;
 
     /* ── Brand: Carrot Orange (secondary) ────────────────────────────── */
     --c-secondary: #D97A00;
@@ -123,6 +123,25 @@
     --c-amber-badge-text: #5c4500; /* gold on pale gold */
     --c-rose-badge-text: #9b0029; /* rose on pale rose */
     --c-danger-badge-text: #b91c1c; /* red on pale red (also used in alert-danger) */
+    --c-indigo-badge-text: #3730a3; /* indigo on pale indigo */
+
+    /* ── Type scale ───────────────────────────────────────────────────────
+       One ramp, used by every component. Before this existed the stylesheet
+       carried 15 ad-hoc sizes including 0.6875rem and 0.7rem — 11px and 11.2px,
+       a fifth of a pixel apart — and templates added inline 0.6rem (9.6px) on
+       top. 0.75rem is a hard floor: nothing in the UI goes below 12px.
+       --fs-3xl exists to fill the gap between 20px and the 50px hero, which
+       previously had nothing in it. */
+    --fs-3xs: 0.75rem;   /* 12px — floor. badges, eyebrows, dense table meta */
+    --fs-2xs: 0.8125rem; /* 13px — captions, mono data, hints */
+    --fs-xs: 0.875rem;   /* 14px — secondary text, table cells, btn-sm */
+    --fs-sm: 0.9375rem;  /* 15px — body copy */
+    --fs-md: 1.0625rem;  /* 17px — lead paragraphs, card titles */
+    --fs-lg: 1.25rem;    /* 20px — section titles */
+    --fs-xl: 1.5rem;     /* 24px — panel headings */
+    --fs-2xl: 1.875rem;  /* 30px — small page titles */
+    --fs-3xl: clamp(1.75rem, 3.5vw, 2.5rem);  /* mid-weight page titles */
+    --fs-4xl: clamp(2.25rem, 5vw, 3.5rem);    /* hero */
 
     /* ── Motion ───────────────────────────────────────────────────────── */
     --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
@@ -161,8 +180,8 @@ html.dark {
     --orb-opacity: 0.5;
 
     --c-text: #e8edf2;
-    --c-text-muted: #8a9ba8;
-    --c-text-faint: #4a5a68;
+    --c-text-muted: #a1b2be;
+    --c-text-faint: #8a9ba8;
     --c-text-placeholder: #384858;
 
     --c-nav-bg: rgba(7, 6, 7, 0.95);
@@ -245,6 +264,7 @@ html.dark {
     --c-amber-badge-text: var(--c-amber);
     --c-rose-badge-text: var(--c-rose);
     --c-danger-badge-text: var(--c-danger);
+    --c-indigo-badge-text: var(--c-indigo);
 }
 
 /* ════════════════════════════════════════════════════════════════════════
@@ -310,9 +330,9 @@ html.dark {
         padding: 0.5rem 1.25rem;
         background: var(--c-primary);
         color: var(--c-primary-fg, #fff);
-        border-radius: 0.5rem;
+        border-radius: var(--r-md);
         font-weight: 600;
-        font-size: 0.875rem;
+        font-size: var(--fs-xs);
         text-decoration: none;
         white-space: nowrap;
     }
@@ -326,7 +346,7 @@ html.dark {
     :focus-visible {
         outline: 2px solid var(--c-primary);
         outline-offset: 2px;
-        border-radius: 4px;
+        border-radius: var(--r-sm);
     }
 
     button:focus-visible, a:focus-visible, [role="button"]:focus-visible {
@@ -485,7 +505,6 @@ html.dark {
    ════════════════════════════════════════════════════════════════════════ */
 
 @layer components {
-
     /* ── Floating Orbs (background decoration) ───────────────────────── */
     .orb-field {
         position: fixed;
@@ -547,7 +566,7 @@ html.dark {
         justify-content: center;
         gap: 0.5rem;
         font-weight: 600;
-        font-size: 0.875rem;
+        font-size: var(--fs-xs);
         line-height: 1.25rem;
         border-radius: var(--r-lg);
         padding: 0.5625rem 1.125rem;
@@ -571,19 +590,44 @@ html.dark {
 
     .btn-sm {
         padding: 0.375rem 0.75rem;
-        font-size: 0.8125rem;
+        font-size: var(--fs-2xs);
         border-radius: var(--r-md);
+    }
+
+    /* Touch targets. Keyed off pointer type rather than viewport width, so a
+       narrow desktop window keeps its compact density while an actual finger
+       always gets 44px. Every interactive control measured 32-34px before this. */
+    @media (pointer: coarse) {
+        .btn,
+        .btn-sm,
+        .nav-icon-btn,
+        .pagination-btn,
+        .lang-btn,
+        .cron-preset,
+        .preview-toggle-button {
+            min-height: 2.75rem;
+            padding-block: 0.625rem;
+        }
+
+        .btn-sm {
+            padding-inline: 0.875rem;
+        }
+
+        .nav-icon-btn,
+        .lang-btn {
+            min-width: 2.75rem;
+        }
     }
 
     .btn-lg {
         padding: 0.75rem 1.5rem;
-        font-size: 0.9375rem;
-        border-radius: 0.875rem;
+        font-size: var(--fs-sm);
+        border-radius: var(--r-xl);
     }
 
     .btn-xl {
         padding: 0.875rem 2rem;
-        font-size: 1rem;
+        font-size: var(--fs-sm);
         border-radius: var(--r-xl);
         letter-spacing: -0.01em;
     }
@@ -625,15 +669,6 @@ html.dark {
         background: var(--c-teal-hover);
     }
 
-    .btn-emerald {
-        background: var(--c-emerald);
-        color: var(--c-emerald-fg);
-    }
-
-    .btn-emerald:hover {
-        background: var(--c-emerald-hover);
-    }
-
     .btn-rose {
         background: var(--c-rose);
         color: var(--c-rose-fg);
@@ -668,7 +703,9 @@ html.dark {
 
     .btn-soft-primary {
         background: var(--c-primary-muted);
-        color: var(--c-primary);
+        /* --c-primary on --c-primary-muted is 2.48:1; the badge-text token is the
+           darkened variant that exists for text on a muted brand surface. */
+        color: var(--c-primary-badge-text);
         border-color: color-mix(in srgb, var(--c-primary) 20%, transparent);
     }
 
@@ -677,7 +714,7 @@ html.dark {
     }
 
     .cron-preset {
-        border-radius: 999px;
+        border-radius: var(--r-pill);
         font-weight: 500;
         letter-spacing: 0.01em;
         background: transparent;
@@ -700,15 +737,38 @@ html.dark {
         box-shadow: 0 0 0 3px color-mix(in srgb, var(--c-primary) 10%, transparent);
     }
 
-    .btn-ghost-nav {
-        background: transparent;
-        color: var(--c-nav-text-muted);
-        border: 1px solid transparent;
+    /* Formatted/Tree switch above the JSON file preview. fileView.js has always assigned
+       these two class names, but neither was ever defined — the buttons rendered as bare
+       unstyled UA buttons. Modelled on .cron-preset, whose active-state pattern this
+       mirrors (it uses `.active` rather than `.is-active`, matching the JS). */
+    .preview-toolbar {
+        display: flex;
+        gap: 0.375rem;
+        margin-bottom: 0.75rem;
     }
 
-    .btn-ghost-nav:hover {
-        background: var(--c-nav-hover);
-        color: var(--c-nav-text);
+    .preview-toggle-button {
+        padding: 0.3rem 0.75rem;
+        font-size: var(--fs-2xs);
+        font-weight: 500;
+        border-radius: var(--r-pill);
+        background: transparent;
+        color: var(--c-text-muted);
+        border: 1px solid var(--c-border-strong);
+        cursor: pointer;
+        transition: all 180ms var(--ease-out-quart);
+    }
+
+    .preview-toggle-button:hover {
+        background: var(--c-surface-raised);
+        border-color: var(--c-primary);
+        color: var(--c-primary);
+    }
+
+    .preview-toggle-button.active {
+        background: var(--c-primary-muted);
+        color: var(--c-primary);
+        border-color: color-mix(in srgb, var(--c-primary) 35%, transparent);
     }
 
     /* ── Cards / Surfaces ─────────────────────────────────────────────── */
@@ -741,60 +801,13 @@ html.dark {
         box-shadow: 0 8px 40px -16px rgba(15, 23, 42, 0.18);
     }
 
-    .card-glow {
-        background: var(--c-surface);
-        border: 1px solid var(--c-border);
-        border-radius: 1.25rem;
-        padding: 1.5rem;
-        position: relative;
-        overflow: hidden;
-        transition: all 300ms var(--ease-out-quart);
-    }
-
-    .card-glow::before {
-        content: "";
-        position: absolute;
-        inset: -1px;
-        border-radius: inherit;
-        padding: 1px;
-        background: var(--c-primary);
-        mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-        mask-composite: exclude;
-        -webkit-mask-composite: xor;
-        opacity: 0;
-        transition: opacity 400ms var(--ease-out-quart);
-        pointer-events: none;
-    }
-
-    .card-glow:hover::before {
-        opacity: 0.5;
-    }
-
-    .card-glow:hover {
-        box-shadow: 0 0 40px -12px var(--c-glow),
-        0 16px 40px -16px rgba(15, 23, 42, 0.16);
-        transform: translateY(-4px);
-    }
-
-    .card-section {
-        padding-bottom: 1.25rem;
-        margin-bottom: 1.25rem;
-        border-bottom: 1px solid var(--c-border);
-    }
-
-    .card-section:last-child {
-        border-bottom: none;
-        margin-bottom: 0;
-        padding-bottom: 0;
-    }
-
     /* ── Oversized Stat (hero number readout) ─────────────────────────── */
     .stat-hero {
         display: flex;
         flex-direction: column;
         gap: 0.25rem;
         padding: 1.5rem;
-        border-radius: 1.25rem;
+        border-radius: var(--r-2xl);
         background: var(--c-surface);
         border: 1px solid var(--c-border);
         position: relative;
@@ -808,7 +821,7 @@ html.dark {
     }
 
     .stat-hero-label {
-        font-size: 0.6875rem;
+        font-size: var(--fs-3xs);
         font-weight: 700;
         color: var(--c-text-muted);
         text-transform: uppercase;
@@ -817,7 +830,7 @@ html.dark {
 
     .stat-hero-value {
         font-family: 'JetBrains Mono', ui-monospace, monospace;
-        font-size: clamp(2.5rem, 5vw, 3.5rem);
+        font-size: var(--fs-4xl);
         font-weight: 700;
         letter-spacing: -0.04em;
         line-height: 1;
@@ -827,12 +840,12 @@ html.dark {
     }
 
     .stat-hero-value--sm {
-        font-size: clamp(1.5rem, 3vw, 2rem);
+        font-size: var(--fs-3xl);
         letter-spacing: -0.02em;
     }
 
     .stat-hero-sub {
-        font-size: 0.75rem;
+        font-size: var(--fs-3xs);
         color: var(--c-text-faint);
         font-weight: 500;
     }
@@ -858,20 +871,6 @@ html.dark {
         border-top: 3px solid var(--c-teal);
     }
 
-    .stat-hero--emerald {
-        --stat-glow: color-mix(in srgb, var(--c-emerald) 30%, transparent);
-        --stat-color: var(--c-emerald);
-        background: color-mix(in srgb, var(--c-emerald) 7%, var(--c-surface));
-        border-top: 3px solid var(--c-emerald);
-    }
-
-    .stat-hero--rose {
-        --stat-glow: color-mix(in srgb, var(--c-rose) 30%, transparent);
-        --stat-color: var(--c-rose);
-        background: color-mix(in srgb, var(--c-rose) 7%, var(--c-surface));
-        border-top: 3px solid var(--c-rose);
-    }
-
     /* ── Accent stripe on cards ──────────────────────────────────────── */
     .accent-stripe {
         position: relative;
@@ -884,7 +883,7 @@ html.dark {
         left: 1.5rem;
         right: 1.5rem;
         height: 3px;
-        border-radius: 0 0 9999px 9999px;
+        border-radius: 0 0 var(--r-pill) var(--r-pill);
         background: var(--stripe-color, var(--c-primary));
     }
 
@@ -908,10 +907,6 @@ html.dark {
         --stripe-color: var(--c-rose);
     }
 
-    .accent-stripe--indigo {
-        --stripe-color: var(--c-indigo);
-    }
-
     .accent-stripe--gradient {
         --stripe-color: var(--c-primary);
     }
@@ -925,7 +920,7 @@ html.dark {
         padding: 0.625rem 0.875rem;
         color: var(--c-text);
         font-family: inherit;
-        font-size: 0.875rem;
+        font-size: var(--fs-xs);
         line-height: 1.5;
         transition: border-color 200ms var(--ease-out-quart),
         box-shadow 200ms var(--ease-out-quart),
@@ -975,12 +970,12 @@ html.dark {
 
     .form-input-mono {
         font-family: 'JetBrains Mono', ui-monospace, monospace;
-        font-size: 0.8125rem;
+        font-size: var(--fs-2xs);
     }
 
     .form-label {
         display: block;
-        font-size: 0.8125rem;
+        font-size: var(--fs-2xs);
         font-weight: 600;
         color: var(--c-text);
         margin-bottom: 0.375rem;
@@ -988,7 +983,7 @@ html.dark {
     }
 
     .form-hint {
-        font-size: 0.75rem;
+        font-size: var(--fs-3xs);
         color: var(--c-text-muted);
         margin-top: 0.25rem;
         line-height: 1.5;
@@ -1012,21 +1007,12 @@ html.dark {
         height: 1rem;
         margin-top: 0.1875rem;
         flex-shrink: 0;
-        border-radius: 0.25rem;
+        border-radius: var(--r-sm);
         cursor: pointer;
-    }
-
-    /* accent-color overrides for non-primary checkboxes */
-    .accent-secondary {
-        accent-color: var(--c-secondary);
     }
 
     .accent-teal {
         accent-color: var(--c-teal);
-    }
-
-    .accent-indigo {
-        accent-color: var(--c-indigo);
     }
 
     /* aligns a standalone checkbox with adjacent text in a flex-start row */
@@ -1055,7 +1041,7 @@ html.dark {
         cursor: pointer;
         inset: 0;
         background: var(--c-border-strong);
-        border-radius: 9999px;
+        border-radius: var(--r-pill);
         transition: background-color 250ms var(--ease-out-quart),
         box-shadow 250ms var(--ease-out-quart);
     }
@@ -1096,70 +1082,1033 @@ html.dark {
         box-shadow: 0 0 12px color-mix(in srgb, var(--c-rose) 40%, transparent);
     }
 
-    .toggle--emerald input:checked + .toggle-slider {
-        background: var(--c-emerald);
-        box-shadow: 0 0 12px color-mix(in srgb, var(--c-emerald) 40%, transparent);
-    }
-
-    .toggle--secondary input:checked + .toggle-slider {
-        background: var(--c-secondary);
-        box-shadow: 0 0 12px color-mix(in srgb, var(--c-secondary) 40%, transparent);
-    }
-
-    .toggle--indigo input:checked + .toggle-slider {
-        background: var(--c-indigo);
-        box-shadow: 0 0 12px color-mix(in srgb, var(--c-indigo) 40%, transparent);
-    }
-
-    .toggle--amber input:checked + .toggle-slider {
-        background: var(--c-amber);
-        box-shadow: 0 0 12px color-mix(in srgb, var(--c-amber) 40%, transparent);
-    }
-
     /* ── Page layout ──────────────────────────────────────────────────── */
+    /* Page container. Encodes exactly what all 17 page templates previously hand-rolled
+       as `max-w-Nxl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12` — the old definition here
+       used flat 1.25rem padding and no breakpoints, which is why no page ever adopted it.
+       The width modifiers are used alongside .page-wrap and change only max-width. */
     .page-wrap {
-        flex: 1;
         width: 100%;
         max-width: 80rem;
-        margin: 0 auto;
-        padding: 2.5rem 1.25rem 4rem;
+        margin-inline: auto;
+        padding: 2rem 1rem;
+    }
+
+    .page-wrap-medium {
+        max-width: 72rem;
     }
 
     .page-wrap-narrow {
-        flex: 1;
-        width: 100%;
-        max-width: 48rem;
-        margin: 0 auto;
-        padding: 2.5rem 1.25rem 4rem;
+        max-width: 64rem;
     }
 
-    .page-wrap-wide {
-        flex: 1;
+    .page-wrap-tight {
+        max-width: 32rem;
+    }
+
+    @media (min-width: 640px) {
+        .page-wrap {
+            padding-inline: 1.5rem;
+        }
+    }
+
+    @media (min-width: 1024px) {
+        .page-wrap {
+            padding-inline: 2rem;
+            padding-block: 3rem;
+        }
+    }
+
+    /* ── Page header ──────────────────────────────────────────────────────
+       One component, two modes. Before this, every page hand-rolled its own
+       header block and admin pages spent a separate row on a back link above an
+       oversized hero — 258px of chrome before the first row of data.
+
+         .page-header--hero  pages a visitor meets (upload, list, paste, gates):
+                             large gradient title, generous spacing.
+         .page-header--bar   pages an operator works in (dashboard, admin/*):
+                             back link, smaller gradient title, actions — one row.
+
+       Both compress hard below 768px, where a 56px title costs a fifth of the
+       screen and the title is already in the nav and the browser tab. */
+    .page-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 1rem 1.5rem;
+        flex-wrap: wrap;
+        margin-bottom: 2rem;
+    }
+
+    .page-header-main {
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0.375rem;
+    }
+
+    .page-header-title {
+        font-weight: 800;
+        letter-spacing: -0.035em;
+        line-height: 1.1;
+        color: var(--c-text);
+        margin: 0;
+    }
+
+    .page-header-sub {
+        font-size: var(--fs-xs);
+        color: var(--c-text-muted);
+        margin: 0;
+    }
+
+    .page-header-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    /* Back link folded into the bar, replacing the separate row above it. */
+    .page-header-back {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.375rem;
+        font-size: var(--fs-2xs);
+        font-weight: 600;
+        color: var(--c-text-muted);
+        text-decoration: none;
+        border-radius: var(--r-md);
+        padding: 0.25rem 0.5rem 0.25rem 0.25rem;
+        margin-left: -0.25rem;
+        transition: color 160ms var(--ease-out-quart), background 160ms var(--ease-out-quart);
+        white-space: nowrap;
+    }
+
+    .page-header-back:hover {
+        color: var(--c-primary);
+        background: var(--c-surface-raised);
+    }
+
+    .page-header-back svg {
+        width: 0.875rem;
+        height: 0.875rem;
+    }
+
+    .page-header--hero {
+        margin-bottom: 2.5rem;
+    }
+
+    .page-header--hero .page-header-title {
+        font-size: var(--fs-4xl);
+    }
+
+    .page-header--bar {
+        align-items: center;
+        gap: 0.75rem 1.5rem;
+        margin-bottom: 1.25rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 1px solid var(--c-border);
+    }
+
+    /* Back link sits inline with the title rather than on its own row above it —
+       that row alone was ~40px of every console page. A subtitle or eyebrow wraps
+       to its own line via flex-basis. */
+    .page-header--bar .page-header-main {
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.25rem 0.875rem;
+    }
+
+    .page-header--bar .page-header-sub {
+        flex-basis: 100%;
+    }
+
+    .page-header--bar .page-header-back {
+        position: relative;
+        padding-right: 0.875rem;
+    }
+
+    /* hairline separating the back link from the page name */
+    .page-header--bar .page-header-back::after {
+        content: "";
+        position: absolute;
+        right: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 1px;
+        height: 1em;
+        background: var(--c-border);
+    }
+
+    .page-header--bar .page-header-title {
+        font-size: var(--fs-2xl);
+    }
+
+    /* Console pages start their content near the top; the generous hero padding is
+       for pages a visitor reads, not pages an operator scans. */
+    .page-wrap:has(> .page-header--bar) {
+        padding-top: 1.25rem;
+    }
+
+    @media (min-width: 1024px) {
+        .page-wrap:has(> .page-header--bar) {
+            padding-top: 1.75rem;
+        }
+    }
+
+    /* Console pages get more width than the 80rem reading measure — a dense table
+       wants the room. Capped rather than full-bleed: past ~100rem a table row gets
+       hard to track across on a large monitor. Width modifiers still win, so the
+       narrow detail pages (history) stay narrow. */
+    @media (min-width: 1440px) {
+        .page-wrap:has(> .page-header--bar):not([class*="page-wrap-"]) {
+            max-width: 100rem;
+        }
+    }
+
+    @media (max-width: 767px) {
+        .page-header {
+            margin-bottom: 1.5rem;
+        }
+
+        .page-header--hero {
+            margin-bottom: 1.5rem;
+        }
+
+        .page-header--hero .page-header-title {
+            font-size: var(--fs-2xl);
+        }
+
+        .page-header--bar {
+            margin-bottom: 1.25rem;
+            padding-bottom: 0.75rem;
+        }
+
+        .page-header--bar .page-header-title {
+            font-size: var(--fs-xl);
+        }
+
+        .page-header-sub {
+            font-size: var(--fs-3xs);
+        }
+    }
+
+    /* Keyboard-shortcut hints are meaningless without a keyboard. */
+    @media (pointer: coarse) {
+        .kbd-hint {
+            display: none !important;
+        }
+    }
+
+    /* ── Paste editor shell ───────────────────────────────────────────────
+       The pastebin is a writing tool, and writing used to be the last thing on
+       the page: a hero title, title field, mode select, an editor-settings box
+       and a two-row toolbar came first, so on a phone roughly 60% of the screen
+       was consumed before the first line of the editor.
+
+       Now the editor fills the viewport and everything else is either in the bar
+       or one tap away in the options panel. Sized in dvh so the mobile keyboard
+       shrinks the editor instead of pushing the page. */
+    .paste-shell {
+        display: flex;
+        flex-direction: column;
+        height: calc(100dvh - var(--nav-h));
+        min-height: 30rem;
         width: 100%;
         max-width: 90rem;
-        margin: 0 auto;
-        padding: 2.5rem 1.25rem 4rem;
+        margin-inline: auto;
+        padding: 0.75rem 1rem 1rem;
+        gap: 0.75rem;
     }
 
-    .page-wrap-full {
+    .paste-form {
+        display: flex;
+        flex-direction: column;
         flex: 1;
+        min-height: 0;
+        gap: 0.75rem;
+    }
+
+    .paste-bar {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+    }
+
+    /* The paste's name, treated as a document title rather than a form field. */
+    .paste-title {
+        flex: 1;
+        min-width: 12rem;
+        background: transparent;
+        border: 0;
+        border-bottom: 1px solid transparent;
+        padding: 0.25rem 0;
+        font-size: var(--fs-xl);
+        font-weight: 800;
+        letter-spacing: -0.025em;
+        color: var(--c-text);
+        outline: none;
+        transition: border-color 160ms var(--ease-out-quart);
+    }
+
+    .paste-title::placeholder {
+        color: var(--c-text-faint);
+        font-weight: 700;
+    }
+
+    .paste-title:hover {
+        border-bottom-color: var(--c-border);
+    }
+
+    .paste-title:focus {
+        border-bottom-color: var(--c-primary);
+    }
+
+    .paste-bar-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex-shrink: 0;
+    }
+
+    .paste-options {
+        background: var(--c-surface-raised);
+        border: 1px solid var(--c-border);
+        border-radius: var(--r-xl);
+        padding: 1rem 1.125rem;
+        max-height: 55dvh;
+        overflow-y: auto;
+    }
+
+    .paste-options-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+        gap: 1rem 1.5rem;
+        align-items: start;
+    }
+
+    .paste-flash {
+        margin: 0;
+    }
+
+    /* Editor takes every remaining pixel. */
+    .paste-editor {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        min-height: 0;
+    }
+
+    @media (max-width: 639px) {
+        .paste-shell {
+            padding: 0.5rem 0.75rem 0.75rem;
+        }
+
+        .paste-title {
+            font-size: var(--fs-md);
+            min-width: 8rem;
+        }
+
+        .paste-options-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    /* Short pages used to pin their content to the top and leave a tall empty band
+       underneath — an upload form or a login card ending 40% down a 1080px screen
+       with nothing below it. `margin-block: auto` centres the content when there is
+       spare room and behaves exactly like top alignment when there is not, so long
+       pages are untouched and nothing can clip.
+
+       Console pages are excluded on purpose: a table should start at the top. */
+    main.hero-scene {
+        display: flex;
+        flex-direction: column;
+        min-height: calc(100dvh - var(--nav-h));
+    }
+
+    main.hero-scene > .page-wrap:not(:has(> .page-header--bar)) {
+        margin-block: auto;
+    }
+
+    /* ── Settings section headings ────────────────────────────────────────
+       The complaint was that you could not tell where one feature's settings
+       stopped and the next began. An earlier attempt boxed each section in a
+       bordered container, which clipped long help text and left unconverted rows
+       looking different — so instead the boundary is drawn as a rule above each
+       section heading. Nothing is wrapped, so nothing can clip. */
+    .settings-section-label {
+        display: block;
+        font-size: var(--fs-3xs);
+        font-weight: 800;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--c-text-muted);
+        margin: 0 0 0.75rem;
+    }
+
+    /* every section except the first in its panel gets a divider above it */
+    section + section > .settings-section-label {
+        padding-top: 1.5rem;
+        border-top: 1px solid var(--c-border);
+    }
+
+    /* ── Backups page ─────────────────────────────────────────────────────
+       Was four full-width cards stacked vertically — schedule, backup now, upload,
+       then a flat filename list — so the thing you came to look at was last and
+       there was no sense of how much was stored or when the next run is.
+       Now: a summary strip, then the list as the primary column with the
+       make/configure actions in a sidebar. */
+    .backup-summary {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+        gap: 1px;
+        background: var(--c-border);
+        border: 1px solid var(--c-border);
+        border-radius: var(--r-2xl);
+        overflow: hidden;
+        margin-bottom: 1.5rem;
+    }
+
+    .backup-stat {
+        display: flex;
+        flex-direction: column;
+        gap: 0.3125rem;
+        padding: 0.9375rem 1.125rem;
+        background: var(--c-surface);
+    }
+
+    .backup-stat-label {
+        font-size: var(--fs-3xs);
+        font-weight: 800;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--c-text-faint);
+    }
+
+    .backup-stat-value {
+        font-family: 'JetBrains Mono', ui-monospace, monospace;
+        font-size: var(--fs-xl);
+        font-weight: 700;
+        line-height: 1.1;
+        color: var(--c-text);
+        font-feature-settings: "tnum";
+    }
+
+    .backup-stat-value--sm {
+        font-size: var(--fs-sm);
+    }
+
+    .backup-stat-value--muted {
+        color: var(--c-text-muted);
+    }
+
+    .backup-layout {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+        align-items: start;
+    }
+
+    @media (min-width: 1024px) {
+        .backup-layout {
+            grid-template-columns: minmax(0, 1.7fr) minmax(20rem, 1fr);
+        }
+    }
+
+    .backup-main,
+    .backup-aside {
+        min-width: 0;
+    }
+
+    .backup-aside {
+        display: flex;
+        flex-direction: column;
+        gap: 1.25rem;
+    }
+
+    /* the aside's cards shed the page-level bottom margins they had when stacked */
+    .backup-aside > .card {
+        margin-bottom: 0;
+    }
+
+    /* ── Search row ───────────────────────────────────────────────────────
+       Search field plus its buttons. Previously `flex-col sm:flex-row`, which on a
+       phone stacked the field and each button as three full-width blocks. Now the
+       field takes the row and the buttons sit together beneath it. */
+    .search-row {
+        display: flex;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+
+    .search-row > .search-bar {
+        flex: 1 1 16rem;
+        min-width: 0;
+    }
+
+    .search-row-actions {
+        display: flex;
+        gap: 0.5rem;
+        flex-shrink: 0;
+    }
+
+    @media (max-width: 479px) {
+        .search-row-actions {
+            width: 100%;
+        }
+
+        .search-row-actions > * {
+            flex: 1;
+            justify-content: center;
+        }
+    }
+
+    /* Visit counter on a redirect-link row: how many times it has actually been
+       followed, as distinct from the remaining-uses budget shown beside it. */
+    .link-visits {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3125rem;
+        margin-top: 0.25rem;
+        font-size: var(--fs-3xs);
+        color: var(--c-text-muted);
+    }
+
+    .link-visits svg {
+        width: 0.8125rem;
+        height: 0.8125rem;
+        opacity: 0.7;
+    }
+
+    .link-visits-count {
+        font-family: 'JetBrains Mono', ui-monospace, monospace;
+        font-weight: 700;
+        font-feature-settings: "tnum";
+        color: var(--c-text);
+    }
+
+    /* ── Kind tabs ────────────────────────────────────────────────────────
+       For switching between two datasets on one page (admin Links: share vs
+       redirect). Deliberately heavier than a filter chip — it changes the columns
+       and the actions, and the previous small segmented toggle was easy to miss. */
+    .kind-tabs {
+        display: flex;
+        gap: 0.25rem;
+        margin-bottom: 1.5rem;
+        border-bottom: 1px solid var(--c-border);
+        overflow-x: auto;
+        scrollbar-width: none;
+    }
+
+    .kind-tabs::-webkit-scrollbar {
+        display: none;
+    }
+
+    .kind-tab {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.6875rem 1rem;
+        border-bottom: 2px solid transparent;
+        margin-bottom: -1px;
+        font-size: var(--fs-xs);
+        font-weight: 700;
+        color: var(--c-text-muted);
+        text-decoration: none;
+        white-space: nowrap;
+        transition: color 160ms var(--ease-out-quart), border-color 160ms var(--ease-out-quart);
+    }
+
+    .kind-tab svg {
+        width: 1rem;
+        height: 1rem;
+        opacity: 0.75;
+    }
+
+    .kind-tab:hover {
+        color: var(--c-text);
+    }
+
+    .kind-tab.is-active {
+        color: var(--c-primary);
+        border-bottom-color: var(--c-primary);
+    }
+
+    .kind-tab.is-active svg {
+        opacity: 1;
+    }
+
+    .kind-tab-count {
+        font-family: 'JetBrains Mono', ui-monospace, monospace;
+        font-size: var(--fs-3xs);
+        font-weight: 700;
+        font-feature-settings: "tnum";
+        padding: 0.125rem 0.4375rem;
+        border-radius: var(--r-pill);
+        background: var(--c-surface-subtle);
+        color: var(--c-text-muted);
+    }
+
+    .kind-tab.is-active .kind-tab-count {
+        background: var(--c-primary-muted);
+        color: var(--c-primary-badge-text);
+    }
+
+    /* ── Loading + swap motion ────────────────────────────────────────────
+       The partial-nav loading state used to be a blunt `opacity: 0.4` on the
+       container, which also let the layout jump when the replacement differed in
+       height. It now keeps its height and shows a shimmer bar along the top. */
+    .is-loading {
+        position: relative;
+        pointer-events: none;
+    }
+
+    .is-loading > * {
+        opacity: 0.55;
+        transition: opacity 160ms var(--ease-out-quart);
+    }
+
+    .is-loading::after {
+        content: "";
+        position: absolute;
+        inset-inline: 0;
+        top: 0;
+        height: 2px;
+        border-radius: var(--r-pill);
+        background: linear-gradient(90deg,
+        transparent 0%,
+        var(--c-primary) 45%,
+        var(--c-primary) 55%,
+        transparent 100%);
+        background-size: 200% 100%;
+        animation: qd-loading-sweep 900ms linear infinite;
+    }
+
+    @keyframes qd-loading-sweep {
+        from {
+            background-position: 150% 0;
+        }
+        to {
+            background-position: -50% 0;
+        }
+    }
+
+    /* Rows entering a freshly swapped list, staggered by spa.js. */
+    .row-enter {
+        animation: qd-row-in 260ms var(--ease-out-quart) both;
+    }
+
+    @keyframes qd-row-in {
+        from {
+            opacity: 0;
+            transform: translateY(0.4rem);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .is-loading::after {
+            animation: none;
+            background: var(--c-primary);
+        }
+
+        .row-enter {
+            animation: none;
+        }
+    }
+
+    /* ── Row overflow menu ────────────────────────────────────────────────
+       Admin rows carried four action buttons inline (view, history, download,
+       delete), which on a phone wrapped onto their own line and pushed every row
+       past 100px. The primary action stays inline; the rest live here.
+       Driven by delegated vanilla JS in spa.js, not Alpine, so it keeps working
+       after QD.loadDynamic swaps the list. */
+    .row-menu {
+        position: relative;
+        display: inline-flex;
+    }
+
+    .row-menu-panel {
+        display: none;
+        position: absolute;
+        right: 0;
+        top: calc(100% + 0.375rem);
+        z-index: 30;
+        min-width: 11rem;
+        padding: 0.3125rem;
+        background: var(--c-surface-raised);
+        border: 1px solid var(--c-border-strong);
+        border-radius: var(--r-lg);
+        box-shadow: 0 16px 40px -14px rgba(2, 6, 23, 0.5);
+    }
+
+    .row-menu.is-open .row-menu-panel {
+        display: block;
+        animation: qd-menu-in 140ms var(--ease-out-quart);
+    }
+
+    @keyframes qd-menu-in {
+        from {
+            opacity: 0;
+            transform: translateY(-0.25rem);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .row-menu-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
         width: 100%;
-        margin: 0 auto;
-        padding: 2.5rem 1.25rem 4rem;
+        padding: 0.4375rem 0.625rem;
+        border: 0;
+        border-radius: var(--r-md);
+        background: transparent;
+        color: var(--c-text);
+        font-size: var(--fs-2xs);
+        font-weight: 600;
+        text-align: left;
+        text-decoration: none;
+        cursor: pointer;
+        white-space: nowrap;
     }
 
-    .page-header {
-        margin-bottom: 2.5rem;
+    .row-menu-item svg {
+        width: 0.875rem;
+        height: 0.875rem;
+        flex-shrink: 0;
+        opacity: 0.7;
     }
 
-    .page-header-center {
-        margin-bottom: 2.5rem;
-        text-align: center;
+    .row-menu-item:hover {
+        background: var(--c-surface-subtle);
+        color: var(--c-primary);
+    }
+
+    .row-menu-item--danger {
+        color: var(--c-danger-badge-text);
+    }
+
+    .row-menu-item--danger:hover {
+        background: var(--c-danger-muted);
+        color: var(--c-danger-badge-text);
+    }
+
+    .row-menu-sep {
+        height: 1px;
+        margin: 0.3125rem 0;
+        background: var(--c-border);
+    }
+
+    /* Density. Comfortable by default; compact roughly doubles rows per screen. */
+    .is-compact .file-row,
+    .is-compact [data-uuid] {
+        padding-block: 0.4375rem;
+    }
+
+    .is-compact .toggle-slider {
+        transform: scale(0.86);
+    }
+
+    .is-compact .row-toggle-label {
+        display: none;
+    }
+
+    /* Toggle labels sit beside the switch rather than stacked above it. */
+    .row-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4375rem;
+    }
+
+    .row-toggle-label {
+        font-size: var(--fs-3xs);
+        font-weight: 800;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+    }
+
+    /* ── Dashboard: attention strip ───────────────────────────────────────
+       The dashboard used to open with eight counters, half of them zero. These
+       items only render when there is genuinely something to decide, so an empty
+       strip means "nothing needs you" rather than a row of noise. */
+    .attention-strip {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .attention-item {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.625rem;
+        padding: 0.75rem 1rem;
+        border-radius: var(--r-xl);
+        border: 1px solid transparent;
+        text-decoration: none;
+        font-size: var(--fs-xs);
+        font-weight: 600;
+        transition: transform 160ms var(--ease-out-quart), box-shadow 160ms var(--ease-out-quart);
+    }
+
+    .attention-item:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 8px 20px -10px rgba(2, 6, 23, 0.45);
+    }
+
+    .attention-item svg {
+        width: 1.125rem;
+        height: 1.125rem;
+        flex-shrink: 0;
+    }
+
+    .attention-item--danger {
+        background: var(--c-danger-muted);
+        border-color: color-mix(in srgb, var(--c-danger) 35%, transparent);
+        color: var(--c-danger-badge-text);
+    }
+
+    .attention-item--warning {
+        background: var(--c-warning-bg);
+        border-color: color-mix(in srgb, var(--c-amber) 35%, transparent);
+        color: var(--c-warning-text);
+    }
+
+    .attention-count {
+        font-family: 'JetBrains Mono', ui-monospace, monospace;
+        font-size: var(--fs-md);
+        font-weight: 700;
+        font-feature-settings: "tnum";
+    }
+
+    /* ── Dashboard: recent activity feed ──────────────────────────────── */
+    .activity-feed {
+        margin-bottom: 1.5rem;
+    }
+
+    .activity-feed-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .activity-feed-list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .activity-feed-row {
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        align-items: center;
+        gap: 0.875rem;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid var(--c-border);
+        min-width: 0;
+    }
+
+    .activity-feed-row:last-child {
+        border-bottom: 0;
+    }
+
+    .activity-feed-badge {
+        justify-self: start;
+    }
+
+    .activity-feed-name {
+        font-size: var(--fs-xs);
+        color: var(--c-text);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        min-width: 0;
+    }
+
+    .activity-feed-time {
+        font-family: 'JetBrains Mono', ui-monospace, monospace;
+        font-size: var(--fs-3xs);
+        color: var(--c-text-faint);
+        font-feature-settings: "tnum";
+        white-space: nowrap;
+    }
+
+    @media (max-width: 479px) {
+        .activity-feed-row {
+            grid-template-columns: auto 1fr;
+        }
+
+        .activity-feed-time {
+            grid-column: 2;
+            justify-self: start;
+        }
+    }
+
+    /* ── Upload page ──────────────────────────────────────────────────────
+       The two columns are centred against each other rather than top-aligned.
+       Top-aligned, the short info column ran out of content around 40% down and
+       left a tall empty rectangle beside the form; centred, the pair reads as one
+       balanced band and the page still fits a 1080px screen without scrolling. */
+    .upload-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 2rem;
+        align-items: center;
+    }
+
+    @media (min-width: 768px) {
+        .upload-grid {
+            grid-template-columns: 2fr 3fr;
+            gap: 3rem;
+        }
+    }
+
+    .upload-aside {
+        display: flex;
+        flex-direction: column;
+        gap: 1.25rem;
+        min-width: 0;
+    }
+
+    .upload-head .page-subtitle {
+        margin-top: 0.625rem;
+    }
+
+    .upload-facts {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .upload-facts-stats {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.75rem;
+    }
+
+    .upload-facts .stat-hero {
+        padding: 0.875rem 1rem;
+    }
+
+    .upload-facts .stat-hero-value {
+        font-size: var(--fs-2xl);
+    }
+
+    .upload-form-card {
+        background: var(--c-surface);
+        border: 1px solid var(--c-border);
+        border-radius: var(--r-3xl);
+        padding: 1.75rem;
+        min-width: 0;
+    }
+
+    @media (max-width: 639px) {
+        .upload-form-card {
+            padding: 1.125rem;
+            border-radius: var(--r-2xl);
+        }
+    }
+
+    /* ── Metadata list ────────────────────────────────────────────────────
+       Label/value pairs (uploaded at, file size, …). On desktop these read as
+       cards; below 640px the cards collapse into one bordered group of compact
+       rows. The file detail page previously spent ~200px of phone screen on two
+       full-width padded cards holding twelve characters of information. */
+    .meta-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+        gap: 0.75rem;
+    }
+
+    .meta-item {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+        padding: 1rem;
+        border-radius: var(--r-xl);
+        background: var(--c-surface-raised);
+        border: 1px solid var(--c-border);
+        min-width: 0;
+    }
+
+    .meta-label {
+        font-size: var(--fs-3xs);
+        font-weight: 800;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--c-text-faint);
+        line-height: 1.2;
+    }
+
+    .meta-value {
+        font-family: 'JetBrains Mono', ui-monospace, monospace;
+        font-size: var(--fs-md);
+        font-weight: 700;
+        color: var(--c-text);
+        font-feature-settings: "tnum";
+        overflow-wrap: anywhere;
+    }
+
+    .meta-note {
+        font-size: var(--fs-3xs);
+        color: var(--c-text-faint);
+        margin: 0;
+    }
+
+    @media (max-width: 639px) {
+        .meta-grid {
+            display: block;
+            border: 1px solid var(--c-border);
+            border-radius: var(--r-xl);
+            background: var(--c-surface-raised);
+            overflow: hidden;
+        }
+
+        .meta-item {
+            flex-direction: row;
+            flex-wrap: wrap;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 0.25rem 1rem;
+            padding: 0.625rem 0.875rem;
+            border: 0;
+            border-bottom: 1px solid var(--c-border);
+            border-radius: 0;
+            background: transparent;
+        }
+
+        .meta-item:last-child {
+            border-bottom: 0;
+        }
+
+        .meta-value {
+            font-size: var(--fs-xs);
+            text-align: right;
+        }
+
+        .meta-note {
+            flex-basis: 100%;
+        }
     }
 
     /* ── Hero titles ──────────────────────────────────────────────────── */
     .page-title {
-        font-size: clamp(1.75rem, 3.5vw, 2.5rem);
+        font-size: var(--fs-3xl);
         font-weight: 800;
         letter-spacing: -0.035em;
         color: var(--c-text);
@@ -1167,35 +2116,48 @@ html.dark {
     }
 
     .page-title-xl {
-        font-size: clamp(2.25rem, 5vw, 3.5rem);
+        font-size: var(--fs-4xl);
         font-weight: 800;
         letter-spacing: -0.04em;
         color: var(--c-text);
         line-height: 1.05;
     }
 
+    /* On a phone the hero title rendered at ~40px and wrapped to two lines, costing a
+       fifth of the viewport — while the page name is already in the nav and the tab. */
+    @media (max-width: 767px) {
+        .page-title,
+        .page-title-xl {
+            font-size: var(--fs-2xl);
+            letter-spacing: -0.03em;
+        }
+    }
+
     .page-subtitle {
-        font-size: 1rem;
+        font-size: var(--fs-sm);
         color: var(--c-text-muted);
         margin-top: 0.75rem;
         line-height: 1.6;
     }
 
     .section-title {
-        font-size: 1.125rem;
+        font-size: var(--fs-md);
         font-weight: 700;
         color: var(--c-text);
         letter-spacing: -0.015em;
     }
 
     .section-eyebrow {
-        font-size: 0.6875rem;
+        font-size: var(--fs-3xs);
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.14em;
         color: var(--c-text-muted);
     }
 
+    /* Solid brand colour, not a gradient — the gradient read as muddy against the
+       dark ground and was explicitly rejected. Kept as its own class so display
+       titles have one place to change. */
     .gradient-text {
         color: var(--c-primary);
     }
@@ -1205,7 +2167,7 @@ html.dark {
         display: inline-flex;
         align-items: center;
         gap: 0.3rem;
-        font-size: 0.6875rem;
+        font-size: var(--fs-3xs);
         font-weight: 700;
         letter-spacing: 0.04em;
         text-transform: uppercase;
@@ -1231,12 +2193,6 @@ html.dark {
         background: var(--c-teal-muted);
         color: var(--c-teal-badge-text);
         border-color: color-mix(in srgb, var(--c-teal) 30%, transparent);
-    }
-
-    .badge-emerald {
-        background: var(--c-emerald-muted);
-        color: var(--c-emerald);
-        border-color: color-mix(in srgb, var(--c-emerald) 30%, transparent);
     }
 
     .badge-rose {
@@ -1295,10 +2251,10 @@ html.dark {
 
     /* ── Alerts ───────────────────────────────────────────────────────── */
     .alert {
-        border-radius: 0.875rem;
+        border-radius: var(--r-xl);
         border: 1px solid;
         padding: 0.875rem 1rem;
-        font-size: 0.875rem;
+        font-size: var(--fs-xs);
         line-height: 1.5;
     }
 
@@ -1347,9 +2303,9 @@ html.dark {
         padding: 0.75rem 1rem 0.75rem 0.875rem;
         background: var(--c-surface);
         border: 1px solid var(--c-border);
-        border-radius: 1rem;
+        border-radius: var(--r-xl);
         box-shadow: 0 16px 40px -12px rgba(15, 23, 42, 0.35);
-        font-size: 0.875rem;
+        font-size: var(--fs-xs);
         color: var(--c-text);
         animation: qd-slide-in-right 300ms var(--ease-spring) both;
         min-width: 14rem;
@@ -1367,6 +2323,8 @@ html.dark {
         height: 1.125rem;
     }
 
+    /* The four .toast--* variants are applied as `toast toast--${kind}` by js/toast.js,
+       so a plain grep for the class name finds nothing. Not dead — do not remove. */
     .toast--success .toast-icon {
         color: var(--c-emerald);
     }
@@ -1383,6 +2341,332 @@ html.dark {
         color: var(--c-amber);
     }
 
+    /* ── Rendered markdown ────────────────────────────────────────────── */
+    /* Was duplicated as a <style> block in both pasteView.html and pastebin.html, with
+       the two copies disagreeing on code/pre background, pre radius, hr colour and
+       blockquote padding — so the same paste rendered differently depending on whether
+       you were viewing it or editing it. This is the union of the two, once. */
+    .markdown-content h1,
+    .markdown-content h2,
+    .markdown-content h3,
+    .markdown-content h4,
+    .markdown-content h5,
+    .markdown-content h6 {
+        margin-top: 1.25rem;
+        margin-bottom: 0.75rem;
+        font-weight: 700;
+        line-height: 1.25;
+    }
+
+    .markdown-content h1 {
+        font-size: var(--fs-2xl);
+    }
+
+    .markdown-content h2 {
+        font-size: var(--fs-xl);
+    }
+
+    .markdown-content h3 {
+        font-size: var(--fs-lg);
+    }
+
+    .markdown-content p,
+    .markdown-content ul,
+    .markdown-content ol,
+    .markdown-content pre,
+    .markdown-content blockquote,
+    .markdown-content table {
+        margin-top: 0.75rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .markdown-content ul,
+    .markdown-content ol {
+        padding-left: 1.25rem;
+    }
+
+    .markdown-content ul {
+        list-style: disc;
+    }
+
+    .markdown-content ol {
+        list-style: decimal;
+    }
+
+    .markdown-content a {
+        color: var(--c-primary);
+        text-decoration: underline;
+    }
+
+    .markdown-content code {
+        background: var(--c-surface-subtle);
+        border-radius: var(--r-sm);
+        padding: 0.1rem 0.3rem;
+        font-family: 'JetBrains Mono', ui-monospace, monospace;
+    }
+
+    .markdown-content pre {
+        background: var(--c-surface-subtle);
+        border-radius: var(--r-lg);
+        overflow: auto;
+        padding: 0.75rem;
+    }
+
+    .markdown-content pre code {
+        background: transparent;
+        padding: 0;
+    }
+
+    .markdown-content hr {
+        border: 0;
+        border-top: 1px solid var(--c-border);
+        margin: 1rem 0;
+    }
+
+    .markdown-content blockquote {
+        border-left: 3px solid var(--c-primary);
+        padding-left: 1rem;
+        color: var(--c-text-muted);
+    }
+
+    .markdown-content table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .markdown-content th,
+    .markdown-content td {
+        border: 1px solid var(--c-border);
+        padding: 0.4rem 0.75rem;
+        text-align: left;
+    }
+
+    .markdown-content th {
+        background: var(--c-surface-subtle);
+        font-weight: 600;
+    }
+
+    /* Confirmation pulse for controls that commit on change. These toggles were
+       already optimistic AJAX with rollback, but a success produced no feedback at
+       all and a failure silently flipped the switch back — you could not tell
+       "saved" from "didn't save". */
+    @keyframes qd-saved-pulse {
+        0% {
+            box-shadow: 0 0 0 0 color-mix(in srgb, var(--c-emerald) 55%, transparent);
+        }
+        100% {
+            box-shadow: 0 0 0 0.6rem transparent;
+        }
+    }
+
+    .is-saved > .toggle-slider,
+    .is-saved.toggle-slider {
+        animation: qd-saved-pulse 700ms var(--ease-out-quart);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .is-saved > .toggle-slider,
+        .is-saved.toggle-slider {
+            animation: none;
+            outline: 2px solid var(--c-emerald);
+            outline-offset: 2px;
+        }
+    }
+
+    /* ── Unsaved-changes bar ──────────────────────────────────────────────
+       Shown by js/dirty-guard.js while an explicit-save form has pending edits.
+       Sits above page content but below modals and toasts. */
+    .unsaved-bar {
+        position: fixed;
+        left: 50%;
+        bottom: 1rem;
+        transform: translate(-50%, 150%);
+        z-index: 150;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        width: calc(100% - 2rem);
+        max-width: 34rem;
+        padding: 0.75rem 0.875rem 0.75rem 1.125rem;
+        background: var(--c-surface-raised);
+        border: 1px solid var(--c-border-strong);
+        border-radius: var(--r-2xl);
+        box-shadow: 0 18px 48px -16px rgba(2, 6, 23, 0.45);
+        transition: transform 260ms var(--ease-spring), opacity 200ms var(--ease-out-quart);
+        opacity: 0;
+    }
+
+    .unsaved-bar.is-visible {
+        transform: translate(-50%, 0);
+        opacity: 1;
+    }
+
+    .unsaved-bar-text {
+        font-size: var(--fs-xs);
+        font-weight: 600;
+        color: var(--c-text);
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    /* amber dot so the bar reads as "pending", not "error" */
+    .unsaved-bar-text::before {
+        content: "";
+        width: 0.5rem;
+        height: 0.5rem;
+        border-radius: var(--r-pill);
+        background: var(--c-amber);
+        flex-shrink: 0;
+    }
+
+    .unsaved-bar-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-left: auto;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .unsaved-bar {
+            transition: opacity 120ms linear;
+            transform: translate(-50%, 0);
+        }
+    }
+
+    /* ── Modal / confirmation dialog ──────────────────────────────────── */
+    /* Driven by js/confirm.js. `:not(.hidden)` rather than a plain display:flex: both
+       this selector and Tailwind's .hidden carry single-class specificity, so a plain
+       rule would win purely by source order and defeat .hidden entirely. */
+    .modal-overlay {
+        display: none;
+    }
+
+    .modal-overlay:not(.hidden) {
+        position: fixed;
+        inset: 0;
+        z-index: 200;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
+        background: rgba(2, 6, 23, 0.6);
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
+        animation: qd-fade-in 160ms var(--ease-out-quart) both;
+    }
+
+    .modal {
+        width: 100%;
+        max-width: 30rem;
+        max-height: calc(100vh - 2rem);
+        overflow-y: auto;
+        background: var(--c-surface-raised);
+        border: 1px solid var(--c-border);
+        border-radius: var(--r-2xl);
+        padding: 1.5rem;
+        box-shadow: 0 24px 60px -16px rgba(2, 6, 23, 0.5);
+        animation: qd-modal-in 220ms var(--ease-spring) both;
+    }
+
+    .modal-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 2.75rem;
+        height: 2.75rem;
+        margin-bottom: 1rem;
+        border-radius: var(--r-xl);
+        background: var(--c-primary-muted);
+        color: var(--c-primary);
+    }
+
+    .modal-icon svg {
+        width: 1.5rem;
+        height: 1.5rem;
+    }
+
+    /* .modal--danger / .modal--warning are applied as `modal modal--${tone}` by
+       js/confirm.js — same caveat as the toast variants above. */
+    .modal--danger .modal-icon {
+        background: var(--c-danger-muted);
+        color: var(--c-danger);
+    }
+
+    .modal--warning .modal-icon {
+        background: var(--c-warning-bg);
+        color: var(--c-warning-text);
+    }
+
+    .modal-title {
+        font-size: var(--fs-md);
+        font-weight: 800;
+        letter-spacing: -0.01em;
+        color: var(--c-text);
+        margin-bottom: 0.5rem;
+    }
+
+    .modal-body {
+        font-size: var(--fs-xs);
+        line-height: 1.6;
+        color: var(--c-text-muted);
+    }
+
+    .modal-body p + p {
+        margin-top: 0.5rem;
+    }
+
+    .modal-body strong {
+        color: var(--c-text);
+        font-weight: 600;
+    }
+
+    .modal--danger .modal-body em {
+        display: block;
+        margin-top: 0.625rem;
+        font-style: normal;
+        font-weight: 600;
+        color: var(--c-danger);
+    }
+
+    .modal-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.5rem;
+        margin-top: 1.5rem;
+    }
+
+    @media (max-width: 479px) {
+        .modal-actions {
+            flex-direction: column-reverse;
+        }
+
+        .modal-actions .btn {
+            width: 100%;
+            justify-content: center;
+        }
+    }
+
+    @keyframes qd-modal-in {
+        from {
+            opacity: 0;
+            transform: translateY(0.75rem) scale(0.97);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .modal-overlay:not(.hidden),
+        .modal {
+            animation: none;
+        }
+    }
+
     /* ── Search bar ───────────────────────────────────────────────────── */
     .search-bar {
         display: flex;
@@ -1390,7 +2674,7 @@ html.dark {
         gap: 0.625rem;
         background: var(--c-surface);
         border: 1px solid var(--c-border-strong);
-        border-radius: 1rem;
+        border-radius: var(--r-xl);
         padding: 0 1rem;
         height: 3rem;
         transition: border-color 200ms var(--ease-out-quart),
@@ -1415,7 +2699,7 @@ html.dark {
         border: none;
         outline: none;
         color: var(--c-text);
-        font-size: 0.875rem;
+        font-size: var(--fs-xs);
         min-width: 0;
     }
 
@@ -1427,11 +2711,11 @@ html.dark {
         display: inline-flex;
         align-items: center;
         padding: 0.1875rem 0.4375rem;
-        border-radius: 0.375rem;
+        border-radius: var(--r-sm);
         border: 1px solid var(--c-border-strong);
         background: var(--c-surface-raised);
         font-family: 'JetBrains Mono', ui-monospace, monospace;
-        font-size: 0.6875rem;
+        font-size: var(--fs-3xs);
         color: var(--c-text-muted);
         line-height: 1;
         box-shadow: 0 1px 0 var(--c-border-strong);
@@ -1451,7 +2735,7 @@ html.dark {
     /* ── Upload dropzone ─────────────────────────────────────────────── */
     .dropzone {
         position: relative;
-        border-radius: 1.5rem;
+        border-radius: var(--r-3xl);
         background: var(--c-surface);
         overflow: hidden;
         transition: all 300ms var(--ease-out-quart);
@@ -1493,7 +2777,7 @@ html.dark {
         background: var(--c-primary-muted);
         width: 4rem;
         height: 4rem;
-        border-radius: 1.25rem;
+        border-radius: var(--r-2xl);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -1508,14 +2792,14 @@ html.dark {
     }
 
     .dropzone-title {
-        font-size: 1.25rem;
+        font-size: var(--fs-lg);
         font-weight: 700;
         color: var(--c-text);
         letter-spacing: -0.02em;
     }
 
     .dropzone-hint {
-        font-size: 0.8125rem;
+        font-size: var(--fs-2xs);
         color: var(--c-text-muted);
     }
 
@@ -1527,49 +2811,11 @@ html.dark {
         flex-wrap: wrap;
     }
 
-    /* Manifest card */
-    .manifest-card {
-        border-radius: 1rem;
-        background: var(--c-surface-raised);
-        border: 1px solid var(--c-border);
-        padding: 1rem 1.25rem;
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-        animation: qd-scale-in 300ms var(--ease-out-expo) both;
-    }
-
-    .manifest-card-icon {
-        width: 3rem;
-        height: 3rem;
-        border-radius: 0.875rem;
-        background: var(--c-primary-muted);
-        color: var(--c-primary);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
-    }
-
-    .manifest-card-name {
-        font-weight: 700;
-        color: var(--c-text);
-        word-break: break-all;
-        line-height: 1.3;
-    }
-
-    .manifest-card-meta {
-        font-family: 'JetBrains Mono', ui-monospace, monospace;
-        font-size: 0.75rem;
-        color: var(--c-text-muted);
-        margin-top: 0.25rem;
-    }
-
     /* ── Progress bar ─────────────────────────────────────────────────── */
     .progress-bar-track {
         width: 100%;
         background: var(--c-border);
-        border-radius: 9999px;
+        border-radius: var(--r-pill);
         height: 0.5rem;
         overflow: hidden;
         position: relative;
@@ -1578,7 +2824,7 @@ html.dark {
     .progress-bar-fill {
         height: 100%;
         background: var(--g-brand);
-        border-radius: 9999px;
+        border-radius: var(--r-pill);
         transition: width 300ms var(--ease-out-quart);
         position: relative;
         overflow: hidden;
@@ -1597,7 +2843,7 @@ html.dark {
     .data-table {
         width: 100%;
         border-collapse: collapse;
-        font-size: 0.875rem;
+        font-size: var(--fs-xs);
     }
 
     .data-table thead tr {
@@ -1609,7 +2855,7 @@ html.dark {
         padding: 0.875rem 1rem;
         text-align: left;
         font-weight: 700;
-        font-size: 0.6875rem;
+        font-size: var(--fs-3xs);
         color: var(--c-text-muted);
         letter-spacing: 0.08em;
         text-transform: uppercase;
@@ -1637,81 +2883,8 @@ html.dark {
 
     .data-table td.mono {
         font-family: 'JetBrains Mono', ui-monospace, monospace;
-        font-size: 0.8125rem;
+        font-size: var(--fs-2xs);
         color: var(--c-text-muted);
-    }
-
-    /* ── Stat card (compact) ─────────────────────────────────────────── */
-    .stat-card {
-        background: var(--c-surface);
-        border: 1px solid var(--c-border);
-        border-radius: 1rem;
-        padding: 1.25rem 1.375rem;
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
-        position: relative;
-        overflow: hidden;
-        transition: transform 200ms var(--ease-out-quart), box-shadow 200ms;
-    }
-
-    .stat-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 12px 32px -16px rgba(15, 23, 42, 0.18);
-    }
-
-    .stat-card::before {
-        content: "";
-        position: absolute;
-        inset: 0 0 auto 0;
-        height: 3px;
-        background: var(--stat-accent, var(--c-primary));
-    }
-
-    .stat-card--primary {
-        --stat-accent: var(--c-primary);
-    }
-
-    .stat-card--secondary {
-        --stat-accent: var(--c-secondary);
-    }
-
-    .stat-card--teal {
-        --stat-accent: var(--c-teal);
-    }
-
-    .stat-card--emerald {
-        --stat-accent: var(--c-emerald);
-    }
-
-    .stat-card--rose {
-        --stat-accent: var(--c-rose);
-    }
-
-    .stat-card--indigo {
-        --stat-accent: var(--c-indigo);
-    }
-
-    .stat-card--amber {
-        --stat-accent: var(--c-amber);
-    }
-
-    .stat-card-label {
-        font-size: 0.6875rem;
-        font-weight: 700;
-        color: var(--c-text-muted);
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
-    }
-
-    .stat-card-value {
-        font-family: 'JetBrains Mono', ui-monospace, monospace;
-        font-size: 2rem;
-        font-weight: 700;
-        color: var(--c-text);
-        letter-spacing: -0.03em;
-        line-height: 1;
-        font-feature-settings: "tnum";
     }
 
     /* ── Pagination ───────────────────────────────────────────────────── */
@@ -1720,7 +2893,7 @@ html.dark {
         align-items: center;
         justify-content: center;
         padding: 0.4375rem 1rem;
-        font-size: 0.8125rem;
+        font-size: var(--fs-2xs);
         font-weight: 600;
         border-radius: var(--r-md);
         background: var(--c-surface);
@@ -1743,17 +2916,11 @@ html.dark {
         pointer-events: none;
     }
 
-    .pagination-btn-active {
-        background: var(--c-primary);
-        border-color: var(--c-primary);
-        color: var(--c-primary-fg);
-    }
-
     /* ── File card (list page) ────────────────────────────────────────── */
     .file-card {
         background: var(--c-surface);
         border: 1px solid var(--c-border);
-        border-radius: 1.25rem;
+        border-radius: var(--r-2xl);
         padding: 1.25rem;
         display: flex;
         flex-direction: column;
@@ -1793,7 +2960,7 @@ html.dark {
     .file-card-icon {
         width: 2.5rem;
         height: 2.5rem;
-        border-radius: 0.75rem;
+        border-radius: var(--r-lg);
         background: var(--c-primary-muted);
         color: var(--c-primary);
         display: inline-flex;
@@ -1820,7 +2987,7 @@ html.dark {
 
     .file-card-meta {
         font-family: 'JetBrains Mono', ui-monospace, monospace;
-        font-size: 0.75rem;
+        font-size: var(--fs-3xs);
         color: var(--c-text-muted);
         display: flex;
         align-items: center;
@@ -1869,7 +3036,7 @@ html.dark {
         text-decoration: none;
         color: var(--c-nav-text);
         font-weight: 700;
-        font-size: 0.9375rem;
+        font-size: var(--fs-sm);
         white-space: nowrap;
         flex-shrink: 0;
         letter-spacing: -0.02em;
@@ -1886,16 +3053,6 @@ html.dark {
         object-fit: contain;
     }
 
-    .nav-brand-dot {
-        width: 0.5rem;
-        height: 0.5rem;
-        border-radius: 50%;
-        background: var(--c-emerald);
-        box-shadow: 0 0 10px var(--c-emerald);
-        flex-shrink: 0;
-        animation: qd-pulse-dot 2s ease-in-out infinite;
-    }
-
     .nav-links {
         display: flex;
         align-items: center;
@@ -1907,8 +3064,8 @@ html.dark {
         align-items: center;
         gap: 0.4rem;
         padding: 0.4375rem 0.75rem;
-        border-radius: 0.625rem;
-        font-size: 0.8125rem;
+        border-radius: var(--r-md);
+        font-size: var(--fs-2xs);
         font-weight: 500;
         color: var(--c-nav-text-muted);
         text-decoration: none;
@@ -1938,7 +3095,7 @@ html.dark {
         bottom: -0.5rem;
         height: 2px;
         background: var(--c-primary);
-        border-radius: 9999px;
+        border-radius: var(--r-pill);
     }
 
     .nav-actions {
@@ -1954,7 +3111,7 @@ html.dark {
         justify-content: center;
         width: 2.25rem;
         height: 2.25rem;
-        border-radius: 0.625rem;
+        border-radius: var(--r-md);
         color: var(--c-nav-text-muted);
         transition: all 200ms;
         border: none;
@@ -1966,29 +3123,6 @@ html.dark {
         color: var(--c-nav-text);
     }
 
-    .nav-select {
-        background: transparent;
-        border: 1px solid var(--c-nav-border);
-        border-radius: 0.5rem;
-        color: var(--c-nav-text-muted);
-        font-family: inherit;
-        font-size: 0.75rem;
-        font-weight: 600;
-        padding: 0.25rem 0.5rem;
-        cursor: pointer;
-        transition: all 200ms;
-    }
-
-    .nav-select:hover {
-        border-color: var(--c-primary);
-        color: var(--c-nav-text);
-    }
-
-    .nav-select option {
-        background: var(--c-nav-bg-solid);
-        color: var(--c-nav-text);
-    }
-
     /* Language picker */
     .lang-btn {
         display: inline-flex;
@@ -1996,10 +3130,10 @@ html.dark {
         gap: 0.35rem;
         background: transparent;
         border: 1px solid var(--c-nav-border);
-        border-radius: 0.5rem;
+        border-radius: var(--r-md);
         color: var(--c-nav-text-muted);
         font-family: inherit;
-        font-size: 0.75rem;
+        font-size: var(--fs-3xs);
         font-weight: 700;
         letter-spacing: 0.04em;
         padding: 0.3rem 0.55rem;
@@ -2022,7 +3156,7 @@ html.dark {
         min-width: 10rem;
         background: var(--c-nav-bg-solid);
         border: 1px solid rgba(255, 255, 255, 0.10);
-        border-radius: 0.875rem;
+        border-radius: var(--r-xl);
         padding: 0.375rem;
         box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.04);
     }
@@ -2034,8 +3168,8 @@ html.dark {
         gap: 0.5rem;
         width: 100%;
         padding: 0.45rem 0.75rem;
-        border-radius: 0.5rem;
-        font-size: 0.8125rem;
+        border-radius: var(--r-md);
+        font-size: var(--fs-2xs);
         font-weight: 500;
         color: var(--c-nav-text-muted);
         text-decoration: none;
@@ -2057,7 +3191,7 @@ html.dark {
 
     .lang-option .lang-code {
         font-family: 'JetBrains Mono', monospace;
-        font-size: 0.7rem;
+        font-size: var(--fs-3xs);
         opacity: 0.55;
     }
 
@@ -2079,7 +3213,7 @@ html.dark {
     .nav-drawer .nav-link {
         padding: 0.75rem;
         width: 100%;
-        border-radius: 0.75rem;
+        border-radius: var(--r-lg);
     }
 
     .nav-drawer-actions {
@@ -2093,10 +3227,10 @@ html.dark {
     .locale-select-standalone {
         background: var(--c-surface);
         border: 1px solid var(--c-border-strong);
-        border-radius: 0.5rem;
+        border-radius: var(--r-md);
         color: var(--c-text);
         font-family: inherit;
-        font-size: 0.8125rem;
+        font-size: var(--fs-2xs);
         padding: 0.3125rem 0.5rem;
         cursor: pointer;
     }
@@ -2115,8 +3249,8 @@ html.dark {
         align-items: center;
         gap: 0.5rem;
         padding: 0.75rem 1rem;
-        border-radius: 0.625rem 0.625rem 0 0;
-        font-size: 0.875rem;
+        border-radius: var(--r-md) var(--r-md) 0 0;
+        font-size: var(--fs-xs);
         font-weight: 600;
         color: var(--c-text-muted);
         background: transparent;
@@ -2145,35 +3279,12 @@ html.dark {
         bottom: -2px;
         height: 2px;
         background: var(--c-primary);
-        border-radius: 9999px 9999px 0 0;
-    }
-
-    .tab-panel {
-        animation: qd-fade-in 250ms var(--ease-out-expo) both;
-    }
-
-    /* ── Settings ────────────────────────────────────────────────────── */
-    .settings-section {
-        display: flex;
-        flex-direction: column;
-        gap: 1.5rem;
-    }
-
-    .settings-row {
-        display: grid;
-        grid-template-columns: 1fr;
-        gap: 1.25rem;
+        border-radius: var(--r-pill) var(--r-pill) 0 0;
     }
 
     @media (min-width: 640px) {
-        .settings-row {
-            grid-template-columns: repeat(2, 1fr);
-        }
     }
     @media (min-width: 1024px) {
-        .settings-row {
-            grid-template-columns: repeat(3, 1fr);
-        }
     }
 
     .settings-list {
@@ -2249,7 +3360,7 @@ html.dark {
         display: inline-block;
         width: 2.75rem;
         height: 1.5rem;
-        border-radius: 9999px;
+        border-radius: var(--r-pill);
         background: var(--c-border-strong);
         transition: background 200ms;
         flex-shrink: 0;
@@ -2265,7 +3376,7 @@ html.dark {
         left: 0.1875rem;
         width: 1.125rem;
         height: 1.125rem;
-        border-radius: 9999px;
+        border-radius: var(--r-pill);
         background: #fff;
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
         transition: transform 200ms var(--ease-out-expo, ease);
@@ -2277,13 +3388,13 @@ html.dark {
 
     .fieldset {
         border: 1px solid var(--c-border);
-        border-radius: 1rem;
+        border-radius: var(--r-xl);
         padding: 1.25rem;
         background: var(--c-surface-raised);
     }
 
     .fieldset-title {
-        font-size: 0.8125rem;
+        font-size: var(--fs-2xs);
         font-weight: 700;
         color: var(--c-text);
         margin-bottom: 0.875rem;
@@ -2298,7 +3409,7 @@ html.dark {
         padding: 0.25rem;
         background: var(--c-surface-raised);
         border: 1px solid var(--c-border);
-        border-radius: 0.75rem;
+        border-radius: var(--r-lg);
         gap: 0.125rem;
     }
 
@@ -2307,10 +3418,10 @@ html.dark {
         border: none;
         background: transparent;
         padding: 0.375rem 0.875rem;
-        font-size: 0.8125rem;
+        font-size: var(--fs-2xs);
         font-weight: 600;
         color: var(--c-text-muted);
-        border-radius: 0.5rem;
+        border-radius: var(--r-md);
         cursor: pointer;
         transition: all 200ms;
     }
@@ -2326,10 +3437,10 @@ html.dark {
     .code-preview {
         background: var(--c-surface-subtle);
         border: 1px solid var(--c-border);
-        border-radius: 1rem;
+        border-radius: var(--r-xl);
         padding: 1.25rem;
         color: var(--c-text);
-        font-size: 0.8125rem;
+        font-size: var(--fs-2xs);
         font-family: 'JetBrains Mono', ui-monospace, monospace;
         overflow: auto;
         max-height: 32rem;
@@ -2338,9 +3449,9 @@ html.dark {
     .json-tree {
         background: var(--c-surface-subtle);
         border: 1px solid var(--c-border);
-        border-radius: 1rem;
+        border-radius: var(--r-xl);
         padding: 0.75rem;
-        font-size: 0.8125rem;
+        font-size: var(--fs-2xs);
         font-family: 'JetBrains Mono', ui-monospace, monospace;
         max-height: 32rem;
         overflow: auto;
@@ -2367,7 +3478,7 @@ html.dark {
         width: 100%;
         height: 36rem;
         border: 1px solid var(--c-border);
-        border-radius: 1rem;
+        border-radius: var(--r-xl);
         overflow: hidden;
         background: var(--c-surface-raised);
     }
@@ -2375,12 +3486,12 @@ html.dark {
     .preview-table {
         width: 100%;
         border-collapse: collapse;
-        font-size: 0.8125rem;
+        font-size: var(--fs-2xs);
         overflow: auto;
         display: block;
         max-height: 32rem;
         border: 1px solid var(--c-border);
-        border-radius: 0.75rem;
+        border-radius: var(--r-lg);
     }
 
     .preview-table thead {
@@ -2406,11 +3517,11 @@ html.dark {
     .folder-tree-box {
         background: var(--c-folder-box-bg);
         border: 1px solid var(--c-folder-box-border);
-        border-radius: 0.75rem;
+        border-radius: var(--r-lg);
         color: var(--c-text);
         padding: 0.75rem 1rem;
         font-family: 'JetBrains Mono', ui-monospace, monospace;
-        font-size: 0.8125rem;
+        font-size: var(--fs-2xs);
         overflow: auto;
         max-height: 24rem;
     }
@@ -2454,7 +3565,7 @@ html.dark {
     .gate-icon {
         width: 5rem;
         height: 5rem;
-        border-radius: 1.5rem;
+        border-radius: var(--r-3xl);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -2477,51 +3588,27 @@ html.dark {
         color: var(--c-primary);
     }
 
-    .gate-icon--danger {
-        background: var(--c-danger-muted);
-        color: var(--c-danger);
-    }
-
-    .gate-icon--amber {
-        background: var(--c-amber-muted);
-        color: var(--c-amber);
-    }
-
-    .gate-icon--secondary {
-        background: var(--c-secondary-muted);
-        color: var(--c-secondary);
-    }
-
-    /* ── Misc utility ─────────────────────────────────────────────────── */
-    .surface-glass {
-        background: var(--c-surface-glass);
-        backdrop-filter: blur(20px) saturate(140%);
-        -webkit-backdrop-filter: blur(20px) saturate(140%);
-    }
-
-    .ring-grad-focus:focus-visible {
-        outline: none;
-        box-shadow: 0 0 0 3px color-mix(in srgb, var(--c-primary) 25%, transparent);
+    /* admin-password.html has always asked for this variant, but it was never defined —
+       the base .gate-icon sets no colour, so the admin login icon rendered unstyled. */
+    .gate-icon--indigo {
+        background: var(--c-indigo-muted);
+        color: var(--c-indigo);
     }
 
     .animate-in {
-        animation: qd-fade-in-up 500ms var(--ease-out-expo) both;
+        animation: qd-fade-in-up 380ms var(--ease-out-expo) both;
     }
 
     .animate-in-delay-1 {
-        animation-delay: 100ms;
+        animation-delay: 60ms;
     }
 
     .animate-in-delay-2 {
-        animation-delay: 200ms;
+        animation-delay: 120ms;
     }
 
     .animate-in-delay-3 {
-        animation-delay: 300ms;
-    }
-
-    .animate-in-delay-4 {
-        animation-delay: 400ms;
+        animation-delay: 180ms;
     }
 }
 

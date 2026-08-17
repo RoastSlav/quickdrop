@@ -20,7 +20,8 @@ import java.util.concurrent.atomic.AtomicLong;
  * <ul>
  *   <li>{@code /file/password} → {@code file-password}</li>
  *   <li>{@code /admin/password} → {@code admin-login}</li>
- *   <li>{@code /share/**} → {@code share-download}</li>
+ *   <li>{@code /share/**} and {@code /api/file/download/**} → {@code share-download}
+ *       (one shared bucket — both consume the same share token)</li>
  *   <li>{@code /api/link} → {@code shortlink-create}</li>
  *   <li>{@code /s/**} → {@code shortlink-resolve}</li>
  * </ul>
@@ -81,6 +82,18 @@ public class RateLimitInterceptor implements HandlerInterceptor {
     }
 
     /**
+     * Clears all rate-limit buckets.
+     *
+     * <p>Exists for tests: this interceptor is a singleton, so its counters otherwise
+     * persist across test methods sharing a Spring context, and a suite that legitimately
+     * makes more than {@value #MAX_ATTEMPTS} requests to one endpoint group within the
+     * window starts seeing 429s that have nothing to do with what's under test.
+     */
+    public void resetLimits() {
+        entries.clear();
+    }
+
+    /**
      * Classifies the request URI into an endpoint group, or returns {@code null}
      * if the endpoint should not be rate-limited.
      */
@@ -94,7 +107,12 @@ public class RateLimitInterceptor implements HandlerInterceptor {
         if (uri.equals("/admin/password") || uri.startsWith("/admin/password/")) {
             return "admin-login";
         }
-        if (uri.startsWith("/share/")) {
+        // Grouped with /share/** on purpose: both take the same share token, so counting
+        // them separately would hand an enumerator two independent quotas for one secret.
+        // /api/file/download/** must be listed explicitly — it is the endpoint that
+        // actually streams bytes, and it is reachable without ever touching /share/**,
+        // so limiting only the HTML page left the byte-serving path unthrottled.
+        if (uri.startsWith("/share/") || uri.startsWith("/api/file/download/")) {
             return "share-download";
         }
         if (uri.equals("/api/link")) {

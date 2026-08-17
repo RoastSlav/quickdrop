@@ -141,6 +141,7 @@ public class ApplicationSettingsService {
             defaults.setShortenerEnabled(true);
             defaults.setShortenerAdminOnly(false);
             defaults.setShortenerCodeLength(5);
+            defaults.setShareTokenLength(8);
             defaults.setShortenerCustomAliasEnabled(true);
             defaults.setShortenerCustomAliasAdminOnly(true);
             defaults.setShortenerInterstitialMode("NON_ADMIN");
@@ -203,6 +204,13 @@ public class ApplicationSettingsService {
         }
         if (settings.getShortenerCodeLength() <= 0) {
             settings.setShortenerCodeLength(5);
+            dirty = true;
+        }
+        // Backfills rows created before share_token_length existed. Those instances were
+        // minting share tokens at shortener_code_length (default 5); leaving a 0/unset
+        // value here would fall through to generateUniqueCode(0) and mint empty codes.
+        if (settings.getShareTokenLength() <= 0) {
+            settings.setShareTokenLength(8);
             dirty = true;
         }
         if (settings.getShortenerInterstitialMode() == null || settings.getShortenerInterstitialMode().isBlank()) {
@@ -373,6 +381,12 @@ public class ApplicationSettingsService {
         entity.setShortenerEnabled(shortenerEnabled);
         entity.setShortenerAdminOnly(shortenerEnabled && settings.isShortenerAdminOnly());
         entity.setShortenerCodeLength(settings.getShortenerCodeLength() > 0 ? settings.getShortenerCodeLength() : 5);
+        // Floored at 8, not just >0: this token is the only thing standing between an
+        // anonymous caller and the file's bytes, and an admin lowering it to 4 "to make
+        // links prettier" silently reopens the enumeration the split exists to close.
+        // The shortener code length above stays freely adjustable — guessing one of those
+        // only reveals a destination URL.
+        entity.setShareTokenLength(Math.max(settings.getShareTokenLength(), 8));
         boolean shortenerCustomAliasEnabled = shortenerEnabled && settings.isShortenerCustomAliasEnabled();
         entity.setShortenerCustomAliasEnabled(shortenerCustomAliasEnabled);
         entity.setShortenerCustomAliasAdminOnly(shortenerCustomAliasEnabled && settings.isShortenerCustomAliasAdminOnly());
@@ -884,10 +898,19 @@ public class ApplicationSettingsService {
     }
 
     /**
-     * @return the random code length for newly-generated short links
+     * @return the random code length for newly-generated redirect links ({@code /s/{code}})
      */
     public int getShortenerCodeLength() {
         return self.getApplicationSettings().getShortenerCodeLength();
+    }
+
+    /**
+     * @return the random code length for newly-generated file share tokens
+     *         ({@code /share/{token}}), floored at 8 — see
+     *         {@link ApplicationSettingsEntity#getShareTokenLength()}
+     */
+    public int getShareTokenLength() {
+        return Math.max(self.getApplicationSettings().getShareTokenLength(), 8);
     }
 
     /**

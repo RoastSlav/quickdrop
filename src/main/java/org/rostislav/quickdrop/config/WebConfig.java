@@ -30,8 +30,9 @@ import java.util.concurrent.TimeUnit;
  *   <li>{@link FilePasswordInterceptor} — enforces per-file password requirements
  *       on the {@code /file/**} routes.</li>
  *   <li>{@link RateLimitInterceptor} — sliding-window request limiting on
- *       password/login endpoints, {@code /share/**}, and the link-shortener's
- *       create and resolve routes.</li>
+ *       password/login endpoints, share-token routes ({@code /share/**} and the
+ *       {@code /api/file/download/**} endpoint that streams the bytes), and the
+ *       link-shortener's create and resolve routes.</li>
  * </ol>
  *
  * <p>The {@code /branding/**} resource handler maps to the {@code branding/}
@@ -75,7 +76,8 @@ public class WebConfig implements WebMvcConfigurer {
                 .excludePathPatterns("/file/upload", "/file/list", "/file/password", "/file/password/**", "/file/history/*", "/file/search", "/file/paste", "/file/paste/new");
 
         registry.addInterceptor(rateLimitInterceptor)
-                .addPathPatterns("/file/password", "/admin/password", "/share/**", "/api/link", "/s/**");
+                .addPathPatterns("/file/password", "/admin/password", "/share/**",
+                        "/api/file/download/**", "/api/link", "/s/**");
     }
 
     /**

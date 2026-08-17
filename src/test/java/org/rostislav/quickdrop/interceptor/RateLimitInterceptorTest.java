@@ -83,6 +83,43 @@ class RateLimitInterceptorTest {
         assertTrue(interceptor.preHandle(requestFor(uri, "10.0.0.4"), allowedForOtherAddr, new Object()));
     }
 
+    /**
+     * The byte-serving endpoint must be throttled, not just the HTML share page: an
+     * enumerator sweeping share tokens can call {@code /api/file/download/{token}}
+     * directly and never touch {@code /share/**} at all.
+     */
+    @Test
+    void downloadApiEndpoint_isRateLimited() throws Exception {
+        String remoteAddr = "10.0.0.7";
+        for (int i = 1; i <= 10; i++) {
+            MockHttpServletResponse response = new MockHttpServletResponse();
+            assertTrue(interceptor.preHandle(requestFor("/api/file/download/tok" + i, remoteAddr), response, new Object()),
+                    "request " + i + " should be allowed");
+        }
+
+        MockHttpServletResponse eleventh = new MockHttpServletResponse();
+        assertFalse(interceptor.preHandle(requestFor("/api/file/download/tok11", remoteAddr), eleventh, new Object()),
+                "11th download attempt in the window must be rejected");
+        assertEquals(429, eleventh.getStatus());
+    }
+
+    /**
+     * Both routes consume the same share token, so they must draw on one bucket —
+     * counting them separately would hand an enumerator two independent quotas.
+     */
+    @Test
+    void sharePageAndDownloadApiShareOneBucket() throws Exception {
+        String remoteAddr = "10.0.0.8";
+        for (int i = 1; i <= 10; i++) {
+            interceptor.preHandle(requestFor("/share/tok" + i, remoteAddr), new MockHttpServletResponse(), new Object());
+        }
+
+        MockHttpServletResponse viaDownloadApi = new MockHttpServletResponse();
+        assertFalse(interceptor.preHandle(requestFor("/api/file/download/tok11", remoteAddr), viaDownloadApi, new Object()),
+                "quota spent on /share/** must also block /api/file/download/**");
+        assertEquals(429, viaDownloadApi.getStatus());
+    }
+
     @Test
     void unclassifiedEndpoint_isNeverRateLimited() throws Exception {
         for (int i = 0; i < 20; i++) {

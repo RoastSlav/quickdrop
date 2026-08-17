@@ -90,7 +90,9 @@ public class ShortLinkService {
             }
         }
 
-        String code = shortCodeService.generateUniqueCode(applicationSettingsService.getShortenerCodeLength());
+        // getShareTokenLength(), not getShortenerCodeLength(): this code gates the file's
+        // bytes, so it needs materially more entropy than a redirect link's code.
+        String code = shortCodeService.generateUniqueCode(applicationSettingsService.getShareTokenLength());
         UploadShareLink link = new UploadShareLink(code, upload, expirationDate, remainingUses);
         shortLinkRepository.save(link);
         return link;
@@ -119,7 +121,8 @@ public class ShortLinkService {
         }
 
         String shareKey = java.util.UUID.randomUUID().toString();
-        String code = shortCodeService.generateUniqueCode(applicationSettingsService.getShortenerCodeLength());
+        // Share-token length, not shortener length — see createUploadLink().
+        String code = shortCodeService.generateUniqueCode(applicationSettingsService.getShareTokenLength());
 
         // Pre-fetch the password on the request thread — HTTP session must not be
         // accessed from the background encryption thread.

@@ -3,6 +3,7 @@ package org.rostislav.quickdrop.support;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.io.TempDir;
 import org.rostislav.quickdrop.entity.ApplicationSettingsEntity;
+import org.rostislav.quickdrop.interceptor.RateLimitInterceptor;
 import org.rostislav.quickdrop.repository.ApplicationSettingsRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -52,6 +53,9 @@ public abstract class QuickdropIntegrationTest {
     @Autowired
     private CacheManager cacheManager;
 
+    @Autowired
+    private RateLimitInterceptor rateLimitInterceptor;
+
     @BeforeEach
     void redirectFileStorageToTempDir() {
         ApplicationSettingsEntity settings = applicationSettingsRepository.findById(1L).orElseThrow();
@@ -61,5 +65,20 @@ public abstract class QuickdropIntegrationTest {
         if (cache != null) {
             cache.clear();
         }
+    }
+
+    /**
+     * The rate limiter is a singleton holding per-(IP, endpoint group) counters, and every
+     * MockMvc request in the suite arrives from the same address. Without this, requests
+     * accumulate across test methods sharing a context and later tests get 429s unrelated
+     * to their own behaviour — which is exactly what happened once the share-download group
+     * grew to cover {@code /api/file/download/**} alongside {@code /share/**}.
+     *
+     * <p>Tests that assert the limiter's <em>own</em> behaviour drive it directly rather
+     * than through MockMvc, so clearing here doesn't weaken them.
+     */
+    @BeforeEach
+    void resetRateLimiter() {
+        rateLimitInterceptor.resetLimits();
     }
 }

@@ -70,6 +70,30 @@ public interface ActivityLogRepository extends JpaRepository<ActivityLog, Long> 
     List<ActivityLog> findByFileUuidOrderByEventDateDesc(@Param("uuid") String uuid);
 
     /**
+     * Counts rows of the given event types older than a cutoff, so the sweep can skip opening
+     * an archive for a category with nothing to purge.
+     *
+     * @param types  event types belonging to the category being swept
+     * @param cutoff exclusive upper bound on event timestamp
+     */
+    @Query("SELECT COUNT(h) FROM ActivityLog h WHERE h.eventType IN :types AND h.eventDate < :cutoff")
+    long countExpiring(@Param("types") Collection<EventType> types, @Param("cutoff") LocalDateTime cutoff);
+
+    /**
+     * Fetches one batch of rows to archive, oldest first. The associations are fetched eagerly
+     * because the sweep serialises them after the transaction ends, where a proxy would fail.
+     *
+     * @param types    event types belonging to the category being swept
+     * @param cutoff   exclusive upper bound on event timestamp
+     * @param pageable batch size; the sweep pages until no rows remain
+     */
+    @Query("SELECT h FROM ActivityLog h LEFT JOIN FETCH h.file LEFT JOIN FETCH h.shortLink " +
+            "WHERE h.eventType IN :types AND h.eventDate < :cutoff ORDER BY h.eventDate ASC, h.id ASC")
+    List<ActivityLog> findExpiringBatch(@Param("types") Collection<EventType> types,
+                                        @Param("cutoff") LocalDateTime cutoff,
+                                        Pageable pageable);
+
+    /**
      * Filters the activity log with optional date range, event type, IP/UA substrings,
      * and a source-type discriminator.
      *

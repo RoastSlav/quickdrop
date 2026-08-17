@@ -327,6 +327,34 @@ public class ApplicationSettingsEntity {
     private String reputationFeedCron = "0 0 4 * * *";
 
     /**
+     * Master switch for activity-log retention. While off, nothing is ever archived or
+     * deleted regardless of the per-category day counts below.
+     */
+    private boolean activityRetentionEnabled;
+
+    /**
+     * Cron expression for the retention sweep, which archives expiring rows to the configured
+     * storage backend and only then deletes them.
+     */
+    private String activityRetentionCron = "0 30 3 * * *";
+
+    /**
+     * Days of activity history to keep per {@link org.rostislav.quickdrop.model.EventCategory}.
+     * {@code 0} keeps that category forever.
+     */
+    private int activityRetentionFileDays = 365;
+
+    private int activityRetentionPasteDays = 365;
+
+    private int activityRetentionShareDays = 365;
+
+    private int activityRetentionShortlinkDays = 365;
+
+    private int activityRetentionAdminDays = 365;
+
+    private int activityRetentionSystemDays = 365;
+
+    /**
      * Free Auth-Key from {@code auth.abuse.ch}, required by URLhaus's API. {@code null}/blank
      * disables the URLhaus feed regardless of {@link #reputationUrlhausEnabled}.
      */
@@ -1060,6 +1088,70 @@ public class ApplicationSettingsEntity {
 
     public void setReputationFeedCron(String reputationFeedCron) {
         this.reputationFeedCron = reputationFeedCron;
+    }
+
+    public boolean isActivityRetentionEnabled() {
+        return activityRetentionEnabled;
+    }
+
+    public void setActivityRetentionEnabled(boolean activityRetentionEnabled) {
+        this.activityRetentionEnabled = activityRetentionEnabled;
+    }
+
+    public String getActivityRetentionCron() {
+        return activityRetentionCron;
+    }
+
+    public void setActivityRetentionCron(String activityRetentionCron) {
+        this.activityRetentionCron = activityRetentionCron;
+    }
+
+    public int getActivityRetentionFileDays() {
+        return activityRetentionFileDays;
+    }
+
+    public void setActivityRetentionFileDays(int activityRetentionFileDays) {
+        this.activityRetentionFileDays = activityRetentionFileDays;
+    }
+
+    public int getActivityRetentionPasteDays() {
+        return activityRetentionPasteDays;
+    }
+
+    public void setActivityRetentionPasteDays(int activityRetentionPasteDays) {
+        this.activityRetentionPasteDays = activityRetentionPasteDays;
+    }
+
+    public int getActivityRetentionShareDays() {
+        return activityRetentionShareDays;
+    }
+
+    public void setActivityRetentionShareDays(int activityRetentionShareDays) {
+        this.activityRetentionShareDays = activityRetentionShareDays;
+    }
+
+    public int getActivityRetentionShortlinkDays() {
+        return activityRetentionShortlinkDays;
+    }
+
+    public void setActivityRetentionShortlinkDays(int activityRetentionShortlinkDays) {
+        this.activityRetentionShortlinkDays = activityRetentionShortlinkDays;
+    }
+
+    public int getActivityRetentionAdminDays() {
+        return activityRetentionAdminDays;
+    }
+
+    public void setActivityRetentionAdminDays(int activityRetentionAdminDays) {
+        this.activityRetentionAdminDays = activityRetentionAdminDays;
+    }
+
+    public int getActivityRetentionSystemDays() {
+        return activityRetentionSystemDays;
+    }
+
+    public void setActivityRetentionSystemDays(int activityRetentionSystemDays) {
+        this.activityRetentionSystemDays = activityRetentionSystemDays;
     }
 
     public String getUrlhausAuthKey() {

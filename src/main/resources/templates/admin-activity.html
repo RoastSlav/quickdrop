@@ -175,8 +175,13 @@
 
                     <div class="flex flex-wrap items-center justify-between gap-4 mb-5">
                         <h2 class="section-title" th:text="#{page.adminActivity.results}">Results</h2>
-                        <span class="badge badge-primary font-mono text-sm"
-                              th:text="${activityPage.totalElements} + ' ' + #{page.dashboard.total}">0 total</span>
+                        <div class="flex items-center gap-3">
+                            <span class="badge badge-primary font-mono text-sm"
+                                  th:text="${activityPage.totalElements} + ' ' + #{page.dashboard.total}">0 total</span>
+                            <a class="btn btn-secondary btn-sm" th:if="${activityPage.totalElements > 0}"
+                               th:href="@{/admin/activity/export(startDate=${startDate}, endDate=${endDate}, eventType=${selectedEventType}, ip=${ip}, ua=${ua}, sourceType=${sourceType})}"
+                               th:text="#{page.adminActivity.exportCsv}">Download CSV</a>
+                        </div>
                     </div>
 
                     <!-- Empty state -->

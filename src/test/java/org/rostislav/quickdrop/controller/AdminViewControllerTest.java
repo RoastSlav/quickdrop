@@ -5,9 +5,11 @@ import org.rostislav.quickdrop.entity.Paste;
 import org.rostislav.quickdrop.entity.StoredFile;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.web.servlet.MvcResult;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.asyncDispatch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -509,6 +511,46 @@ class AdminViewControllerTest extends ControllerTestSupport {
                 .andExpect(status().isOk())
                 .andExpect(view().name("admin-activity"))
                 .andExpect(model().attributeExists("activityPage", "eventTypes"));
+    }
+
+    // -- GET /admin/activity/export ------------------------------------------
+
+    @Test
+    void activityExport_withAdminSession_returnsCsvAttachment() throws Exception {
+        MockHttpSession session = adminSession();
+        // StreamingResponseBody writes on the async dispatch, so the initial result carries no
+        // content -- the body only exists after the request is dispatched back.
+        MvcResult started = mockMvc.perform(get("/admin/activity/export").session(session))
+                .andExpect(request().asyncStarted())
+                .andReturn();
+        String body = mockMvc.perform(asyncDispatch(started))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Content-Disposition",
+                        org.hamcrest.Matchers.startsWith("attachment; filename=\"quickdrop-activity-")))
+                .andReturn().getResponse().getContentAsString();
+        assertTrue(body.startsWith("event_date,event_type,category"));
+    }
+
+    @Test
+    void activityExport_withoutAdminSession_redirectsToPassword() throws Exception {
+        ensureAdminPasswordSet();
+        mockMvc.perform(get("/admin/activity/export"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/admin/password"));
+    }
+
+    /** An unmatchable filter must produce a header-only file, not the whole table. */
+    @Test
+    void activityExport_honoursFilters() throws Exception {
+        MockHttpSession session = adminSession();
+        MvcResult started = mockMvc.perform(get("/admin/activity/export").session(session)
+                        .param("ip", "no-such-ip-198.51.100.7"))
+                .andExpect(request().asyncStarted())
+                .andReturn();
+        String body = mockMvc.perform(asyncDispatch(started))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        assertEquals(1, body.lines().count(), body);
     }
 
     // -- POST /admin/notification-test -------------------------------------------

@@ -55,6 +55,9 @@ import static org.springframework.http.ResponseEntity.ok;
 public class FileRestController {
     private static final Logger logger = LoggerFactory.getLogger(FileRestController.class);
     private static final JsonMapper OBJECT_MAPPER = JsonMapper.builder().build();
+    /** Mirrors {@code AsyncFileMergeService}'s own check so a bad id yields 400, not 500. */
+    private static final java.util.regex.Pattern SAFE_UPLOAD_ID =
+            java.util.regex.Pattern.compile("^[A-Za-z0-9_-]{1,64}$");
     private final FileQueryService fileQueryService;
     private final FileLifecycleService fileLifecycleService;
     private final FileDownloadService fileDownloadService;
@@ -162,6 +165,15 @@ public class FileRestController {
             // If the client did not supply an uploadId fall back to a random UUID.
             // All chunks of the same upload MUST share the same uploadId, so the fallback
             // is only safe for single-chunk uploads or legacy clients.
+            //
+            // A supplied id is format-checked here so a bad one returns 400 rather than
+            // surfacing as a 500 from the service's own guard. That guard is the actual
+            // security control (the id ends up in a filesystem path); this is the
+            // client-facing contract in front of it.
+            if (uploadId != null && !uploadId.isBlank() && !SAFE_UPLOAD_ID.matcher(uploadId).matches()) {
+                return ResponseEntity.badRequest().body(Map.of(
+                        "error", "uploadId must be 1-64 characters of letters, digits, '-' or '_'."));
+            }
             String effectiveUploadId = (uploadId != null && !uploadId.isBlank())
                     ? uploadId
                     : UUID.randomUUID().toString();

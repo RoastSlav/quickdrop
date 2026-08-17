@@ -39,6 +39,17 @@ public class AsyncFileMergeService {
     private static final int MAX_TOTAL_CHUNKS = 10_000;
     private static final String CHUNK_DIR_NAME = ".upload-chunks";
 
+    /**
+     * Character set permitted in an upload id, which becomes part of an on-disk filename.
+     *
+     * <p>Excludes {@code .}, {@code /} and {@code \}, so no accepted value can contain a
+     * {@code ..} segment or a path separator. Real clients send {@code crypto.randomUUID()},
+     * which this admits; the bound exists so a caller cannot push the composed name past
+     * the filesystem's per-name length limit either.
+     */
+    private static final java.util.regex.Pattern SAFE_UPLOAD_ID =
+            java.util.regex.Pattern.compile("^[A-Za-z0-9_-]{1,64}$");
+
     private final ConcurrentMap<String, MergeTask> mergeTasks = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, Instant> abortedUploads = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, UploadCompletion> completedUploads = new ConcurrentHashMap<>();
@@ -203,11 +214,16 @@ public class AsyncFileMergeService {
                     "totalChunks " + request.totalChunks + " exceeds the maximum allowed value of " + MAX_TOTAL_CHUNKS);
         }
 
-        // Use uploadId (a UUID) as the temp-file prefix — never the user-supplied filename,
-        // which could contain path-traversal sequences or OS-reserved characters.
-        String taskKey = (request.uploadId != null && !request.uploadId.isBlank())
-                ? request.uploadId
-                : request.fileName;
+        // Use uploadId as the temp-file prefix — never the user-supplied filename, which
+        // could contain path-traversal sequences or OS-reserved characters.
+        //
+        // The id is validated rather than merely preferred: it is attacker-controlled on
+        // the HTTP path (an optional request param) and is concatenated into a filesystem
+        // path below, so an unchecked value like "../../../etc/cron.d/pwn" writes
+        // attacker-chosen bytes outside the staging directory. There is deliberately no
+        // fileName fallback any more — falling back moved the same taint to a different
+        // parameter instead of removing it, and every caller already supplies an id.
+        String taskKey = requireSafeUploadId(request.uploadId);
         if (isRecentlyAborted(taskKey)) {
             throw new UploadAbortedException("Upload was aborted");
         }
@@ -220,7 +236,12 @@ public class AsyncFileMergeService {
         // original then hits FileNotFoundException when the drain loop finally reaches it,
         // aborting the whole upload. evictStaleTasks()'s cleanup glob matches on
         // startsWith(taskKey + "_chunk_"), so the added suffix doesn't break that.
-        File savedChunk = new File(resolveTempDir(), taskKey + "_chunk_" + chunkNumber + "_" + UUID.randomUUID());
+        File stagingDir = resolveTempDir();
+        File savedChunk = new File(stagingDir, taskKey + "_chunk_" + chunkNumber + "_" + UUID.randomUUID());
+        // Belt and braces over the taskKey validation above: this is the line that actually
+        // writes attacker-supplied bytes, so it enforces the containment property itself
+        // rather than trusting that every path feeding it stayed safe.
+        requireInsideStagingDir(stagingDir, savedChunk);
         multipartChunk.transferTo(savedChunk);
         logger.info("Chunk {} for file {} saved to {}", chunkNumber, request.fileName, savedChunk.getAbsolutePath());
 
@@ -397,10 +418,40 @@ public class AsyncFileMergeService {
         return DeleteResult.FAILED;
     }
 
+    /**
+     * @return {@code uploadId} unchanged if it is safe to embed in a filename
+     * @throws IllegalArgumentException if it is missing or contains anything outside
+     *                                  {@link #SAFE_UPLOAD_ID} — notably path separators
+     *                                  or {@code ..} segments
+     */
+    private static String requireSafeUploadId(String uploadId) {
+        if (uploadId == null || uploadId.isBlank()) {
+            throw new IllegalArgumentException("uploadId is required");
+        }
+        if (!SAFE_UPLOAD_ID.matcher(uploadId).matches()) {
+            throw new IllegalArgumentException(
+                    "uploadId must be 1-64 characters of letters, digits, '-' or '_'");
+        }
+        return uploadId;
+    }
+
+    /**
+     * Fails unless {@code child} resolves to a location inside {@code stagingDir}.
+     *
+     * <p>Compares canonical paths so symlinked or {@code ..}-containing paths are resolved
+     * before the check — {@code getAbsolutePath()} would preserve a {@code ..} segment and
+     * compare as if it were inside.
+     */
+    private static void requireInsideStagingDir(File stagingDir, File child) throws IOException {
+        String dir = stagingDir.getCanonicalPath();
+        String target = child.getCanonicalPath();
+        if (!target.startsWith(dir.endsWith(File.separator) ? dir : dir + File.separator)) {
+            throw new IOException("Refusing to write a chunk outside the staging directory");
+        }
+    }
+
     private String getTaskKey(UploadRequest request) {
-        return (request.uploadId != null && !request.uploadId.isBlank())
-                ? request.uploadId
-                : request.fileName;
+        return request.uploadId;
     }
 
     private enum DeleteResult {

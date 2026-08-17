@@ -8,6 +8,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.rostislav.quickdrop.model.LinkVerdict;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -133,10 +134,19 @@ class LinkGuardTest {
     void blocklistDoesNotFalsePositiveOnASuffixThatIsNotADomainBoundary() {
         // "notevil.com" contains "evil.com" as a suffix of its label, but is a different
         // domain -- domainMatches must compare on a dot boundary, not raw string suffix.
+        // Unlike the other domain-rule tests, "notevil.com" isn't a registered domain, so
+        // routing it through the real UrlSafetyValidator (which does a live DNS lookup)
+        // would fail it for "unsafe_destination" before the boundary logic under test ever
+        // runs -- a mocked, always-safe validator isolates this test from DNS entirely.
+        UrlSafetyValidator alwaysSafe = mock(UrlSafetyValidator.class);
+        when(alwaysSafe.validate(org.mockito.ArgumentMatchers.any())).thenReturn(java.util.Optional.empty());
+        LinkGuard guardWithoutDnsCheck = new LinkGuard(new UrlNormalizationService(), alwaysSafe,
+                applicationSettingsService, new ReputationCheckService(java.util.List.of(), applicationSettingsService));
+
         when(applicationSettingsService.getShortenerDomainRuleMode()).thenReturn("BLOCKLIST");
         when(applicationSettingsService.getShortenerDomainRules()).thenReturn("evil.com");
 
-        LinkVerdict verdict = linkGuard.checkForCreation("https://notevil.com/page");
+        LinkVerdict verdict = guardWithoutDnsCheck.checkForCreation("https://notevil.com/page");
         assertTrue(verdict.allowed());
     }
 

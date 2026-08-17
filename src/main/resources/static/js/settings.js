@@ -163,6 +163,62 @@ function syncShareLinkSettings() {
     }
 }
 
+/** Sections with at least this many rows start collapsed; shorter ones stay open. */
+const SECTION_COLLAPSE_THRESHOLD = 5;
+
+/** Makes long settings sections collapsible. Collapsed sections still submit normally. */
+function initCollapsibleSettingsSections() {
+    document.querySelectorAll("section > .settings-section-label").forEach((label) => {
+        const body = label.nextElementSibling;
+        if (!body || label.dataset.collapsible === "true") return;
+
+        const rowCount = body.querySelectorAll(".rounded-2xl").length;
+        if (rowCount < SECTION_COLLAPSE_THRESHOLD) return;
+
+        label.dataset.collapsible = "true";
+        label.classList.add("settings-section-label--toggle");
+        label.setAttribute("role", "button");
+        label.setAttribute("tabindex", "0");
+
+        const chevron = document.createElement("span");
+        chevron.className = "settings-section-chevron";
+        chevron.setAttribute("aria-hidden", "true");
+        chevron.innerHTML =
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" width="100%" height="100%">' +
+            '<path d="m9 5 7 7-7 7" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+        label.insertBefore(chevron, label.firstChild);
+
+        const count = document.createElement("span");
+        count.className = "settings-section-count";
+        count.textContent = String(rowCount);
+        label.appendChild(count);
+
+        const setExpanded = (expanded) => {
+            label.setAttribute("aria-expanded", String(expanded));
+            body.hidden = !expanded;
+        };
+        setExpanded(false);
+
+        label.addEventListener("click", () => setExpanded(label.getAttribute("aria-expanded") !== "true"));
+        label.addEventListener("keydown", (e) => {
+            if (e.key !== "Enter" && e.key !== " ") return;
+            e.preventDefault();
+            setExpanded(label.getAttribute("aria-expanded") !== "true");
+        });
+    });
+
+    // A required field in a collapsed section isn't focusable, so the browser aborts the
+    // submit instead of showing its message. Re-open the owning section first.
+    document.addEventListener("invalid", (e) => {
+        const label = e.target?.closest?.("section")?.querySelector(":scope > .settings-section-label--toggle");
+        if (label && label.getAttribute("aria-expanded") !== "true") {
+            label.setAttribute("aria-expanded", "true");
+            const body = label.nextElementSibling;
+            if (body) body.hidden = false;
+        }
+    }, true);
+}
+
 function syncRetentionSettings() {
     const enabled = Boolean(document.getElementById("activityRetentionEnabled")?.checked);
     ["activityRetentionDaysRow", "activityRetentionCronRow"].forEach((rowId) => {
@@ -624,6 +680,7 @@ document.addEventListener("DOMContentLoaded", function () {
     syncShareLinkSettings();
     syncShortenerSettings();
     syncRetentionSettings();
+    initCollapsibleSettingsSections();
     togglePreviewSizeField();
     syncDefaultHomePageOptions();
 

@@ -142,6 +142,21 @@ public class AnalyticsService {
     }
 
     /**
+     * Records a non-file event together with specifics the event type alone doesn't convey.
+     *
+     * @param eventType the event type to record
+     * @param ip        requester IP address, or {@code null} for system events
+     * @param ua        requester User-Agent header value, or {@code null} for system events
+     * @param detail    free-text specifics shown alongside the event, or {@code null}
+     */
+    @CacheEvict(value = "analytics", allEntries = true)
+    public void logEvent(EventType eventType, String ip, String ua, String detail) {
+        ActivityLog log = new ActivityLog(eventType, ip, ua);
+        log.setDetail(detail);
+        activityLogRepository.save(log);
+    }
+
+    /**
      * Returns a filtered, paginated slice of the global activity log.
      * Any parameter that is {@code null} is treated as "no filter on this dimension".
      *

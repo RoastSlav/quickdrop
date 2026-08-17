@@ -134,27 +134,31 @@ public abstract class AbstractHashFeedProvider {
     /**
      * Downloads and reloads the feed if {@link #minSyncIntervalMillis()} has elapsed since the
      * last attempt (successful or not — a failing upstream doesn't get hammered either).
-     * Never throws; failures are logged and the previously-loaded feed keeps serving.
+     * Never throws; failures are reported in the returned outcome and the previously-loaded
+     * feed keeps serving.
+     *
+     * @return what actually happened, so callers can record it (see
+     *         {@link ReputationSyncService}); never {@code null}
      */
-    public synchronized void refresh() {
+    public synchronized RefreshOutcome refresh() {
         // Seed from the last downloaded copy first. Without this, every JVM start began with
         // lastSyncAttemptEpochMillis = 0 and no cached validators, so the interval floor never
         // applied on boot and the whole feed was re-downloaded on every restart.
         hydrateFromDisk();
         long now = System.currentTimeMillis();
         if (now - lastSyncAttemptEpochMillis < minSyncIntervalMillis()) {
-            return;
+            return RefreshOutcome.skipped();
         }
         lastSyncAttemptEpochMillis = now;
         try {
             FetchResult result = fetch();
             if (result.notModified()) {
                 logger.debug("[{}] feed unchanged (304)", feedUrl());
-                return;
+                return RefreshOutcome.unchanged();
             }
             if (result.body() == null) {
                 logger.warn("[{}] feed fetch failed: {}", feedUrl(), result.failureReason());
-                return;
+                return RefreshOutcome.failed(result.failureReason());
             }
             loadFromBytes(result.body());
             lastETag = result.eTag();
@@ -162,10 +166,48 @@ public abstract class AbstractHashFeedProvider {
             loadedSuccessfully = true;
             writeValidators();
             logger.info("[{}] feed refreshed: {} entries", feedUrl(), sortedHashes.length);
+            return RefreshOutcome.updated(sortedHashes.length);
         } catch (Exception e) {
             // Defensive catch-all: refresh() must never throw, or it would take the caller
             // (scheduler thread, or an ApplicationReadyEvent listener) down with it.
             logger.warn("[{}] feed refresh failed: {}", feedUrl(), e.getMessage());
+            return RefreshOutcome.failed(e.getMessage());
+        }
+    }
+
+    /**
+     * Result of one {@link #refresh()} call.
+     *
+     * @param status       what happened
+     * @param entryCount   entries loaded, only meaningful for {@link Status#UPDATED}
+     * @param failureReason why the refresh failed, only set for {@link Status#FAILED}
+     */
+    public record RefreshOutcome(Status status, int entryCount, String failureReason) {
+        public enum Status {
+            /** New content downloaded and loaded. */
+            UPDATED,
+            /** Upstream answered 304 — the copy already held is current. */
+            UNCHANGED,
+            /** The sync interval floor had not elapsed, so no request was made. */
+            SKIPPED,
+            /** Download or parse failed; the previously loaded copy keeps serving. */
+            FAILED
+        }
+
+        static RefreshOutcome updated(int entryCount) {
+            return new RefreshOutcome(Status.UPDATED, entryCount, null);
+        }
+
+        static RefreshOutcome unchanged() {
+            return new RefreshOutcome(Status.UNCHANGED, 0, null);
+        }
+
+        static RefreshOutcome skipped() {
+            return new RefreshOutcome(Status.SKIPPED, 0, null);
+        }
+
+        static RefreshOutcome failed(String reason) {
+            return new RefreshOutcome(Status.FAILED, 0, reason);
         }
     }
 

@@ -1,14 +1,18 @@
 package org.rostislav.quickdrop.service;
 
 import jakarta.annotation.PreDestroy;
+import org.rostislav.quickdrop.model.EventType;
+import org.rostislav.quickdrop.service.AbstractHashFeedProvider.RefreshOutcome;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.scheduling.support.CronTrigger;
 import org.springframework.stereotype.Service;
 
+import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledFuture;
 
@@ -30,9 +34,13 @@ import java.util.concurrent.ScheduledFuture;
 public class ReputationSyncService {
     private static final Logger logger = LoggerFactory.getLogger(ReputationSyncService.class);
 
+    private static final String PHISHING_ARMY_LABEL = "Phishing Army";
+    private static final String URLHAUS_LABEL = "URLhaus";
+
     private final ApplicationSettingsService applicationSettingsService;
     private final PhishingArmyProvider phishingArmyProvider;
     private final UrlhausProvider urlhausProvider;
+    private final AnalyticsService analyticsService;
     private final ThreadPoolTaskScheduler taskScheduler = new ThreadPoolTaskScheduler();
 
     private volatile ScheduledFuture<?> scheduledTask;
@@ -40,10 +48,12 @@ public class ReputationSyncService {
 
     public ReputationSyncService(ApplicationSettingsService applicationSettingsService,
                                  PhishingArmyProvider phishingArmyProvider,
-                                 UrlhausProvider urlhausProvider) {
+                                 UrlhausProvider urlhausProvider,
+                                 @Lazy AnalyticsService analyticsService) {
         this.applicationSettingsService = applicationSettingsService;
         this.phishingArmyProvider = phishingArmyProvider;
         this.urlhausProvider = urlhausProvider;
+        this.analyticsService = analyticsService;
         taskScheduler.setPoolSize(1);
         taskScheduler.initialize();
     }
@@ -69,10 +79,31 @@ public class ReputationSyncService {
 
     private void triggerInitialLoadIfNeeded() {
         if (applicationSettingsService.isReputationPhishingArmyEnabled() && !phishingArmyProvider.isLoaded()) {
-            CompletableFuture.runAsync(phishingArmyProvider::refresh);
+            CompletableFuture.runAsync(() -> refreshAndLog(PHISHING_ARMY_LABEL, phishingArmyProvider));
         }
         if (applicationSettingsService.isReputationUrlhausEnabled() && !urlhausProvider.isLoaded()) {
-            CompletableFuture.runAsync(urlhausProvider::refresh);
+            CompletableFuture.runAsync(() -> refreshAndLog(URLHAUS_LABEL, urlhausProvider));
+        }
+    }
+
+    /**
+     * Refreshes one feed and records the outcome in the activity log. A 304 or an
+     * interval-floor skip records nothing — those happen on most ticks and would bury the rest.
+     */
+    void refreshAndLog(String label, AbstractHashFeedProvider provider) {
+        RefreshOutcome outcome = provider.refresh();
+        try {
+            switch (outcome.status()) {
+                case UPDATED -> analyticsService.logEvent(EventType.REPUTATION_FEED_UPDATED, null, null,
+                        label + ": " + String.format(Locale.ROOT, "%,d", outcome.entryCount()) + " entries");
+                case FAILED -> analyticsService.logEvent(EventType.REPUTATION_FEED_FAILED, null, null,
+                        label + ": " + outcome.failureReason());
+                case UNCHANGED, SKIPPED -> {
+                }
+            }
+        } catch (Exception e) {
+            // A logging failure must not escape into the scheduler thread and cancel the job.
+            logger.warn("Failed to record reputation feed refresh for {}: {}", label, e.getMessage());
         }
     }
 
@@ -104,10 +135,10 @@ public class ReputationSyncService {
      */
     private void runScheduledSync() {
         if (applicationSettingsService.isReputationPhishingArmyEnabled()) {
-            phishingArmyProvider.refresh();
+            refreshAndLog(PHISHING_ARMY_LABEL, phishingArmyProvider);
         }
         if (applicationSettingsService.isReputationUrlhausEnabled()) {
-            urlhausProvider.refresh();
+            refreshAndLog(URLHAUS_LABEL, urlhausProvider);
         }
     }
 

@@ -68,6 +68,13 @@ public class ActivityLog {
     private String userAgent;
 
     /**
+     * Free-text specifics for events the {@link EventType} alone doesn't identify, such as
+     * which reputation feed refreshed. {@code null} when there is nothing to add.
+     */
+    @Column(columnDefinition = "TEXT")
+    private String detail;
+
+    /**
      * Creates an empty log entry and stamps {@link #eventDate} to now.
      */
     public ActivityLog() {
@@ -173,5 +180,13 @@ public class ActivityLog {
 
     public void setUserAgent(String userAgent) {
         this.userAgent = userAgent;
+    }
+
+    public String getDetail() {
+        return detail;
+    }
+
+    public void setDetail(String detail) {
+        this.detail = detail;
     }
 }

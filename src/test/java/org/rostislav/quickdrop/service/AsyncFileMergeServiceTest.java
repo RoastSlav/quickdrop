@@ -55,6 +55,44 @@ class AsyncFileMergeServiceTest extends QuickdropIntegrationTest {
     }
 
     // -------------------------------------------------------------------------
+    // Path traversal via uploadId
+    // -------------------------------------------------------------------------
+
+    /**
+     * uploadId becomes part of an on-disk filename, so a {@code ..} sequence in it once
+     * wrote attacker-controlled bytes anywhere the process could reach. Declaring more
+     * chunks than are sent keeps the merge from ever consuming the planted file, and the
+     * TTL cleanup only globs the staging directory, so a file placed outside it would
+     * persist indefinitely.
+     */
+    @Test
+    @Timeout(60)
+    void traversalUploadIdIsRejectedAndWritesNothingOutsideStagingDir() throws Exception {
+        File outsideDir = storageDir.resolve("outside").toFile();
+        assertTrue(outsideDir.mkdirs(), "probe directory should be created");
+
+        UploadRequest request = baseRequest("../outside/pwned", "harmless.txt", 2, 18);
+
+        assertThrows(IllegalArgumentException.class,
+                () -> asyncFileMergeService.submitChunk(request, chunk("* * * * * root id".getBytes(StandardCharsets.UTF_8)), 0, false),
+                "a traversal uploadId must be rejected outright");
+
+        File[] planted = outsideDir.listFiles();
+        assertTrue(planted == null || planted.length == 0,
+                "nothing may be written outside the staging directory, found: " + Arrays.toString(planted));
+    }
+
+    @Test
+    @Timeout(60)
+    void blankUploadIdIsRejectedRatherThanFallingBackToFileName() {
+        UploadRequest request = baseRequest(null, "../../evil.txt", 1, 4);
+
+        assertThrows(IllegalArgumentException.class,
+                () -> asyncFileMergeService.submitChunk(request, chunk("data".getBytes(StandardCharsets.UTF_8)), 0, false),
+                "a blank uploadId must not fall back to the attacker-supplied fileName");
+    }
+
+    // -------------------------------------------------------------------------
     // Full round trip across the real 4 MB chunk boundary
     // -------------------------------------------------------------------------
 

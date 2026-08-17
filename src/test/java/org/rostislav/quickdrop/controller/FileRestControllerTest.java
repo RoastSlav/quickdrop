@@ -64,6 +64,24 @@ class FileRestControllerTest extends ControllerTestSupport {
         asyncFileMergeService.abortUpload(uploadId);
     }
 
+    /**
+     * uploadId lands in a filesystem path, so a traversal value must be refused at the
+     * edge with a 400 rather than reaching the service (which would answer 500) or, before
+     * this was fixed, writing attacker bytes outside the chunk staging directory.
+     */
+    @Test
+    void uploadChunk_traversalUploadId_returns400() throws Exception {
+        ensureAdminPasswordSet();
+        MockMultipartFile part = new MockMultipartFile("file", "x", "application/octet-stream", "pwn".getBytes());
+
+        mockMvc.perform(multipart("/api/file/upload-chunk").file(part).with(csrf())
+                        .param("fileName", "harmless.txt")
+                        .param("chunkNumber", "0")
+                        .param("totalChunks", "1")
+                        .param("uploadId", "../../../../etc/cron.d/pwn"))
+                .andExpect(status().isBadRequest());
+    }
+
     @Test
     void uploadChunk_emptyFile_returns400() throws Exception {
         ensureAdminPasswordSet();

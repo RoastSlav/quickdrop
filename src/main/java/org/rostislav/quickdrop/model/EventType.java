@@ -178,7 +178,28 @@ public enum EventType {
     /**
      * The active storage backend recovered and is reachable again.
      */
-    STORAGE_BACKEND_UP(EventCategory.SYSTEM);
+    STORAGE_BACKEND_UP(EventCategory.SYSTEM),
+
+    /**
+     * A threat-intelligence feed downloaded new content. Not recorded for a 304 or a skipped
+     * sync, so the log shows content changes rather than every scheduler tick.
+     */
+    REPUTATION_FEED_UPDATED(EventCategory.SYSTEM),
+
+    /**
+     * A threat-intelligence feed refresh failed; the previously loaded copy keeps serving.
+     */
+    REPUTATION_FEED_FAILED(EventCategory.SYSTEM),
+
+    /**
+     * Expired activity-log entries were archived to storage and deleted from the table.
+     */
+    ACTIVITY_RETENTION_PURGED(EventCategory.SYSTEM),
+
+    /**
+     * A retention sweep could not archive a category, so nothing was deleted for it.
+     */
+    ACTIVITY_RETENTION_FAILED(EventCategory.SYSTEM);
 
     // -------------------------------------------------------------------------
 

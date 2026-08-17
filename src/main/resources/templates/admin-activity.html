@@ -276,6 +276,9 @@
                                   th:style="${cat == 'PASTE'} ? 'background:var(--c-indigo-muted,var(--c-secondary-muted));color:var(--c-indigo,var(--c-secondary))' : (${cat == 'ADMIN' or cat == 'SYSTEM'} ? 'background:var(--c-amber-muted,color-mix(in srgb,var(--c-amber,#f59e0b) 15%,transparent));color:var(--c-amber,#f59e0b)' : '')"
                                   th:text="#{page.history.actionType.__${entry.eventType.name().toLowerCase()}__}"
                                   th:with="cat=${entry.eventType.category.name()}">upload</span>
+                                    <span class="block mt-0.5 text-xs" style="color:var(--c-text-faint)"
+                                          th:if="${entry.detail != null}" th:text="${entry.detail}"
+                                          th:title="${entry.detail}">Phishing Army: 156,264 entries</span>
                                 </td>
                                 <td class="py-2.5 px-3 font-mono text-xs" style="color:var(--c-text-muted)"
                                     th:text="${entry.ipAddress != null ? entry.ipAddress : '—'}">0.0.0.0

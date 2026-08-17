@@ -87,6 +87,12 @@ public class ShortLinkViewController {
         model.addAttribute("shortenerInterstitialMode", applicationSettingsService.getShortenerInterstitialMode());
         model.addAttribute("shortenerDomainRuleMode", applicationSettingsService.getShortenerDomainRuleMode());
         model.addAttribute("reputationCheckEnabled", applicationSettingsService.isReputationCheckEnabled());
+        // Hides the custom-alias field for visitors who couldn't use it anyway, rather than
+        // showing it and rejecting the submission with an admin-only error — mirrors
+        // ShortLinkService's own admin-only check server-side.
+        boolean customAliasAllowed = applicationSettingsService.isShortenerCustomAliasEnabled()
+                && (!applicationSettingsService.isShortenerCustomAliasAdminOnly() || isAdmin);
+        model.addAttribute("customAliasAllowed", customAliasAllowed);
         return "link-new";
     }
 

@@ -53,7 +53,7 @@
         const daysValid = parseInt(document.getElementById('daysValid').value, 10);
         const unlimitedUses = document.getElementById('unlimitedUses').checked;
         const allowedUses = parseInt(document.getElementById('allowedUsesCount').value, 10);
-        const customAlias = document.getElementById('customAlias').value.trim();
+        const customAlias = document.getElementById('customAlias')?.value.trim() || '';
 
         const params = new URLSearchParams();
         params.set('url', url);

@@ -454,79 +454,6 @@
                                 </div>
                             </section>
 
-                            <!-- Activity log retention -->
-                            <section id="activityRetentionSection">
-                                <p class="settings-section-label"
-                                   th:text="#{page.settings.features.retention.section}">Activity Log Retention</p>
-                                <div class="flex flex-col gap-3">
-                                    <div class="rounded-2xl p-4" style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
-                                        <label class="form-check">
-                                            <input id="activityRetentionEnabled" onchange="syncRetentionSettings()"
-                                                   th:field="*{activityRetentionEnabled}" type="checkbox"/>
-                                            <span>
-                        <span class="text-sm font-semibold" th:text="#{page.settings.features.retention.enabled}">Enable activity log retention</span>
-                        <span class="form-hint block mt-0.5"
-                              th:text="#{page.settings.features.retention.enabled.help}">Archive expired activity entries to the configured storage backend as CSV, then delete them. Entries are only deleted once the archive has been written successfully.</span>
-                      </span>
-                                        </label>
-                                    </div>
-
-                                    <div class="rounded-2xl p-4" id="activityRetentionDaysRow" style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
-                                        <p class="text-sm font-semibold mb-1" th:text="#{page.settings.features.retention.days}">Keep entries for</p>
-                                        <p class="form-hint mb-3" th:text="#{page.settings.features.retention.days.help}">Days of history to keep per category. 0 keeps that category forever.</p>
-                                        <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                                            <div class="form-row">
-                                                <label class="form-label" for="activityRetentionFileDays"
-                                                       th:text="#{page.adminActivity.type.file}">File</label>
-                                                <input class="form-input" id="activityRetentionFileDays" min="0"
-                                                       th:field="*{activityRetentionFileDays}" type="number"/>
-                                            </div>
-                                            <div class="form-row">
-                                                <label class="form-label" for="activityRetentionPasteDays"
-                                                       th:text="#{page.adminActivity.type.paste}">Paste</label>
-                                                <input class="form-input" id="activityRetentionPasteDays" min="0"
-                                                       th:field="*{activityRetentionPasteDays}" type="number"/>
-                                            </div>
-                                            <div class="form-row">
-                                                <label class="form-label" for="activityRetentionShareDays"
-                                                       th:text="#{page.settings.features.retention.category.share}">Share</label>
-                                                <input class="form-input" id="activityRetentionShareDays" min="0"
-                                                       th:field="*{activityRetentionShareDays}" type="number"/>
-                                            </div>
-                                            <div class="form-row">
-                                                <label class="form-label" for="activityRetentionShortlinkDays"
-                                                       th:text="#{page.adminActivity.type.link}">Link</label>
-                                                <input class="form-input" id="activityRetentionShortlinkDays" min="0"
-                                                       th:field="*{activityRetentionShortlinkDays}" type="number"/>
-                                            </div>
-                                            <div class="form-row">
-                                                <label class="form-label" for="activityRetentionAdminDays"
-                                                       th:text="#{page.settings.features.retention.category.admin}">Admin</label>
-                                                <input class="form-input" id="activityRetentionAdminDays" min="0"
-                                                       th:field="*{activityRetentionAdminDays}" type="number"/>
-                                            </div>
-                                            <div class="form-row">
-                                                <label class="form-label" for="activityRetentionSystemDays"
-                                                       th:text="#{page.adminActivity.type.system}">System</label>
-                                                <input class="form-input" id="activityRetentionSystemDays" min="0"
-                                                       th:field="*{activityRetentionSystemDays}" type="number"/>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="rounded-2xl p-4" id="activityRetentionCronRow" style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
-                                        <div class="form-row" style="max-width:24rem">
-                                            <label class="form-label" for="activityRetentionCron"
-                                                   th:text="#{page.settings.features.retention.cron}">Retention schedule</label>
-                                            <input class="form-input font-mono" id="activityRetentionCron" required
-                                                   th:field="*{activityRetentionCron}" type="text"/>
-                                            <p class="form-hint" th:text="#{page.settings.features.retention.cron.help}">
-                                                Cron expression for the archive-and-delete sweep.</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </section>
-
                             <!-- Threat Intelligence (reputation checking) -->
                             <section id="reputationSection">
                                 <p class="settings-section-label"
@@ -646,8 +573,26 @@
                                         <div class="form-row" style="max-width:24rem">
                                             <label class="form-label" for="reputationFeedCron"
                                                    th:text="#{page.settings.features.reputation.feedCron}">Feed refresh schedule</label>
+                                            <div class="flex flex-wrap gap-1.5 mb-2" id="reputationFeedCronPresets">
+                                                <button class="btn btn-sm btn-ghost cron-preset" data-cron="0 0 * * * *"
+                                                        th:text="#{page.settings.system.cron.hourly}" type="button">Hourly
+                                                </button>
+                                                <button class="btn btn-sm btn-ghost cron-preset" data-cron="0 0 2 * * *"
+                                                        th:text="#{page.settings.system.cron.daily2am}" type="button">Daily at 2 AM
+                                                </button>
+                                                <button class="btn btn-sm btn-ghost cron-preset" data-cron="0 0 4 * * *"
+                                                        th:text="#{page.settings.system.cron.daily4am}" type="button">Daily at 4 AM
+                                                </button>
+                                                <button class="btn btn-sm btn-ghost cron-preset" data-cron="0 0 0 * * SUN"
+                                                        th:text="#{page.settings.system.cron.weekly}" type="button">Weekly (Sun)
+                                                </button>
+                                                <button class="btn btn-sm btn-ghost cron-preset" data-cron="0 0 0 1 * *"
+                                                        th:text="#{page.settings.system.cron.monthly}" type="button">Monthly (1st)
+                                                </button>
+                                            </div>
                                             <input class="form-input font-mono" id="reputationFeedCron" required
                                                    th:field="*{reputationFeedCron}" type="text"/>
+                                            <p class="text-xs mt-1.5 min-h-[1.25rem]" id="reputationFeedCronFeedback"></p>
                                             <p class="form-hint" th:text="#{page.settings.features.reputation.feedCron.help}">
                                                 Cron expression for the Phishing Army / URLhaus feed refresh. Google Safe Browsing is queried live and has no feed.</p>
                                         </div>
@@ -685,7 +630,101 @@
                                 </div>
                             </section>
 
+                            <!-- Activity log retention -->
+                            <section id="activityRetentionSection">
+                                <p class="settings-section-label"
+                                   th:text="#{page.settings.features.retention.section}">Activity Log Retention</p>
+                                <div class="flex flex-col gap-3">
+                                    <div class="rounded-2xl p-4" style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
+                                        <label class="form-check">
+                                            <input id="activityRetentionEnabled" onchange="syncRetentionSettings()"
+                                                   th:field="*{activityRetentionEnabled}" type="checkbox"/>
+                                            <span>
+                        <span class="text-sm font-semibold" th:text="#{page.settings.features.retention.enabled}">Enable activity log retention</span>
+                        <span class="form-hint block mt-0.5"
+                              th:text="#{page.settings.features.retention.enabled.help}">Archive expired activity entries to the configured storage backend as CSV, then delete them. Entries are only deleted once the archive has been written successfully.</span>
+                      </span>
+                                        </label>
+                                    </div>
+
+                                    <div class="rounded-2xl p-4" id="activityRetentionDaysRow" style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
+                                        <p class="text-sm font-semibold mb-1" th:text="#{page.settings.features.retention.days}">Keep entries for</p>
+                                        <p class="form-hint mb-3" th:text="#{page.settings.features.retention.days.help}">Days of history to keep per category. 0 keeps that category forever.</p>
+                                        <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                                            <div class="form-row">
+                                                <label class="form-label" for="activityRetentionFileDays"
+                                                       th:text="#{page.adminActivity.type.file}">File</label>
+                                                <input class="form-input" id="activityRetentionFileDays" min="0"
+                                                       th:field="*{activityRetentionFileDays}" type="number"/>
+                                            </div>
+                                            <div class="form-row">
+                                                <label class="form-label" for="activityRetentionPasteDays"
+                                                       th:text="#{page.adminActivity.type.paste}">Paste</label>
+                                                <input class="form-input" id="activityRetentionPasteDays" min="0"
+                                                       th:field="*{activityRetentionPasteDays}" type="number"/>
+                                            </div>
+                                            <div class="form-row">
+                                                <label class="form-label" for="activityRetentionShareDays"
+                                                       th:text="#{page.settings.features.retention.category.share}">Share</label>
+                                                <input class="form-input" id="activityRetentionShareDays" min="0"
+                                                       th:field="*{activityRetentionShareDays}" type="number"/>
+                                            </div>
+                                            <div class="form-row">
+                                                <label class="form-label" for="activityRetentionShortlinkDays"
+                                                       th:text="#{page.adminActivity.type.link}">Link</label>
+                                                <input class="form-input" id="activityRetentionShortlinkDays" min="0"
+                                                       th:field="*{activityRetentionShortlinkDays}" type="number"/>
+                                            </div>
+                                            <div class="form-row">
+                                                <label class="form-label" for="activityRetentionAdminDays"
+                                                       th:text="#{page.settings.features.retention.category.admin}">Admin</label>
+                                                <input class="form-input" id="activityRetentionAdminDays" min="0"
+                                                       th:field="*{activityRetentionAdminDays}" type="number"/>
+                                            </div>
+                                            <div class="form-row">
+                                                <label class="form-label" for="activityRetentionSystemDays"
+                                                       th:text="#{page.adminActivity.type.system}">System</label>
+                                                <input class="form-input" id="activityRetentionSystemDays" min="0"
+                                                       th:field="*{activityRetentionSystemDays}" type="number"/>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="rounded-2xl p-4" id="activityRetentionCronRow" style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
+                                        <div class="form-row" style="max-width:24rem">
+                                            <label class="form-label" for="activityRetentionCron"
+                                                   th:text="#{page.settings.features.retention.cron}">Retention schedule</label>
+                                            <div class="flex flex-wrap gap-1.5 mb-2" id="activityRetentionCronPresets">
+                                                <button class="btn btn-sm btn-ghost cron-preset" data-cron="0 0 * * * *"
+                                                        th:text="#{page.settings.system.cron.hourly}" type="button">Hourly
+                                                </button>
+                                                <button class="btn btn-sm btn-ghost cron-preset" data-cron="0 0 2 * * *"
+                                                        th:text="#{page.settings.system.cron.daily2am}" type="button">Daily at 2 AM
+                                                </button>
+                                                <button class="btn btn-sm btn-ghost cron-preset" data-cron="0 0 4 * * *"
+                                                        th:text="#{page.settings.system.cron.daily4am}" type="button">Daily at 4 AM
+                                                </button>
+                                                <button class="btn btn-sm btn-ghost cron-preset" data-cron="0 0 0 * * SUN"
+                                                        th:text="#{page.settings.system.cron.weekly}" type="button">Weekly (Sun)
+                                                </button>
+                                                <button class="btn btn-sm btn-ghost cron-preset" data-cron="0 0 0 1 * *"
+                                                        th:text="#{page.settings.system.cron.monthly}" type="button">Monthly (1st)
+                                                </button>
+                                            </div>
+                                            <input class="form-input font-mono" id="activityRetentionCron" required
+                                                   th:field="*{activityRetentionCron}" type="text"/>
+                                            <p class="text-xs mt-1.5 min-h-[1.25rem]" id="activityRetentionCronFeedback"></p>
+                                            <p class="form-hint" th:text="#{page.settings.features.retention.cron.help}">
+                                                Cron expression for the archive-and-delete sweep.</p>
+                                            <p class="text-xs" style="color:var(--c-text-faint)"
+                                               th:text="#{page.settings.system.cron.hint}">Spring format: second minute hour day month weekday</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
+
                         </div>
+
                     </div>
 
                     <!-- ═══════════════════════════════════════════════════════════

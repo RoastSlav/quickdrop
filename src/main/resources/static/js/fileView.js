@@ -63,6 +63,7 @@ function setupDownloadPreparingMessage() {
 Object.assign(window, {
     copyShareLink,
     createShareLink,
+    copyPublicLink,
     showPreparingMessage,
     toggleDownloadLimit,
     toggleExpirationLimit,
@@ -104,8 +105,37 @@ function initializeModal() {
 function isSimplifiedShareLinksEnabled() {
     const panel = document.getElementById("sharePanel");
     return (
-        isShareLinksEnabled() && panel?.dataset?.simplifiedShareLinks === "true"
+        isShareLinksEnabled() && !isPubliclyAccessible() &&
+        panel?.dataset?.simplifiedShareLinks === "true"
     );
+}
+
+/** Nothing gates the file, so the panel offers the page link instead of minting a share link. */
+function isPubliclyAccessible() {
+    const panel = document.getElementById("sharePanel");
+    return panel?.dataset?.publiclyAccessible === "true";
+}
+
+function copyPublicLink() {
+    const input = document.getElementById("publicLink");
+    const button = document.getElementById("copyPublicLinkButton");
+    if (!input?.value || !button) return;
+
+    const flash = (state) => {
+        button.textContent = getI18nStr(
+            state === "success" ? "copied" : "failed",
+            state === "success" ? "Copied" : "Failed"
+        );
+        button.style.background = state === "success" ? "var(--c-emerald)" : "var(--c-danger)";
+        button.style.color = "#ffffff";
+        setTimeout(() => {
+            button.textContent = getI18nStr("copy", "Copy");
+            button.style.background = "";
+            button.style.color = "";
+        }, 1500);
+    };
+
+    navigator.clipboard.writeText(input.value).then(() => flash("success")).catch(() => flash("error"));
 }
 
 function isShareLinksEnabled() {

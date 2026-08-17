@@ -30,7 +30,8 @@
             </svg>
             <div>
                 <p class="text-sm font-semibold" style="color: var(--c-indigo)"
-                   th:text="#{page.linkNew.notice.title}">Links are checked before they're shared</p>
+                   th:text="${reputationCheckEnabled} ? #{page.linkNew.notice.title} : #{page.linkNew.notice.titleBasic}">
+                    Links are checked before they're shared</p>
                 <p class="text-xs mt-0.5" style="color: var(--c-text-muted)"
                    th:text="#{page.linkNew.notice.safety}">
                     We check destinations for unsafe patterns and block links that point into a private network.</p>

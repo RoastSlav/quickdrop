@@ -3,7 +3,15 @@
 # Stage 1 — build the application jar
 # Pinned explicitly: the previous "maven:3.9.9" tag resolved its JDK by Docker Hub
 # alias, so the build's Java version could drift without a commit here.
-FROM maven:3.9.11-eclipse-temurin-21-alpine AS builder
+#
+# --platform=$BUILDPLATFORM pins this stage to the build host's native
+# architecture regardless of which --platform buildx is targeting. The jar is
+# architecture-independent JVM bytecode, so there's no reason to compile and
+# run the full test suite once per target platform -- without this pin, the
+# arm64 leg of a multi-arch build runs `mvn clean package` under QEMU
+# emulation, which took ~20x longer than the native amd64 leg (20 minutes vs.
+# ~1 minute) for no benefit, since both legs produce an identical jar.
+FROM --platform=$BUILDPLATFORM maven:3.9.11-eclipse-temurin-21-alpine AS builder
 
 WORKDIR /build
 

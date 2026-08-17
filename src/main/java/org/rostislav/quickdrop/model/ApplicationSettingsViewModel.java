@@ -68,6 +68,7 @@ public class ApplicationSettingsViewModel {
     private boolean shortenerEnabled;
     private boolean shortenerAdminOnly;
     private int shortenerCodeLength;
+    private int shareTokenLength;
     private boolean shortenerCustomAliasEnabled;
     private boolean shortenerCustomAliasAdminOnly;
     private String shortenerInterstitialMode;
@@ -179,6 +180,7 @@ public class ApplicationSettingsViewModel {
         this.shortenerEnabled = settings.isShortenerEnabled();
         this.shortenerAdminOnly = settings.isShortenerAdminOnly();
         this.shortenerCodeLength = settings.getShortenerCodeLength();
+        this.shareTokenLength = settings.getShareTokenLength();
         this.shortenerCustomAliasEnabled = settings.isShortenerCustomAliasEnabled();
         this.shortenerCustomAliasAdminOnly = settings.isShortenerCustomAliasAdminOnly();
         this.shortenerInterstitialMode = settings.getShortenerInterstitialMode();
@@ -559,6 +561,14 @@ public class ApplicationSettingsViewModel {
 
     public void setShortenerCodeLength(int shortenerCodeLength) {
         this.shortenerCodeLength = shortenerCodeLength;
+    }
+
+    public int getShareTokenLength() {
+        return shareTokenLength;
+    }
+
+    public void setShareTokenLength(int shareTokenLength) {
+        this.shareTokenLength = shareTokenLength;
     }
 
     public boolean isShortenerCustomAliasEnabled() {

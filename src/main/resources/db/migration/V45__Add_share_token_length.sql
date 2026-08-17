@@ -1,0 +1,1 @@
+ALTER TABLE app_settings ADD COLUMN share_token_length INTEGER NOT NULL DEFAULT 8;

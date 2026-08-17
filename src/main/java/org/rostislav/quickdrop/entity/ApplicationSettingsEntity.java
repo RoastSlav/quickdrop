@@ -218,10 +218,26 @@ public class ApplicationSettingsEntity {
     private boolean shortenerAdminOnly;
 
     /**
-     * Random code length for newly-generated short links (both redirect and upload-share).
+     * Random code length for newly-generated redirect links ({@code /s/{code}}).
      * Existing codes of a different length keep working — lookup is by exact match.
+     *
+     * <p>Deliberately short: guessing a redirect code reveals a URL someone shortened,
+     * not file content. File share tokens are sized separately by
+     * {@link #shareTokenLength} because they carry far higher stakes.
      */
     private int shortenerCodeLength = 5;
+
+    /**
+     * Random code length for newly-generated file share tokens ({@code /share/{token}}).
+     *
+     * <p>Longer than {@link #shortenerCodeLength} because a guessed share token yields the
+     * file itself — including the pre-decrypted sidecar for password-protected uploads.
+     * Brute-force cost is keyspace divided by the number of live tokens, so a short length
+     * gets cheaper as an instance accumulates links; 8 characters keeps that cost far
+     * beyond what the per-IP rate limiter allows. Share links are copy-pasted or scanned,
+     * never typed, so the extra characters cost nothing in usability.
+     */
+    private int shareTokenLength = 8;
 
     /**
      * When {@code true}, users may request a human-chosen alias instead of a random code.
@@ -932,6 +948,14 @@ public class ApplicationSettingsEntity {
 
     public void setShortenerCodeLength(int shortenerCodeLength) {
         this.shortenerCodeLength = shortenerCodeLength;
+    }
+
+    public int getShareTokenLength() {
+        return shareTokenLength;
+    }
+
+    public void setShareTokenLength(int shareTokenLength) {
+        this.shareTokenLength = shareTokenLength;
     }
 
     public boolean isShortenerCustomAliasEnabled() {

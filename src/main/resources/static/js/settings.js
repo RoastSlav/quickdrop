@@ -786,6 +786,8 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     wireCronField('cronPresets', 'fileDeletionCron', 'cronFeedback');
+    wireCronField('activityRetentionCronPresets', 'activityRetentionCron', 'activityRetentionCronFeedback');
+    wireCronField('reputationFeedCronPresets', 'reputationFeedCron', 'reputationFeedCronFeedback');
     document
         .getElementById("discordWebhookEnabled")
         ?.addEventListener("change", toggleDiscordField);

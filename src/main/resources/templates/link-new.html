@@ -79,7 +79,7 @@
                     </label>
                 </div>
 
-                <div class="form-row">
+                <div class="form-row" th:if="${customAliasAllowed}">
                     <label class="form-label" for="customAlias" th:text="#{page.linkNew.aliasLabel}">Custom alias
                         (optional)</label>
                     <input autocomplete="off" class="form-input form-input-mono" id="customAlias"

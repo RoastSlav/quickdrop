@@ -191,6 +191,11 @@ public class FileViewController {
         model.addAttribute("previewUrl", String.format("/file/preview/%s", uuid));
         model.addAttribute("requireManualPreview", requireManualPreview);
         model.addAttribute("maxPreviewSizeMB", previewLimit / 1024 / 1024);
+        // Nothing gates this file, so a share link would grant exactly what the page URL
+        // already grants — the Share panel offers the page link instead of minting one.
+        model.addAttribute("isPubliclyAccessible",
+                (fileEntity.passwordHash == null || fileEntity.passwordHash.isBlank())
+                        && !applicationSettingsService.isAppPasswordEnabled());
 
         return "fileView";
     }

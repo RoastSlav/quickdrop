@@ -257,7 +257,7 @@
                 <!-- Share panel -->
                 <div class="card card-lg flex flex-col gap-4 animate-in animate-in-delay-2 accent-stripe accent-stripe--gradient"
                      id="sharePanel"
-                     th:attr="data-simplified-share-links=${isSimplifiedShareLinksEnabled},data-share-links-enabled=${isShareLinksEnabled}">
+                     th:attr="data-simplified-share-links=${isSimplifiedShareLinksEnabled},data-share-links-enabled=${isShareLinksEnabled},data-publicly-accessible=${isPubliclyAccessible}">
                     <h2 class="section-title flex items-center gap-2">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8"
                              style="color:var(--c-secondary)"
@@ -270,19 +270,36 @@
                     </h2>
 
                     <p class="text-sm" style="color: var(--c-text-muted)"
+                       th:if="${isPubliclyAccessible}"
+                       th:text="#{page.fileView.sharePublicNotice}">Anyone with this link can download the file.</p>
+                    <p class="text-sm" style="color: var(--c-text-muted)"
+                       th:if="${!isPubliclyAccessible}"
                        th:text="#{page.fileView.shareBypassNotice}">Share links bypass file and app passwords.</p>
 
+                    <!-- Nothing gates this file, so the page link is the share link -->
+                    <div class="flex gap-2" th:if="${isPubliclyAccessible}">
+                        <label class="sr-only" for="publicLink" th:text="#{page.fileView.publicLinkLabel}">Link</label>
+                        <input class="form-input form-input-mono flex-1 min-w-0" id="publicLink" readonly
+                               th:value="${downloadLink}" type="text"/>
+                        <button class="btn btn-gradient btn-sm shrink-0" id="copyPublicLinkButton"
+                                onclick="copyPublicLink()" th:text="#{button.copy}" type="button">Copy
+                        </button>
+                    </div>
+
                     <p class="text-xs" style="color: var(--c-warning-text)"
-                       th:if="${!isSimplifiedShareLinksEnabled}" th:text="#{page.fileView.shareAdvancedHint}">
+                       th:if="${!isPubliclyAccessible and !isSimplifiedShareLinksEnabled}"
+                       th:text="#{page.fileView.shareAdvancedHint}">
                         Add an expiration date and/or download limit.
                     </p>
                     <p class="text-xs" style="color: var(--c-warning-text)"
-                       th:if="${isSimplifiedShareLinksEnabled}" th:text="#{page.fileView.shareSimplifiedHint}">
+                       th:if="${!isPubliclyAccessible and isSimplifiedShareLinksEnabled}"
+                       th:text="#{page.fileView.shareSimplifiedHint}">
                         Simplified share links are enabled.
                     </p>
 
                     <!-- Advanced options -->
-                    <div class="flex flex-col gap-3" id="linkOptions" th:if="${!isSimplifiedShareLinksEnabled}">
+                    <div class="flex flex-col gap-3" id="linkOptions"
+                         th:if="${!isPubliclyAccessible and !isSimplifiedShareLinksEnabled}">
                         <div class="form-row">
                             <label class="form-label" for="daysValid" th:text="#{page.fileView.daysValid}">Days
                                 valid</label>
@@ -316,7 +333,8 @@
                         </div>
                     </div>
 
-                    <div class="flex justify-end items-center gap-2" th:if="${isSimplifiedShareLinksEnabled}">
+                    <div class="flex justify-end items-center gap-2"
+                         th:if="${!isPubliclyAccessible and isSimplifiedShareLinksEnabled}">
                         <div class="hidden animate-spin rounded-full h-4 w-4 border-2"
                              id="spinnerShareAuto"
                              style="border-color: var(--c-primary); border-top-color: transparent"></div>

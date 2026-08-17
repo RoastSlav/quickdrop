@@ -133,17 +133,14 @@
                        th:if="${!isPubliclyAccessible and isSimplifiedShareLinksEnabled}"
                        th:text="#{page.fileView.shareSimplifiedHint}">Simplified share links are enabled.</p>
 
-                    <!-- Public paste: pre-filled URL, disabled buttons -->
+                    <!-- Public paste: nothing gates it, so the page link is the share link -->
                     <div class="flex flex-col gap-2" th:if="${isPubliclyAccessible}">
-                        <label class="sr-only" for="shareLinkPublic" th:text="#{page.pasteView.shareLinkLabel}">Share link</label>
-                        <input class="form-input form-input-mono text-xs w-full" id="shareLinkPublic"
+                        <label class="sr-only" for="publicLink" th:text="#{page.pasteView.shareLinkLabel}">Share link</label>
+                        <input class="form-input form-input-mono text-xs w-full" id="publicLink"
                                readonly th:value="${downloadLink}" type="text"/>
                         <div class="flex gap-2">
-                            <button class="btn btn-gradient btn-sm flex-1 opacity-50 cursor-not-allowed"
-                                    disabled th:text="#{page.pasteView.generateLink}" type="button">Generate link
-                            </button>
-                            <button class="btn btn-ghost btn-sm shrink-0 opacity-50 cursor-not-allowed"
-                                    disabled th:text="#{button.copy}" type="button">Copy
+                            <button class="btn btn-gradient btn-sm flex-1" id="copyPublicLinkButton"
+                                    th:text="#{button.copy}" type="button">Copy
                             </button>
                         </div>
                     </div>
@@ -310,6 +307,24 @@
                 }
                 generateShareButton.disabled = false;
             }
+        });
+    }
+
+    const copyPublicLinkButton = document.getElementById('copyPublicLinkButton');
+    if (copyPublicLinkButton) {
+        copyPublicLinkButton.addEventListener('click', async () => {
+            const publicLinkInput = document.getElementById('publicLink');
+            if (!publicLinkInput?.value) return;
+            try {
+                await navigator.clipboard.writeText(publicLinkInput.value);
+                copyPublicLinkButton.textContent = copySuccessText;
+                if (typeof window.toast === 'function') window.toast(copySuccessText, 'success');
+            } catch (_) {
+                copyPublicLinkButton.textContent = copyFailedText;
+            }
+            setTimeout(() => {
+                copyPublicLinkButton.textContent = copyShareButtonText;
+            }, 1200);
         });
     }
 

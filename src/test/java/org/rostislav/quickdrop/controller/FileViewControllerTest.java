@@ -10,6 +10,7 @@ import org.springframework.test.web.servlet.MvcResult;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -77,6 +78,41 @@ class FileViewControllerTest extends ControllerTestSupport {
                 .andExpect(status().isOk())
                 .andExpect(view().name("fileView"))
                 .andExpect(model().attribute("isDeleted", false));
+    }
+
+    /**
+     * The share panel drops its expiry/download-limit form when nothing gates the file — a
+     * share link would grant exactly what the page URL already grants.
+     */
+    @Test
+    void filePage_noFilePasswordAndNoAppPassword_isPubliclyAccessible() throws Exception {
+        ensureAdminPasswordSet();
+        StoredFile file = createFile("a.txt", "hello".getBytes());
+        mockMvc.perform(get("/file/" + file.uuid))
+                .andExpect(status().isOk())
+                .andExpect(model().attribute("isPubliclyAccessible", true));
+    }
+
+    @Test
+    void filePage_passwordProtectedFile_isNotPubliclyAccessible() throws Exception {
+        StoredFile file = createFile("a.txt", "hello".getBytes(), "filepw");
+        MockHttpSession session = fileSession(file.uuid, "filepw");
+        mockMvc.perform(get("/file/" + file.uuid).session(session))
+                .andExpect(status().isOk())
+                .andExpect(model().attribute("isPubliclyAccessible", false));
+    }
+
+    @Test
+    @DirtiesContext
+    void filePage_appPasswordEnabled_isNotPubliclyAccessible() throws Exception {
+        ensureAdminPasswordSet();
+        StoredFile file = createFile("a.txt", "hello".getBytes());
+        updateSettings(s -> s.setAppPasswordEnabled(true));
+        // The app-password gate is a Spring Security rule, so the request has to be
+        // authenticated to reach the controller at all.
+        mockMvc.perform(get("/file/" + file.uuid).with(user("tester")))
+                .andExpect(status().isOk())
+                .andExpect(model().attribute("isPubliclyAccessible", false));
     }
 
     @Test

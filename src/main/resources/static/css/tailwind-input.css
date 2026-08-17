@@ -1455,6 +1455,44 @@ html.dark {
         border-top: 1px solid var(--c-border);
     }
 
+    /* Sections past a row threshold collapse (see settings.js) so a long tab stays
+       scannable. The heading keeps its own styling and gains a chevron + hit area. */
+    .settings-section-label--toggle {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        cursor: pointer;
+        user-select: none;
+    }
+
+    .settings-section-label--toggle:hover {
+        color: var(--c-text);
+    }
+
+    .settings-section-label--toggle:focus-visible {
+        outline: 2px solid var(--c-primary);
+        outline-offset: 3px;
+        border-radius: 0.25rem;
+    }
+
+    .settings-section-chevron {
+        flex: none;
+        width: 0.85em;
+        height: 0.85em;
+        transition: transform 0.15s ease;
+    }
+
+    .settings-section-label--toggle[aria-expanded="true"] .settings-section-chevron {
+        transform: rotate(90deg);
+    }
+
+    .settings-section-count {
+        margin-left: auto;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        color: var(--c-text-faint);
+    }
+
     /* ── Backups page ─────────────────────────────────────────────────────
        Was four full-width cards stacked vertically — schedule, backup now, upload,
        then a flat filename list — so the thing you came to look at was last and

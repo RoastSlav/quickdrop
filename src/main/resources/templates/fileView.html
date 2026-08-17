@@ -286,6 +286,12 @@
                         </button>
                     </div>
 
+                    <div class="text-center p-3 rounded-xl" th:if="${isPubliclyAccessible}"
+                         style="background: var(--c-surface-raised); border: 1px solid var(--c-border)">
+                        <img alt="" class="mx-auto rounded-lg" height="150" th:alt="#{page.fileView.qrAlt}"
+                             th:src="@{/api/file/{uuid}/qr.svg(uuid=${file.uuid}, size=150)}" width="150"/>
+                    </div>
+
                     <p class="text-xs" style="color: var(--c-warning-text)"
                        th:if="${!isPubliclyAccessible and !isSimplifiedShareLinksEnabled}"
                        th:text="#{page.fileView.shareAdvancedHint}">

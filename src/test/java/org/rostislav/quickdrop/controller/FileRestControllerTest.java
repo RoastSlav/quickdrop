@@ -20,6 +20,37 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 class FileRestControllerTest extends ControllerTestSupport {
 
+    // -- GET /api/file/{uuid}/qr.svg --------------------------------------------
+
+    @Test
+    void pageQr_publicFile_returnsSvg() throws Exception {
+        ensureAdminPasswordSet();
+        StoredFile file = createFile("a.txt", "hello".getBytes());
+        String body = mockMvc.perform(get("/api/file/" + file.uuid + "/qr.svg"))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        assertTrue(body.contains("<svg"), body.substring(0, Math.min(80, body.length())));
+    }
+
+    /**
+     * A gated file's QR would encode a page the caller can't open, and answering at all would
+     * make this an existence oracle for uuids the interceptor otherwise hides.
+     */
+    @Test
+    void pageQr_passwordProtectedFile_returns404() throws Exception {
+        ensureAdminPasswordSet();
+        StoredFile file = createFile("a.txt", "hello".getBytes(), "filepw");
+        mockMvc.perform(get("/api/file/" + file.uuid + "/qr.svg"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void pageQr_unknownUuid_returns404() throws Exception {
+        ensureAdminPasswordSet();
+        mockMvc.perform(get("/api/file/does-not-exist/qr.svg"))
+                .andExpect(status().isNotFound());
+    }
+
     // -- POST /api/file/upload-chunk --------------------------------------------
 
     @Test

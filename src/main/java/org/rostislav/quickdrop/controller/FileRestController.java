@@ -64,19 +64,22 @@ public class FileRestController {
     private final SessionService sessionService;
     private final AsyncFileMergeService asyncFileMergeService;
     private final ApplicationSettingsService applicationSettingsService;
+    private final QrCodeService qrCodeService;
 
     public FileRestController(FileQueryService fileQueryService,
                               FileLifecycleService fileLifecycleService,
                               FileDownloadService fileDownloadService,
                               SessionService sessionService,
                               AsyncFileMergeService asyncFileMergeService,
-                              ApplicationSettingsService applicationSettingsService) {
+                              ApplicationSettingsService applicationSettingsService,
+                              QrCodeService qrCodeService) {
         this.fileQueryService = fileQueryService;
         this.fileLifecycleService = fileLifecycleService;
         this.fileDownloadService = fileDownloadService;
         this.sessionService = sessionService;
         this.asyncFileMergeService = asyncFileMergeService;
         this.applicationSettingsService = applicationSettingsService;
+        this.qrCodeService = qrCodeService;
     }
 
     private static String sanitizeFolderManifest(String manifest, boolean isFolderUpload) {
@@ -304,6 +307,42 @@ public class FileRestController {
      * @param request the HTTP request (for session key lookup and history logging)
      * @return 200 with the file byte stream, 302 redirect on invalid/missing token, 503 if not ready
      */
+    /**
+     * Returns an SVG QR code for a file's own page URL, used by the share panel when nothing
+     * gates the file.
+     *
+     * <p>The URL is derived here from the uuid rather than accepted from the caller, so this
+     * can't be used to render a QR for an arbitrary destination. Only publicly accessible
+     * files are served: for a gated one it would answer for a page the caller can't open,
+     * turning this into an existence oracle.
+     *
+     * @param uuid the file's uuid
+     * @param size rendered width/height in pixels; clamped by {@link QrCodeService}
+     * @return 200 with the SVG body, or 404 when the file is unknown, deleted, or gated
+     */
+    @GetMapping(value = "/{uuid}/qr.svg", produces = "image/svg+xml")
+    public ResponseEntity<String> pageQrSvg(@PathVariable String uuid,
+                                            @RequestParam(defaultValue = "150") int size,
+                                            HttpServletRequest request) {
+        Optional<Upload> fileEntity = fileQueryService.getFile(uuid);
+        if (fileEntity.isEmpty() || fileEntity.get().deleted || !isPubliclyAccessible(fileEntity.get())) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+        try {
+            String svg = qrCodeService.renderSvg(FileUtils.getDownloadLink(request, fileEntity.get()),
+                    size, "#000000", "#ffffff");
+            return ResponseEntity.ok().header("Cache-Control", "no-store").body(svg);
+        } catch (QrGenerationException e) {
+            return ResponseEntity.status(HttpStatus.UNPROCESSABLE_CONTENT).build();
+        }
+    }
+
+    /** Mirrors the flag FileViewController puts on the model; kept in sync deliberately. */
+    private boolean isPubliclyAccessible(Upload fileEntity) {
+        return (fileEntity.passwordHash == null || fileEntity.passwordHash.isBlank())
+                && !applicationSettingsService.isAppPasswordEnabled();
+    }
+
     @GetMapping("/download/{token}")
     public ResponseEntity<StreamingResponseBody> downloadFile(@PathVariable String token, HttpServletRequest request) {
         try {

@@ -163,6 +163,17 @@ function syncShareLinkSettings() {
     }
 }
 
+function syncRetentionSettings() {
+    const enabled = Boolean(document.getElementById("activityRetentionEnabled")?.checked);
+    ["activityRetentionDaysRow", "activityRetentionCronRow"].forEach((rowId) => {
+        const row = document.getElementById(rowId);
+        if (row) {
+            row.classList.toggle("opacity-60", !enabled);
+            row.classList.toggle("cursor-not-allowed", !enabled);
+        }
+    });
+}
+
 function syncShortenerSettings() {
     const shortenerEnabledCb = document.getElementById("shortenerEnabled");
     const customAliasEnabledCb = document.getElementById("shortenerCustomAliasEnabled");
@@ -612,6 +623,7 @@ document.addEventListener("DOMContentLoaded", function () {
     syncUploadEnabled();
     syncShareLinkSettings();
     syncShortenerSettings();
+    syncRetentionSettings();
     togglePreviewSizeField();
     syncDefaultHomePageOptions();
 

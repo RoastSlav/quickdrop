@@ -5,18 +5,22 @@ import jakarta.servlet.http.HttpSession;
 import org.rostislav.quickdrop.entity.*;
 import org.rostislav.quickdrop.model.*;
 import org.rostislav.quickdrop.service.*;
+import org.rostislav.quickdrop.util.ActivityLogCsv;
 import org.rostislav.quickdrop.util.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.support.CronExpression;
 import org.springframework.security.crypto.bcrypt.BCrypt;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
@@ -50,6 +54,9 @@ public class AdminViewController {
 
     /** How far ahead the dashboard warns about files due for auto-deletion. */
     private static final int EXPIRING_SOON_WINDOW_DAYS = 7;
+
+    /** Rows fetched per round trip when streaming a CSV export. */
+    private static final int EXPORT_PAGE_SIZE = 1000;
 
     /** Number of activity-log entries shown in the dashboard feed. */
     private static final int RECENT_ACTIVITY_LIMIT = 6;
@@ -616,24 +623,9 @@ public class AdminViewController {
         int pageNumber = clampPage(page);
         int pageSize = clampSize(size);
 
-        LocalDateTime start = null;
-        LocalDateTime end = null;
-        try {
-            if (startDate != null && !startDate.isBlank()) start = LocalDateTime.parse(startDate);
-        } catch (Exception ignored) {
-        }
-        try {
-            if (endDate != null && !endDate.isBlank()) end = LocalDateTime.parse(endDate);
-        } catch (Exception ignored) {
-        }
-
-        EventType typeFilter = null;
-        if (eventType != null && !eventType.isBlank()) {
-            try {
-                typeFilter = EventType.valueOf(eventType.toUpperCase());
-            } catch (IllegalArgumentException ignored) {
-            }
-        }
+        LocalDateTime start = parseFilterDate(startDate);
+        LocalDateTime end = parseFilterDate(endDate);
+        EventType typeFilter = parseFilterEventType(eventType);
 
         // Normalise blank strings to null so service-layer filters treat them as "no filter".
         String ipFilter = (ip == null || ip.isBlank()) ? null : ip;
@@ -654,6 +646,74 @@ public class AdminViewController {
         model.addAttribute("ua", ua == null ? "" : ua);
         model.addAttribute("sourceType", resolvedSourceType);
         return "admin-activity";
+    }
+
+    /**
+     * Streams the activity log as CSV using the same filters as {@link #getActivityPage}.
+     * Paged rather than materialised so an unfiltered export doesn't pull the table into heap.
+     */
+    @GetMapping("/activity/export")
+    public ResponseEntity<StreamingResponseBody> exportActivity(@RequestParam(required = false) String startDate,
+                                                                @RequestParam(required = false) String endDate,
+                                                                @RequestParam(required = false) String eventType,
+                                                                @RequestParam(required = false) String ip,
+                                                                @RequestParam(required = false) String ua,
+                                                                @RequestParam(required = false) String sourceType) {
+        LocalDateTime start = parseFilterDate(startDate);
+        LocalDateTime end = parseFilterDate(endDate);
+        EventType typeFilter = parseFilterEventType(eventType);
+        String ipFilter = (ip == null || ip.isBlank()) ? null : ip;
+        String uaFilter = (ua == null || ua.isBlank()) ? null : ua;
+
+        String filename = "quickdrop-activity-"
+                + LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH-mm-ss"))
+                + ".csv";
+
+        StreamingResponseBody body = outputStream -> {
+            try (java.io.Writer writer = new java.io.BufferedWriter(
+                    new java.io.OutputStreamWriter(outputStream, java.nio.charset.StandardCharsets.UTF_8))) {
+                ActivityLogCsv.writeHeader(writer);
+                int page = 0;
+                Page<ActivityLog> slice;
+                do {
+                    slice = analyticsService.getFilteredActivity(start, end, typeFilter, ipFilter, uaFilter,
+                            sourceType, PageRequest.of(page, EXPORT_PAGE_SIZE));
+                    for (ActivityLog entry : slice.getContent()) {
+                        ActivityLogCsv.writeRow(writer, entry);
+                    }
+                    page++;
+                } while (slice.hasNext());
+            }
+        };
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                .contentType(new MediaType("text", "csv", java.nio.charset.StandardCharsets.UTF_8))
+                .body(body);
+    }
+
+    /** Returns the parsed timestamp, or {@code null} when absent or unparseable. */
+    private static LocalDateTime parseFilterDate(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        try {
+            return LocalDateTime.parse(value);
+        } catch (Exception ignored) {
+            return null;
+        }
+    }
+
+    /** Returns the matching event type, or {@code null} when absent or unrecognised. */
+    private static EventType parseFilterEventType(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        try {
+            return EventType.valueOf(value.toUpperCase());
+        } catch (IllegalArgumentException ignored) {
+            return null;
+        }
     }
 
     @PostMapping("/notification-test")

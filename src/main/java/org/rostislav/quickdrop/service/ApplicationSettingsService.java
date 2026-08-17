@@ -3,6 +3,7 @@ package org.rostislav.quickdrop.service;
 import jakarta.annotation.PostConstruct;
 import org.rostislav.quickdrop.entity.ApplicationSettingsEntity;
 import org.rostislav.quickdrop.model.ApplicationSettingsViewModel;
+import org.rostislav.quickdrop.model.EventCategory;
 import org.rostislav.quickdrop.repository.ApplicationSettingsRepository;
 import org.rostislav.quickdrop.storage.*;
 import org.slf4j.Logger;
@@ -155,6 +156,14 @@ public class ApplicationSettingsService {
             defaults.setReputationSafeBrowsingEnabled(false);
             defaults.setReputationFailClosed(false);
             defaults.setReputationFeedCron("0 0 4 * * *");
+            defaults.setActivityRetentionEnabled(false);
+            defaults.setActivityRetentionCron("0 30 3 * * *");
+            defaults.setActivityRetentionFileDays(365);
+            defaults.setActivityRetentionPasteDays(365);
+            defaults.setActivityRetentionShareDays(365);
+            defaults.setActivityRetentionShortlinkDays(365);
+            defaults.setActivityRetentionAdminDays(365);
+            defaults.setActivityRetentionSystemDays(365);
             defaults.setAppName("QuickDrop");
             defaults.setLogoFileName(null);
             defaults.setDefaultLanguage("en");
@@ -211,6 +220,10 @@ public class ApplicationSettingsService {
         // value here would fall through to generateUniqueCode(0) and mint empty codes.
         if (settings.getShareTokenLength() <= 0) {
             settings.setShareTokenLength(8);
+            dirty = true;
+        }
+        if (settings.getActivityRetentionCron() == null || settings.getActivityRetentionCron().isBlank()) {
+            settings.setActivityRetentionCron("0 30 3 * * *");
             dirty = true;
         }
         if (settings.getShortenerInterstitialMode() == null || settings.getShortenerInterstitialMode().isBlank()) {
@@ -405,6 +418,16 @@ public class ApplicationSettingsService {
         entity.setReputationFailClosed(settings.isReputationFailClosed());
         String reputationFeedCron = settings.getReputationFeedCron();
         entity.setReputationFeedCron(reputationFeedCron != null && !reputationFeedCron.isBlank() ? reputationFeedCron : "0 0 4 * * *");
+        entity.setActivityRetentionEnabled(settings.isActivityRetentionEnabled());
+        String activityRetentionCron = settings.getActivityRetentionCron();
+        entity.setActivityRetentionCron(activityRetentionCron != null && !activityRetentionCron.isBlank() ? activityRetentionCron : "0 30 3 * * *");
+        // A negative would put the cutoff in the future and purge unexpired rows; 0 = forever.
+        entity.setActivityRetentionFileDays(Math.max(settings.getActivityRetentionFileDays(), 0));
+        entity.setActivityRetentionPasteDays(Math.max(settings.getActivityRetentionPasteDays(), 0));
+        entity.setActivityRetentionShareDays(Math.max(settings.getActivityRetentionShareDays(), 0));
+        entity.setActivityRetentionShortlinkDays(Math.max(settings.getActivityRetentionShortlinkDays(), 0));
+        entity.setActivityRetentionAdminDays(Math.max(settings.getActivityRetentionAdminDays(), 0));
+        entity.setActivityRetentionSystemDays(Math.max(settings.getActivityRetentionSystemDays(), 0));
         entity.setUrlhausAuthKey(settings.getUrlhausAuthKey());
         entity.setSafeBrowsingApiKey(settings.getSafeBrowsingApiKey());
         // Each provider can only be (re-)enabled through #acceptReputationProviderTerms, never
@@ -1010,6 +1033,38 @@ public class ApplicationSettingsService {
      */
     public String getReputationFeedCron() {
         return self.getApplicationSettings().getReputationFeedCron();
+    }
+
+    /**
+     * @return {@code true} if the activity-log retention sweep should run
+     */
+    public boolean isActivityRetentionEnabled() {
+        return self.getApplicationSettings().isActivityRetentionEnabled();
+    }
+
+    /**
+     * @return cron expression for the activity-log archive-and-purge sweep
+     */
+    public String getActivityRetentionCron() {
+        return self.getApplicationSettings().getActivityRetentionCron();
+    }
+
+    /**
+     * Days of activity history kept for a category before it is archived and deleted.
+     *
+     * @param category the event category
+     * @return retention in days, or {@code 0} to keep that category forever
+     */
+    public int getActivityRetentionDays(EventCategory category) {
+        ApplicationSettingsEntity settings = self.getApplicationSettings();
+        return switch (category) {
+            case FILE -> settings.getActivityRetentionFileDays();
+            case PASTE -> settings.getActivityRetentionPasteDays();
+            case SHARE -> settings.getActivityRetentionShareDays();
+            case SHORTLINK -> settings.getActivityRetentionShortlinkDays();
+            case ADMIN -> settings.getActivityRetentionAdminDays();
+            case SYSTEM -> settings.getActivityRetentionSystemDays();
+        };
     }
 
     /**

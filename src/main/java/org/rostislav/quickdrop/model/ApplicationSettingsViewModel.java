@@ -82,6 +82,14 @@ public class ApplicationSettingsViewModel {
     private boolean reputationSafeBrowsingEnabled;
     private boolean reputationFailClosed;
     private String reputationFeedCron;
+    private boolean activityRetentionEnabled;
+    private String activityRetentionCron;
+    private int activityRetentionFileDays;
+    private int activityRetentionPasteDays;
+    private int activityRetentionShareDays;
+    private int activityRetentionShortlinkDays;
+    private int activityRetentionAdminDays;
+    private int activityRetentionSystemDays;
     private String urlhausAuthKey;
     private String safeBrowsingApiKey;
     private LocalDateTime phishingArmyTermsAcceptedAt;
@@ -194,6 +202,14 @@ public class ApplicationSettingsViewModel {
         this.reputationSafeBrowsingEnabled = settings.isReputationSafeBrowsingEnabled();
         this.reputationFailClosed = settings.isReputationFailClosed();
         this.reputationFeedCron = settings.getReputationFeedCron();
+        this.activityRetentionEnabled = settings.isActivityRetentionEnabled();
+        this.activityRetentionCron = settings.getActivityRetentionCron();
+        this.activityRetentionFileDays = settings.getActivityRetentionFileDays();
+        this.activityRetentionPasteDays = settings.getActivityRetentionPasteDays();
+        this.activityRetentionShareDays = settings.getActivityRetentionShareDays();
+        this.activityRetentionShortlinkDays = settings.getActivityRetentionShortlinkDays();
+        this.activityRetentionAdminDays = settings.getActivityRetentionAdminDays();
+        this.activityRetentionSystemDays = settings.getActivityRetentionSystemDays();
         this.urlhausAuthKey = settings.getUrlhausAuthKey();
         this.safeBrowsingApiKey = settings.getSafeBrowsingApiKey();
         this.phishingArmyTermsAcceptedAt = settings.getPhishingArmyTermsAcceptedAt();
@@ -673,6 +689,70 @@ public class ApplicationSettingsViewModel {
 
     public void setReputationFeedCron(String reputationFeedCron) {
         this.reputationFeedCron = reputationFeedCron;
+    }
+
+    public boolean isActivityRetentionEnabled() {
+        return activityRetentionEnabled;
+    }
+
+    public void setActivityRetentionEnabled(boolean activityRetentionEnabled) {
+        this.activityRetentionEnabled = activityRetentionEnabled;
+    }
+
+    public String getActivityRetentionCron() {
+        return activityRetentionCron;
+    }
+
+    public void setActivityRetentionCron(String activityRetentionCron) {
+        this.activityRetentionCron = activityRetentionCron;
+    }
+
+    public int getActivityRetentionFileDays() {
+        return activityRetentionFileDays;
+    }
+
+    public void setActivityRetentionFileDays(int activityRetentionFileDays) {
+        this.activityRetentionFileDays = activityRetentionFileDays;
+    }
+
+    public int getActivityRetentionPasteDays() {
+        return activityRetentionPasteDays;
+    }
+
+    public void setActivityRetentionPasteDays(int activityRetentionPasteDays) {
+        this.activityRetentionPasteDays = activityRetentionPasteDays;
+    }
+
+    public int getActivityRetentionShareDays() {
+        return activityRetentionShareDays;
+    }
+
+    public void setActivityRetentionShareDays(int activityRetentionShareDays) {
+        this.activityRetentionShareDays = activityRetentionShareDays;
+    }
+
+    public int getActivityRetentionShortlinkDays() {
+        return activityRetentionShortlinkDays;
+    }
+
+    public void setActivityRetentionShortlinkDays(int activityRetentionShortlinkDays) {
+        this.activityRetentionShortlinkDays = activityRetentionShortlinkDays;
+    }
+
+    public int getActivityRetentionAdminDays() {
+        return activityRetentionAdminDays;
+    }
+
+    public void setActivityRetentionAdminDays(int activityRetentionAdminDays) {
+        this.activityRetentionAdminDays = activityRetentionAdminDays;
+    }
+
+    public int getActivityRetentionSystemDays() {
+        return activityRetentionSystemDays;
+    }
+
+    public void setActivityRetentionSystemDays(int activityRetentionSystemDays) {
+        this.activityRetentionSystemDays = activityRetentionSystemDays;
     }
 
     public String getUrlhausAuthKey() {

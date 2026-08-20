@@ -135,6 +135,15 @@ pre.hljs, code.hljs {
 
 .editor-wrapper.manual-preview-active .manual-preview-pane {
     display: block;
+    flex: 1;
+    min-height: 0;
+    max-height: none;
+}
+
+/* The container keeps its box (toolbar lives outside it) but must stop claiming the
+   free space, or the preview pane renders as a short box at the very bottom. */
+.editor-wrapper.manual-preview-active .EasyMDEContainer {
+    flex: 0 0 auto;
 }
 
 .editor-wrapper.manual-preview-active .EasyMDEContainer .CodeMirror,
@@ -184,9 +193,9 @@ pre.hljs, code.hljs {
 }
 
 .custom-editor-toolbar button[aria-pressed="true"] {
-    background: var(--g-brand);
-    border-color: transparent;
-    color: #fff;
+    background-color: var(--c-primary-muted);
+    border-color: var(--c-primary);
+    color: var(--c-primary);
 }
 
 .preview-tool-button {

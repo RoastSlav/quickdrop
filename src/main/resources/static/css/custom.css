@@ -122,15 +122,37 @@ pre.hljs, code.hljs {
     border-left-color: var(--c-text);
 }
 
+/* Shaped like the editor it replaces: joined to the toolbar above, rounded only at
+   the bottom. A fully rounded box reads as a panel floating inside the editor. */
 .editor-wrapper .manual-preview-pane {
     display: none;
     max-height: 72vh;
     overflow: auto;
     border: 1px solid var(--c-border-strong);
-    border-radius: 1rem;
+    border-top: none;
+    border-radius: 0 0 1rem 1rem;
     background-color: var(--c-surface);
     padding: 1.5rem;
     color: var(--c-text);
+}
+
+.paste-editor .manual-preview-pane {
+    border-radius: 0 0 0.75rem 0.75rem;
+}
+
+/* EasyMDE ships `.EasyMDEContainer .CodeMirror` with its own 1px border and 4px bottom
+   corners. That selector has the same specificity as `.editor-wrapper .CodeMirror` above
+   and its stylesheet loads later, so it was winning the tie: the editor rendered detached
+   from the toolbar with corners that matched neither it nor the preview. One extra class
+   takes the tie back. */
+.editor-wrapper .EasyMDEContainer .CodeMirror {
+    border: 1px solid var(--c-border-strong);
+    border-top: none;
+    border-radius: 0 0 1rem 1rem;
+}
+
+.paste-editor .EasyMDEContainer .CodeMirror {
+    border-radius: 0 0 0.75rem 0.75rem;
 }
 
 .editor-wrapper.manual-preview-active .manual-preview-pane {

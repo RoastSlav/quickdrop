@@ -46,6 +46,14 @@ import static org.rostislav.quickdrop.util.FileUtils.formatFileSize;
  */
 @Service
 public class ApplicationSettingsService {
+    /**
+     * Directory the application log is written to when the admin has not configured one.
+     * Matches the {@code log/} directory declared as a Docker volume by the Dockerfile and
+     * docker-compose, and is read at startup by
+     * {@link org.rostislav.quickdrop.config.LogStoragePathEnvironmentPostProcessor}.
+     */
+    public static final String DEFAULT_LOG_STORAGE_PATH = "log";
+
     private static final Logger logger = LoggerFactory.getLogger(ApplicationSettingsService.class);
 
     private final ApplicationSettingsRepository applicationSettingsRepository;
@@ -105,7 +113,7 @@ public class ApplicationSettingsService {
             defaults.setMaxFileSize(1024L * 1024L * 1024L);
             defaults.setMaxFileLifeTime(30L);
             defaults.setFileStoragePath("files");
-            defaults.setLogStoragePath("logs");
+            defaults.setLogStoragePath(DEFAULT_LOG_STORAGE_PATH);
             defaults.setFileDeletionCron("0 0 2 * * *");
             defaults.setAppPasswordEnabled(false);
             defaults.setAppPasswordHash("");
@@ -204,7 +212,7 @@ public class ApplicationSettingsService {
             dirty = true;
         }
         if (settings.getLogStoragePath() == null || settings.getLogStoragePath().isBlank()) {
-            settings.setLogStoragePath("logs");
+            settings.setLogStoragePath(DEFAULT_LOG_STORAGE_PATH);
             dirty = true;
         }
         if (settings.getFileStoragePath() == null || settings.getFileStoragePath().isBlank()) {

@@ -752,7 +752,7 @@
                             </div>
 
                             <div class="alert alert-danger"
-                                 th:if="${param.error != null && (param.error.contains('invalidMaxFileSize') || param.error.contains('invalidRetention') || param.error.contains('invalidStoragePath'))}"
+                                 th:if="${param.error != null && (param.error.contains('invalidMaxFileSize') || param.error.contains('invalidRetention') || param.error.contains('invalidStoragePath') || param.error.contains('invalidLogStoragePath'))}"
                                  th:text="#{validation.settings.invalid}">Invalid settings value.
                             </div>
 
@@ -787,6 +787,9 @@
                                                 Storage Path</label>
                                             <input class="form-input" id="logStoragePath" th:field="*{logStoragePath}"
                                                    type="text"/>
+                                            <p class="form-hint"
+                                               th:text="#{page.settings.system.logStoragePath.help}">The application log
+                                                file moves here after the next restart.</p>
                                         </div>
                                     </div>
                                     <!-- Deletion cron -->

@@ -1,0 +1,5 @@
+# Runs while the Environment is being prepared, before Logback is configured, to point
+# logging.file.name at the admin-configured "Log Storage Path" setting -- which lives in
+# SQLite and so cannot be reached through the usual settings service at that point.
+org.springframework.boot.EnvironmentPostProcessor=\
+org.rostislav.quickdrop.config.LogStoragePathEnvironmentPostProcessor

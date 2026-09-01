@@ -53,7 +53,7 @@ COPY --from=builder /build/target/quickdrop.jar /app/quickdrop.jar
 
 WORKDIR /app
 
-VOLUME ["/app/db", "/app/db-backups", "/app/log", "/app/files"]
+VOLUME ["/app/db", "/app/db-backups", "/app/log", "/app/files", "/app/branding", "/app/reputation-feeds"]
 
 EXPOSE 8080
 

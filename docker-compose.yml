@@ -4,12 +4,12 @@ services:
         ports:
             - 8080:8080
         environment:
-            - PUID=1000
-            - PGID=1000
-            - TZ=/etc/UTC
+            - TZ=Etc/UTC
         volumes:
             - ./db:/app/db
             - ./db-backups:/app/db-backups
             - ./log:/app/log
             - ./files:/app/files
+            - ./branding:/app/branding
+            - ./reputation-feeds:/app/reputation-feeds
         restart: unless-stopped

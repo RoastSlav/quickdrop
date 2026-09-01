@@ -76,12 +76,18 @@ Open:
 Persistence directories created locally (relative to the compose file):
 
 - ./db → /app/db
+- ./db-backups → /app/db-backups
 - ./files → /app/files
 - ./log → /app/log
+- ./branding → /app/branding
+- ./reputation-feeds → /app/reputation-feeds
 
 Notes:
 
-- The compose includes PUID, PGID, and TZ env vars.
+- The compose sets TZ, which the JVM reads to pick the default time zone. It must be a
+  tzdb zone ID such as `Etc/UTC` or `Europe/Sofia`. The image runs the JVM as root and has
+  no entrypoint script, so PUID/PGID are not supported; bind-mounted directories are
+  created owned by root.
 - View logs:
 
 ```bash

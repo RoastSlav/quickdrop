@@ -1,11 +1,18 @@
 package org.rostislav.quickdrop.controller;
 
 import org.junit.jupiter.api.Test;
+import org.rostislav.quickdrop.entity.ActivityLog;
 import org.rostislav.quickdrop.entity.Paste;
 import org.rostislav.quickdrop.entity.StoredFile;
+import org.rostislav.quickdrop.model.EventCategory;
+import org.rostislav.quickdrop.model.EventType;
+import org.rostislav.quickdrop.service.ApplicationSettingsService;
+import org.springframework.data.domain.Page;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.web.servlet.MvcResult;
+
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
@@ -317,6 +324,67 @@ class AdminViewControllerTest extends ControllerTestSupport {
     }
 
     @Test
+    void postApiSave_traversalLogStoragePath_returns400AndDoesNotPersist() throws Exception {
+        // The log path drives logging.file.name at the next startup, so a traversal value here
+        // would put the log file outside the app directory.
+        MockHttpSession session = adminSession();
+        String before = applicationSettingsService.getLogStoragePath();
+        mockMvc.perform(settingsFormParams(post("/admin/api/save").session(session).with(csrf()), "0 0 2 * * *")
+                        .param("logStoragePath", "log/../../escaped"))
+                .andExpect(status().isBadRequest());
+        assertEquals(before, applicationSettingsRepository.findById(1L).orElseThrow().getLogStoragePath());
+    }
+
+    @Test
+    void postApiSave_dangerousLogStoragePath_returns400AndDoesNotPersist() throws Exception {
+        MockHttpSession session = adminSession();
+        String before = applicationSettingsService.getLogStoragePath();
+        mockMvc.perform(settingsFormParams(post("/admin/api/save").session(session).with(csrf()), "0 0 2 * * *")
+                        .param("logStoragePath", "C:\\Windows"))
+                .andExpect(status().isBadRequest());
+        assertEquals(before, applicationSettingsRepository.findById(1L).orElseThrow().getLogStoragePath());
+    }
+
+    @Test
+    void postApiSave_blankLogStoragePath_coercedToTheDefaultRatherThanPersistedAsNull() throws Exception {
+        // The field is optional and API callers omit it entirely; persisting null would leave
+        // the startup lookup (LogStoragePathEnvironmentPostProcessor) with nothing to read.
+        MockHttpSession session = adminSession();
+        String before = applicationSettingsService.getLogStoragePath();
+        try {
+            mockMvc.perform(settingsFormParams(post("/admin/api/save").session(session).with(csrf()), "0 0 2 * * *")
+                            .param("logStoragePath", "   "))
+                    .andExpect(status().isOk());
+            assertEquals(ApplicationSettingsService.DEFAULT_LOG_STORAGE_PATH,
+                    applicationSettingsRepository.findById(1L).orElseThrow().getLogStoragePath());
+        } finally {
+            restoreLogStoragePath(before);
+        }
+    }
+
+    @Test
+    void postApiSave_customLogStoragePath_isAccepted() throws Exception {
+        MockHttpSession session = adminSession();
+        String before = applicationSettingsService.getLogStoragePath();
+        try {
+            mockMvc.perform(settingsFormParams(post("/admin/api/save").session(session).with(csrf()), "0 0 2 * * *")
+                            .param("logStoragePath", storageDir.resolve("logs").toString()))
+                    .andExpect(status().isOk());
+            assertEquals(storageDir.resolve("logs").toString(),
+                    applicationSettingsRepository.findById(1L).orElseThrow().getLogStoragePath());
+        } finally {
+            restoreLogStoragePath(before);
+        }
+    }
+
+    // The settings row is a process-wide singleton shared by every test class using this
+    // cached context -- put the log path back so a @TempDir that no longer exists doesn't
+    // leak into an unrelated test.
+    private void restoreLogStoragePath(String value) {
+        updateSettings(settings -> settings.setLogStoragePath(value));
+    }
+
+    @Test
     void postApiSave_absoluteNonDangerousStoragePath_isAccepted() throws Exception {
         // Docker deployments legitimately mount the storage root at an absolute path
         // (README: "mount /app/db, /app/files, /app/log") -- only a short list of
@@ -505,12 +573,72 @@ class AdminViewControllerTest extends ControllerTestSupport {
     // -- GET /admin/activity ------------------------------------------------
 
     @Test
+    void activityPage_categoryFilter_returnsEveryTypeInThatCategory() throws Exception {
+        MockHttpSession session = adminSession();
+        analyticsService.logEvent(EventType.STARTUP, "10.9.9.1", "ua");
+        analyticsService.logEvent(EventType.STORAGE_BACKEND_UP, "10.9.9.1", "ua");
+        analyticsService.logEvent(EventType.PASTE_CREATE, "10.9.9.1", "ua");
+
+        MvcResult result = mockMvc.perform(get("/admin/activity")
+                        .param("eventType", "SYSTEM")
+                        .param("ip", "10.9.9.1")
+                        .session(session))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        List<EventType> seen = activityTypes(result);
+        assertTrue(seen.contains(EventType.STARTUP));
+        assertTrue(seen.contains(EventType.STORAGE_BACKEND_UP));
+        assertTrue(seen.stream().allMatch(type -> type.getCategory() == EventCategory.SYSTEM));
+    }
+
+    @Test
+    void activityPage_singleTypeFilter_stillNarrowsToThatType() throws Exception {
+        MockHttpSession session = adminSession();
+        analyticsService.logEvent(EventType.STARTUP, "10.9.9.2", "ua");
+        analyticsService.logEvent(EventType.STORAGE_BACKEND_UP, "10.9.9.2", "ua");
+
+        MvcResult result = mockMvc.perform(get("/admin/activity")
+                        .param("eventType", "STARTUP")
+                        .param("ip", "10.9.9.2")
+                        .session(session))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        List<EventType> seen = activityTypes(result);
+        assertFalse(seen.isEmpty());
+        assertTrue(seen.stream().allMatch(type -> type == EventType.STARTUP));
+    }
+
+    @Test
+    void activityPage_unknownEventTypeFilter_isIgnoredRatherThanEmptying() throws Exception {
+        MockHttpSession session = adminSession();
+        analyticsService.logEvent(EventType.STARTUP, "10.9.9.3", "ua");
+
+        MvcResult result = mockMvc.perform(get("/admin/activity")
+                        .param("eventType", "NOT_A_REAL_TYPE")
+                        .param("ip", "10.9.9.3")
+                        .session(session))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        assertFalse(activityTypes(result).isEmpty());
+    }
+
+    @SuppressWarnings("unchecked")
+    private static List<EventType> activityTypes(MvcResult result) {
+        Page<ActivityLog> page =
+                (Page<ActivityLog>) result.getModelAndView().getModel().get("activityPage");
+        return page.getContent().stream().map(ActivityLog::getEventType).toList();
+    }
+
+    @Test
     void activityPage_withAdminSession_returns200() throws Exception {
         MockHttpSession session = adminSession();
         mockMvc.perform(get("/admin/activity").session(session))
                 .andExpect(status().isOk())
                 .andExpect(view().name("admin-activity"))
-                .andExpect(model().attributeExists("activityPage", "eventTypes"));
+                .andExpect(model().attributeExists("activityPage", "eventTypes", "eventTypesByCategory"));
     }
 
     // -- GET /admin/activity/export ------------------------------------------

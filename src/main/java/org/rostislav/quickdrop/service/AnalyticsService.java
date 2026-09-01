@@ -12,6 +12,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 
 import static org.rostislav.quickdrop.model.EventType.DOWNLOAD;
@@ -29,6 +30,9 @@ import static org.rostislav.quickdrop.util.FileUtils.formatFileSize;
  */
 @Service
 public class AnalyticsService {
+    /** Stands in for "no type filter": the query's IN clause has no null form. */
+    private static final List<EventType> ALL_EVENT_TYPES = List.of(EventType.values());
+
     private final FileQueryService fileQueryService;
     private final PasteService pasteService;
     private final ActivityLogRepository activityLogRepository;
@@ -59,7 +63,7 @@ public class AnalyticsService {
      */
     public List<ActivityLog> getRecentActivity(int limit) {
         return activityLogRepository
-                .findFiltered(null, null, null, null, null, null, PageRequest.of(0, limit))
+                .findFiltered(null, null, ALL_EVENT_TYPES, null, null, null, PageRequest.of(0, limit))
                 .getContent();
     }
 
@@ -162,7 +166,7 @@ public class AnalyticsService {
      *
      * @param startDate  lower bound on event timestamp (inclusive), or {@code null}
      * @param endDate    upper bound on event timestamp (inclusive), or {@code null}
-     * @param eventType  exact event type filter, or {@code null} to include all types
+     * @param eventTypes event types to include, or {@code null}/empty to include all types
      * @param ip         substring filter on IP address, or {@code null}
      * @param ua         substring filter on user-agent, or {@code null}
      * @param sourceType one of {@code "file"}, {@code "paste"}, {@code "system"}, or {@code null} for all
@@ -170,9 +174,11 @@ public class AnalyticsService {
      * @return a page of matching log entries ordered by event date descending
      */
     public Page<ActivityLog> getFilteredActivity(LocalDateTime startDate, LocalDateTime endDate,
-                                                 EventType eventType, String ip, String ua, String sourceType,
-                                                 Pageable pageable) {
+                                                 Collection<EventType> eventTypes, String ip, String ua,
+                                                 String sourceType, Pageable pageable) {
         String sourceTypeFilter = (sourceType == null || sourceType.isBlank()) ? null : sourceType.toLowerCase();
-        return activityLogRepository.findFiltered(startDate, endDate, eventType, ip, ua, sourceTypeFilter, pageable);
+        Collection<EventType> typeFilter =
+                (eventTypes == null || eventTypes.isEmpty()) ? ALL_EVENT_TYPES : eventTypes;
+        return activityLogRepository.findFiltered(startDate, endDate, typeFilter, ip, ua, sourceTypeFilter, pageable);
     }
 }

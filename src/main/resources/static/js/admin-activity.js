@@ -98,6 +98,15 @@
             return;
         }
 
+        const srcBtn = e.target.closest('[data-sourcetype]');
+        if (srcBtn) {
+            const input = wrapper.querySelector('#sourceTypeInput');
+            if (input) input.value = srcBtn.getAttribute('data-sourcetype');
+            const form = document.getElementById('activityFilterForm');
+            if (form) form.requestSubmit();
+            return;
+        }
+
         const pBtn = e.target.closest('a.pagination-btn:not(.pagination-btn-disabled)');
         if (pBtn) {
             e.preventDefault();

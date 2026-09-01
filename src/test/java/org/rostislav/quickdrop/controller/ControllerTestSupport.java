@@ -11,6 +11,7 @@ import org.rostislav.quickdrop.repository.FileRepository;
 import org.rostislav.quickdrop.repository.PasteRepository;
 import org.rostislav.quickdrop.repository.ShortLinkRepository;
 import org.rostislav.quickdrop.service.ApplicationSettingsService;
+import org.rostislav.quickdrop.service.AnalyticsService;
 import org.rostislav.quickdrop.service.AsyncFileMergeService;
 import org.rostislav.quickdrop.service.SessionService;
 import org.rostislav.quickdrop.support.QuickdropIntegrationTest;
@@ -58,6 +59,8 @@ abstract class ControllerTestSupport extends QuickdropIntegrationTest {
     protected CacheManager cacheManager;
     @Autowired
     protected AsyncFileMergeService asyncFileMergeService;
+    @Autowired
+    protected AnalyticsService analyticsService;
 
     /**
      * Polls {@code AsyncFileMergeService#getUploadStatus} until the async chunk-merge task

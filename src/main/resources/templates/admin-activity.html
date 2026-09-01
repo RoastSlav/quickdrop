@@ -133,11 +133,19 @@
                                             th:text="#{page.adminActivity.filter.allTypes}"
                                             value="">All types
                                     </option>
-                                    <option th:each="type : ${eventTypes}"
-                                            th:selected="${selectedEventType == type.name()}"
-                                            th:text="#{page.history.actionType.__${type.name().toLowerCase()}__}"
-                                            th:value="${type.name()}">type
-                                    </option>
+                                    <optgroup th:each="group : ${eventTypesByCategory}"
+                                              th:label="${#messages.msg('page.adminActivity.category.' + group.key.name().toLowerCase())}"
+                                              th:with="catLabel=${#messages.msg('page.adminActivity.category.' + group.key.name().toLowerCase())}">
+                                        <option th:selected="${selectedEventType == group.key.name()}"
+                                                th:text="#{page.adminActivity.filter.allInCategory(${catLabel})}"
+                                                th:value="${group.key.name()}">All in category
+                                        </option>
+                                        <option th:each="type : ${group.value}"
+                                                th:selected="${selectedEventType == type.name()}"
+                                                th:text="#{page.history.actionType.__${type.name().toLowerCase()}__}"
+                                                th:value="${type.name()}">type
+                                        </option>
+                                    </optgroup>
                                 </select>
                             </div>
 
@@ -351,13 +359,5 @@
 <script src="/js/spa.js"></script>
 <script src="/js/admin-activity.js"></script>
 <th:block th:replace="~{fragments/layout :: pageScripts}"></th:block>
-<script>
-    document.querySelectorAll('[data-sourcetype]').forEach(function (btn) {
-        btn.addEventListener('click', function () {
-            document.getElementById('sourceTypeInput').value = btn.getAttribute('data-sourcetype');
-            document.getElementById('activityFilterForm').submit();
-        });
-    });
-</script>
 </body>
 </html>

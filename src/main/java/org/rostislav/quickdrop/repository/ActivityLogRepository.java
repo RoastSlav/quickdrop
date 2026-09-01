@@ -99,7 +99,9 @@ public interface ActivityLogRepository extends JpaRepository<ActivityLog, Long> 
      *
      * @param startDate  lower bound on event timestamp, or {@code null}
      * @param endDate    upper bound on event timestamp, or {@code null}
-     * @param eventType  exact event type, or {@code null}
+     * @param eventTypes event types to include. Must be non-empty; callers with no type
+     *                   filter pass every {@link EventType} rather than {@code null},
+     *                   because a collection parameter can't be null-checked in JPQL
      * @param ip         IP substring filter, or {@code null}
      * @param ua         user-agent substring filter, or {@code null}
      * @param sourceType one of {@code "file"} ({@link org.rostislav.quickdrop.entity.StoredFile}),
@@ -110,7 +112,7 @@ public interface ActivityLogRepository extends JpaRepository<ActivityLog, Long> 
     @Query(value = "SELECT h FROM ActivityLog h LEFT JOIN FETCH h.file WHERE " +
             "(:startDate IS NULL OR h.eventDate >= :startDate) AND " +
             "(:endDate IS NULL OR h.eventDate <= :endDate) AND " +
-            "(:eventType IS NULL OR h.eventType = :eventType) AND " +
+            "h.eventType IN :eventTypes AND " +
             "(:ip IS NULL OR LOWER(h.ipAddress) LIKE LOWER(CONCAT('%', :ip, '%'))) AND " +
             "(:ua IS NULL OR LOWER(h.userAgent) LIKE LOWER(CONCAT('%', :ua, '%'))) AND " +
             "(:sourceType IS NULL OR " +
@@ -122,7 +124,7 @@ public interface ActivityLogRepository extends JpaRepository<ActivityLog, Long> 
             countQuery = "SELECT COUNT(h) FROM ActivityLog h WHERE " +
                     "(:startDate IS NULL OR h.eventDate >= :startDate) AND " +
                     "(:endDate IS NULL OR h.eventDate <= :endDate) AND " +
-                    "(:eventType IS NULL OR h.eventType = :eventType) AND " +
+                    "h.eventType IN :eventTypes AND " +
                     "(:ip IS NULL OR LOWER(h.ipAddress) LIKE LOWER(CONCAT('%', :ip, '%'))) AND " +
                     "(:ua IS NULL OR LOWER(h.userAgent) LIKE LOWER(CONCAT('%', :ua, '%'))) AND " +
                     "(:sourceType IS NULL OR " +
@@ -133,7 +135,7 @@ public interface ActivityLogRepository extends JpaRepository<ActivityLog, Long> 
     Page<ActivityLog> findFiltered(
             @Param("startDate") LocalDateTime startDate,
             @Param("endDate") LocalDateTime endDate,
-            @Param("eventType") EventType eventType,
+            @Param("eventTypes") Collection<EventType> eventTypes,
             @Param("ip") String ip,
             @Param("ua") String ua,
             @Param("sourceType") String sourceType,

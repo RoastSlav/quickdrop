@@ -26,7 +26,9 @@ import org.springframework.web.multipart.MultipartFile;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import static org.rostislav.quickdrop.util.FileUtils.*;
@@ -301,6 +303,15 @@ public class AdminViewController {
         if (storagePath == null || storagePath.isBlank() || !isSafeStoragePath(storagePath)) {
             return "invalidStoragePath";
         }
+        // The log path field is optional (unlike fileStoragePath), and API callers may omit it
+        // entirely -- coerce a blank submission back to the default rather than persisting null,
+        // which would leave the startup lookup with nothing to read.
+        String logPath = settings.getLogStoragePath();
+        if (logPath == null || logPath.isBlank()) {
+            settings.setLogStoragePath(ApplicationSettingsService.DEFAULT_LOG_STORAGE_PATH);
+        } else if (!isSafeStoragePath(logPath)) {
+            return "invalidLogStoragePath";
+        }
 
         try {
             CronExpression.parse(settings.getFileDeletionCron());
@@ -353,6 +364,7 @@ public class AdminViewController {
             case "invalidMaxFileSize" -> "Max file size must be greater than zero";
             case "invalidRetention" -> "File retention must be at least 1 day";
             case "invalidStoragePath" -> "Storage path must be a relative path under the app directory";
+            case "invalidLogStoragePath" -> "Log storage path must be a relative path under the app directory";
             case "invalidCron" -> "Invalid cron expression";
             default -> "Invalid settings";
         };
@@ -625,7 +637,7 @@ public class AdminViewController {
 
         LocalDateTime start = parseFilterDate(startDate);
         LocalDateTime end = parseFilterDate(endDate);
-        EventType typeFilter = parseFilterEventType(eventType);
+        List<EventType> typeFilter = parseFilterEventType(eventType);
 
         // Normalise blank strings to null so service-layer filters treat them as "no filter".
         String ipFilter = (ip == null || ip.isBlank()) ? null : ip;
@@ -639,6 +651,7 @@ public class AdminViewController {
         model.addAttribute("activityPage", activityPage);
         model.addAttribute("pageSize", pageSize);
         model.addAttribute("eventTypes", Arrays.asList(EventType.values()));
+        model.addAttribute("eventTypesByCategory", eventTypesByCategory());
         model.addAttribute("selectedEventType", eventType == null ? "" : eventType);
         model.addAttribute("startDate", startDate == null ? "" : startDate);
         model.addAttribute("endDate", endDate == null ? "" : endDate);
@@ -661,7 +674,7 @@ public class AdminViewController {
                                                                 @RequestParam(required = false) String sourceType) {
         LocalDateTime start = parseFilterDate(startDate);
         LocalDateTime end = parseFilterDate(endDate);
-        EventType typeFilter = parseFilterEventType(eventType);
+        List<EventType> typeFilter = parseFilterEventType(eventType);
         String ipFilter = (ip == null || ip.isBlank()) ? null : ip;
         String uaFilter = (ua == null || ua.isBlank()) ? null : ua;
 
@@ -704,16 +717,41 @@ public class AdminViewController {
         }
     }
 
-    /** Returns the matching event type, or {@code null} when absent or unrecognised. */
-    private static EventType parseFilterEventType(String value) {
+    /**
+     * Resolves the event-type filter value, which is either a single {@link EventType} name or an
+     * {@link EventCategory} name selected from the dropdown's category headings. A category
+     * expands to every type it contains. Returns {@code null} when absent or unrecognised, meaning
+     * no filter. The two enums share no constant names, so a value can only match one of them.
+     */
+    private static List<EventType> parseFilterEventType(String value) {
         if (value == null || value.isBlank()) {
             return null;
         }
+        String normalised = value.toUpperCase();
         try {
-            return EventType.valueOf(value.toUpperCase());
+            return List.of(EventType.valueOf(normalised));
+        } catch (IllegalArgumentException ignored) {
+            // fall through to the category interpretation
+        }
+        try {
+            EventCategory category = EventCategory.valueOf(normalised);
+            return Arrays.stream(EventType.values())
+                    .filter(type -> type.getCategory() == category)
+                    .toList();
         } catch (IllegalArgumentException ignored) {
             return null;
         }
+    }
+
+    /** Groups the event types by category, preserving declaration order, for the filter dropdown. */
+    private static Map<EventCategory, List<EventType>> eventTypesByCategory() {
+        Map<EventCategory, List<EventType>> grouped = new LinkedHashMap<>();
+        for (EventCategory category : EventCategory.values()) {
+            grouped.put(category, Arrays.stream(EventType.values())
+                    .filter(type -> type.getCategory() == category)
+                    .toList());
+        }
+        return grouped;
     }
 
     @PostMapping("/notification-test")

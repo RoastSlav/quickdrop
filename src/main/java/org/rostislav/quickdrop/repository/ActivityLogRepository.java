@@ -109,7 +109,7 @@ public interface ActivityLogRepository extends JpaRepository<ActivityLog, Long> 
      *                   {@code "system"} (no associated upload), or {@code null} for all
      * @param pageable   pagination and sort configuration
      */
-    @Query(value = "SELECT h FROM ActivityLog h LEFT JOIN FETCH h.file WHERE " +
+    @Query(value = "SELECT h FROM ActivityLog h LEFT JOIN FETCH h.file f WHERE " +
             "(:startDate IS NULL OR h.eventDate >= :startDate) AND " +
             "(:endDate IS NULL OR h.eventDate <= :endDate) AND " +
             "h.eventType IN :eventTypes AND " +
@@ -118,10 +118,13 @@ public interface ActivityLogRepository extends JpaRepository<ActivityLog, Long> 
             "(:sourceType IS NULL OR " +
             " (:sourceType = 'system' AND h.file IS NULL AND h.shortLink IS NULL) OR " +
             " (:sourceType = 'link'   AND h.shortLink IS NOT NULL) OR " +
-            " (:sourceType = 'file'   AND h.file IS NOT NULL AND TYPE(h.file) = StoredFile) OR " +
-            " (:sourceType = 'paste'  AND h.file IS NOT NULL AND TYPE(h.file) = Paste)) " +
+            " (:sourceType = 'file'   AND TYPE(f) = StoredFile) OR " +
+            " (:sourceType = 'paste'  AND TYPE(f) = Paste)) " +
             "ORDER BY h.eventDate DESC, h.id DESC",
-            countQuery = "SELECT COUNT(h) FROM ActivityLog h WHERE " +
+            // The join has to be spelled out and left: navigating h.file inline makes Hibernate
+            // add an inner join to the count query, which then silently drops every row without
+            // an upload (admin, system and short-link events) from the total.
+            countQuery = "SELECT COUNT(h) FROM ActivityLog h LEFT JOIN h.file f WHERE " +
                     "(:startDate IS NULL OR h.eventDate >= :startDate) AND " +
                     "(:endDate IS NULL OR h.eventDate <= :endDate) AND " +
                     "h.eventType IN :eventTypes AND " +
@@ -129,9 +132,9 @@ public interface ActivityLogRepository extends JpaRepository<ActivityLog, Long> 
                     "(:ua IS NULL OR LOWER(h.userAgent) LIKE LOWER(CONCAT('%', :ua, '%'))) AND " +
                     "(:sourceType IS NULL OR " +
                     " (:sourceType = 'system' AND h.file IS NULL AND h.shortLink IS NULL) OR " +
-            " (:sourceType = 'link'   AND h.shortLink IS NOT NULL) OR " +
-                    " (:sourceType = 'file'   AND h.file IS NOT NULL AND TYPE(h.file) = StoredFile) OR " +
-                    " (:sourceType = 'paste'  AND h.file IS NOT NULL AND TYPE(h.file) = Paste))")
+                    " (:sourceType = 'link'   AND h.shortLink IS NOT NULL) OR " +
+                    " (:sourceType = 'file'   AND TYPE(f) = StoredFile) OR " +
+                    " (:sourceType = 'paste'  AND TYPE(f) = Paste))")
     Page<ActivityLog> findFiltered(
             @Param("startDate") LocalDateTime startDate,
             @Param("endDate") LocalDateTime endDate,

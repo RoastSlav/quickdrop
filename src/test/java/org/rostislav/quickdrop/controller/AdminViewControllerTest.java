@@ -670,6 +670,55 @@ class AdminViewControllerTest extends ControllerTestSupport {
         assertFalse(activityTypes(result).isEmpty());
     }
 
+    @Test
+    @SuppressWarnings("unchecked")
+    void activityPage_totalCount_coversRowsWithoutAnUploadSoLaterPagesStayReachable() throws Exception {
+        MockHttpSession session = adminSession();
+        for (int i = 0; i < 25; i++) {
+            analyticsService.logEvent(EventType.STARTUP, "10.7.7.7", "ua");
+        }
+
+        MvcResult result = mockMvc.perform(get("/admin/activity")
+                        .param("ip", "10.7.7.7")
+                        .param("size", "10")
+                        .session(session))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        Page<ActivityLog> page = (Page<ActivityLog>) result.getModelAndView().getModel().get("activityPage");
+        assertEquals(25, page.getTotalElements());
+        assertEquals(3, page.getTotalPages());
+
+        MvcResult lastPage = mockMvc.perform(get("/admin/activity")
+                        .param("ip", "10.7.7.7")
+                        .param("size", "10")
+                        .param("page", "2")
+                        .session(session))
+                .andExpect(status().isOk())
+                .andReturn();
+        assertEquals(5, activityTypes(lastPage).size());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void activityPage_fileSourceFilter_countsOnlyFileRows() throws Exception {
+        MockHttpSession session = adminSession();
+        StoredFile file = createFile("counted.txt", "hi".getBytes());
+        activityLogRepository.save(new ActivityLog(file, EventType.DOWNLOAD, "10.7.7.8", "ua"));
+        analyticsService.logEvent(EventType.STARTUP, "10.7.7.8", "ua");
+
+        MvcResult result = mockMvc.perform(get("/admin/activity")
+                        .param("ip", "10.7.7.8")
+                        .param("sourceType", "file")
+                        .session(session))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        Page<ActivityLog> page = (Page<ActivityLog>) result.getModelAndView().getModel().get("activityPage");
+        assertEquals(1, page.getTotalElements());
+        assertEquals(List.of(EventType.DOWNLOAD), activityTypes(result));
+    }
+
     @SuppressWarnings("unchecked")
     private static List<EventType> activityTypes(MvcResult result) {
         Page<ActivityLog> page =

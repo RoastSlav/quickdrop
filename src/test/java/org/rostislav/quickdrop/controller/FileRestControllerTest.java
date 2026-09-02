@@ -214,6 +214,40 @@ class FileRestControllerTest extends ControllerTestSupport {
         assertTrue(saved.folderManifest.contains("\\u003c"), "expected Unicode-escaped '<' in sanitized manifest");
     }
 
+    /**
+     * A multi-file selection reuses the folder fields: the same endpoint, but a flat manifest
+     * with no {@code dir} entries and a generated archive name instead of a picked directory.
+     */
+    @Test
+    void uploadChunk_looseFileBundle_persistsFlatManifest() throws Exception {
+        ensureAdminPasswordSet();
+        String manifest = "[{\"path\":\"report.txt\",\"size\":1024,\"type\":\"file\"},"
+                + "{\"path\":\"notes.md\",\"size\":2048,\"type\":\"file\"}]";
+        MockMultipartFile part = new MockMultipartFile("file", "files.zip", "application/zip", "zipbytes".getBytes());
+        String uploadId = java.util.UUID.randomUUID().toString();
+
+        mockMvc.perform(multipart("/api/file/upload-chunk").file(part).with(csrf())
+                        .param("fileName", "files.zip")
+                        .param("chunkNumber", "0")
+                        .param("totalChunks", "1")
+                        .param("fileSize", "8")
+                        .param("folderUpload", "true")
+                        .param("folderName", "files")
+                        .param("folderManifest", manifest)
+                        .param("uploadId", uploadId))
+                .andExpect(status().isAccepted());
+
+        AsyncFileMergeService.UploadProgress progress = waitForUploadCompletion(uploadId);
+        assertEquals("complete", progress.status());
+        StoredFile saved = fileRepository.findByUUID(progress.uuid()).orElseThrow();
+        assertTrue(saved.folderUpload, "a loose-file bundle is stored as an archive upload");
+        assertEquals("files", saved.folderName);
+        assertEquals("files.zip", saved.name);
+        assertNotNull(saved.folderManifest);
+        assertTrue(saved.folderManifest.contains("report.txt"));
+        assertFalse(saved.folderManifest.contains("\"dir\""), "a flat bundle has no directory entries");
+    }
+
     @Test
     void uploadChunk_malformedFolderManifest_returns400() throws Exception {
         ensureAdminPasswordSet();

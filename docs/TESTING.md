@@ -7,7 +7,7 @@ right in a browser (Layer 3).
 
 ---
 
-## Layer 1 — JUnit / MockMvc suite
+## Layer 1 — Unit & integration suites
 
 ```bash
 ./mvnw test            # full suite
@@ -19,6 +19,22 @@ Lives under `src/test/java/`, organized by `controller/`, `service/`, `storage/`
 `interceptor/`, `migration/`, `support/`. Runs on every CI build (Jenkinsfile's
 `Build and Test` stage) and gates Docker publish. ~381 tests as of this writing — run
 the suite for the exact current count, don't trust a number in a doc.
+
+### Browser-module unit tests
+
+```bash
+npm test                # node --test over src/test/js/**/*.test.js
+```
+
+For logic that lives only in the browser and that MockMvc therefore cannot reach — today
+the archive-layout rules in `static/js/upload/zip-builder.js`: which selections count as a
+folder, how colliding paths are made unique, what the manifest ends up claiming. Node's
+built-in runner, no test framework dependency.
+
+Only pure functions belong here. Anything needing JSZip, a `Blob`, or the DOM is a Layer 3
+concern — stub-heavy tests of those would assert the stubs, not the behaviour. The modules
+import cleanly in Node because `src/package.json` marks the tree as ES modules; that file
+sits above the Maven resource root, so it is not packaged into the jar.
 
 ### Conventions that matter before you add a test
 
@@ -185,7 +201,10 @@ confirmed before firing.
 Scripted journeys worth running end-to-end in a real browser rather than via raw HTTP
 (these exercise the frontend JS, not just the backend contract): first-run admin setup,
 anonymous upload → share → download → limit exhaustion, password-protected file with a
-wrong-then-right password attempt, folder upload, a full admin settings sweep (change a
+wrong-then-right password attempt, folder upload, multi-file upload (pick several files,
+confirm one archive, then download it and compare the entries against the contents tree —
+including same-named files, which must survive as separate entries), a full admin settings
+sweep (change a
 setting, confirm the UI actually reflects it without a restart — see the Layer 2 note
 above on verifying persistence, the same caution applies here).
 

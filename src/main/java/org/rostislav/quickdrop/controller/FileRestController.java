@@ -82,6 +82,14 @@ public class FileRestController {
         this.qrCodeService = qrCodeService;
     }
 
+    /**
+     * A manifest is client-supplied text that gets parsed and then stored verbatim in a TEXT
+     * column, so its length has to be bounded here. A thousand files with long paths stays
+     * comfortably under this; anything larger is not a selection the uploader could have made
+     * through the page.
+     */
+    private static final int MAX_MANIFEST_LENGTH = 1024 * 1024;
+
     private static String sanitizeArchiveManifest(String manifest, boolean isArchiveUpload) {
         if (!isArchiveUpload || manifest == null || manifest.isBlank()) {
             return null;
@@ -159,6 +167,11 @@ public class FileRestController {
             String uploaderUserAgent = request.getHeader("User-Agent");
 
             String effectivePassword = uploadPasswordEnabled ? password : null;
+
+            if (archiveManifest != null && archiveManifest.length() > MAX_MANIFEST_LENGTH) {
+                return ResponseEntity.badRequest().body(Map.of(
+                        "error", "Archive manifest exceeds " + MAX_MANIFEST_LENGTH + " characters."));
+            }
 
             String safeManifest = sanitizeArchiveManifest(archiveManifest, Boolean.TRUE.equals(archiveUpload));
             if (safeManifest == null && archiveManifest != null) {

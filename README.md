@@ -45,6 +45,9 @@ hand out expiring share links, and administer everything from a web admin panel 
   top-level directory keeps that directory's name (`docs.zip`); anything else is a dated bundle, `files-2692-atbn.zip`
   for 2 September 2026 — the four-character code is added by the server so two bundles from the same day never
   present the same name.
+- Archive limits: at most 1000 files per selection, and the browser hands over to a streaming
+  ZIP64 writer above 256 MB rather than holding the whole archive in memory. Contents trees
+  longer than 500 lines are collapsed behind a "show more" on the file page.
 - Configurable maximum file size and default retention period; users can renew a file to reset its deletion date.
 - `Keep indefinitely` exempts a file from scheduled deletion. `Hide from list` keeps it off the public file list. Either
   toggle can be restricted to admins.

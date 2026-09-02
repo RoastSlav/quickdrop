@@ -2,10 +2,12 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import {
+    buildArchiveCandidates,
     buildArchiveManifest,
     bundleDateStamp,
     collectSelectionEntries,
     describeSelection,
+    MAX_ARCHIVE_FILES,
     parseSize,
 } from "../../../main/resources/static/js/upload/zip-builder.js";
 
@@ -157,4 +159,14 @@ test("bundleDateStamp: two-digit year, then month and day without leading zeros"
     assert.equal(bundleDateStamp(new Date(2026, 11, 25)), "261225");
     assert.equal(bundleDateStamp(new Date(2026, 0, 1)), "2611");
     assert.equal(bundleDateStamp(new Date(2007, 4, 9)), "0759");
+});
+
+test("buildArchiveCandidates: refuses a selection past the file cap", async () => {
+    const tooMany = Array.from({length: MAX_ARCHIVE_FILES + 1}, (_, i) => f(`f${i}.txt`));
+
+    // Rejects before any zipping, so this needs neither JSZip nor a Blob.
+    await assert.rejects(
+        () => buildArchiveCandidates(tooMany, {metadataEnabled: false}),
+        (err) => err.name === "TooManyFilesError" && err.limit === MAX_ARCHIVE_FILES
+    );
 });

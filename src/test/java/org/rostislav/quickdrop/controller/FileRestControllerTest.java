@@ -300,6 +300,29 @@ class FileRestControllerTest extends ControllerTestSupport {
         return fileRepository.findByUUID(progress.uuid()).orElseThrow().name;
     }
 
+    /**
+     * The manifest is client-supplied text that gets parsed and then stored verbatim, so an
+     * oversized one has to be refused at the edge rather than reaching the database.
+     */
+    @Test
+    void uploadChunk_oversizedArchiveManifest_returns400() throws Exception {
+        ensureAdminPasswordSet();
+        StringBuilder manifest = new StringBuilder("[");
+        while (manifest.length() < 1024 * 1024) {
+            manifest.append("{\"path\":\"").append("p".repeat(200)).append("\",\"type\":\"file\"},");
+        }
+        manifest.append("{\"path\":\"last.txt\",\"type\":\"file\"}]");
+
+        MockMultipartFile part = new MockMultipartFile("file", "files.zip", "application/zip", "zipbytes".getBytes());
+        mockMvc.perform(multipart("/api/file/upload-chunk").file(part).with(csrf())
+                        .param("fileName", "files.zip")
+                        .param("chunkNumber", "0")
+                        .param("totalChunks", "1")
+                        .param("archiveUpload", "true")
+                        .param("archiveManifest", manifest.toString()))
+                .andExpect(status().isBadRequest());
+    }
+
     @Test
     void uploadChunk_malformedArchiveManifest_returns400() throws Exception {
         ensureAdminPasswordSet();

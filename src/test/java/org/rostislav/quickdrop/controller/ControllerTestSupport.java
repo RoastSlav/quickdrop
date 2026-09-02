@@ -212,9 +212,24 @@ abstract class ControllerTestSupport extends QuickdropIntegrationTest {
             try {
                 test.execute();
                 return;
-            } catch (ConcurrentModificationException e) {
-                if (attempt >= 3) throw e;
+            } catch (Throwable e) {
+                // The race surfaces bare on the async dispatch but wrapped in a
+                // ServletException on the request that starts it, so match on the cause
+                // chain rather than the thrown type.
+                if (attempt >= 3 || !isAsyncHeaderRace(e)) throw e;
             }
         }
+    }
+
+    private static boolean isAsyncHeaderRace(Throwable error) {
+        for (Throwable cause = error; cause != null; cause = cause.getCause()) {
+            if (cause instanceof ConcurrentModificationException) {
+                return true;
+            }
+            if (cause.getCause() == cause) {
+                break;
+            }
+        }
+        return false;
     }
 }

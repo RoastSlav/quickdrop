@@ -8,7 +8,7 @@ import jakarta.persistence.Table;
 /**
  * Represents a binary or text file upload stored by the application.
  *
- * <p>Extends {@link Upload} with folder-upload fields.  Maps to the {@code file}
+ * <p>Extends {@link Upload} with archive-upload fields.  Maps to the {@code file}
  * table in a JPA {@code JOINED} inheritance hierarchy; the common fields live in
  * the {@code upload} base table.
  *
@@ -17,7 +17,8 @@ import jakarta.persistence.Table;
  *
  * <p>Archive uploads are ZIP files accompanied by a JSON manifest that describes
  * the original directory tree.  When {@link #archiveUpload} is {@code false} the
- * folder fields are {@code null} / {@code false}.
+ * archive fields are {@code null} / {@code false}.  Their columns keep the original
+ * {@code folder_*} names: renaming them would need a migration and buy nothing.
  *
  * <p>All fields are {@code public} for direct access; there are no getter/setter
  * accessor methods.
@@ -28,19 +29,19 @@ import jakarta.persistence.Table;
 public class StoredFile extends Upload {
 
     /**
-     * Whether this entry represents a folder upload (ZIP archive with a manifest).
+     * Whether this entry represents an archive upload (browser-built ZIP with a manifest).
      */
     @Column(name = "folder_upload")
     public boolean archiveUpload;
 
     /**
-     * Display name of the uploaded folder; {@code null} for non-folder uploads.
+     * Label for the archive's root, not the stored file name; {@code null} for plain uploads.
      */
     @Column(name = "folder_name")
     public String archiveName;
 
     /**
-     * JSON array describing the folder's file tree, stored as TEXT; {@code null} for single-file uploads.
+     * JSON array describing the archive's file tree, stored as TEXT; {@code null} for plain uploads.
      */
     @Column(name = "folder_manifest", columnDefinition = "TEXT")
     public String archiveManifest;

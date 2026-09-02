@@ -1,8 +1,7 @@
 import {preprocessFileForMetadata} from "./metadata-pipeline.js";
 
-// Below this, JSZip materialises the whole archive as one Blob in the tab. A gigabyte of
-// that reliably kills a modest machine, so hand over to the streamed zip64 builder much
-// earlier -- it is slower to write but never holds more than a chunk.
+// JSZip materialises the whole archive as one Blob in the tab; above this, hand over to
+// the streamed zip64 builder, which is slower but never holds more than a chunk.
 const IN_MEMORY_ZIP_LIMIT = 256 * 1024 * 1024;
 
 // Ten thousand small files means ten thousand sequential metadata passes, a manifest close
@@ -59,9 +58,9 @@ function throwIfAborted(signal) {
 
 /**
  * The single top-level directory shared by every entry, or null when there isn't one --
- * loose files, several picked folders, or a folder dropped alongside a file. Three things
- * depend on the answer: the archive's name, the tree's root label, and which strings the
- * upload page shows, so it is asked once here rather than guessed at each call site.
+ * loose files, several picked folders, or a folder dropped alongside a file. Asked once
+ * here because the archive's name, its tree root and the upload page's wording all hang
+ * off the answer.
  * @param {string[]} paths normalized, slash-separated relative paths
  */
 function deriveRootFolder(paths) {

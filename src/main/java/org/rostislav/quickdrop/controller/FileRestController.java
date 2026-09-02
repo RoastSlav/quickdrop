@@ -86,8 +86,7 @@ public class FileRestController {
     /**
      * A manifest is client-supplied text that gets parsed and then stored verbatim in a TEXT
      * column, so its length has to be bounded here. A thousand files with long paths stays
-     * comfortably under this; anything larger is not a selection the uploader could have made
-     * through the page.
+     * comfortably under this.
      */
     private static final int MAX_MANIFEST_LENGTH = 1024 * 1024;
 

@@ -34,8 +34,6 @@ public interface UploadRepository extends JpaRepository<Upload, Long> {
     /**
      * Whether a live upload already carries this display name. Used to keep the generated
      * name of a multi-file bundle distinct; soft-deleted rows do not reserve their name.
-     *
-     * @param name the display name to check
      */
     @Query("SELECT COUNT(u) > 0 FROM Upload u WHERE u.name = :name AND u.deleted = false")
     boolean existsByNameAndNotDeleted(@Param("name") String name);

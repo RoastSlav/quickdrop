@@ -215,8 +215,8 @@ class FileRestControllerTest extends ControllerTestSupport {
     }
 
     /**
-     * A multi-file selection reuses the folder fields: the same endpoint, but a flat manifest
-     * with no {@code dir} entries and a generated archive name instead of a picked directory.
+     * A multi-file selection takes the same endpoint as a folder, but with a flat manifest
+     * carrying no {@code dir} entries and a generated name instead of a picked directory.
      */
     @Test
     void uploadChunk_looseFileBundle_persistsFlatManifest() throws Exception {

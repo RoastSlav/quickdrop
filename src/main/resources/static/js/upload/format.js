@@ -1,9 +1,8 @@
 const UNITS = ["B", "KB", "MB", "GB", "TB"];
 
 /**
- * Mirrors FileUtils.formatFileSize so a selection reads the same on the upload page as it
- * does on the file page after it lands. Hard-coding MB there made every small selection
- * show as "0.00 MB".
+ * Mirrors FileUtils.formatFileSize so a size reads the same on the upload page as it does on
+ * the file page afterwards.
  */
 export function formatBytes(bytes) {
     let size = Number(bytes);

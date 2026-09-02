@@ -87,8 +87,7 @@ class PhishingArmyProviderTest {
 
     @Test
     void duplicateEntriesInTheFeedAreCollapsedAndStillMatch() throws Exception {
-        // Covers the sort-then-dedupe-in-place path in loadFromBytes: a feed listing the same
-        // domain repeatedly must still match, and must not leave duplicate hashes behind.
+        // Covers the sort-then-dedupe-in-place path in loadFromBytes.
         load("evil.com\nevil.com\nother.com\nevil.com\n");
 
         assertTrue(provider.isMalicious(URI.create("https://evil.com/x")));

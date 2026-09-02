@@ -304,8 +304,7 @@ public class FileDownloadService {
 
     private ResponseEntity<StreamingResponseBody> createFileDownloadResponse(InputStream inputStream, Upload upload, HttpServletRequest request) {
         logger.info("Sending file: {}", upload);
-        // Fix 5: log the download INSIDE the streaming lambda's finally block so it is
-        // recorded after the transfer completes, not before bytes start flowing.
+        // Log inside the finally block so it's recorded after the transfer completes, not before.
         StreamingResponseBody responseBody = outputStream -> {
             try {
                 byte[] buffer = new byte[8192];

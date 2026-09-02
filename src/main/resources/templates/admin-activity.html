@@ -36,7 +36,6 @@
                         <input id="sourceTypeInput" name="sourceType" th:value="${sourceType}" type="hidden"/>
 
                         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
-                            <!-- Date range presets -->
                             <div class="sm:col-span-2 lg:col-span-3 flex flex-wrap gap-2">
                         <span class="text-xs font-black uppercase tracking-widest self-center mr-1"
                               style="color:var(--c-text-faint)"
@@ -59,7 +58,6 @@
                                 </button>
                             </div>
 
-                            <!-- Source type filter -->
                             <div class="sm:col-span-2 lg:col-span-3 flex flex-wrap items-center gap-2">
                                 <span class="text-xs font-black uppercase tracking-widest self-center mr-1"
                                       style="color:var(--c-text-faint)"
@@ -96,7 +94,6 @@
                                 </button>
                             </div>
 
-                            <!-- Start date + time -->
                             <div class="form-row">
                                 <label class="form-label" th:text="#{page.adminActivity.filter.from}">From</label>
                                 <div class="flex gap-2">
@@ -110,7 +107,6 @@
                                 </div>
                             </div>
 
-                            <!-- End date + time -->
                             <div class="form-row">
                                 <label class="form-label" th:text="#{page.adminActivity.filter.to}">To</label>
                                 <div class="flex gap-2">
@@ -124,7 +120,6 @@
                                 </div>
                             </div>
 
-                            <!-- Event type -->
                             <div class="form-row">
                                 <label class="form-label" for="eventType"
                                        th:text="#{page.adminActivity.filter.eventType}">Event Type</label>
@@ -149,7 +144,6 @@
                                 </select>
                             </div>
 
-                            <!-- IP filter -->
                             <div class="form-row">
                                 <label class="form-label" for="ipFilter" th:text="#{page.adminActivity.filter.ip}">IP
                                     Address</label>
@@ -158,7 +152,6 @@
                                        th:value="${ip}" type="text"/>
                             </div>
 
-                            <!-- User-agent filter -->
                             <div class="form-row sm:col-span-2">
                                 <label class="form-label" for="uaFilter"
                                        th:text="#{page.adminActivity.filter.userAgent}">User Agent</label>
@@ -178,7 +171,6 @@
                     </form>
                 </div>
 
-                <!-- Results -->
                 <div class="card card-xl animate-in animate-in-delay-2">
 
                     <div class="flex flex-wrap items-center justify-between gap-4 mb-5">
@@ -192,7 +184,6 @@
                         </div>
                     </div>
 
-                    <!-- Empty state -->
                     <div class="text-center py-16" th:if="${activityPage.totalElements == 0}">
                         <div class="gate-icon gate-icon--primary mx-auto mb-6">
                             <svg class="w-10 h-10" fill="none" stroke="currentColor" stroke-width="1.4"
@@ -205,7 +196,6 @@
                            th:text="#{page.adminActivity.noResults}">No activity found.</p>
                     </div>
 
-                    <!-- Activity table -->
                     <div class="overflow-x-auto" th:if="${activityPage.totalElements > 0}">
                         <table class="w-full text-sm">
                             <thead>
@@ -238,7 +228,6 @@
                                     th:text="${#temporals.format(entry.eventDate, 'dd.MM.yyyy HH:mm')}">01.01.2025 12:00
                                 </td>
                                 <td class="py-2.5 px-3 max-w-[14rem]">
-                                    <!-- File (not a paste) -->
                                     <th:block th:if="${entry.file != null and !entry.file.paste}">
                                         <div class="flex items-center gap-1.5 min-w-0">
                                             <span class="shrink-0 rounded px-1 py-0.5 font-bold uppercase leading-none"
@@ -250,7 +239,6 @@
                                                th:title="${entry.file.name}">file.zip</a>
                                         </div>
                                     </th:block>
-                                    <!-- Paste -->
                                     <th:block th:if="${entry.file != null and entry.file.paste}">
                                         <div class="flex items-center gap-1.5 min-w-0">
                                             <span class="shrink-0 rounded px-1 py-0.5 font-bold uppercase leading-none"
@@ -276,7 +264,6 @@
                                                th:title="${entry.shortLink.code}">abc12</a>
                                         </div>
                                     </th:block>
-                                    <!-- System (no associated file or link) -->
                                     <th:block th:if="${entry.file == null and entry.shortLink == null}">
                                         <span class="shrink-0 rounded px-1 py-0.5 font-bold uppercase leading-none"
                                               style="font-size:var(--fs-3xs);background:var(--c-amber-muted,color-mix(in srgb,var(--c-amber,#f59e0b) 15%,transparent));color:var(--c-amber,#f59e0b)"
@@ -306,7 +293,6 @@
                         </table>
                     </div>
 
-                    <!-- Pagination -->
                     <div class="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 pt-6"
                          style="border-top: 1px solid var(--c-border)"
                          th:if="${activityPage.totalElements > 0}">

@@ -124,7 +124,6 @@ public class FileViewController {
             return "redirect:/file/list";
         }
 
-        // Soft-deleted files are only accessible to admins.
         if (fileEntity.deleted && !sessionService.hasValidAdminSession(request)) {
             return "redirect:/file/list";
         }
@@ -225,7 +224,6 @@ public class FileViewController {
             return "redirect:/file/list";
         }
 
-        // Auth check: if file has a password, require either a valid file session or admin session
         if (fileEntity.passwordHash != null && !fileEntity.passwordHash.isBlank()) {
             if (!fileQueryService.isAuthorizedForFile(uuid, request)
                     && !sessionService.hasValidAdminSession(request)) {
@@ -265,7 +263,6 @@ public class FileViewController {
             String fileSessionToken = sessionService.addFileSessionToken(UUID.randomUUID().toString(), password, uuid);
             request.getSession().setAttribute("file-session-token", fileSessionToken);
             logger.info("Token has been added to the session for file UUID: {}", uuid);
-            // For edit-mode logins redirect directly to the edit page
             return editMode ? "redirect:/file/paste/edit/" + uuid : "redirect:/file/" + uuid;
         } else {
             logger.info("Incorrect password attempt for file UUID: {}", uuid);

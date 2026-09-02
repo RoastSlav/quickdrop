@@ -5,14 +5,7 @@ package org.rostislav.quickdrop.model;
  * and the UUID of the protected file.
  */
 public class FileSession {
-    /**
-     * Cleartext access password for the file.
-     */
     private final String password;
-
-    /**
-     * UUID of the file this session grants access to.
-     */
     private final String fileUuid;
 
     /**

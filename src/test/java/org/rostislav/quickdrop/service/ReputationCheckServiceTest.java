@@ -87,8 +87,7 @@ class ReputationCheckServiceTest {
 
     @Test
     void aTierOneHitThatFailsTierTwoConfirmationIsAllowed() throws Exception {
-        // Exercises the false-positive-avoidance path end to end: a provider whose isMalicious
-        // returns false (as it would after a hash hit fails tier-2 confirmation) must not block.
+        // Exercises the false-positive-avoidance path: a hash hit that fails tier-2 confirmation must not block.
         when(applicationSettingsService.isReputationCheckEnabled()).thenReturn(true);
         when(provider.isEnabled()).thenReturn(true);
         when(provider.isMalicious(URI_TO_CHECK)).thenReturn(false);

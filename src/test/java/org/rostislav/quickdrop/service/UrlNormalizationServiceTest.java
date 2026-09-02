@@ -81,18 +81,14 @@ class UrlNormalizationServiceTest {
 
     @Test
     void schemelessHostWithPortIsNotMistakenForAScheme() {
-        // "example.com:8080" is ambiguous RFC-3986-wise (dots are technically legal in a
-        // scheme), but no real scheme contains a dot -- this must be read as a host:port,
-        // not mangled into "https://example.com:8080/page" being treated as already-schemed.
+        // Dots are technically legal in a scheme per RFC 3986, but no real scheme uses one, so this must read as host:port, not an already-schemed URL.
         NormalizedUrl result = service.normalize("example.com:8080/page");
         assertEquals("https://example.com:8080/page", result.absoluteForm());
     }
 
     @Test
     void opaqueSchemeIsPassedThroughUnmangled() {
-        // javascript:/mailto:/data: are opaque (host-less) schemes -- normalize() must not
-        // reject them for lacking a host (that's UrlSafetyValidator's job, via the scheme
-        // allowlist) or mangle them by prepending https://.
+        // Opaque schemes are host-less by design; rejecting/mangling them is UrlSafetyValidator's job, not normalize()'s.
         NormalizedUrl result = service.normalize("javascript:alert(1)");
         assertEquals("javascript:alert(1)", result.absoluteForm());
     }

@@ -100,15 +100,10 @@ public class SecurityConfig {
                 .frameOptions(HeadersConfigurer.FrameOptionsConfig::disable)
                 .contentSecurityPolicy(csp -> csp.policyDirectives("frame-ancestors *;"))
         ).cors(Customizer.withDefaults())
-        // CsrfToken resolution is deferred by default: the XSRF-TOKEN cookie is only
-        // written if something actually calls csrfToken.getToken() during the request.
-        // Our responses stream as chunked (no Content-Length), so headers commit as
-        // soon as the body starts flushing -- if the token isn't resolved until
-        // Thymeleaf reaches it deep in the page, the response is already committed
-        // and CookieCsrfTokenRepository's Set-Cookie silently never gets written,
-        // leaving the JS client with no cookie to echo back and every state-changing
-        // request (uploads included) failing CSRF validation with a 403. Force
-        // eager resolution on every request so the cookie is always written up front.
+        // CsrfToken resolution is deferred by default (cookie only written once something
+        // calls getToken()); our chunked responses can commit before Thymeleaf gets to it
+        // deep in the page, so the cookie silently never gets set and CSRF validation then
+        // 403s every state-changing request. Force eager resolution up front instead.
         .addFilterAfter(new CsrfCookieFilter(), CsrfFilter.class);
 
         return http.build();

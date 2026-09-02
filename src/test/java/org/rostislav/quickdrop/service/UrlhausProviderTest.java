@@ -53,8 +53,7 @@ class UrlhausProviderTest {
 
     @Test
     void allowsADifferentPathOnTheSameHost() throws Exception {
-        // Deliberately not host matching -- URLhaus entries frequently sit on compromised
-        // legitimate hosts, so a different path on the same host must NOT be blocked.
+        // Deliberately not host matching: URLhaus entries frequently sit on compromised legitimate hosts.
         load(SAMPLE_ROW + "\n");
         assertFalse(provider.isMalicious(URI.create("http://evil.example/some-other-page")));
     }

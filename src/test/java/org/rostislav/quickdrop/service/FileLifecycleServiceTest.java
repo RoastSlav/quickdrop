@@ -94,10 +94,6 @@ class FileLifecycleServiceTest extends QuickdropIntegrationTest {
         return request;
     }
 
-    // -------------------------------------------------------------------------
-    // saveFile
-    // -------------------------------------------------------------------------
-
     @Test
     void saveFileValidatesAndPersistsWithUploadEvent() {
         String uuid = UUID.randomUUID().toString();
@@ -141,10 +137,6 @@ class FileLifecycleServiceTest extends QuickdropIntegrationTest {
         assertTrue(passwordEncoder.matches("a-password", saved.passwordHash));
     }
 
-    // -------------------------------------------------------------------------
-    // removeFileFromDatabase
-    // -------------------------------------------------------------------------
-
     @Test
     void removeFileFromDatabaseSoftDeletesAndIsIdempotent() {
         StoredFile file = persistPlainFile(UUID.randomUUID().toString());
@@ -174,10 +166,6 @@ class FileLifecycleServiceTest extends QuickdropIntegrationTest {
         List<UploadShareLink> remaining = shareTokenRepository.findAllByFile(uploadRepository.findByUUID(file.uuid).orElseThrow());
         assertTrue(remaining.isEmpty(), "all share tokens must be purged when the file is soft-deleted");
     }
-
-    // -------------------------------------------------------------------------
-    // extendFile
-    // -------------------------------------------------------------------------
 
     @Test
     void extendFileResetsUploadDateToTodayAndLogsRenewal() {
@@ -210,10 +198,6 @@ class FileLifecycleServiceTest extends QuickdropIntegrationTest {
 
         assertEquals(original, uploadRepository.findByUUID(file.uuid).orElseThrow().uploadDate);
     }
-
-    // -------------------------------------------------------------------------
-    // toggleHidden
-    // -------------------------------------------------------------------------
 
     @Test
     void toggleHiddenFlipsFlagWhenNotAdminGated() {
@@ -270,10 +254,6 @@ class FileLifecycleServiceTest extends QuickdropIntegrationTest {
         assertTrue(result.hidden);
     }
 
-    // -------------------------------------------------------------------------
-    // updateKeepIndefinitely
-    // -------------------------------------------------------------------------
-
     @Test
     void updateKeepIndefinitelyResetsUploadDateWhenDisabling() {
         StoredFile file = persistPlainFile(UUID.randomUUID().toString());
@@ -318,10 +298,6 @@ class FileLifecycleServiceTest extends QuickdropIntegrationTest {
 
         assertTrue(result.keepIndefinitely);
     }
-
-    // -------------------------------------------------------------------------
-    // generateShareToken
-    // -------------------------------------------------------------------------
 
     @Test
     void generateShareTokenReusesExistingUnlimitedToken() {
@@ -396,10 +372,6 @@ class FileLifecycleServiceTest extends QuickdropIntegrationTest {
         assertTrue(storageService.exists(sidecarKey));
     }
 
-    // -------------------------------------------------------------------------
-    // revokeShareToken
-    // -------------------------------------------------------------------------
-
     @Test
     void revokeShareTokenDeletesRowAndLogsRevoke() {
         StoredFile file = persistPlainFile(UUID.randomUUID().toString());
@@ -415,10 +387,6 @@ class FileLifecycleServiceTest extends QuickdropIntegrationTest {
     void revokeShareTokenOfUnknownIdIsANoOp() {
         assertDoesNotThrow(() -> fileLifecycleService.revokeShareToken(-999L, new MockHttpServletRequest()));
     }
-
-    // -------------------------------------------------------------------------
-    // Cache eviction
-    // -------------------------------------------------------------------------
 
     @Test
     void mutationsEvictThePublicFilesCache() {
@@ -446,10 +414,6 @@ class FileLifecycleServiceTest extends QuickdropIntegrationTest {
         assertNull(cacheManager.getCache("adminFiles").get("probe-key"));
         assertNull(cacheManager.getCache("analytics").get("probe-key"));
     }
-
-    // -------------------------------------------------------------------------
-    // helpers
-    // -------------------------------------------------------------------------
 
     private void setHideFromListAdminOnly(boolean value) {
         ApplicationSettingsViewModel vm = new ApplicationSettingsViewModel(applicationSettingsService.getApplicationSettings());

@@ -27,10 +27,8 @@
             </div>
         </div>
 
-        <!-- Kind switch. This is a dataset switch, not a filter: it changes which
-             columns and actions the table has, so it reads as real tabs rather than the
-             small segmented toggle it used to be. Counts live in the tabs, which also
-             retires the lone "Active links" stat card that sat under them. -->
+        <!-- Real tabs, not a filter toggle: kind changes which columns/actions the table has.
+             Counts live here, replacing the old standalone "Active links" stat card. -->
         <div class="kind-tabs animate-in" role="tablist">
             <a class="kind-tab" role="tab"
                th:attr="aria-selected=${kind == 'share'}"
@@ -56,7 +54,6 @@
             </a>
         </div>
 
-        <!-- Links section -->
         <div class="card card-xl animate-in animate-in-delay-2" id="linksSectionWrapper">
             <div id="linksContent">
 
@@ -75,10 +72,9 @@
                               th:text="${tokensPage.totalElements} + ' ' + #{page.dashboard.total}">0 total</span>
                     </div>
 
-                    <!-- Search + filter + sort -->
                     <div class="flex flex-col gap-3">
 
-                        <!-- Search bar (normal GET navigates, keeps history entry) -->
+                        <!-- Plain GET form so this navigation keeps a history entry, unlike the filters below -->
                         <form action="/admin/links" class="search-row" id="shareSearchForm"
                               method="get">
                             <input name="kind" type="hidden" value="share"/>
@@ -111,11 +107,10 @@
                             </div>
                         </form>
 
-                        <!-- Filter + sort row — all changes use replaceState via JS -->
+                        <!-- Unlike the search form above, these use replaceState via JS instead of navigating -->
                         <div class="flex flex-wrap items-center gap-3 rounded-xl px-4 py-3"
                              style="background:var(--c-surface);border:1px solid var(--c-border)">
 
-                            <!-- Type segmented toggle -->
                             <div class="flex items-center gap-2.5 flex-shrink-0">
                             <span class="text-xs font-black uppercase tracking-widest"
                                   style="color:var(--c-text-faint)"
@@ -145,11 +140,9 @@
                                 </div>
                             </div>
 
-                            <!-- Divider -->
                             <div class="hidden sm:block w-px self-stretch flex-shrink-0 my-0.5"
                                  style="background:var(--c-border)"></div>
 
-                            <!-- Checkboxes -->
                             <label class="form-check items-center gap-2 cursor-pointer select-none text-sm flex-shrink-0">
                                 <input id="noExpiryCheck"
                                        th:checked="${noExpiry}" type="checkbox"/>
@@ -161,7 +154,6 @@
                                 <span th:text="#{page.adminShareLinks.filter.unlimited}">Unlimited only</span>
                             </label>
 
-                            <!-- Sort pushed to the right -->
                             <div class="flex items-center gap-2 ml-auto flex-shrink-0">
                             <span class="text-xs font-black uppercase tracking-widest"
                                   style="color:var(--c-text-faint)"
@@ -195,7 +187,6 @@
                         </div>
                     </div>
 
-                    <!-- Empty state -->
                     <div class="text-center py-16" th:if="${tokensPage.totalElements == 0}">
                         <div class="gate-icon gate-icon--primary mx-auto mb-6">
                             <svg class="w-10 h-10" fill="none" stroke="currentColor" stroke-width="1.4"
@@ -208,13 +199,11 @@
                            th:text="#{page.adminShareLinks.noTokens}">No active share links.</p>
                     </div>
 
-                    <!-- Token cards -->
                     <div class="flex flex-col gap-2.5" th:if="${tokensPage.totalElements > 0}">
                         <div class="group flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 px-4 py-3.5 rounded-2xl transition-all duration-200 hover:shadow-md"
                              th:each="token, iterStat : ${tokensPage.content}"
                              th:style="'animation: qd-fade-in-up 350ms var(--ease-out-expo) both; animation-delay:' + ${iterStat.index * 35} + 'ms; background: var(--c-surface-raised); border: 1px solid var(--c-border); border-left: 4px solid var(--c-teal)'">
 
-                            <!-- Icon + info -->
                             <div class="flex items-center gap-3 min-w-0 flex-1">
                                 <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
                                      style="background:var(--c-teal-muted);color:var(--c-teal-badge-text)">
@@ -230,7 +219,6 @@
                                            th:href="@{/file/{uuid}(uuid=${token.upload.uuid})}"
                                            th:text="${token.upload.name}"
                                            th:title="${token.upload.name}">filename.zip</a>
-                                        <!-- File / Paste badge -->
                                         <span class="badge text-xs"
                                               th:classappend="${token.upload.paste} ? '' : 'badge-primary'"
                                               th:style="${token.upload.paste} ? 'background:var(--c-indigo-muted,var(--c-secondary-muted));color:var(--c-indigo,var(--c-secondary))' : ''"
@@ -258,9 +246,7 @@
                                 </div>
                             </div>
 
-                            <!-- Actions -->
                             <div class="flex items-center gap-1.5 flex-shrink-0 pl-12 sm:pl-0">
-                                <!-- QR code -->
                                 <a class="btn btn-ghost btn-sm" target="_blank"
                                    th:href="@{/api/link/{code}/qr.svg(code=${token.code})}"
                                    th:title="#{page.adminLinks.qr}">
@@ -270,7 +256,6 @@
                                               stroke-linecap="round" stroke-linejoin="round"/>
                                     </svg>
                                 </a>
-                                <!-- File history button -->
                                 <a class="btn btn-ghost btn-sm"
                                    th:href="@{/file/history/{uuid}(uuid=${token.upload.uuid})}"
                                    th:title="#{page.adminShareLinks.fileHistory}">
@@ -282,7 +267,6 @@
                                     <span class="hidden sm:inline"
                                           th:text="#{page.adminShareLinks.fileHistory}">History</span>
                                 </a>
-                                <!-- Revoke button -->
                                 <form data-revoke-form method="post" th:action="@{/admin/links/revoke-share/{id}(id=${token.id})}">
                                     <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden"/>
                                     <button class="btn btn-danger btn-sm" th:title="#{page.adminShareLinks.revoke}"
@@ -300,7 +284,6 @@
                         </div>
                     </div>
 
-                    <!-- Pagination -->
                     <div class="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 pt-6"
                          style="border-top: 1px solid var(--c-border)"
                          th:if="${tokensPage.totalElements > 0}">
@@ -362,7 +345,6 @@
                               th:text="${redirectLinksPage.totalElements} + ' ' + #{page.dashboard.total}">0 total</span>
                     </div>
 
-                    <!-- Search + filter + sort -->
                     <div class="flex flex-col gap-3">
                         <form action="/admin/links" class="search-row" id="redirectSearchForm"
                               method="get">
@@ -396,7 +378,6 @@
 
                         </form>
 
-                            <!-- Filter + sort row -->
                             <div class="flex flex-wrap items-center gap-3 rounded-xl px-4 py-3 w-full"
                                  style="background:var(--c-surface);border:1px solid var(--c-border)">
                                 <label class="form-check items-center gap-2 cursor-pointer select-none text-sm flex-shrink-0">
@@ -439,7 +420,6 @@
                             </div>
                     </div>
 
-                    <!-- Empty state -->
                     <div class="text-center py-16" th:if="${redirectLinksPage.totalElements == 0}">
                         <div class="gate-icon gate-icon--primary mx-auto mb-6">
                             <svg class="w-10 h-10" fill="none" stroke="currentColor" stroke-width="1.4"
@@ -452,7 +432,6 @@
                            th:text="#{page.adminRedirectLinks.noLinks}">No active redirect links.</p>
                     </div>
 
-                    <!-- Redirect link cards -->
                     <div class="flex flex-col gap-2.5" th:if="${redirectLinksPage.totalElements > 0}">
                         <div class="group flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 px-4 py-3.5 rounded-2xl transition-all duration-200 hover:shadow-md"
                              th:each="link, iterStat : ${redirectLinksPage.content}"
@@ -493,8 +472,7 @@
                                               th:if="${link.remainingUses == null}"
                                               th:text="#{page.adminShareLinks.unlimited}">∞</span>
                                     </p>
-                                    <!-- How many times the link has actually been followed.
-                                         remainingUses above is the budget; this is the usage. -->
+                                    <!-- remainingUses above is the budget; this is actual usage -->
                                     <p class="link-visits" th:title="#{page.adminRedirectLinks.visits}">
                                         <svg fill="none" role="img" stroke="currentColor" stroke-width="2"
                                              th:attr="aria-label=#{page.adminRedirectLinks.visits}"
@@ -509,9 +487,7 @@
                                 </div>
                             </div>
 
-                            <!-- Actions -->
                             <div class="flex items-center gap-1.5 flex-shrink-0 pl-12 sm:pl-0">
-                                <!-- QR code -->
                                 <a class="btn btn-ghost btn-sm" target="_blank"
                                    th:href="@{/api/link/{code}/qr.svg(code=${link.code})}"
                                    th:title="#{page.adminLinks.qr}">
@@ -521,7 +497,6 @@
                                               stroke-linecap="round" stroke-linejoin="round"/>
                                     </svg>
                                 </a>
-                                <!-- Open link -->
                                 <a class="btn btn-ghost btn-sm"
                                    target="_blank" th:href="@{/{prefix}/{code}(prefix=${T(org.rostislav.quickdrop.service.ShortCodeService).DEFAULT_PATH_PREFIX},code=${link.code})}"
                                    th:title="#{page.adminRedirectLinks.open}">
@@ -531,7 +506,6 @@
                                               stroke-linecap="round" stroke-linejoin="round"/>
                                     </svg>
                                 </a>
-                                <!-- Revoke button -->
                                 <form data-revoke-form method="post" th:action="@{/admin/links/revoke-redirect/{id}(id=${link.id})}">
                                     <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden"/>
                                     <button class="btn btn-danger btn-sm" th:title="#{page.adminShareLinks.revoke}"
@@ -549,7 +523,6 @@
                         </div>
                     </div>
 
-                    <!-- Pagination -->
                     <div class="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 pt-6"
                          style="border-top: 1px solid var(--c-border)"
                          th:if="${redirectLinksPage.totalElements > 0}">

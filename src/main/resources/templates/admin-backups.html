@@ -25,7 +25,6 @@
             </div>
         </div>
 
-        <!-- Flash messages -->
         <div class="alert alert-success mb-6 animate-in" th:if="${backupSuccess != null}">
             <span th:text="#{page.backup.flash.created}">Backup created:</span> <span
                 th:text="${backupSuccess}"></span>
@@ -35,8 +34,7 @@
         </div>
         <div class="alert alert-danger mb-6 animate-in" th:if="${backupError != null}" th:text="${backupError}"></div>
 
-        <!-- What an admin needs before touching anything: how many, how much disk,
-             how old the newest one is, and when the next automatic run happens. -->
+        <!-- Ordered by what an admin needs to know before touching anything -->
         <div class="backup-summary animate-in">
             <div class="backup-stat">
                 <span class="backup-stat-label" th:text="#{page.backup.summary.count}">Backups</span>
@@ -66,7 +64,6 @@
         </div>
 
         <div class="backup-layout">
-            <!-- Primary: what you actually have -->
             <div class="backup-main">
                 <div class="card card-xl animate-in animate-in-delay-3">
                     <div class="flex items-center justify-between gap-4 mb-6">
@@ -99,9 +96,7 @@
                                 </div>
                             </div>
 
-                            <!-- Restore is why you are on this page, so it stays inline. Download
-                                 and Delete move behind one menu: three full-word buttons squeezed
-                                 the filename and wrapped the meta line in longer languages. -->
+                            <!-- Restore stays inline; Download/Delete are behind the menu — three buttons wrapped the row in longer languages -->
                             <div class="flex items-center gap-1.5 flex-shrink-0 pl-12 sm:pl-0">
                                 <button class="btn btn-secondary btn-sm backup-restore-btn"
                                         th:data-created="${#temporals.format(backup.createdAt, 'dd.MM.yyyy HH:mm')}"
@@ -163,9 +158,7 @@
                 </div>
             </div>
 
-            <!-- Secondary: making and configuring them -->
             <aside class="backup-aside">
-                <!-- Backup now -->
                 <div class="card p-6 mb-6 animate-in animate-in-delay-2">
                     <h2 class="font-semibold mb-4" th:text="#{page.backup.now.title}">Backup Now</h2>
                     <form action="/admin/backups/create" method="post">
@@ -182,7 +175,6 @@
                         standalone database file — kept up to the configured limit.</p>
                 </div>
 
-                <!-- Upload backup -->
                 <div class="card p-6 mb-6 animate-in animate-in-delay-2">
                     <h2 class="font-semibold mb-4" th:text="#{page.backup.upload.title}">Upload Backup</h2>
                     <form action="/admin/backups/upload" enctype="multipart/form-data" method="post">
@@ -205,9 +197,6 @@
                     </form>
                 </div>
 
-                <!-- Backup list -->
-
-                <!-- Schedule -->
                 <div class="card p-6 mb-6 animate-in animate-in-delay-1">
                     <h2 class="font-semibold mb-4" th:text="#{page.backup.schedule.title}">Automatic Backups</h2>
                     <form method="post" th:action="@{/admin/backups/schedule}">

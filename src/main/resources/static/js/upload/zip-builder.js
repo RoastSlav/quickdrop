@@ -14,6 +14,7 @@ const getRelativePath = (file) =>
 const textEncoder = new TextEncoder();
 let crcTable = null;
 
+/** @throws {Error} if sizeLabel doesn't match a "<number><unit>" pattern */
 export function parseSize(sizeLabel) {
     const units = {B: 1, KB: 1024, MB: 1024 * 1024, GB: 1024 * 1024 * 1024};
     const unitMatch = sizeLabel.match(/[a-zA-Z]+/);
@@ -318,6 +319,13 @@ function makeStreamingCandidate(entries, zipName, rootFolder, manifestArray) {
     };
 }
 
+/**
+ * Zips a folder selection into a single upload candidate, stripping metadata per-file when
+ * enabled. Falls back to a streamed zip64 build (createStream instead of a materialized blob)
+ * once the folder exceeds LARGE_FOLDER_STREAM_THRESHOLD, or if in-memory zipping throws a
+ * blob-related error.
+ * @returns {{cleanCandidate: object, fallbackCandidate: object, failures: object[], warnings: object[]}}
+ */
 export async function buildFolderCandidates(fileList, {metadataEnabled}) {
     const {manifestArray, rootFolder, totalOriginalSize} =
         buildFolderManifest(fileList);

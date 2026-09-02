@@ -212,7 +212,6 @@ public class NotificationService {
             String host = uri.getHost();
             if (!"https".equalsIgnoreCase(scheme)) return false;
             if (host == null) return false;
-            // Only allow Discord domains
             return host.equals("discord.com") || host.endsWith(".discord.com")
                     || host.equals("discordapp.com") || host.endsWith(".discordapp.com");
         } catch (Exception e) {
@@ -229,9 +228,7 @@ public class NotificationService {
      */
     private String escapeDiscord(String text) {
         if (text == null) return "";
-        // Prevent @everyone and @here mentions
         text = text.replace("@everyone", "@​everyone").replace("@here", "@​here");
-        // Escape Discord markdown special characters
         return text.replaceAll("([*_`~|>\\\\\\[\\]])", "\\\\$1");
     }
 

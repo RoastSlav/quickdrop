@@ -1,4 +1,3 @@
-// tailwindTheme.js
 // Runtime controls for the pre-paint theme bootstrap in fragments/header.html.
 (function () {
     const storageKey = "theme";

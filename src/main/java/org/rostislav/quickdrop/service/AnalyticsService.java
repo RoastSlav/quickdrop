@@ -44,15 +44,6 @@ public class AnalyticsService {
     }
 
     /**
-     * Builds and caches a complete analytics snapshot.
-     *
-     * <p>Aggregates total downloads (counting both direct {@code DOWNLOAD} and
-     * {@code SHARE_DOWNLOAD} events), storage usage, file/paste counts, and paste
-     * statistics in a single service call.
-     *
-     * @return cached analytics view-model
-     */
-    /**
      * Most recent activity-log entries, newest first.
      *
      * <p>Deliberately not cached: the dashboard feed is meant to reflect what just
@@ -67,6 +58,15 @@ public class AnalyticsService {
                 .getContent();
     }
 
+    /**
+     * Builds and caches a complete analytics snapshot.
+     *
+     * <p>Aggregates total downloads (counting both direct {@code DOWNLOAD} and
+     * {@code SHARE_DOWNLOAD} events), storage usage, file/paste counts, and paste
+     * statistics in a single service call.
+     *
+     * @return cached analytics view-model
+     */
     @Cacheable("analytics")
     public AnalyticsDataView getAnalytics() {
         long totalDownloads = activityLogRepository.countByEventTypeIn(List.of(DOWNLOAD, SHARE_DOWNLOAD));

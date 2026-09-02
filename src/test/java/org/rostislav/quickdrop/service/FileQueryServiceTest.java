@@ -74,10 +74,6 @@ class FileQueryServiceTest extends QuickdropIntegrationTest {
         return "tag" + UUID.randomUUID().toString().replace("-", "");
     }
 
-    // -------------------------------------------------------------------------
-    // Visibility: hidden / soft-deleted exclusion
-    // -------------------------------------------------------------------------
-
     @Test
     void getVisibleFilesExcludesHiddenAndDeleted() {
         String tag = uniqueTag();
@@ -85,8 +81,7 @@ class FileQueryServiceTest extends QuickdropIntegrationTest {
         persistFile("hidden-" + tag + ".txt", "hidden file", true, false);
         persistFile("deleted-" + tag + ".txt", "deleted file", false, true);
 
-        // Scoped by tag: the shared test DB may contain rows from other test classes,
-        // so an unfiltered query would not give a stable expected count.
+        // Tag-scoped so the shared test DB's rows from other test classes don't affect the count.
         Page<StoredFile> page = fileQueryService.getVisibleFiles(PageRequest.of(0, 10), tag);
 
         assertEquals(1, page.getTotalElements());
@@ -120,10 +115,6 @@ class FileQueryServiceTest extends QuickdropIntegrationTest {
         assertEquals(deleted.uuid, deletedPage.getContent().get(0).uuid);
     }
 
-    // -------------------------------------------------------------------------
-    // Search: matches name and description
-    // -------------------------------------------------------------------------
-
     @Test
     void searchMatchesByName() {
         persistFile("unique-quokka-name.txt", "generic description", false, false);
@@ -155,10 +146,8 @@ class FileQueryServiceTest extends QuickdropIntegrationTest {
 
     @Test
     void blankQueryReturnsAllVisibleFiles() {
-        // A blank query means "no filter", so it can't be tag-scoped like the other
-        // tests -- instead verify both freshly-created files are present in a
-        // generously-sized unfiltered page, rather than asserting an exact total
-        // (the shared test DB may already contain rows from other test classes).
+        // Blank means "no filter" so it can't be tag-scoped like the other tests; check
+        // membership in a generously-sized page instead of an exact total.
         StoredFile a = persistFile("a-" + uniqueTag() + ".txt", "d", false, false);
         StoredFile b = persistFile("b-" + uniqueTag() + ".txt", "d", false, false);
 
@@ -168,10 +157,6 @@ class FileQueryServiceTest extends QuickdropIntegrationTest {
         assertTrue(uuids.contains(a.uuid));
         assertTrue(uuids.contains(b.uuid));
     }
-
-    // -------------------------------------------------------------------------
-    // Pagination
-    // -------------------------------------------------------------------------
 
     @Test
     void paginationRespectsPageAndSize() {
@@ -202,10 +187,6 @@ class FileQueryServiceTest extends QuickdropIntegrationTest {
         assertEquals(1, farPage.getTotalElements());
     }
 
-    // -------------------------------------------------------------------------
-    // checkFilePassword
-    // -------------------------------------------------------------------------
-
     @Test
     void checkFilePasswordMatchesCorrectPasswordOnly() {
         StoredFile file = persistFile("secured.txt", "d", false, false);
@@ -226,10 +207,6 @@ class FileQueryServiceTest extends QuickdropIntegrationTest {
     void checkFilePasswordFalseForUnknownUuid() {
         assertFalse(fileQueryService.checkFilePassword("no-such-uuid", "anything"));
     }
-
-    // -------------------------------------------------------------------------
-    // isAuthorizedForFile / isAuthorizedToEdit
-    // -------------------------------------------------------------------------
 
     @Test
     void isAuthorizedForFileWithNoPasswordIsAlwaysTrue() {
@@ -323,10 +300,6 @@ class FileQueryServiceTest extends QuickdropIntegrationTest {
         withToken.getSession(true).setAttribute("file-session-token", token);
         assertTrue(fileQueryService.isAuthorizedToEdit(paste.uuid, withToken));
     }
-
-    // -------------------------------------------------------------------------
-    // shouldEncrypt
-    // -------------------------------------------------------------------------
 
     @Test
     void shouldEncryptTrueWhenPasswordProvidedAndEncryptionEnabled() {

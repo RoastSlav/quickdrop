@@ -98,7 +98,6 @@ public class SessionService implements HttpSessionListener {
             adminSessionTokens.remove(adminToken.toString());
             String at = adminToken.toString();
             logger.info("Session destroyed, admin session token invalidated (id: {}...)", at.length() > 8 ? at.substring(0, 8) : "***");
-            // Token still present → session timed out, not an explicit logout.
             String ip = (String) session.getAttribute("admin-ip");
             String ua = (String) session.getAttribute("admin-ua");
             if (applicationContext.isActive()) {

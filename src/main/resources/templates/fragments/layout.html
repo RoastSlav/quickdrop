@@ -64,9 +64,8 @@
     <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.3/dist/htmx.min.js"></script>
 </head>
 
-<!-- Skip link, nav and background orbs. The skip link has to precede the header so it is
-     the document's first focusable element; it used to sit outside header.html's fragment
-     boundary, which meant th:replace never picked it up and no page ever rendered it. -->
+<!-- Skip link must precede header (first focusable element) -- previously lived outside the
+     fragment boundary, so th:replace never rendered it and no page had a working skip link. -->
 <th:block th:fragment="chrome(isAdminNav)">
     <a class="skip-link" href="#main-content" th:text="#{nav.skipToContent}">Skip to main content</a>
     <div th:replace="~{fragments/header :: header(${isAdminNav})}"></div>

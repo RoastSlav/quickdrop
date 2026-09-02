@@ -1,4 +1,3 @@
-// metadata.js
 // Central registry for client-side metadata stripping
 (function () {
     const MB_LIMIT = 25; // matches METADATA_STRIP_MAX_BYTES in upload flow
@@ -278,13 +277,12 @@
                 }
             };
 
-            // Remove common identifying fields
             ["creator", "contributor", "publisher"].forEach((tag) => {
                 removeAll(`dc:${tag}`);
                 removeAll(tag); // fallback if namespace missing
             });
 
-            // Neutralize identifier content while preserving structure/ids
+            // Blank identifier values rather than removing the elements, to keep the OPF's id refs intact
             const identifiers = metadata.getElementsByTagName("dc:identifier");
             for (let i = 0; i < identifiers.length; i++) {
                 identifiers[i].textContent =
@@ -296,7 +294,6 @@
                     "urn:uuid:00000000-0000-0000-0000-000000000000";
             }
 
-            // Remove generator/tool traces if present in <meta> elements
             const metaEls = metadata.getElementsByTagName("meta");
             for (let i = metaEls.length - 1; i >= 0; i--) {
                 const el = metaEls[i];
@@ -421,10 +418,9 @@
                 const parser = new DOMParser();
                 const doc = parser.parseFromString(text, "image/svg+xml");
 
-                // Remove <metadata> blocks
                 doc.querySelectorAll("metadata").forEach((n) => n.remove());
 
-                // Remove editor-specific elements and attributes (Inkscape/Illustrator traces)
+                // Editor namespaces that leak author/tool identity into otherwise-anonymous SVGs
                 const editorNamespaces = [
                     "inkscape",
                     "sodipodi",
@@ -441,10 +437,9 @@
                     });
                 });
 
-                // Remove desc/title text that often carries author info
+                // desc/title often carry author info, not just accessibility text
                 doc.querySelectorAll("desc, title").forEach((n) => n.remove());
 
-                // Strip obvious identifying comments
                 const walker = doc.createTreeWalker(doc, NodeFilter.SHOW_COMMENT, null);
                 const comments = [];
                 let c;
@@ -756,7 +751,6 @@
         }),
     });
 
-    // Update any labels that declare supported metadata types
     const updateSupportedLabels = () => {
         const label = supportedDisplay();
         document

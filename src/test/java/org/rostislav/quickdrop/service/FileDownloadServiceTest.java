@@ -73,8 +73,6 @@ class FileDownloadServiceTest {
         return new MockHttpServletRequest();
     }
 
-    // ---------------------------------------------------------------- downloadFile
-
     @Test
     void downloadFile_storageDown_returns503() {
         when(storageHealthService.isStorageDown()).thenReturn(true);
@@ -156,8 +154,6 @@ class FileDownloadServiceTest {
         verify(activityLogRepository).save(any());
         verify(notificationService).notifyFileAction(eq(plain), eq(org.rostislav.quickdrop.model.EventType.DOWNLOAD));
     }
-
-    // ----------------------------------------------------------------- previewFile
 
     @Test
     void previewFile_storageDown_returns503() {
@@ -311,8 +307,6 @@ class FileDownloadServiceTest {
         assertEquals("DENY", response.getHeaders().getFirst("X-Frame-Options"));
     }
 
-    // --------------------------------------------------------- streamFileByShareToken
-
     @Test
     void streamFileByShareToken_storageDown_returnsNull() {
         when(storageHealthService.isStorageDown()).thenReturn(true);
@@ -433,8 +427,6 @@ class FileDownloadServiceTest {
 
         assertEquals("main", out.toString());
     }
-
-    // ------------------------------------------------------------- deleteShareSidecar
 
     @Test
     void deleteShareSidecar_noHash_isNoOp() {

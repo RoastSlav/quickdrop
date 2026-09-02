@@ -10,14 +10,12 @@
 <main class="flex-1 hero-scene" id="main-content">
     <div class="page-wrap">
 
-        <!-- ── Hero title (static) ──────────────────────────────────────── -->
         <div class="mb-8 animate-in">
             <h1 class="page-title-xl">
                 <span class="gradient-text" th:text="#{page.files.title}">All Files</span>
             </h1>
         </div>
 
-        <!-- ── Search (static) ─────────────────────────────────────────── -->
         <div class="mb-8 animate-in animate-in-delay-1">
             <form action="/file/list" id="listSearchForm" method="GET">
                 <input name="page" type="hidden" value="0"/>
@@ -42,12 +40,10 @@
             </form>
         </div>
 
-        <!-- ── Dynamic content (replaced on search / paginate) ──────────── -->
-        <!-- aria-live wrapper persists across AJAX replacements; SR announces new result counts -->
+        <!-- Wrapper persists across AJAX replacements so SR announces updated result counts -->
         <div aria-live="polite" aria-relevant="additions text">
         <div id="listDynamicContent">
 
-            <!-- Subtitle: count + keyboard hint -->
             <p class="text-center page-subtitle mb-8" th:if="${filesPage.totalElements > 0}">
                 <span class="font-mono font-bold text-lg" style="color: var(--c-text)"
                       th:text="${filesPage.totalElements}">0</span>
@@ -57,7 +53,6 @@
                 <span class="ml-1" th:text="#{page.files.keyboardSearch}">to search</span>
             </p>
 
-            <!-- ── Empty state ─────────────────────────────────────────────── -->
             <div class="flex flex-col items-center justify-center gap-6 py-24 text-center"
                  th:if="${filesPage.totalElements == 0}">
                 <div class="gate-icon gate-icon--primary">
@@ -85,7 +80,6 @@
                 </a>
             </div>
 
-            <!-- ── File grid ────────────────────────────────────────────────── -->
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5"
                  th:if="${filesPage.totalElements > 0}">
                 <a class="file-card group"
@@ -152,7 +146,6 @@
                 </a>
             </div>
 
-            <!-- ── Pagination ────────────────────────────────────────────── -->
             <div class="flex flex-col sm:flex-row items-center justify-between gap-4 mt-10 pt-6"
                  style="border-top: 1px solid var(--c-border)"
                  th:if="${filesPage.totalElements > 0}">

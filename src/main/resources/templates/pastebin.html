@@ -85,13 +85,9 @@
                  stretch a row of short editor fields and leave a void beside them. -->
             <div class="paste-options-cards">
 
-                <!-- Password: settable on create; on edit, a non-blank value changes it but a
-                     blank field leaves the CURRENT password state untouched (a password field
-                     can never be pre-filled with the real value, so "blank = remove" would
-                     silently strip protection any time someone edits content without retyping
-                     the password -- see PasteService#updatePaste). The editOnly *scope* is
-                     fixed at creation and not editable here, so that sub-section stays
-                     create-only. -->
+                <!-- On edit, blank means "leave password unchanged", not "remove" -- a password field
+                     can't be pre-filled with the real value, so blank=remove would strip protection
+                     on any edit where the password isn't retyped (see PasteService#updatePaste). -->
                 <div class="paste-option-card" id="passwordSection" th:if="${uploadPasswordEnabled}">
                     <div class="form-row">
                         <label class="form-label" for="password" th:text="#{page.paste.password.label}">Password
@@ -120,7 +116,6 @@
                     </div>
                 </div>
 
-                <!-- Immutable toggle -->
                 <div class="paste-option-card paste-option-card--toggle">
                     <label class="toggle">
                         <input id="immutableToggle" name="immutable" th:checked="${isImmutable}"
@@ -150,7 +145,6 @@
         <div class="alert alert-danger paste-flash" th:if="${pasteError != null}" th:text="${pasteError}"></div>
 
 
-                <!-- Storage down banner -->
                 <div class="alert alert-danger flex items-center gap-3" role="alert" th:if="${s3Down}">
                     <svg aria-hidden="true" class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor"
                          stroke-width="2" viewBox="0 0 24 24">
@@ -160,7 +154,6 @@
                     <span th:text="#{alert.pastesUnavailable}">Pastes are temporarily unavailable.</span>
         </div>
 
-        <!-- Editor fills whatever is left. -->
         <div class="editor-wrapper paste-editor">
                 <div class="custom-editor-toolbar" id="customEditorToolbar">
                     <button aria-label="Bold" data-action="bold" title="Bold" type="button">

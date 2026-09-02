@@ -35,9 +35,7 @@ class FileUtilsTest {
         Locale.setDefault(originalDefaultLocale);
     }
 
-    // -------------------------------------------------------------------------
-    // formatFileSize — locale regression (European JVMs printed "5,00 GB")
-    // -------------------------------------------------------------------------
+    // formatFileSize must not use the JVM default locale's decimal separator (European JVMs printed "5,00 GB").
 
     @Test
     void formatFileSizeUsesDotDecimalUnderGermanDefaultLocale() {
@@ -64,10 +62,6 @@ class FileUtilsTest {
         assertEquals("1.00 GB", FileUtils.formatFileSize(1024L * 1024 * 1024));
         assertEquals("1.00 TB", FileUtils.formatFileSize(1024L * 1024 * 1024 * 1024));
     }
-
-    // -------------------------------------------------------------------------
-    // getDownloadLink — port + X-Forwarded-Host handling
-    // -------------------------------------------------------------------------
 
     @Test
     void getDownloadLinkIncludesNonDefaultPort() {
@@ -119,16 +113,13 @@ class FileUtilsTest {
 
         String link = FileUtils.getDownloadLink(request, upload);
 
-        // X-Forwarded-Host is used verbatim (no port appended) since the proxy is
-        // expected to supply the externally-visible host:port itself if needed.
+        // X-Forwarded-Host is used verbatim; the proxy is expected to supply the externally-visible host:port itself.
         assertEquals("http://public.example.com/file/abc-123", link);
     }
 
     @Test
     void getDownloadLinkHonoursXForwardedProtoOverRequestScheme() {
-        // Realistic reverse-proxy setup: the proxy terminates TLS on 443 and forwards
-        // to the backend on its own (already-standard-for-https) port, so no port
-        // suffix is expected in the generated link.
+        // Proxy terminates TLS on 443 and forwards to the backend's own standard-for-https port, so no port suffix is expected.
         MockHttpServletRequest request = new MockHttpServletRequest();
         request.setScheme("http");
         request.setServerName("example.com");
@@ -143,13 +134,7 @@ class FileUtilsTest {
 
     @Test
     void getDownloadLinkAssumesSchemeDefaultPortWhenOnlyProtoIsForwarded() {
-        // Regression guard for a fixed port-leak bug: when a proxy forwards only
-        // X-Forwarded-Proto (not Host or Port) -- e.g. a minimal proxy config --
-        // request.getServerPort() is the backend's own raw listening port (8080 here),
-        // not the port the client actually connected to. Pairing that raw port with the
-        // forwarded scheme used to produce "https://internal-host:8080/...", leaking the
-        // internal port. getDownloadLink() now assumes the scheme's standard port in this
-        // case instead, since that holds for effectively every reverse-proxy deployment.
+        // Regression guard: when only X-Forwarded-Proto is set, getServerPort() is the backend's raw listening port, not the client-facing one -- pairing them used to leak the internal port.
         MockHttpServletRequest request = new MockHttpServletRequest();
         request.setScheme("http");
         request.setServerName("internal-host");
@@ -164,9 +149,7 @@ class FileUtilsTest {
 
     @Test
     void getDownloadLinkHonoursXForwardedPortWhenProvided() {
-        // A proxy that forwards its own non-standard external port explicitly (rather
-        // than relying on the "assume standard port" fallback above) should have that
-        // port used verbatim, since it's an authoritative signal for the client-facing port.
+        // X-Forwarded-Port is an authoritative signal for the client-facing port, so it's used verbatim rather than the standard-port fallback.
         MockHttpServletRequest request = new MockHttpServletRequest();
         request.setScheme("http");
         request.setServerName("internal-host");
@@ -194,10 +177,6 @@ class FileUtilsTest {
 
         assertEquals("https://internal-host/file/abc-123", link);
     }
-
-    // -------------------------------------------------------------------------
-    // Misc small helpers
-    // -------------------------------------------------------------------------
 
     @Test
     void clampPageNeverGoesNegative() {

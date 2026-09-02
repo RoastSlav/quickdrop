@@ -42,7 +42,6 @@
             </a>
         </div>
 
-        <!-- File stats row -->
         <p class="text-xs font-black uppercase tracking-widest mb-3 animate-in" style="color:var(--c-primary)"
            th:text="#{page.dashboard.section.files}">Files</p>
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 lg:gap-5 mb-4 animate-in animate-in-delay-1">
@@ -69,7 +68,6 @@
             </div>
         </div>
 
-        <!-- Paste stats row -->
         <p class="text-xs font-black uppercase tracking-widest mb-3 mt-8 animate-in animate-in-delay-2"
            style="color:var(--c-secondary)" th:text="#{page.dashboard.section.pastes}">Pastes</p>
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 lg:gap-5 mb-10 animate-in animate-in-delay-2">
@@ -95,7 +93,6 @@
             </div>
         </div>
 
-        <!-- Storage backend down banner -->
         <div class="alert alert-danger flex items-center gap-3 mb-6 animate-in animate-in-delay-2" role="alert"
              th:if="${s3Down}">
             <svg aria-hidden="true" class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor"
@@ -114,7 +111,6 @@
                th:text="#{page.dashboard.storage.checkSettings}">Check Settings</a>
         </div>
 
-        <!-- What just happened -->
         <section class="card card-lg activity-feed animate-in animate-in-delay-2" th:if="${!#lists.isEmpty(recentActivity)}">
             <div class="activity-feed-head">
                 <h2 class="section-title" th:text="#{page.dashboard.recentActivity}">Recent activity</h2>
@@ -136,10 +132,8 @@
             </ul>
         </section>
 
-        <!-- Navigation cards -->
         <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5 animate-in animate-in-delay-3">
 
-            <!-- Files card -->
             <a class="card card-lg flex flex-col gap-4 transition-all duration-200 hover:shadow-xl hover:-translate-y-0.5 accent-stripe accent-stripe--primary group"
                href="/admin/files" style="text-decoration:none">
                 <div class="flex items-center gap-4">
@@ -174,7 +168,6 @@
                 </div>
             </a>
 
-            <!-- Pastes card -->
             <a class="card card-lg flex flex-col gap-4 transition-all duration-200 hover:shadow-xl hover:-translate-y-0.5 accent-stripe accent-stripe--secondary group"
                href="/admin/pastes" style="text-decoration:none">
                 <div class="flex items-center gap-4">
@@ -210,7 +203,7 @@
                 </div>
             </a>
 
-            <!-- Links card (share links + redirect links) -->
+            <!-- Also covers redirect (shortener) links, not just file share links -->
             <a class="card card-lg flex flex-col gap-4 transition-all duration-200 hover:shadow-xl hover:-translate-y-0.5 accent-stripe accent-stripe--teal group"
                href="/admin/links" style="text-decoration:none">
                 <div class="flex items-center gap-4">
@@ -234,7 +227,6 @@
                 </div>
             </a>
 
-            <!-- Activity card -->
             <a class="card card-lg flex flex-col gap-4 transition-all duration-200 hover:shadow-xl hover:-translate-y-0.5 accent-stripe accent-stripe--rose group"
                href="/admin/activity" style="text-decoration:none">
                 <div class="flex items-center gap-4">
@@ -258,7 +250,6 @@
                 </div>
             </a>
 
-            <!-- Backups card -->
             <a class="card card-lg flex flex-col gap-4 transition-all duration-200 hover:shadow-xl hover:-translate-y-0.5 accent-stripe accent-stripe--emerald group"
                href="/admin/backups" style="text-decoration:none">
                 <div class="flex items-center gap-4">
@@ -283,7 +274,6 @@
             </a>
 
 
-            <!-- Settings -->
             <a class="card card-lg flex flex-col gap-4 transition-all duration-200 hover:shadow-xl hover:-translate-y-0.5 accent-stripe accent-stripe--indigo group"
                href="/admin/settings" style="text-decoration:none">
                 <div class="flex items-center gap-4">

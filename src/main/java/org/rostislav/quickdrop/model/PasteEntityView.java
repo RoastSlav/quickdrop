@@ -18,9 +18,6 @@ public class PasteEntityView {
     public String name;
     public LocalDate uploadDate;
 
-    /**
-     * {@code true} when the paste filename ends with {@code .md}.
-     */
     public boolean isMarkdown;
 
     /**
@@ -33,24 +30,9 @@ public class PasteEntityView {
      */
     public long rawSize;
 
-    /**
-     * {@code true} when the paste has a password hash set.
-     */
     public boolean passwordProtected;
-
-    /**
-     * Total number of PASTE_VIEW events logged for this paste.
-     */
     public long totalViews;
-
-    /**
-     * {@code true} when the paste has been soft-deleted.
-     */
     public boolean deleted;
-
-    /**
-     * {@code true} when the paste is permanently immutable (cannot be edited).
-     */
     public boolean immutable;
 
     /**

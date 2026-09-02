@@ -294,9 +294,9 @@ All paths are relative to the process working directory (`/app` in the image).
 | `files/`            | `reputation-feeds/` (cached Phishing Army and URLhaus feeds), plus — when the storage backend is Local disk — the uploaded files themselves and `.upload-chunks/` staging during chunked uploads | Yes                         |
 | `log/`              | `quickdrop.log`. Relocatable via the **Log storage path** runtime setting, which takes effect on the next restart       | Yes                         |
 
-Backups, branding and threat feeds used to sit in top-level `db-backups/`, `branding/` and
-`reputation-feeds/`. Anything left in those is moved into the paths above on startup, so those
-three mounts can simply be dropped from an existing setup.
+The `db/`, `files/` and `log/` mounts are unchanged. Up to v1.5.3 the custom logo lived in a
+top-level `branding/` directory; anything still there is moved into `db/branding/` on startup,
+so that mount can be dropped.
 
 ### Runtime settings
 

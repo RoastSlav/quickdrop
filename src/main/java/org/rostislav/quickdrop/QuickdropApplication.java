@@ -43,7 +43,7 @@ public class QuickdropApplication {
         try {
             Files.createDirectories(Path.of("./db"));
             Files.createDirectories(AppPaths.BACKUPS);
-            AppPaths.migrateLegacyDirectories();
+            AppPaths.migrateReleasedBrandingDirectory();
         } catch (Exception e) {
             logger.error("Error creating directory for database", e);
         }

@@ -65,8 +65,10 @@
                         <span class="badge badge-danger" th:if="${isDeleted}">
               <span th:text="#{badge.deleted}">Deleted</span>
             </span>
-                        <span class="badge badge-indigo" th:if="${file.folderUpload}">
-              <span th:text="#{badge.folder}">Folder</span>
+                        <span class="badge badge-indigo" th:if="${file.archiveUpload}">
+              <span th:text="${archive.bundle()} ? #{badge.files} : #{badge.folder}">Folder</span>
+              <span th:if="${archive.fileCount() > 0}"
+                    th:text="'· ' + ${#messages.msg('badge.items', archive.fileCount())}">· 3 items</span>
             </span>
                         <span class="badge badge-primary" th:if="${file.paste}">
               <span th:text="#{badge.paste}">Paste</span>
@@ -186,11 +188,11 @@
                         </div>
                     </div>
 
-                    <div th:if="${file.folderUpload}">
-                        <p class="section-eyebrow mb-2" th:text="#{page.fileView.folderContents}">Folder contents</p>
-                        <div class="folder-tree-box" id="folderTree"
-                             th:attr="data-manifest=${file.folderManifest},data-folder-name=${file.folderName}"></div>
-                        <script id="folderManifestData" th:utext="${file.folderManifest}"
+                    <div th:if="${file.archiveUpload}">
+                        <p class="section-eyebrow mb-2" th:text="#{page.fileView.archiveContents}">Folder contents</p>
+                        <div class="folder-tree-box" id="archiveTree"
+                             th:attr="data-manifest=${file.archiveManifest},data-archive-name=${file.archiveName}"></div>
+                        <script id="archiveManifestData" th:utext="${file.archiveManifest}"
                                 type="application/json"></script>
                     </div>
 
@@ -385,15 +387,15 @@
         previewImageAlt:             /*[[#{page.fileView.preview.imageAlt}]]*/ 'Preview',
         previewCodeTruncated:        /*[[#{page.fileView.preview.codeTruncated}]]*/ '... (truncated)'
     };
-    window.i18n.folderTree = {
-        fallbackName: /*[[#{page.fileView.folderFallbackName}]]*/ 'folder',
-        noManifest:   /*[[#{page.fileView.folderNoManifest}]]*/ 'No manifest available.',
-        renderFailed: /*[[#{page.fileView.folderRenderFailed}]]*/ 'Unable to render folder contents.'
+    window.i18n.archiveTree = {
+        fallbackName: /*[[#{page.archiveTree.fallbackName}]]*/ 'folder',
+        noManifest:   /*[[#{page.archiveTree.noManifest}]]*/ 'No manifest available.',
+        renderFailed: /*[[#{page.archiveTree.renderFailed}]]*/ 'Unable to render folder contents.'
     };
     /*]]>*/
 </script>
 <script src="/js/fileView.js"></script>
-<script src="/js/folder-tree.js" type="module"></script>
+<script src="/js/archive-tree.js" type="module"></script>
 <th:block th:replace="~{fragments/layout :: pageScripts}"></th:block>
 </body>
 </html>

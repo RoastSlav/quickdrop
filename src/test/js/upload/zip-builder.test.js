@@ -2,7 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import {
-    buildFolderManifest,
+    buildArchiveManifest,
+    bundleDateStamp,
     collectSelectionEntries,
     describeSelection,
     parseSize,
@@ -21,40 +22,40 @@ const paths = (entries) => entries.map((entry) => entry.path);
 
 test("describeSelection: one shared top-level directory is a folder", () => {
     const result = describeSelection([f("docs/a.txt"), f("docs/sub/b.txt")]);
-    assert.deepEqual(result, {rootFolder: "docs", isBundle: false});
+    assert.deepEqual(result, {archiveName: "docs", isBundle: false});
 });
 
 test("describeSelection: a folder holding a single file is still a folder", () => {
     assert.deepEqual(describeSelection([f("docs/only.txt")]), {
-        rootFolder: "docs",
+        archiveName: "docs",
         isBundle: false,
     });
 });
 
 test("describeSelection: backslash paths resolve the same as forward slashes", () => {
     assert.deepEqual(describeSelection([f("docs\\a.txt"), f("docs\\b.txt")]), {
-        rootFolder: "docs",
+        archiveName: "docs",
         isBundle: false,
     });
 });
 
 test("describeSelection: two top-level directories is a bundle", () => {
     assert.deepEqual(describeSelection([f("a/x.txt"), f("b/y.txt")]), {
-        rootFolder: "files",
+        archiveName: "files",
         isBundle: true,
     });
 });
 
 test("describeSelection: a directory next to a loose file is a bundle", () => {
     assert.deepEqual(describeSelection([f("a/x.txt"), f("loose.txt")]), {
-        rootFolder: "files",
+        archiveName: "files",
         isBundle: true,
     });
 });
 
 test("describeSelection: loose files only is a bundle", () => {
     assert.deepEqual(describeSelection([f("one.txt"), f("two.txt")]), {
-        rootFolder: "files",
+        archiveName: "files",
         isBundle: true,
     });
 });
@@ -103,11 +104,11 @@ test("collectSelectionEntries: a suffix never lands on an already-taken name", (
     assert.equal(new Set(paths(entries)).size, 3);
 });
 
-test("buildFolderManifest: flat bundle has file entries and no directories", () => {
+test("buildArchiveManifest: flat bundle has file entries and no directories", () => {
     const entries = collectSelectionEntries([f("a.txt", 100), f("b.txt", 200)]);
-    const manifest = buildFolderManifest(entries);
+    const manifest = buildArchiveManifest(entries);
 
-    assert.equal(manifest.rootFolder, "files");
+    assert.equal(manifest.archiveName, "files");
     assert.equal(manifest.isBundle, true);
     assert.equal(manifest.totalOriginalSize, 300);
     assert.deepEqual(manifest.manifestArray, [
@@ -116,24 +117,24 @@ test("buildFolderManifest: flat bundle has file entries and no directories", () 
     ]);
 });
 
-test("buildFolderManifest: every intermediate directory is emitted exactly once", () => {
+test("buildArchiveManifest: every intermediate directory is emitted exactly once", () => {
     const entries = collectSelectionEntries([
         f("docs/a.txt", 1),
         f("docs/sub/b.txt", 2),
         f("docs/sub/c.txt", 3),
     ]);
-    const manifest = buildFolderManifest(entries);
+    const manifest = buildArchiveManifest(entries);
     const dirs = manifest.manifestArray.filter((e) => e.type === "dir").map((e) => e.path);
 
-    assert.equal(manifest.rootFolder, "docs");
+    assert.equal(manifest.archiveName, "docs");
     assert.equal(manifest.isBundle, false);
     assert.equal(manifest.totalOriginalSize, 6);
     assert.deepEqual(dirs.sort(), ["docs", "docs/sub"]);
 });
 
-test("buildFolderManifest: a multi-root bundle keeps each directory in the manifest", () => {
+test("buildArchiveManifest: a multi-root bundle keeps each directory in the manifest", () => {
     const entries = collectSelectionEntries([f("a/x.txt"), f("b/y.txt")]);
-    const manifest = buildFolderManifest(entries);
+    const manifest = buildArchiveManifest(entries);
     const dirs = manifest.manifestArray.filter((e) => e.type === "dir").map((e) => e.path);
 
     assert.equal(manifest.isBundle, true);
@@ -149,4 +150,11 @@ test("parseSize: reads the size limit the upload page renders", () => {
 
 test("parseSize: rejects a label it cannot read", () => {
     assert.throws(() => parseSize("unlimited"), /Invalid maxFileSize format/);
+});
+
+test("bundleDateStamp: two-digit year, then month and day without leading zeros", () => {
+    assert.equal(bundleDateStamp(new Date(2026, 8, 2)), "2692");
+    assert.equal(bundleDateStamp(new Date(2026, 11, 25)), "261225");
+    assert.equal(bundleDateStamp(new Date(2026, 0, 1)), "2611");
+    assert.equal(bundleDateStamp(new Date(2007, 4, 9)), "0759");
 });

@@ -1,11 +1,11 @@
 /**
  * Draws an archive upload's contents as an ASCII tree, on any page that provides a
- * `#folderTree` container and a `#folderManifestData` JSON block. Self-mounting, so a page
+ * `#archiveTree` container and a `#archiveManifestData` JSON block. Self-mounting, so a page
  * only has to include it -- which is why the file page and the share landing page can both
  * show the same tree without either one knowing how it is built.
  */
 
-const t = (key, fallback) => window.i18n?.folderTree?.[key] || fallback;
+const t = (key, fallback) => window.i18n?.archiveTree?.[key] || fallback;
 
 function createTreeNode(name) {
     return {name, children: [], files: []};
@@ -101,7 +101,7 @@ const SEGMENT_CLASS = {
     connector: "folder-tree-connector",
 };
 
-export function renderFolderTree(treeEl, entries, rootName) {
+export function renderArchiveTree(treeEl, entries, rootName) {
     treeEl.textContent = "";
     const fragment = document.createDocumentFragment();
 
@@ -121,11 +121,11 @@ export function renderFolderTree(treeEl, entries, rootName) {
 }
 
 function mount() {
-    const treeEl = document.getElementById("folderTree");
+    const treeEl = document.getElementById("archiveTree");
     if (!treeEl) return;
 
-    const manifestScript = document.getElementById("folderManifestData");
-    const rootName = treeEl.dataset.folderName || t("fallbackName", "folder");
+    const manifestScript = document.getElementById("archiveManifestData");
+    const rootName = treeEl.dataset.archiveName || t("fallbackName", "folder");
     if (!manifestScript || !manifestScript.textContent) {
         treeEl.textContent = t("noManifest", "No manifest available.");
         return;
@@ -135,12 +135,12 @@ function mount() {
     try {
         entries = JSON.parse(manifestScript.textContent);
     } catch (e) {
-        console.warn("Folder manifest parse failed", e);
+        console.warn("Archive manifest parse failed", e);
         treeEl.textContent = t("renderFailed", "Unable to render folder contents.");
         return;
     }
 
-    renderFolderTree(treeEl, entries, rootName);
+    renderArchiveTree(treeEl, entries, rootName);
 }
 
 // Guarded so the tree-building functions above can be imported and tested outside a browser.

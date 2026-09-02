@@ -182,12 +182,12 @@ class FileRestControllerTest extends ControllerTestSupport {
     }
 
     /**
-     * Regression for GHSA-q9xf-5rwh-9hmm (stored XSS via folderManifest): a manifest entry
+     * Regression for GHSA-q9xf-5rwh-9hmm (stored XSS via archiveManifest): a manifest entry
      * name containing raw HTML must come back Unicode-escaped ({@code <}/{@code >}/
      * {@code &}) so it cannot execute if ever interpolated into a template or script context.
      */
     @Test
-    void uploadChunk_folderManifestXss_isSanitized() throws Exception {
+    void uploadChunk_archiveManifestXss_isSanitized() throws Exception {
         ensureAdminPasswordSet();
         String maliciousManifest = "[{\"name\": \"<img src=x onerror=alert(1)>.txt\", \"path\": \"a.txt\"}, "
                 + "{\"name\": \"\\\"><script>alert(2)</script>\", \"path\": \"b.txt\"}]";
@@ -199,19 +199,19 @@ class FileRestControllerTest extends ControllerTestSupport {
                         .param("chunkNumber", "0")
                         .param("totalChunks", "1")
                         .param("fileSize", "8")
-                        .param("folderUpload", "true")
-                        .param("folderName", "myFolder")
-                        .param("folderManifest", maliciousManifest)
+                        .param("archiveUpload", "true")
+                        .param("archiveName", "myFolder")
+                        .param("archiveManifest", maliciousManifest)
                         .param("uploadId", uploadId))
                 .andExpect(status().isAccepted());
 
         AsyncFileMergeService.UploadProgress progress = waitForUploadCompletion(uploadId);
         assertEquals("complete", progress.status());
         StoredFile saved = fileRepository.findByUUID(progress.uuid()).orElseThrow();
-        assertNotNull(saved.folderManifest);
-        assertFalse(saved.folderManifest.contains("<img"), "raw <img tag must not survive sanitizeFolderManifest()");
-        assertFalse(saved.folderManifest.contains("<script>"), "raw <script> tag must not survive sanitizeFolderManifest()");
-        assertTrue(saved.folderManifest.contains("\\u003c"), "expected Unicode-escaped '<' in sanitized manifest");
+        assertNotNull(saved.archiveManifest);
+        assertFalse(saved.archiveManifest.contains("<img"), "raw <img tag must not survive sanitizeArchiveManifest()");
+        assertFalse(saved.archiveManifest.contains("<script>"), "raw <script> tag must not survive sanitizeArchiveManifest()");
+        assertTrue(saved.archiveManifest.contains("\\u003c"), "expected Unicode-escaped '<' in sanitized manifest");
     }
 
     /**
@@ -231,33 +231,85 @@ class FileRestControllerTest extends ControllerTestSupport {
                         .param("chunkNumber", "0")
                         .param("totalChunks", "1")
                         .param("fileSize", "8")
-                        .param("folderUpload", "true")
-                        .param("folderName", "files")
-                        .param("folderManifest", manifest)
+                        .param("archiveUpload", "true")
+                        .param("archiveName", "files")
+                        .param("archiveManifest", manifest)
                         .param("uploadId", uploadId))
                 .andExpect(status().isAccepted());
 
         AsyncFileMergeService.UploadProgress progress = waitForUploadCompletion(uploadId);
         assertEquals("complete", progress.status());
         StoredFile saved = fileRepository.findByUUID(progress.uuid()).orElseThrow();
-        assertTrue(saved.folderUpload, "a loose-file bundle is stored as an archive upload");
-        assertEquals("files", saved.folderName);
-        assertEquals("files.zip", saved.name);
-        assertNotNull(saved.folderManifest);
-        assertTrue(saved.folderManifest.contains("report.txt"));
-        assertFalse(saved.folderManifest.contains("\"dir\""), "a flat bundle has no directory entries");
+        assertTrue(saved.archiveUpload, "a loose-file bundle is stored as an archive upload");
+        assertEquals("files", saved.archiveName);
+        assertTrue(saved.name.startsWith("files-"), "a bundle name gets its code appended: " + saved.name);
+        assertNotNull(saved.archiveManifest);
+        assertTrue(saved.archiveManifest.contains("report.txt"));
+        assertFalse(saved.archiveManifest.contains("\"dir\""), "a flat bundle has no directory entries");
+    }
+
+    /**
+     * The browser cannot see which names are taken, so it names a bundle for its date alone
+     * and the distinguishing code is appended here. Two bundles uploaded the same day must
+     * therefore not end up sharing a name.
+     */
+    @Test
+    void uploadChunk_looseFileBundle_getsADistinctNameAppendedServerSide() throws Exception {
+        ensureAdminPasswordSet();
+        String manifest = "[{\"path\":\"a.txt\",\"size\":1,\"type\":\"file\"},"
+                + "{\"path\":\"b.txt\",\"size\":2,\"type\":\"file\"}]";
+
+        String first = uploadArchive("files-2692.zip", manifest);
+        String second = uploadArchive("files-2692.zip", manifest);
+
+        assertTrue(first.startsWith("files-2692-"), first);
+        assertEquals("files-2692-".length() + 4 + ".zip".length(), first.length(), first);
+        assertNotEquals(first, second, "two bundles from the same day must not share a name");
+    }
+
+    /**
+     * A picked folder is named after the folder itself, which the uploader chose -- only a
+     * generated bundle name gets a code appended.
+     */
+    @Test
+    void uploadChunk_folderUpload_keepsItsFolderName() throws Exception {
+        ensureAdminPasswordSet();
+        String manifest = "[{\"path\":\"docs\",\"type\":\"dir\"},"
+                + "{\"path\":\"docs/a.txt\",\"size\":1,\"type\":\"file\"}]";
+
+        assertEquals("docs.zip", uploadArchive("docs.zip", manifest));
+    }
+
+    private String uploadArchive(String fileName, String manifest) throws Exception {
+        MockMultipartFile part = new MockMultipartFile("file", fileName, "application/zip", "zipbytes".getBytes());
+        String uploadId = java.util.UUID.randomUUID().toString();
+
+        mockMvc.perform(multipart("/api/file/upload-chunk").file(part).with(csrf())
+                        .param("fileName", fileName)
+                        .param("chunkNumber", "0")
+                        .param("totalChunks", "1")
+                        .param("fileSize", "8")
+                        .param("archiveUpload", "true")
+                        .param("archiveName", "files")
+                        .param("archiveManifest", manifest)
+                        .param("uploadId", uploadId))
+                .andExpect(status().isAccepted());
+
+        AsyncFileMergeService.UploadProgress progress = waitForUploadCompletion(uploadId);
+        assertEquals("complete", progress.status());
+        return fileRepository.findByUUID(progress.uuid()).orElseThrow().name;
     }
 
     @Test
-    void uploadChunk_malformedFolderManifest_returns400() throws Exception {
+    void uploadChunk_malformedArchiveManifest_returns400() throws Exception {
         ensureAdminPasswordSet();
         MockMultipartFile part = new MockMultipartFile("file", "folder.zip", "application/zip", "zipbytes".getBytes());
         mockMvc.perform(multipart("/api/file/upload-chunk").file(part).with(csrf())
                         .param("fileName", "folder.zip")
                         .param("chunkNumber", "0")
                         .param("totalChunks", "1")
-                        .param("folderUpload", "true")
-                        .param("folderManifest", "not-json-at-all"))
+                        .param("archiveUpload", "true")
+                        .param("archiveManifest", "not-json-at-all"))
                 .andExpect(status().isBadRequest());
     }
 

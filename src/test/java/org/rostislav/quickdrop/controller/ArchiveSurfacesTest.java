@@ -38,7 +38,7 @@ class ArchiveSurfacesTest extends ControllerTestSupport {
     }
 
     private StoredFile archive(String name) throws Exception {
-        return createFolderFile(name, "zipbytes".getBytes(), "docs", MANIFEST);
+        return createArchiveFile(name, "zipbytes".getBytes(), "docs", MANIFEST);
     }
 
     private UploadShareLink readyShareToken(StoredFile file, String keyHash) {
@@ -88,7 +88,7 @@ class ArchiveSurfacesTest extends ControllerTestSupport {
         mockMvc.perform(get("/share/" + token.code))
                 .andExpect(status().isOk())
                 .andExpect(view().name("file-share-view"))
-                .andExpect(content().string(containsString("folderManifestData")))
+                .andExpect(content().string(containsString("archiveManifestData")))
                 .andExpect(content().string(containsString("docs/alpha.txt")))
                 .andExpect(content().string(containsString("3 items")));
     }
@@ -100,7 +100,7 @@ class ArchiveSurfacesTest extends ControllerTestSupport {
 
         mockMvc.perform(get("/share/" + token.code))
                 .andExpect(status().isOk())
-                .andExpect(content().string(not(containsString("folderManifestData"))));
+                .andExpect(content().string(not(containsString("archiveManifestData"))));
     }
 
     /**
@@ -117,7 +117,7 @@ class ArchiveSurfacesTest extends ControllerTestSupport {
                 .andExpect(status().isOk())
                 .andExpect(view().name("file-share-view"))
                 .andExpect(content().string(containsString("surfaces-keyed.zip")))
-                .andExpect(content().string(not(containsString("folderManifestData"))))
+                .andExpect(content().string(not(containsString("archiveManifestData"))))
                 .andExpect(content().string(not(containsString("docs/alpha.txt"))));
     }
 }

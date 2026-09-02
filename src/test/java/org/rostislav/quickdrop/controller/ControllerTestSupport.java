@@ -155,11 +155,11 @@ abstract class ControllerTestSupport extends QuickdropIntegrationTest {
         return fileRepository.save(file);
     }
 
-    protected StoredFile createFolderFile(String name, byte[] content, String folderName, String manifestJson) throws IOException {
+    protected StoredFile createArchiveFile(String name, byte[] content, String archiveName, String manifestJson) throws IOException {
         StoredFile file = createFile(name, content, null);
-        file.folderUpload = true;
-        file.folderName = folderName;
-        file.folderManifest = manifestJson;
+        file.archiveUpload = true;
+        file.archiveName = archiveName;
+        file.archiveManifest = manifestJson;
         return fileRepository.save(file);
     }
 

@@ -15,8 +15,8 @@ import jakarta.persistence.Table;
  * <p>A discriminator value of {@code "0"} in the {@code upload.paste} column
  * identifies rows belonging to this subtype.
  *
- * <p>Folder uploads are ZIP archives accompanied by a JSON manifest that describes
- * the original directory tree.  When {@link #folderUpload} is {@code false} the
+ * <p>Archive uploads are ZIP files accompanied by a JSON manifest that describes
+ * the original directory tree.  When {@link #archiveUpload} is {@code false} the
  * folder fields are {@code null} / {@code false}.
  *
  * <p>All fields are {@code public} for direct access; there are no getter/setter
@@ -31,17 +31,17 @@ public class StoredFile extends Upload {
      * Whether this entry represents a folder upload (ZIP archive with a manifest).
      */
     @Column(name = "folder_upload")
-    public boolean folderUpload;
+    public boolean archiveUpload;
 
     /**
      * Display name of the uploaded folder; {@code null} for non-folder uploads.
      */
     @Column(name = "folder_name")
-    public String folderName;
+    public String archiveName;
 
     /**
      * JSON array describing the folder's file tree, stored as TEXT; {@code null} for single-file uploads.
      */
     @Column(name = "folder_manifest", columnDefinition = "TEXT")
-    public String folderManifest;
+    public String archiveManifest;
 }

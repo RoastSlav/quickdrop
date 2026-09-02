@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import {buildTreeLines} from "../../main/resources/static/js/folder-tree.js";
+import {buildTreeLines} from "../../main/resources/static/js/archive-tree.js";
 
 /** Flattens the typed segments back to the text a reader sees, one string per line. */
 const render = (entries, rootName) =>

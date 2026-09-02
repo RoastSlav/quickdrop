@@ -5,7 +5,7 @@ import org.rostislav.quickdrop.entity.Upload;
 
 import java.time.LocalDate;
 
-import static org.rostislav.quickdrop.util.FileUtils.countArchiveFiles;
+import static org.rostislav.quickdrop.util.FileUtils.summarizeArchive;
 import static org.rostislav.quickdrop.util.FileUtils.formatFileSize;
 
 /**
@@ -52,23 +52,30 @@ public class FileEntityView {
      * a picked folder or a multi-file selection. The remaining archive fields are only
      * populated when this is set.
      */
-    public boolean folderUpload;
+    public boolean archiveUpload;
 
     /**
      * Display name of the archive's root.
      */
-    public String folderName;
+    public String archiveName;
 
     /**
      * Raw manifest JSON, for the views that draw the contents tree. Every other view
      * should read {@link #itemCount} instead of parsing this again.
      */
-    public String folderManifest;
+    public String archiveManifest;
 
     /**
      * Number of files inside the archive, directory entries excluded.
      */
     public int itemCount;
+
+    /**
+     * {@code true} when the archive is a loose multi-file selection rather than one picked
+     * folder. Derived from the manifest, so it costs nothing beyond the parse {@link
+     * #itemCount} already needs.
+     */
+    public boolean bundle;
 
     public FileEntityView() {
     }
@@ -91,11 +98,13 @@ public class FileEntityView {
         this.passwordProtected = upload.passwordHash != null;
         this.deleted = upload.deleted;
 
-        if (upload instanceof StoredFile storedFile && storedFile.folderUpload) {
-            this.folderUpload = true;
-            this.folderName = storedFile.folderName;
-            this.folderManifest = storedFile.folderManifest;
-            this.itemCount = countArchiveFiles(storedFile.folderManifest);
+        if (upload instanceof StoredFile storedFile && storedFile.archiveUpload) {
+            this.archiveUpload = true;
+            this.archiveName = storedFile.archiveName;
+            this.archiveManifest = storedFile.archiveManifest;
+            ArchiveSummary summary = summarizeArchive(storedFile.archiveManifest);
+            this.itemCount = summary.fileCount();
+            this.bundle = summary.bundle();
         }
     }
 }

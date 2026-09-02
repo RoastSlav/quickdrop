@@ -41,8 +41,10 @@ hand out expiring share links, and administer everything from a web admin panel 
   uploads survive flaky connections.
 - Folder and multi-file uploads — a picked directory, or several files selected at once, is zipped in the browser
   (ZIP64, stored uncompressed) with a JSON manifest of the original paths and sizes. One upload, one download, and the
-  file page lists the contents as a tree. A selection that shares a single top-level directory keeps that directory's
-  name; anything else is bundled as `files.zip`.
+  contents are listed as a tree on the file page, the file list and the share link. A selection that shares a single
+  top-level directory keeps that directory's name (`docs.zip`); anything else is a dated bundle, `files-2692-atbn.zip`
+  for 2 September 2026 — the four-character code is added by the server so two bundles from the same day never
+  present the same name.
 - Configurable maximum file size and default retention period; users can renew a file to reset its deletion date.
 - `Keep indefinitely` exempts a file from scheduled deletion. `Hide from list` keeps it off the public file list. Either
   toggle can be restricted to admins.

@@ -102,6 +102,10 @@
         if (srcBtn) {
             const input = wrapper.querySelector('#sourceTypeInput');
             if (input) input.value = srcBtn.getAttribute('data-sourcetype');
+            // A type left over from the previous source usually contradicts the new one
+            // (source System + event Viewed matches nothing), so the quick filter starts clean.
+            const evtType = wrapper.querySelector('#eventType');
+            if (evtType) evtType.value = '';
             const form = document.getElementById('activityFilterForm');
             if (form) form.requestSubmit();
             return;

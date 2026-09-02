@@ -611,6 +611,51 @@ class AdminViewControllerTest extends ControllerTestSupport {
     }
 
     @Test
+    void activityPage_adminSourceFilter_excludesSystemEventsAndViceVersa() throws Exception {
+        MockHttpSession session = adminSession();
+        analyticsService.logEvent(EventType.STARTUP, "10.9.9.4", "ua");
+        analyticsService.logEvent(EventType.ADMIN_LOGIN, "10.9.9.4", "ua");
+
+        MvcResult adminResult = mockMvc.perform(get("/admin/activity")
+                        .param("sourceType", "admin")
+                        .param("ip", "10.9.9.4")
+                        .session(session))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        List<EventType> adminSeen = activityTypes(adminResult);
+        assertTrue(adminSeen.contains(EventType.ADMIN_LOGIN));
+        assertTrue(adminSeen.stream().allMatch(type -> type.getCategory() == EventCategory.ADMIN));
+
+        MvcResult systemResult = mockMvc.perform(get("/admin/activity")
+                        .param("sourceType", "system")
+                        .param("ip", "10.9.9.4")
+                        .session(session))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        List<EventType> systemSeen = activityTypes(systemResult);
+        assertTrue(systemSeen.contains(EventType.STARTUP));
+        assertTrue(systemSeen.stream().allMatch(type -> type.getCategory() == EventCategory.SYSTEM));
+    }
+
+    @Test
+    void activityPage_sourceFilterContradictingTheEventType_returnsNothingRatherThanFailing() throws Exception {
+        MockHttpSession session = adminSession();
+        analyticsService.logEvent(EventType.ADMIN_LOGIN, "10.9.9.5", "ua");
+
+        MvcResult result = mockMvc.perform(get("/admin/activity")
+                        .param("sourceType", "system")
+                        .param("eventType", "ADMIN_LOGIN")
+                        .param("ip", "10.9.9.5")
+                        .session(session))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        assertTrue(activityTypes(result).isEmpty());
+    }
+
+    @Test
     void activityPage_unknownEventTypeFilter_isIgnoredRatherThanEmptying() throws Exception {
         MockHttpSession session = adminSession();
         analyticsService.logEvent(EventType.STARTUP, "10.9.9.3", "ua");

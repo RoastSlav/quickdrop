@@ -2,6 +2,7 @@ package org.rostislav.quickdrop.service;
 
 import org.rostislav.quickdrop.entity.ActivityLog;
 import org.rostislav.quickdrop.model.AnalyticsDataView;
+import org.rostislav.quickdrop.model.EventCategory;
 import org.rostislav.quickdrop.model.EventType;
 import org.rostislav.quickdrop.repository.ActivityLogRepository;
 import org.springframework.cache.annotation.CacheEvict;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 import static org.rostislav.quickdrop.model.EventType.DOWNLOAD;
 import static org.rostislav.quickdrop.model.EventType.SHARE_DOWNLOAD;
@@ -32,6 +34,10 @@ import static org.rostislav.quickdrop.util.FileUtils.formatFileSize;
 public class AnalyticsService {
     /** Stands in for "no type filter": the query's IN clause has no null form. */
     private static final List<EventType> ALL_EVENT_TYPES = List.of(EventType.values());
+
+    /** Source filters that select on the event's category rather than on what it is linked to. */
+    private static final Map<String, EventCategory> CATEGORY_SOURCES =
+            Map.of("admin", EventCategory.ADMIN, "system", EventCategory.SYSTEM);
 
     private final FileQueryService fileQueryService;
     private final PasteService pasteService;
@@ -169,7 +175,8 @@ public class AnalyticsService {
      * @param eventTypes event types to include, or {@code null}/empty to include all types
      * @param ip         substring filter on IP address, or {@code null}
      * @param ua         substring filter on user-agent, or {@code null}
-     * @param sourceType one of {@code "file"}, {@code "paste"}, {@code "system"}, or {@code null} for all
+     * @param sourceType one of {@code "file"}, {@code "paste"}, {@code "link"}, {@code "admin"},
+     *                   {@code "system"}, or {@code null} for all
      * @param pageable   pagination and sort configuration
      * @return a page of matching log entries ordered by event date descending
      */
@@ -179,6 +186,17 @@ public class AnalyticsService {
         String sourceTypeFilter = (sourceType == null || sourceType.isBlank()) ? null : sourceType.toLowerCase();
         Collection<EventType> typeFilter =
                 (eventTypes == null || eventTypes.isEmpty()) ? ALL_EVENT_TYPES : eventTypes;
+
+        // Admin and system rows look identical to the query -- neither has a file or a short link
+        // -- so the event's own category is what separates them.
+        EventCategory category = sourceTypeFilter == null ? null : CATEGORY_SOURCES.get(sourceTypeFilter);
+        if (category != null) {
+            typeFilter = typeFilter.stream().filter(type -> type.getCategory() == category).toList();
+            if (typeFilter.isEmpty()) {
+                return Page.empty(pageable);
+            }
+            sourceTypeFilter = "system";
+        }
         return activityLogRepository.findFiltered(startDate, endDate, typeFilter, ip, ua, sourceTypeFilter, pageable);
     }
 }

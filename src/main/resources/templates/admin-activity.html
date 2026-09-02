@@ -87,6 +87,12 @@
                                         type="button">Link
                                 </button>
                                 <button class="btn btn-sm"
+                                        data-sourcetype="admin"
+                                        th:classappend="${sourceType == 'admin'} ? ' btn-primary' : ' btn-ghost'"
+                                        th:text="#{page.adminActivity.category.admin}"
+                                        type="button">Admin
+                                </button>
+                                <button class="btn btn-sm"
                                         data-sourcetype="system"
                                         th:classappend="${sourceType == 'system'} ? ' btn-primary' : ' btn-ghost'"
                                         th:text="#{page.adminActivity.type.system}"
@@ -204,8 +210,7 @@
                                     style="color:var(--c-text-faint)" th:text="#{page.adminActivity.col.date}">Date
                                 </th>
                                 <th class="text-left py-2 px-3 font-semibold text-xs uppercase tracking-wider"
-                                    style="color:var(--c-text-faint)" th:text="#{page.adminActivity.col.filePaste}">File
-                                    / Paste
+                                    style="color:var(--c-text-faint)" th:text="#{page.adminActivity.col.source}">Source
                                 </th>
                                 <th class="text-left py-2 px-3 font-semibold text-xs uppercase tracking-wider"
                                     style="color:var(--c-text-faint)" th:text="#{page.adminActivity.col.event}">Event
@@ -264,10 +269,14 @@
                                                th:title="${entry.shortLink.code}">abc12</a>
                                         </div>
                                     </th:block>
+                                    <!-- Admin and system rows are alike here (no file, no link); the event's
+                                         category is what tells them apart. -->
                                     <th:block th:if="${entry.file == null and entry.shortLink == null}">
                                         <span class="shrink-0 rounded px-1 py-0.5 font-bold uppercase leading-none"
                                               style="font-size:var(--fs-3xs);background:var(--c-amber-muted,color-mix(in srgb,var(--c-amber,#f59e0b) 15%,transparent));color:var(--c-amber,#f59e0b)"
-                                              th:text="#{page.adminActivity.type.system}">System</span>
+                                              th:text="${entry.eventType.category.name() == 'ADMIN'}
+                                                       ? #{page.adminActivity.category.admin}
+                                                       : #{page.adminActivity.type.system}">System</span>
                                     </th:block>
                                 </td>
                                 <td class="py-2.5 px-3">

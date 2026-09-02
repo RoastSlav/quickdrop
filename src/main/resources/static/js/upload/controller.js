@@ -219,9 +219,16 @@ export function initUploadPage(config = {}) {
             });
         } catch (err) {
             if (err?.name === "AbortError" || token !== processingToken) return;
+            resetFileSelection();
+            if (err?.name === "TooManyFilesError") {
+                setDropZoneText(
+                    i18nUpload("tooManyFiles", "A selection can hold at most {0} files.")
+                        .replace("{0}", err.limit)
+                );
+                return;
+            }
             console.error("Selection processing failed", err);
             showMessage("danger", plan.failureMessage);
-            resetFileSelection();
             return;
         }
         if (token !== processingToken) return;

@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import {buildTreeLines} from "../../main/resources/static/js/archive-tree.js";
+import {buildTreeLines, INITIAL_TREE_LINES} from "../../main/resources/static/js/archive-tree.js";
 
 /** Flattens the typed segments back to the text a reader sees, one string per line. */
 const render = (entries, rootName) =>
@@ -82,4 +82,14 @@ test("buildTreeLines: entries without a path are skipped rather than throwing", 
 
 test("buildTreeLines: an empty manifest still renders the root", () => {
     assert.deepEqual(render([], "files"), ["files"]);
+});
+
+test("buildTreeLines: a large archive still produces one line per entry to slice", () => {
+    const entries = Array.from({length: INITIAL_TREE_LINES + 120}, (_, i) => file(`f${i}.txt`));
+    const lines = buildTreeLines(entries, "files");
+
+    // Root plus every file; renderArchiveTree shows the first INITIAL_TREE_LINES of these
+    // and puts the rest behind a "show more" button.
+    assert.equal(lines.length, entries.length + 1);
+    assert.ok(lines.length > INITIAL_TREE_LINES);
 });

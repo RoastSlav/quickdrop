@@ -101,23 +101,49 @@ const SEGMENT_CLASS = {
     connector: "folder-tree-connector",
 };
 
-export function renderArchiveTree(treeEl, entries, rootName) {
-    treeEl.textContent = "";
-    const fragment = document.createDocumentFragment();
+// One DOM node per line, rebuilt on every page view: a large archive would otherwise make
+// the file page crawl before the reader has decided they want the whole listing.
+export const INITIAL_TREE_LINES = 500;
 
-    buildTreeLines(entries, rootName).forEach((segments) => {
-        const lineEl = document.createElement("div");
-        lineEl.style.whiteSpace = "pre";
-        segments.forEach((segment) => {
-            const span = document.createElement("span");
-            span.className = SEGMENT_CLASS[segment.type] || "";
-            span.textContent = segment.text;
-            lineEl.appendChild(span);
-        });
-        fragment.appendChild(lineEl);
+function lineElement(segments) {
+    const lineEl = document.createElement("div");
+    lineEl.style.whiteSpace = "pre";
+    segments.forEach((segment) => {
+        const span = document.createElement("span");
+        span.className = SEGMENT_CLASS[segment.type] || "";
+        span.textContent = segment.text;
+        lineEl.appendChild(span);
     });
+    return lineEl;
+}
 
+function appendLines(treeEl, lines) {
+    const fragment = document.createDocumentFragment();
+    lines.forEach((segments) => fragment.appendChild(lineElement(segments)));
     treeEl.appendChild(fragment);
+}
+
+export function renderArchiveTree(treeEl, entries, rootName, limit = INITIAL_TREE_LINES) {
+    treeEl.textContent = "";
+
+    const lines = buildTreeLines(entries, rootName);
+    if (lines.length <= limit) {
+        appendLines(treeEl, lines);
+        return;
+    }
+
+    appendLines(treeEl, lines.slice(0, limit));
+
+    const remaining = lines.length - limit;
+    const showAll = document.createElement("button");
+    showAll.type = "button";
+    showAll.className = "mt-2 text-left underline opacity-80 hover:opacity-100";
+    showAll.textContent = t("showAll", "Show {0} more").replace("{0}", remaining);
+    showAll.addEventListener("click", () => {
+        showAll.remove();
+        appendLines(treeEl, lines.slice(limit));
+    });
+    treeEl.appendChild(showAll);
 }
 
 function mount() {

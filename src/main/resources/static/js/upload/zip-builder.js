@@ -1,6 +1,14 @@
 import {preprocessFileForMetadata} from "./metadata-pipeline.js";
 
-const LARGE_FOLDER_STREAM_THRESHOLD = 1024 * 1024 * 1024;
+// Below this, JSZip materialises the whole archive as one Blob in the tab. A gigabyte of
+// that reliably kills a modest machine, so hand over to the streamed zip64 builder much
+// earlier -- it is slower to write but never holds more than a chunk.
+const IN_MEMORY_ZIP_LIMIT = 256 * 1024 * 1024;
+
+// Ten thousand small files means ten thousand sequential metadata passes, a manifest close
+// to a megabyte of JSON, and a contents tree of ten thousand DOM nodes on every file view.
+export const MAX_ARCHIVE_FILES = 1000;
+
 const DEFAULT_BUNDLE_NAME = "files";
 const ZIP64_EXTRA_ID = 0x0001;
 const UTF8_FLAG = 0x0800;
@@ -411,11 +419,18 @@ function makeStreamingCandidate(entries, zipName, archiveName, manifestArray) {
 /**
  * Zips a folder or multi-file selection into a single upload candidate, stripping metadata
  * per-file when enabled. Falls back to a streamed zip64 build (createStream instead of a
- * materialized blob) once the selection exceeds LARGE_FOLDER_STREAM_THRESHOLD, or if
+ * materialized blob) once the selection exceeds IN_MEMORY_ZIP_LIMIT, or if
  * in-memory zipping throws a blob-related error.
  * @returns {{cleanCandidate: object, fallbackCandidate: object, failures: object[], warnings: object[]}}
  */
 export async function buildArchiveCandidates(fileList, {metadataEnabled, onProgress, signal}) {
+    if (fileList.length > MAX_ARCHIVE_FILES) {
+        const error = new Error(`A selection can hold at most ${MAX_ARCHIVE_FILES} files.`);
+        error.name = "TooManyFilesError";
+        error.limit = MAX_ARCHIVE_FILES;
+        throw error;
+    }
+
     const selectionEntries = collectSelectionEntries(fileList);
     const {manifestArray, archiveName, isBundle, totalOriginalSize} =
         buildArchiveManifest(selectionEntries);
@@ -459,7 +474,7 @@ export async function buildArchiveCandidates(fileList, {metadataEnabled, onProgr
         makeStreamEntry(entry.path, entry.file)
     );
 
-    if (totalOriginalSize >= LARGE_FOLDER_STREAM_THRESHOLD) {
+    if (totalOriginalSize >= IN_MEMORY_ZIP_LIMIT) {
         const cleanCandidate = makeStreamingCandidate(
             cleanStreamEntries,
             zipName,

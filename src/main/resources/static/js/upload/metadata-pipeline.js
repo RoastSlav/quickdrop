@@ -31,6 +31,18 @@ export async function preprocessFileForMetadata(
     };
 }
 
+/** One row per file, matching what buildFolderCandidates produces, so the review panel
+ *  renders a lone file and an archive the same way. */
+function reviewRow(file, failureReason, fileWarnings) {
+    return {
+        name: file.name,
+        size: file.size,
+        status: failureReason ? "failed" : (fileWarnings.length ? "warning" : "ok"),
+        reason: failureReason || null,
+        warnings: [...fileWarnings],
+    };
+}
+
 export async function buildSingleCandidates(file, metadataEnabled) {
     const base = {
         file,
@@ -47,6 +59,7 @@ export async function buildSingleCandidates(file, metadataEnabled) {
             fallbackCandidate: base,
             failures: [],
             warnings: [],
+            results: [reviewRow(file, null, [])],
         };
     }
 
@@ -69,5 +82,11 @@ export async function buildSingleCandidates(file, metadataEnabled) {
         reason: w,
     }));
     const fallbackCandidate = {...base, file, size: file.size};
-    return {cleanCandidate, fallbackCandidate, failures, warnings};
+    return {
+        cleanCandidate,
+        fallbackCandidate,
+        failures,
+        warnings,
+        results: [reviewRow(file, result.failureReason, result.warnings || [])],
+    };
 }

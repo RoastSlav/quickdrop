@@ -1,3 +1,5 @@
+import {formatBytes} from "./format.js";
+
 export const UploadState = Object.freeze({
     IDLE: "IDLE",
     PROCESSING: "PROCESSING",
@@ -10,37 +12,83 @@ const METADATA_PRIVACY_NOTICE = () =>
     window.i18n?.upload?.metadataPrivacyNotice ||
     "All known metadata will be removed, but this format may still contain details that give information about your identity.";
 
-function escapeHtml(value) {
-    return String(value)
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#39;");
+const t = (key, fallback) => window.i18n?.upload?.[key] || fallback;
+
+const STATUS_LABEL = {
+    failed: () => t("reviewStatusFailed", "Metadata kept"),
+    warning: () => t("reviewStatusWarning", "May still carry metadata"),
+};
+
+/** Collapsed/expanded label for the review toggle. The caret is decorative. */
+export function setReviewToggleLabel(button, expanded) {
+    button.textContent = "";
+    const caret = document.createElement("span");
+    caret.setAttribute("aria-hidden", "true");
+    caret.textContent = expanded ? "\u25BE" : "\u25B8";
+    button.append(caret, ` ${t("technicalInfo", "Technical info")}`);
 }
 
-function renderWarningDetails(entries, ui) {
+function reviewRow(entry) {
+    const row = document.createElement("li");
+    row.className = "flex flex-wrap items-center gap-x-2 gap-y-1";
+
+    const name = document.createElement("span");
+    name.className = "font-mono break-all";
+    name.textContent = entry.name;
+
+    const size = document.createElement("span");
+    size.className = "opacity-70";
+    size.textContent = formatBytes(entry.size);
+
+    const status = document.createElement("span");
+    status.className = `badge ${entry.status === "failed" ? "badge-danger" : "badge-amber"}`;
+    status.textContent = STATUS_LABEL[entry.status]?.() || entry.status;
+
+    row.append(name, size, status);
+
+    const reason = entry.reason || entry.warnings?.[0];
+    if (reason) {
+        const detail = document.createElement("span");
+        detail.className = "basis-full opacity-80";
+        detail.textContent = reason;
+        row.appendChild(detail);
+    }
+    return row;
+}
+
+/**
+ * Lists only the files that need attention, but counts them against the whole selection so
+ * the scale is clear when three of two hundred files could not be cleaned.
+ */
+function renderReviewDetails(results, ui) {
     if (!ui.uploadWarningDetails || !ui.uploadWarningList) return;
-    if (!entries || entries.length === 0) {
+
+    const affected = (results || []).filter((entry) => entry && entry.status !== "ok");
+    if (affected.length === 0) {
         ui.uploadWarningDetails.classList.add("hidden");
         ui.uploadWarningList.classList.add("hidden");
-        ui.uploadWarningList.innerHTML = "";
+        ui.uploadWarningList.textContent = "";
         return;
     }
 
-    const items = entries
-        .map((entry) => {
-            const name = entry?.name ? `<strong>${escapeHtml(entry.name)}</strong>: ` : "";
-            const reason = entry?.reason ? escapeHtml(entry.reason) : "No technical details.";
-            return `<li>${name}${reason}</li>`;
-        })
-        .join("");
-
     ui.uploadWarningDetails.classList.remove("hidden");
     ui.uploadWarningDetails.setAttribute("aria-expanded", "false");
-    ui.uploadWarningDetails.innerHTML = "<span aria-hidden=\"true\">&#9656;</span> Technical info";
+    setReviewToggleLabel(ui.uploadWarningDetails, false);
+
     ui.uploadWarningList.classList.add("hidden");
-    ui.uploadWarningList.innerHTML = `<ul class=\"list-disc pl-5 space-y-1\">${items}</ul>`;
+    ui.uploadWarningList.textContent = "";
+
+    const summary = document.createElement("p");
+    summary.className = "mb-2 font-semibold";
+    summary.textContent = t("reviewAffected", "{0} of {1} files need a closer look")
+        .replace("{0}", affected.length)
+        .replace("{1}", results.length);
+
+    const list = document.createElement("ul");
+    list.className = "flex flex-col gap-2";
+    affected.forEach((entry) => list.appendChild(reviewRow(entry)));
+
+    ui.uploadWarningList.append(summary, list);
 }
 
 export function getUIRefs() {
@@ -80,12 +128,12 @@ export function setUploadState(state, ui = getUIRefs()) {
         );
     }
 
+    // Preparing a large selection takes a while, so the user can back out of it too.
     if (ui.uploadCancel) {
-        ui.uploadCancel.classList.toggle(
-            "hidden",
-            state !== UploadState.NEEDS_CONFIRMATION
-        );
-        ui.uploadCancel.disabled = isBusy;
+        const cancellable =
+            state === UploadState.NEEDS_CONFIRMATION || state === UploadState.PROCESSING;
+        ui.uploadCancel.classList.toggle("hidden", !cancellable);
+        ui.uploadCancel.disabled = state === UploadState.UPLOADING;
     }
 
     if (ui.fileButton) ui.fileButton.disabled = isBusy;
@@ -97,9 +145,14 @@ export function setUploadState(state, ui = getUIRefs()) {
     }
 }
 
-export function renderStripWarning(entries = [], ui = getUIRefs()) {
+/**
+ * @param {{results?: object[]}} review the candidate set returned by the metadata pass
+ */
+export function renderStripReview(review, ui = getUIRefs()) {
     if (!ui.uploadWarning) return;
-    if (!entries || entries.length === 0) {
+
+    const results = review?.results || [];
+    if (!results.some((entry) => entry && entry.status !== "ok")) {
         clearStripWarning(ui);
         return;
     }
@@ -110,7 +163,7 @@ export function renderStripWarning(entries = [], ui = getUIRefs()) {
     } else {
         ui.uploadWarning.textContent = METADATA_PRIVACY_NOTICE();
     }
-    renderWarningDetails(entries, ui);
+    renderReviewDetails(results, ui);
 }
 
 export function clearStripWarning(ui = getUIRefs()) {
@@ -125,11 +178,11 @@ export function clearStripWarning(ui = getUIRefs()) {
     if (ui.uploadWarningDetails) {
         ui.uploadWarningDetails.classList.add("hidden");
         ui.uploadWarningDetails.setAttribute("aria-expanded", "false");
-        ui.uploadWarningDetails.innerHTML = "<span aria-hidden=\"true\">&#9656;</span> Technical info";
+        setReviewToggleLabel(ui.uploadWarningDetails, false);
     }
     if (ui.uploadWarningList) {
         ui.uploadWarningList.classList.add("hidden");
-        ui.uploadWarningList.innerHTML = "";
+        ui.uploadWarningList.textContent = "";
     }
 }
 

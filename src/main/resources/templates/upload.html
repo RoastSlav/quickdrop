@@ -111,8 +111,8 @@
                         <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden"/>
                         <input name="uuid" th:value="${uuid}" type="hidden"/>
 
-                        <div aria-label="File drop area — use the buttons below to select files or a folder" class="dropzone"
-                             id="dropZone" role="region">
+                        <div class="dropzone" id="dropZone" role="region"
+                             th:attr="aria-label=#{page.upload.dropzone.ariaLabel}">
                             <div class="dropzone-body">
                                 <div class="dropzone-icon">
                                     <svg aria-hidden="true" class="w-7 h-7" fill="none" stroke="currentColor"
@@ -124,12 +124,13 @@
                                     </svg>
                                 </div>
                                 <span
+                                        aria-live="polite"
                                         class="dropzone-title"
                                         id="dropZoneInstructions"
                                         th:attr="data-default-text=#{page.upload.dropzone.title}"
                                         th:text="#{page.upload.dropzone.title}"
                                 >Drop file or folder here</span>
-                                <p class="dropzone-hint hidden" id="selectedFile"></p>
+                                <p aria-live="polite" class="dropzone-hint hidden" id="selectedFile"></p>
                                 <p class="dropzone-hint" th:text="#{page.upload.dropzone.hint}">or use the buttons
                                     below</p>
                             </div>
@@ -279,7 +280,7 @@
                                 <span aria-hidden="true">&#9656;</span> <span th:text="#{page.upload.technicalInfo}">Technical info</span>
                             </button>
                             <div
-                                    class="hidden mt-2 max-h-28 overflow-y-auto text-xs rounded-lg border px-3 py-2 w-full"
+                                    class="hidden mt-2 max-h-48 overflow-y-auto text-xs rounded-lg border px-3 py-2 w-full"
                                     id="uploadWarningList"
                                     style="border-color: var(--c-warning-border); background: color-mix(in srgb, var(--c-warning-bg) 60%, transparent)"
                             ></div>
@@ -347,6 +348,7 @@
         filesExceedLimit:      /*[[#{page.upload.validation.filesExceedLimit}]]*/ 'Selected files exceed the {0} limit.',
         processingFolder:      /*[[#{page.upload.processingFolder}]]*/ 'Processing folder...',
         processingFiles:       /*[[#{page.upload.processingFiles}]]*/ 'Processing files...',
+        preparing:             /*[[#{page.upload.preparing}]]*/ 'Preparing {0} of {1} files...',
         folderSelected:        /*[[#{page.upload.folderSelected}]]*/ 'Folder selected: {0} ({1} items)',
         filesSelected:         /*[[#{page.upload.filesSelected}]]*/ '{0} files selected',
         noCandidate:           /*[[#{page.upload.noCandidate}]]*/ 'No upload candidate is available.',
@@ -354,7 +356,11 @@
         noFileInfo:            /*[[#{notification.upload.noFileInfo}]]*/ 'Upload finished but no file information was returned from the server.',
         selectionRequired:     /*[[#{notification.selection.required}]]*/ 'Select a file or folder to upload first.',
         folderFailed:          /*[[#{notification.folder.processingFailed}]]*/ 'Unable to prepare folder for upload.',
-        filesFailed:           /*[[#{notification.files.processingFailed}]]*/ 'Unable to prepare the files for upload.'
+        filesFailed:           /*[[#{notification.files.processingFailed}]]*/ 'Unable to prepare the files for upload.',
+        technicalInfo:         /*[[#{page.upload.technicalInfo}]]*/ 'Technical info',
+        reviewAffected:        /*[[#{page.upload.review.affected}]]*/ '{0} of {1} files need a closer look',
+        reviewStatusFailed:    /*[[#{page.upload.review.status.failed}]]*/ 'Metadata kept',
+        reviewStatusWarning:   /*[[#{page.upload.review.status.warning}]]*/ 'May still carry metadata'
     };
     /*]]>*/
 </script>

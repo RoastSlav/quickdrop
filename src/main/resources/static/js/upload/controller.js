@@ -1,6 +1,15 @@
-import {clearStripWarning, getUIRefs, renderStripWarning, setUploadState, showMessage, UploadState,} from "./state.js";
+import {
+    clearStripWarning,
+    getUIRefs,
+    renderStripReview,
+    setReviewToggleLabel,
+    setUploadState,
+    showMessage,
+    UploadState,
+} from "./state.js";
 import {buildSingleCandidates} from "./metadata-pipeline.js";
 import {buildFolderCandidates, describeSelection, parseSize} from "./zip-builder.js";
+import {formatBytes} from "./format.js";
 import {uploadCandidate} from "./network.js";
 
 export function initUploadPage(config = {}) {
@@ -25,9 +34,7 @@ export function initUploadPage(config = {}) {
     let processingToken = 0;
     let isUploading = false;
     let uploadState = UploadState.IDLE;
-
-    const getRelativePath = (file) =>
-        file?.relativePath || file?.webkitRelativePath || file?.path || file?.name;
+    let preparation = null;
 
     const withRelativePath = (file, rel) => {
         try {
@@ -63,6 +70,7 @@ export function initUploadPage(config = {}) {
 
     function resetUploadUI() {
         uploadIndicator?.classList.add("hidden");
+        abortPreparation();
         isUploading = false;
         uploadCandidates = null;
         clearStripWarning(ui);
@@ -81,6 +89,7 @@ export function initUploadPage(config = {}) {
     }
 
     function resetFileSelection() {
+        abortPreparation();
         isUploading = false;
         uploadCandidates = null;
         processingToken++;
@@ -98,134 +107,149 @@ export function initUploadPage(config = {}) {
         applyState(UploadState.IDLE);
     }
 
-    async function handleSingleFile(files) {
-        if (!fileNameEl || !dropZoneText) return;
-
-        if (!files || files.length === 0) {
-            resetFileSelection();
-            return;
-        }
-
-        const file = files[0];
-        if (file.size > maxSize) {
-            dropZoneText.textContent = (window.i18n?.upload?.fileExceedsLimit || 'File exceeds the {0} limit.').replace('{0}', maxSizeLabel);
-            dropZoneText.classList.remove("hidden");
-            fileNameEl.textContent = "";
-            fileNameEl.classList.add("hidden");
-            if (fileInput) fileInput.value = "";
-            uploadCandidates = null;
-            applyState(UploadState.IDLE);
-            return;
-        }
-
-        const size = (file.size / (1024 * 1024)).toFixed(2) + " MB";
-        fileNameEl.textContent = `${file.name} (${size})`;
-        fileNameEl.classList.remove("hidden");
-        dropZoneText.textContent = defaultText;
-        dropZoneText.classList.add("hidden");
-        if (folderInput) folderInput.value = "";
-
-        const token = ++processingToken;
-        applyState(UploadState.PROCESSING);
-
-        const candidates = await buildSingleCandidates(file, metadataEnabled);
-        if (token !== processingToken) return;
-
-        uploadCandidates = {...candidates, source: "single"};
-        if (candidates.failures.length > 0) {
-            applyState(UploadState.NEEDS_CONFIRMATION);
-            renderStripWarning(candidates.failures, ui);
-        } else {
-            applyState(UploadState.READY);
-            if (candidates.warnings.length > 0) {
-                renderStripWarning(candidates.warnings, ui);
-            }
-        }
+    function abortPreparation() {
+        preparation?.abort();
+        preparation = null;
     }
 
+    function setDropZoneText(text) {
+        if (!dropZoneText) return;
+        dropZoneText.textContent = text;
+        dropZoneText.classList.remove("hidden");
+    }
+
+    const i18nUpload = (key, fallback) => window.i18n?.upload?.[key] || fallback;
+
     /**
-     * Archives a folder or a multi-file selection into one upload. Which of the two it is
-     * comes from the selection's own paths rather than from the input that produced it, so
-     * a dropped folder and a picked one are described identically.
+     * Everything that differs between the three kinds of selection: a lone file, a picked
+     * folder, and a loose bundle. A single file that carries a directory in its path is
+     * still an archive -- dropping a folder that happens to hold one file must not turn
+     * into a bare upload of that file.
      */
-    async function handleMultiSelection(fileList) {
-        if (!fileList || fileList.length === 0) {
+    function planSelection(files) {
+        const {isBundle} = describeSelection(files);
+
+        if (files.length === 1 && isBundle) {
+            const file = files[0];
+            return {
+                source: "single",
+                totalSize: file.size,
+                pendingName: `${file.name} (${formatBytes(file.size)})`,
+                startedMessage: null,
+                limitMessage: i18nUpload("fileExceedsLimit", "File exceeds the {0} limit."),
+                failureMessage: i18nUpload("uploadFailed", "Upload failed. Please try again."),
+                build: () => buildSingleCandidates(file, metadataEnabled),
+                describe: () => ({
+                    name: `${file.name} (${formatBytes(file.size)})`,
+                    hint: null,
+                }),
+            };
+        }
+
+        let totalSize = 0;
+        for (const file of files) totalSize += file.size;
+
+        return {
+            source: isBundle ? "files" : "folder",
+            totalSize,
+            pendingName: null,
+            startedMessage: isBundle
+                ? i18nUpload("processingFiles", "Processing files...")
+                : i18nUpload("processingFolder", "Processing folder..."),
+            limitMessage: isBundle
+                ? i18nUpload("filesExceedLimit", "Selected files exceed the {0} limit.")
+                : i18nUpload("folderExceedsLimit", "Folder exceeds the {0} limit."),
+            failureMessage: isBundle
+                ? i18nUpload("filesFailed", "Unable to prepare the files for upload.")
+                : i18nUpload("folderFailed", "Unable to prepare folder for upload."),
+            build: (options) => buildFolderCandidates(files, {metadataEnabled, ...options}),
+            describe: (candidates) => ({
+                name: `${candidates.cleanCandidate.name} (${formatBytes(candidates.cleanCandidate.size)})`,
+                hint: candidates.isBundle
+                    ? i18nUpload("filesSelected", "{0} files selected")
+                        .replace("{0}", candidates.fileCount)
+                    : i18nUpload("folderSelected", "Folder selected: {0} ({1} items)")
+                        .replace("{0}", candidates.rootFolder)
+                        .replace("{1}", candidates.fileCount),
+            }),
+        };
+    }
+
+    /** The one path every selection takes, whichever picker or drop produced it. */
+    async function handleSelection(fileList) {
+        const files = Array.from(fileList || []);
+        if (files.length === 0) {
             resetFileSelection();
             return;
         }
 
-        const {isBundle} = describeSelection(fileList);
+        const plan = planSelection(files);
 
-        let totalOriginalSize = 0;
-        for (const file of fileList) totalOriginalSize += file.size;
-        if (totalOriginalSize > maxSize) {
-            const limitMessage = isBundle
-                ? window.i18n?.upload?.filesExceedLimit || 'Selected files exceed the {0} limit.'
-                : window.i18n?.upload?.folderExceedsLimit || 'Folder exceeds the {0} limit.';
-            showMessage("danger", limitMessage.replace('{0}', maxSizeLabel));
+        if (plan.totalSize > maxSize) {
             resetFileSelection();
+            setDropZoneText(plan.limitMessage.replace("{0}", maxSizeLabel));
             return;
         }
 
-        if (dropZoneText) {
-            dropZoneText.textContent = isBundle
-                ? (window.i18n?.upload?.processingFiles || 'Processing files...')
-                : (window.i18n?.upload?.processingFolder || 'Processing folder...');
-            dropZoneText.classList.remove("hidden");
+        if (fileNameEl) {
+            fileNameEl.textContent = plan.pendingName || "";
+            fileNameEl.classList.toggle("hidden", !plan.pendingName);
         }
-        if (fileNameEl) fileNameEl.classList.add("hidden");
+        if (plan.startedMessage) setDropZoneText(plan.startedMessage);
+        else dropZoneText?.classList.add("hidden");
 
         const token = ++processingToken;
+        abortPreparation();
+        preparation = new AbortController();
+        const {signal} = preparation;
         applyState(UploadState.PROCESSING);
 
         let candidates;
         try {
-            candidates = await buildFolderCandidates(fileList, {metadataEnabled});
+            candidates = await plan.build({
+                signal,
+                onProgress: (done, total) => {
+                    if (token !== processingToken) return;
+                    setDropZoneText(
+                        i18nUpload("preparing", "Preparing {0} of {1} files...")
+                            .replace("{0}", done)
+                            .replace("{1}", total)
+                    );
+                },
+            });
         } catch (err) {
+            if (err?.name === "AbortError" || token !== processingToken) return;
             console.error("Selection processing failed", err);
-            showMessage("danger", isBundle
-                ? window.i18n?.upload?.filesFailed || 'Unable to prepare the files for upload.'
-                : window.i18n?.upload?.folderFailed || 'Unable to prepare folder for upload.');
+            showMessage("danger", plan.failureMessage);
             resetFileSelection();
             return;
         }
         if (token !== processingToken) return;
+        preparation = null;
 
-        const sizeLabel =
-            (candidates.cleanCandidate.size / (1024 * 1024)).toFixed(2) + " MB";
+        const {name, hint} = plan.describe(candidates);
         if (fileNameEl) {
-            fileNameEl.textContent = `${candidates.cleanCandidate.name} (${sizeLabel})`;
+            fileNameEl.textContent = name;
             fileNameEl.classList.remove("hidden");
         }
-        if (dropZoneText) {
-            dropZoneText.textContent = candidates.isBundle
-                ? (window.i18n?.upload?.filesSelected || '{0} files selected').replace('{0}', candidates.fileCount)
-                : (window.i18n?.upload?.folderSelected || 'Folder selected: {0} ({1} items)').replace('{0}', candidates.rootFolder).replace('{1}', candidates.fileCount);
-            dropZoneText.classList.remove("hidden");
+        if (hint) setDropZoneText(hint);
+        else if (dropZoneText) {
+            dropZoneText.textContent = defaultText;
+            dropZoneText.classList.add("hidden");
         }
+
         // The candidates hold their own File references, so both pickers can be cleared --
-        // which also lets re-picking the same folder fire another change event.
+        // which also lets re-picking the same file or folder fire another change event.
         if (fileInput) fileInput.value = "";
         if (folderInput) folderInput.value = "";
 
-        uploadCandidates = {...candidates, source: candidates.isBundle ? "files" : "folder"};
-        if (candidates.failures.length > 0) {
-            applyState(UploadState.NEEDS_CONFIRMATION);
-            renderStripWarning(candidates.failures, ui);
-        } else {
-            applyState(UploadState.READY);
-            if (candidates.warnings.length > 0) {
-                renderStripWarning(candidates.warnings, ui);
-            }
-        }
-    }
-
-    /** A lone file uploads as itself; two or more are archived together. */
-    function handleFileSelection(files) {
-        if (files && files.length > 1) {
-            return handleMultiSelection(Array.from(files));
-        }
-        return handleSingleFile(files);
+        uploadCandidates = {...candidates, source: plan.source};
+        applyState(
+            candidates.failures.length > 0
+                ? UploadState.NEEDS_CONFIRMATION
+                : UploadState.READY
+        );
+        renderStripReview(candidates, ui);
     }
 
     async function onUploadPrimaryClick() {
@@ -309,35 +333,11 @@ export function initUploadPage(config = {}) {
         });
         dropZone.addEventListener("drop", async (e) => {
             const items = e.dataTransfer.items;
-            const files = e.dataTransfer.files;
-
             if (items && items.length > 0) {
-                const collected = await getFilesFromItems(items);
-                if (!collected || collected.length === 0) {
-                    resetFileSelection();
-                    return;
-                }
-                const hasRelative = collected.some((f) => {
-                    const rel = getRelativePath(f);
-                    return rel && rel.includes("/");
-                });
-                if (hasRelative || collected.length > 1) {
-                    await handleMultiSelection(collected);
-                } else {
-                    const dt = new DataTransfer();
-                    dt.items.add(collected[0]);
-                    if (fileInput) fileInput.files = dt.files;
-                    handleSingleFile(fileInput.files);
-                }
+                await handleSelection(await getFilesFromItems(items));
                 return;
             }
-
-            if (files && files.length > 0) {
-                const dt = new DataTransfer();
-                for (const f of files) dt.items.add(f);
-                if (fileInput) fileInput.files = dt.files;
-                handleFileSelection(fileInput.files);
-            }
+            await handleSelection(e.dataTransfer.files);
         });
     }
 
@@ -349,15 +349,14 @@ export function initUploadPage(config = {}) {
         fileButton?.addEventListener("click", () => fileInput?.click());
         folderButton?.addEventListener("click", () => folderInput?.click());
 
-        fileInput?.addEventListener("change", () =>
-            handleFileSelection(fileInput.files)
-        );
-        folderInput?.addEventListener("change", () =>
-            handleMultiSelection(folderInput.files)
-        );
+        fileInput?.addEventListener("change", () => handleSelection(fileInput.files));
+        folderInput?.addEventListener("change", () => handleSelection(folderInput.files));
 
         ui.uploadPrimary?.addEventListener("click", onUploadPrimaryClick);
-        ui.uploadCancel?.addEventListener("click", resetUploadUI);
+        ui.uploadCancel?.addEventListener("click", () => {
+            if (uploadState === UploadState.PROCESSING) resetFileSelection();
+            else resetUploadUI();
+        });
 
         ui.uploadWarningDetails?.addEventListener("click", () => {
             if (!ui.uploadWarningList) return;
@@ -367,9 +366,7 @@ export function initUploadPage(config = {}) {
                 "aria-expanded",
                 nowHidden ? "false" : "true"
             );
-            ui.uploadWarningDetails.innerHTML = nowHidden
-                ? '<span aria-hidden="true">&#9656;</span> Technical info'
-                : '<span aria-hidden="true">&#9662;</span> Technical info';
+            setReviewToggleLabel(ui.uploadWarningDetails, !nowHidden);
         });
     }
 

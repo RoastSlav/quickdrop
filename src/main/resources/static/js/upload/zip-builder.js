@@ -31,6 +31,14 @@ export function parseSize(sizeLabel) {
 
 const normalizePath = (file) => getRelativePath(file).replace(/\\/g, "/");
 
+/** Preparation runs per file and can take a while, so it has to be interruptible. */
+function throwIfAborted(signal) {
+    if (!signal?.aborted) return;
+    const error = new Error("Preparation was cancelled.");
+    error.name = "AbortError";
+    throw error;
+}
+
 /**
  * The single top-level directory shared by every entry, or null when there isn't one --
  * loose files, several picked folders, or a folder dropped alongside a file. Three things
@@ -397,7 +405,7 @@ function makeStreamingCandidate(entries, zipName, rootFolder, manifestArray) {
  * in-memory zipping throws a blob-related error.
  * @returns {{cleanCandidate: object, fallbackCandidate: object, failures: object[], warnings: object[]}}
  */
-export async function buildFolderCandidates(fileList, {metadataEnabled}) {
+export async function buildFolderCandidates(fileList, {metadataEnabled, onProgress, signal}) {
     const selectionEntries = collectSelectionEntries(fileList);
     const {manifestArray, rootFolder, isBundle, totalOriginalSize} =
         buildFolderManifest(selectionEntries);
@@ -405,35 +413,34 @@ export async function buildFolderCandidates(fileList, {metadataEnabled}) {
     const failures = [];
     const warnings = [];
     const results = [];
+    let prepared = 0;
 
     for (const {file, path: rel} of selectionEntries) {
+        throwIfAborted(signal);
         const result = await preprocessFileForMetadata(file, rel, metadataEnabled);
         processedEntries.push({path: rel, file: result.processedFile});
 
         if (result.failureReason) {
             failures.push({name: rel, reason: result.failureReason});
-            results.push({
-                name: rel,
-                status: "failed",
-                reason: result.failureReason,
-            });
         }
         if (result.warnings && result.warnings.length) {
             result.warnings.forEach((w) => warnings.push({name: rel, reason: w}));
-            results.push({
-                name: rel,
-                status: "warning",
-                warnings: [...result.warnings],
-            });
         }
-        if (
-            !result.failureReason &&
-            (!result.warnings || result.warnings.length === 0)
-        ) {
-            results.push({name: rel, status: "ok"});
-        }
+        // Exactly one row per file, so a review panel can count "N of M" honestly.
+        results.push({
+            name: rel,
+            size: file.size,
+            status: result.failureReason
+                ? "failed"
+                : (result.warnings && result.warnings.length ? "warning" : "ok"),
+            reason: result.failureReason || null,
+            warnings: result.warnings ? [...result.warnings] : [],
+        });
+
+        onProgress?.(++prepared, selectionEntries.length);
     }
 
+    throwIfAborted(signal);
     const zipName = `${rootFolder}.zip`;
     const cleanStreamEntries = processedEntries.map((entry) =>
         makeStreamEntry(entry.path, entry.file)

@@ -1,6 +1,7 @@
 import {preprocessFileForMetadata} from "./metadata-pipeline.js";
 
 const LARGE_FOLDER_STREAM_THRESHOLD = 1024 * 1024 * 1024;
+const DEFAULT_BUNDLE_NAME = "files";
 const ZIP64_EXTRA_ID = 0x0001;
 const UTF8_FLAG = 0x0800;
 const DATA_DESCRIPTOR_FLAG = 0x0008;
@@ -28,19 +29,89 @@ export function parseSize(sizeLabel) {
     return value * (units[unit] || 1);
 }
 
-export function buildFolderManifest(fileList) {
+const normalizePath = (file) => getRelativePath(file).replace(/\\/g, "/");
+
+/**
+ * The single top-level directory shared by every entry, or null when there isn't one --
+ * loose files, several picked folders, or a folder dropped alongside a file. Three things
+ * depend on the answer: the archive's name, the tree's root label, and which strings the
+ * upload page shows, so it is asked once here rather than guessed at each call site.
+ * @param {string[]} paths normalized, slash-separated relative paths
+ */
+function deriveRootFolder(paths) {
+    let root = null;
+    for (const path of paths) {
+        const parts = path.split("/").filter(Boolean);
+        if (parts.length < 2) return null;
+        if (root === null) root = parts[0];
+        else if (root !== parts[0]) return null;
+    }
+    return root;
+}
+
+// A zip entry written twice keeps only one of the files, so same-named files from different
+// source folders would vanish without a word. Suffix the later ones instead.
+function uniquePath(path, used) {
+    if (!used.has(path)) {
+        used.add(path);
+        return path;
+    }
+    const slash = path.lastIndexOf("/");
+    const dir = slash === -1 ? "" : path.slice(0, slash + 1);
+    const base = path.slice(slash + 1);
+    const dot = base.lastIndexOf(".");
+    const stem = dot > 0 ? base.slice(0, dot) : base;
+    const extension = dot > 0 ? base.slice(dot) : "";
+
+    let candidate;
+    let counter = 2;
+    do {
+        candidate = `${dir}${stem} (${counter++})${extension}`;
+    } while (used.has(candidate));
+    used.add(candidate);
+    return candidate;
+}
+
+/**
+ * Pairs every selected file with the path it will occupy in the archive, guaranteeing those
+ * paths are unique. Everything downstream -- manifest, zip entries, metadata warnings --
+ * reads the path from here so they cannot disagree about what the archive contains.
+ * @returns {{file: File, path: string}[]} in selection order
+ */
+export function collectSelectionEntries(fileList) {
+    const used = new Set();
+    return Array.from(fileList, (file) => ({
+        file,
+        path: uniquePath(normalizePath(file), used),
+    }));
+}
+
+/**
+ * Whether a selection archives as one named folder or as a generated bundle. Callers need
+ * this before the (potentially slow) zip build, to phrase what they show while it runs.
+ */
+export function describeSelection(fileList) {
+    const rootFolder = deriveRootFolder(Array.from(fileList, normalizePath));
+    return {
+        rootFolder: rootFolder || DEFAULT_BUNDLE_NAME,
+        isBundle: rootFolder === null,
+    };
+}
+
+/**
+ * @param {{file: File, path: string}[]} entries from {@link collectSelectionEntries}
+ */
+export function buildFolderManifest(entries) {
     const manifestSet = new Set();
     let totalOriginalSize = 0;
-    const firstPath = getRelativePath(fileList[0]);
-    const rootFolder = firstPath.split(/[/\\]/)[0];
+    const derivedRoot = deriveRootFolder(entries.map((entry) => entry.path));
 
-    for (const file of fileList) {
+    for (const {file, path} of entries) {
         totalOriginalSize += file.size;
-        const rel = getRelativePath(file);
         manifestSet.add(
-            JSON.stringify({path: rel, size: file.size, type: "file"})
+            JSON.stringify({path, size: file.size, type: "file"})
         );
-        const parts = rel.split(/[/\\]/);
+        const parts = path.split("/");
         let prefix = "";
         for (let i = 0; i < parts.length - 1; i++) {
             prefix = prefix ? `${prefix}/${parts[i]}` : parts[i];
@@ -50,7 +121,8 @@ export function buildFolderManifest(fileList) {
 
     return {
         manifestArray: Array.from(manifestSet).map((s) => JSON.parse(s)),
-        rootFolder,
+        rootFolder: derivedRoot || DEFAULT_BUNDLE_NAME,
+        isBundle: derivedRoot === null,
         totalOriginalSize,
     };
 }
@@ -69,7 +141,7 @@ async function zipFromEntries(entries, manifestArray) {
     return zip.generateAsync({type: "blob"});
 }
 
-async function zipRawFiles(fileList, manifestArray) {
+async function zipRawEntries(entries, manifestArray) {
     if (!window.JSZip) throw new Error("JSZip is unavailable");
     const rawZip = new JSZip();
     manifestArray.forEach((entry) => {
@@ -77,9 +149,8 @@ async function zipRawFiles(fileList, manifestArray) {
             rawZip.folder(entry.path);
         }
     });
-    for (const file of fileList) {
-        const rel = getRelativePath(file);
-        rawZip.file(rel, file);
+    for (const {file, path} of entries) {
+        rawZip.file(path, file);
     }
     return rawZip.generateAsync({type: "blob"});
 }
@@ -320,22 +391,22 @@ function makeStreamingCandidate(entries, zipName, rootFolder, manifestArray) {
 }
 
 /**
- * Zips a folder selection into a single upload candidate, stripping metadata per-file when
- * enabled. Falls back to a streamed zip64 build (createStream instead of a materialized blob)
- * once the folder exceeds LARGE_FOLDER_STREAM_THRESHOLD, or if in-memory zipping throws a
- * blob-related error.
+ * Zips a folder or multi-file selection into a single upload candidate, stripping metadata
+ * per-file when enabled. Falls back to a streamed zip64 build (createStream instead of a
+ * materialized blob) once the selection exceeds LARGE_FOLDER_STREAM_THRESHOLD, or if
+ * in-memory zipping throws a blob-related error.
  * @returns {{cleanCandidate: object, fallbackCandidate: object, failures: object[], warnings: object[]}}
  */
 export async function buildFolderCandidates(fileList, {metadataEnabled}) {
-    const {manifestArray, rootFolder, totalOriginalSize} =
-        buildFolderManifest(fileList);
+    const selectionEntries = collectSelectionEntries(fileList);
+    const {manifestArray, rootFolder, isBundle, totalOriginalSize} =
+        buildFolderManifest(selectionEntries);
     const processedEntries = [];
     const failures = [];
     const warnings = [];
     const results = [];
 
-    for (const file of fileList) {
-        const rel = getRelativePath(file);
+    for (const {file, path: rel} of selectionEntries) {
         const result = await preprocessFileForMetadata(file, rel, metadataEnabled);
         processedEntries.push({path: rel, file: result.processedFile});
 
@@ -367,8 +438,8 @@ export async function buildFolderCandidates(fileList, {metadataEnabled}) {
     const cleanStreamEntries = processedEntries.map((entry) =>
         makeStreamEntry(entry.path, entry.file)
     );
-    const fallbackStreamEntries = Array.from(fileList, (file) =>
-        makeStreamEntry(getRelativePath(file), file)
+    const fallbackStreamEntries = selectionEntries.map((entry) =>
+        makeStreamEntry(entry.path, entry.file)
     );
 
     if (totalOriginalSize >= LARGE_FOLDER_STREAM_THRESHOLD) {
@@ -394,7 +465,8 @@ export async function buildFolderCandidates(fileList, {metadataEnabled}) {
             manifestArray,
             rootFolder,
             totalOriginalSize,
-            fileCount: fileList.length,
+            isBundle,
+            fileCount: selectionEntries.length,
             zipSize: cleanCandidate.size,
         };
     }
@@ -405,7 +477,7 @@ export async function buildFolderCandidates(fileList, {metadataEnabled}) {
         zipBlob = await zipFromEntries(processedEntries, manifestArray);
         fallbackZipBlob = zipBlob;
         if (failures.length > 0) {
-            fallbackZipBlob = await zipRawFiles(fileList, manifestArray);
+            fallbackZipBlob = await zipRawEntries(selectionEntries, manifestArray);
         }
     } catch (error) {
         if (!String(error?.message || error).toLowerCase().includes("blob")) {
@@ -433,7 +505,8 @@ export async function buildFolderCandidates(fileList, {metadataEnabled}) {
             manifestArray,
             rootFolder,
             totalOriginalSize,
-            fileCount: fileList.length,
+            isBundle,
+            fileCount: selectionEntries.length,
             zipSize: cleanCandidate.size,
         };
     }
@@ -461,7 +534,8 @@ export async function buildFolderCandidates(fileList, {metadataEnabled}) {
         manifestArray,
         rootFolder,
         totalOriginalSize,
-        fileCount: fileList.length,
+        isBundle,
+        fileCount: selectionEntries.length,
         zipSize: zipBlob.size,
     };
 }

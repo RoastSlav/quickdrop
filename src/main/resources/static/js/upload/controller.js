@@ -1,6 +1,6 @@
 import {clearStripWarning, getUIRefs, renderStripWarning, setUploadState, showMessage, UploadState,} from "./state.js";
 import {buildSingleCandidates} from "./metadata-pipeline.js";
-import {buildFolderCandidates, parseSize} from "./zip-builder.js";
+import {buildFolderCandidates, describeSelection, parseSize} from "./zip-builder.js";
 import {uploadCandidate} from "./network.js";
 
 export function initUploadPage(config = {}) {
@@ -143,22 +143,34 @@ export function initUploadPage(config = {}) {
         }
     }
 
-    async function handleFolderSelection(fileList) {
+    /**
+     * Archives a folder or a multi-file selection into one upload. Which of the two it is
+     * comes from the selection's own paths rather than from the input that produced it, so
+     * a dropped folder and a picked one are described identically.
+     */
+    async function handleMultiSelection(fileList) {
         if (!fileList || fileList.length === 0) {
             resetFileSelection();
             return;
         }
 
+        const {isBundle} = describeSelection(fileList);
+
         let totalOriginalSize = 0;
         for (const file of fileList) totalOriginalSize += file.size;
         if (totalOriginalSize > maxSize) {
-            showMessage("danger", (window.i18n?.upload?.folderExceedsLimit || 'Folder exceeds the {0} limit.').replace('{0}', maxSizeLabel));
+            const limitMessage = isBundle
+                ? window.i18n?.upload?.filesExceedLimit || 'Selected files exceed the {0} limit.'
+                : window.i18n?.upload?.folderExceedsLimit || 'Folder exceeds the {0} limit.';
+            showMessage("danger", limitMessage.replace('{0}', maxSizeLabel));
             resetFileSelection();
             return;
         }
 
         if (dropZoneText) {
-            dropZoneText.textContent = window.i18n?.upload?.processingFolder || 'Processing folder...';
+            dropZoneText.textContent = isBundle
+                ? (window.i18n?.upload?.processingFiles || 'Processing files...')
+                : (window.i18n?.upload?.processingFolder || 'Processing folder...');
             dropZoneText.classList.remove("hidden");
         }
         if (fileNameEl) fileNameEl.classList.add("hidden");
@@ -170,8 +182,10 @@ export function initUploadPage(config = {}) {
         try {
             candidates = await buildFolderCandidates(fileList, {metadataEnabled});
         } catch (err) {
-            console.error("Folder processing failed", err);
-            showMessage("danger", window.i18n?.upload?.folderFailed || 'Unable to prepare folder for upload.');
+            console.error("Selection processing failed", err);
+            showMessage("danger", isBundle
+                ? window.i18n?.upload?.filesFailed || 'Unable to prepare the files for upload.'
+                : window.i18n?.upload?.folderFailed || 'Unable to prepare folder for upload.');
             resetFileSelection();
             return;
         }
@@ -184,12 +198,17 @@ export function initUploadPage(config = {}) {
             fileNameEl.classList.remove("hidden");
         }
         if (dropZoneText) {
-            dropZoneText.textContent = (window.i18n?.upload?.folderSelected || 'Folder selected: {0} ({1} items)').replace('{0}', candidates.rootFolder).replace('{1}', fileList.length);
+            dropZoneText.textContent = candidates.isBundle
+                ? (window.i18n?.upload?.filesSelected || '{0} files selected').replace('{0}', candidates.fileCount)
+                : (window.i18n?.upload?.folderSelected || 'Folder selected: {0} ({1} items)').replace('{0}', candidates.rootFolder).replace('{1}', candidates.fileCount);
             dropZoneText.classList.remove("hidden");
         }
+        // The candidates hold their own File references, so both pickers can be cleared --
+        // which also lets re-picking the same folder fire another change event.
         if (fileInput) fileInput.value = "";
+        if (folderInput) folderInput.value = "";
 
-        uploadCandidates = {...candidates, source: "folder"};
+        uploadCandidates = {...candidates, source: candidates.isBundle ? "files" : "folder"};
         if (candidates.failures.length > 0) {
             applyState(UploadState.NEEDS_CONFIRMATION);
             renderStripWarning(candidates.failures, ui);
@@ -199,6 +218,14 @@ export function initUploadPage(config = {}) {
                 renderStripWarning(candidates.warnings, ui);
             }
         }
+    }
+
+    /** A lone file uploads as itself; two or more are archived together. */
+    function handleFileSelection(files) {
+        if (files && files.length > 1) {
+            return handleMultiSelection(Array.from(files));
+        }
+        return handleSingleFile(files);
     }
 
     async function onUploadPrimaryClick() {
@@ -295,7 +322,7 @@ export function initUploadPage(config = {}) {
                     return rel && rel.includes("/");
                 });
                 if (hasRelative || collected.length > 1) {
-                    await handleFolderSelection(collected);
+                    await handleMultiSelection(collected);
                 } else {
                     const dt = new DataTransfer();
                     dt.items.add(collected[0]);
@@ -309,7 +336,7 @@ export function initUploadPage(config = {}) {
                 const dt = new DataTransfer();
                 for (const f of files) dt.items.add(f);
                 if (fileInput) fileInput.files = dt.files;
-                handleSingleFile(fileInput.files);
+                handleFileSelection(fileInput.files);
             }
         });
     }
@@ -323,10 +350,10 @@ export function initUploadPage(config = {}) {
         folderButton?.addEventListener("click", () => folderInput?.click());
 
         fileInput?.addEventListener("change", () =>
-            handleSingleFile(fileInput.files)
+            handleFileSelection(fileInput.files)
         );
         folderInput?.addEventListener("change", () =>
-            handleFolderSelection(folderInput.files)
+            handleMultiSelection(folderInput.files)
         );
 
         ui.uploadPrimary?.addEventListener("click", onUploadPrimaryClick);

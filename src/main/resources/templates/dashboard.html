@@ -124,7 +124,10 @@
                           th:text="#{page.history.actionType.__${entry.eventType.name().toLowerCase()}__}"
                           th:with="cat=${entry.eventType.category.name()}">upload</span>
                     <span class="activity-feed-name"
-                          th:text="${entry.file != null ? entry.file.name : #messages.msg('page.adminActivity.type.system')}"
+                          th:text="${entry.file != null ? entry.file.name
+                                     : (entry.eventType.category.name() == 'ADMIN'
+                                        ? #messages.msg('page.adminActivity.category.admin')
+                                        : #messages.msg('page.adminActivity.type.system'))}"
                           th:title="${entry.file != null ? entry.file.name : ''}">file.zip</span>
                     <span class="activity-feed-time"
                           th:text="${#temporals.format(entry.eventDate, 'dd.MM.yyyy HH:mm')}">01.01.2026 12:00</span>

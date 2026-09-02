@@ -1,5 +1,7 @@
 package org.rostislav.quickdrop.util;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import org.rostislav.quickdrop.entity.ShortLink;
 import org.rostislav.quickdrop.entity.Upload;
@@ -27,6 +29,7 @@ import java.util.Set;
  */
 public class FileUtils {
     private static final Logger logger = LoggerFactory.getLogger(FileUtils.class);
+    private static final ObjectMapper MANIFEST_MAPPER = new ObjectMapper();
 
     /**
      * Extensions treated as plain-text and eligible for the in-browser text preview.
@@ -368,6 +371,37 @@ public class FileUtils {
         } catch (IOException e) {
             logger.error("Error streaming file for UUID: {}", uuid, e);
             throw e;
+        }
+    }
+
+    /**
+     * Number of files inside an archive upload, read from its manifest. Directory entries
+     * only describe the tree's shape, so they are not counted. Anything unreadable counts
+     * as zero rather than throwing -- a list page must not fail to render because one row
+     * carries a malformed manifest.
+     *
+     * @param manifest the stored manifest JSON, or {@code null}
+     */
+    public static int countArchiveFiles(String manifest) {
+        if (manifest == null || manifest.isBlank()) {
+            return 0;
+        }
+        try {
+            JsonNode root = MANIFEST_MAPPER.readTree(manifest);
+            if (!root.isArray()) {
+                return 0;
+            }
+            int count = 0;
+            for (JsonNode entry : root) {
+                // Matches the tree renderer, which also treats a typeless entry as a file.
+                if (!"dir".equals(entry.path("type").asText(null))) {
+                    count++;
+                }
+            }
+            return count;
+        } catch (Exception e) {
+            logger.warn("Unreadable archive manifest: {}", e.getMessage());
+            return 0;
         }
     }
 }

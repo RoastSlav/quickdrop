@@ -112,6 +112,8 @@ public class ShareViewController {
 
         model.addAttribute("file", new FileEntityView(file, analyticsService.getTotalDownloadsByFile(file.uuid)));
         model.addAttribute("downloadLink", "/api/file/download/" + token);
+        // Always present so the view can test it; a missing attribute is not a usable false.
+        model.addAttribute("needsKeyAuth", false);
 
         logger.info("Accessed shared file view for file UUID: {} via short link", file.uuid);
         return "file-share-view";

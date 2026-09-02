@@ -1,9 +1,11 @@
 package org.rostislav.quickdrop.model;
 
+import org.rostislav.quickdrop.entity.StoredFile;
 import org.rostislav.quickdrop.entity.Upload;
 
 import java.time.LocalDate;
 
+import static org.rostislav.quickdrop.util.FileUtils.countArchiveFiles;
 import static org.rostislav.quickdrop.util.FileUtils.formatFileSize;
 
 /**
@@ -45,6 +47,29 @@ public class FileEntityView {
      */
     public boolean deleted;
 
+    /**
+     * {@code true} when the file is a browser-built ZIP archive carrying a manifest --
+     * a picked folder or a multi-file selection. The remaining archive fields are only
+     * populated when this is set.
+     */
+    public boolean folderUpload;
+
+    /**
+     * Display name of the archive's root.
+     */
+    public String folderName;
+
+    /**
+     * Raw manifest JSON, for the views that draw the contents tree. Every other view
+     * should read {@link #itemCount} instead of parsing this again.
+     */
+    public String folderManifest;
+
+    /**
+     * Number of files inside the archive, directory entries excluded.
+     */
+    public int itemCount;
+
     public FileEntityView() {
     }
 
@@ -65,5 +90,12 @@ public class FileEntityView {
         this.hidden = upload.hidden;
         this.passwordProtected = upload.passwordHash != null;
         this.deleted = upload.deleted;
+
+        if (upload instanceof StoredFile storedFile && storedFile.folderUpload) {
+            this.folderUpload = true;
+            this.folderName = storedFile.folderName;
+            this.folderManifest = storedFile.folderManifest;
+            this.itemCount = countArchiveFiles(storedFile.folderManifest);
+        }
     }
 }

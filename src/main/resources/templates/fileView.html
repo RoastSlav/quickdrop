@@ -373,8 +373,6 @@
         jsonFormatted:               /*[[#{page.fileView.preview.jsonFormatted}]]*/ 'Formatted',
         jsonTree:                    /*[[#{page.fileView.preview.jsonTree}]]*/ 'Tree',
         csvNoRows:                   /*[[#{page.fileView.preview.csvNoRows}]]*/ 'No rows to display.',
-        folderNoManifest:            /*[[#{page.fileView.folderNoManifest}]]*/ 'No manifest available.',
-        folderRenderFailed:          /*[[#{page.fileView.folderRenderFailed}]]*/ 'Unable to render folder contents.',
         openInNewTab:                /*[[#{page.fileView.preview.openInNewTab}]]*/ 'Open {0} in a new tab',
         csvShowingFirst:             /*[[#{page.fileView.preview.csvShowingFirst}]]*/ 'Showing first {0} rows out of {1}.',
         deleteConfirm:               /*[[#{page.dashboard.deleteConfirm}]]*/ 'Are you sure you want to delete this file? This action cannot be undone.',
@@ -385,12 +383,17 @@
         shareGenerateFailed:         /*[[#{page.fileView.shareGenerateFailed}]]*/ 'Failed to generate share link.',
         sharePreparingNotice:        /*[[#{page.fileView.sharePreparingNotice}]]*/ 'Your share link will be functional in a couple of minutes.',
         previewImageAlt:             /*[[#{page.fileView.preview.imageAlt}]]*/ 'Preview',
-        previewCodeTruncated:        /*[[#{page.fileView.preview.codeTruncated}]]*/ '... (truncated)',
-        folderFallbackName:          /*[[#{page.fileView.folderFallbackName}]]*/ 'folder'
+        previewCodeTruncated:        /*[[#{page.fileView.preview.codeTruncated}]]*/ '... (truncated)'
+    };
+    window.i18n.folderTree = {
+        fallbackName: /*[[#{page.fileView.folderFallbackName}]]*/ 'folder',
+        noManifest:   /*[[#{page.fileView.folderNoManifest}]]*/ 'No manifest available.',
+        renderFailed: /*[[#{page.fileView.folderRenderFailed}]]*/ 'Unable to render folder contents.'
     };
     /*]]>*/
 </script>
 <script src="/js/fileView.js"></script>
+<script src="/js/folder-tree.js" type="module"></script>
 <th:block th:replace="~{fragments/layout :: pageScripts}"></th:block>
 </body>
 </html>

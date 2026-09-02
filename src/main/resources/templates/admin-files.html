@@ -150,6 +150,10 @@
                                        th:title="${file.name}">filename.zip</p>
                                     <span class="badge badge-danger text-xs flex-shrink-0" th:if="${file.deleted}"
                                           th:text="#{badge.deleted}">Deleted</span>
+                                    <span class="badge badge-indigo text-xs flex-shrink-0"
+                                          th:if="${file.folderUpload}"
+                                          th:title="${#messages.msg('badge.items', file.itemCount)}"
+                                          th:text="#{badge.folder}">Folder</span>
                                 </div>
                                 <p class="text-xs font-mono mt-0.5" style="color: var(--c-text-faint)">
                                     <span th:text="${#temporals.format(file.uploadDate, 'dd.MM.yyyy')}">01.01.2025</span>

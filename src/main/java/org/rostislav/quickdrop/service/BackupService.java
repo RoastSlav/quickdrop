@@ -1,5 +1,6 @@
 package org.rostislav.quickdrop.service;
 
+import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import org.rostislav.quickdrop.model.EventType;
 import org.slf4j.Logger;
@@ -45,6 +46,8 @@ public class BackupService {
     private static final DateTimeFormatter FILENAME_TIMESTAMP = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH-mm-ss-SSS");
     private static final String FILE_PREFIX = "quickdrop-";
     private static final String FILE_SUFFIX = ".db";
+    // Mirrors ApplicationSettingsEntity's own default; used when the stored value is unusable.
+    private static final int DEFAULT_MAX_BACKUPS = 7;
 
     private final ApplicationSettingsService applicationSettingsService;
     private final AnalyticsService analyticsService;
@@ -80,6 +83,16 @@ public class BackupService {
         this.backupDir = backupDir;
         taskScheduler.setPoolSize(1);
         taskScheduler.initialize();
+    }
+
+    /**
+     * Records where backups actually land and how many survived the last shutdown: a count of zero
+     * on an instance that has been taking backups means the directory did not persist the restart.
+     */
+    @PostConstruct
+    public void logBackupLocation() {
+        logger.info("Backup directory: {} ({} backup(s) present at startup)",
+                backupDir.toAbsolutePath().normalize(), listBackups().size());
     }
 
     @EventListener
@@ -202,10 +215,20 @@ public class BackupService {
         }
     }
 
-    /** Deletes backups beyond the configured {@code maxBackups}, oldest first. */
+    /**
+     * Deletes backups beyond the configured {@code maxBackups}, oldest first. A retention of zero
+     * or less is treated as unset rather than as "keep nothing": taken literally it would delete
+     * every backup including the one just written, and the UI never stores a value below 1.
+     */
     private void prune() throws IOException {
-        int maxBackups = applicationSettingsService.getApplicationSettings().getMaxBackups();
+        int configured = applicationSettingsService.getApplicationSettings().getMaxBackups();
+        int maxBackups = configured > 0 ? configured : DEFAULT_MAX_BACKUPS;
+        if (configured != maxBackups) {
+            logger.warn("Configured backups-to-keep is {}; falling back to {}", configured, maxBackups);
+        }
         List<Path> backups = listBackupPaths();
+        // When backups go missing, this line says whether retention removed them, and under which setting.
+        logger.info("Backup retention: {} backup(s) on disk, keeping the newest {}", backups.size(), maxBackups);
         for (int i = maxBackups; i < backups.size(); i++) {
             Files.deleteIfExists(backups.get(i));
             logger.info("Pruned old backup: {}", backups.get(i).getFileName());

@@ -7,7 +7,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.util.Map;
 import java.util.stream.Stream;
 
 /**
@@ -25,32 +24,26 @@ public final class AppPaths {
     public static final Path BRANDING = Path.of("db", "branding");
     public static final Path REPUTATION_FEEDS = Path.of("files", "reputation-feeds");
 
-    /** Where each of these lived before they were folded into {@code db/} and {@code files/}. */
-    private static final Map<Path, Path> LEGACY_LOCATIONS = Map.of(
-            Path.of("db-backups"), BACKUPS,
-            Path.of("branding"), BRANDING,
-            Path.of("reputation-feeds"), REPUTATION_FEEDS);
+    /** Where the custom logo lived from v1.5.1 through v1.5.3. */
+    private static final Path RELEASED_BRANDING_DIR = Path.of("branding");
 
     private AppPaths() {
     }
 
     /**
-     * Moves anything left in the old top-level directories into their new homes, so an instance
-     * upgrading with those volumes still mounted keeps its backups and its custom logo.
+     * Moves an uploaded logo out of the top-level {@code branding/} directory a v1.5.x install
+     * would have. Backups and reputation feeds never shipped in a release, so nothing upgrading
+     * from one has those directories to migrate.
      */
-    public static void migrateLegacyDirectories() {
-        LEGACY_LOCATIONS.forEach(AppPaths::migrate);
-    }
-
-    private static void migrate(Path legacy, Path target) {
-        if (!Files.isDirectory(legacy)) {
+    public static void migrateReleasedBrandingDirectory() {
+        if (!Files.isDirectory(RELEASED_BRANDING_DIR)) {
             return;
         }
-        try (Stream<Path> files = Files.list(legacy)) {
+        try (Stream<Path> files = Files.list(RELEASED_BRANDING_DIR)) {
             int moved = 0;
             for (Path source : files.filter(Files::isRegularFile).toList()) {
-                Files.createDirectories(target);
-                Path destination = target.resolve(source.getFileName().toString());
+                Files.createDirectories(BRANDING);
+                Path destination = BRANDING.resolve(source.getFileName().toString());
                 if (Files.exists(destination)) {
                     continue;
                 }
@@ -58,10 +51,10 @@ public final class AppPaths {
                 moved++;
             }
             if (moved > 0) {
-                logger.info("Moved {} file(s) from {} to {}; that volume can be removed", moved, legacy, target);
+                logger.info("Moved {} branding file(s) into {}; the branding volume can be removed", moved, BRANDING);
             }
         } catch (IOException e) {
-            logger.error("Failed to move {} into {}; leaving it in place", legacy, target, e);
+            logger.error("Failed to move {} into {}; leaving it in place", RELEASED_BRANDING_DIR, BRANDING, e);
         }
     }
 }

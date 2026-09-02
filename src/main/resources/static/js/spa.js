@@ -36,7 +36,10 @@
                 document.title = doc.title;
             }
 
+            let committed = false;
             const commit = () => {
+                if (committed) return;
+                committed = true;
                 container.replaceWith(next);
                 next.style.minHeight = '';
                 markRowsForEntrance(next);
@@ -44,12 +47,20 @@
             };
 
             // Cross-fade the swap where the browser supports it, so filtering and
-            // paging read as a transition rather than a blink.
+            // paging read as a transition rather than a blink. The animation is
+            // best-effort: a transition that gets skipped, or never runs at all
+            // because the tab is in the background, must not swallow the swap --
+            // that leaves the filter controls describing results still on screen.
             if (document.startViewTransition && !prefersReducedMotion()) {
-                await document.startViewTransition(commit).finished.catch(() => {});
-            } else {
-                commit();
+                const transition = document.startViewTransition(commit);
+                transition.ready.catch(() => {});
+                transition.finished.catch(() => {});
+                await Promise.race([
+                    transition.updateCallbackDone.catch(() => {}),
+                    new Promise(resolve => setTimeout(resolve, 400))
+                ]);
             }
+            commit();
 
             if (opts && opts.replace) {
                 history.replaceState({}, '', url);

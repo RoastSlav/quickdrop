@@ -376,9 +376,7 @@ public class FileLifecycleService {
     /**
      * A multi-file bundle arrives named for its date alone ({@code files-2692.zip}) because
      * the browser cannot see which names are already taken. The distinguishing code is added
-     * here instead, so two bundles uploaded on the same day never present the same name --
-     * they would otherwise be indistinguishable in the file list and collide in a
-     * recipient's downloads folder.
+     * here instead, so two bundles uploaded on the same day never present the same name.
      */
     private String distinctBundleName(String proposed) {
         int dot = proposed.lastIndexOf('.');

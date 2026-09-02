@@ -595,8 +595,7 @@ public class AsyncFileMergeService {
                                 mergedBytes += in.transferTo(finalOut);
                             }
                             // The declared fileSize is the client's word; this is what actually
-                            // arrived, so it is the only size check an uncooperative client
-                            // cannot talk its way past. Checked per chunk to stop early.
+                            // arrived, so it is the only size check a caller cannot talk past.
                             if (mergedBytes > maxFileSize) {
                                 throw new IOException("Upload exceeds the maximum file size of "
                                         + formatFileSize(maxFileSize) + ".");

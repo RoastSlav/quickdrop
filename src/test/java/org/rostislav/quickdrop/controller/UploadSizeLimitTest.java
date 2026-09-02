@@ -13,9 +13,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * The max-file-size setting used to bind only the browser and Tomcat's per-request part
- * limit. Because uploads are chunked, every individual request sits far below that limit,
- * so nothing stopped a caller that ignored the page and posted chunks directly.
+ * Uploads are chunked, so every individual request sits far below the max-file-size setting
+ * and neither the browser's check nor Tomcat's per-request part limit bounds the assembled
+ * file. Only the merge, counting what actually arrives, can.
  */
 class UploadSizeLimitTest extends ControllerTestSupport {
 
@@ -39,8 +39,8 @@ class UploadSizeLimitTest extends ControllerTestSupport {
     }
 
     /**
-     * The interesting case: fileSize is the client's word, so a caller can simply understate
-     * it. Only measuring what actually arrives catches that.
+     * fileSize is the client's word, so a caller can simply understate it; only measuring
+     * what actually arrives catches that.
      */
     @Test
     @DirtiesContext

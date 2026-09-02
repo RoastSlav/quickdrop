@@ -46,18 +46,18 @@ public class UploadRequest {
     public String uploaderUserAgent;
 
     /**
-     * Whether this upload is a folder (ZIP archive with a manifest).
+     * Whether this upload is an archive (browser-built ZIP with a manifest).
      */
     public boolean archiveUpload;
 
     /**
-     * Display name of the uploaded folder (only set when {@link #archiveUpload} is {@code true}).
+     * Label for the archive's root (only set when {@link #archiveUpload} is {@code true}).
      */
     public String archiveName;
 
     /**
-     * JSON array describing the folder's file tree, sanitised for safe storage.
-     * {@code null} for single-file uploads.
+     * JSON array describing the archive's file tree, sanitised for safe storage.
+     * {@code null} for plain uploads.
      */
     public String archiveManifest;
 

@@ -16,10 +16,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
 /**
- * An archive upload is only useful if the pages a recipient actually opens say what is
- * inside it. Every surface here renders {@code FileEntityView}, so these cover the archive
- * fields reaching the templates -- the list pages by badge and count, the share landing page
- * by the manifest the contents tree is drawn from.
+ * Every surface here renders {@code FileEntityView}, so these cover the archive fields
+ * reaching the templates: the list pages by badge and count, the share landing page by the
+ * manifest its contents tree is drawn from.
  *
  * <p>Each list assertion filters by a unique name so the page contains exactly one row and
  * cannot be satisfied by a file some other test left behind.

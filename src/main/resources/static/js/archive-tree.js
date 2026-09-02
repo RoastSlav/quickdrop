@@ -1,8 +1,7 @@
 /**
- * Draws an archive upload's contents as an ASCII tree, on any page that provides a
- * `#archiveTree` container and a `#archiveManifestData` JSON block. Self-mounting, so a page
- * only has to include it -- which is why the file page and the share landing page can both
- * show the same tree without either one knowing how it is built.
+ * Draws an archive upload's contents as an ASCII tree on any page providing an
+ * `#archiveTree` container and an `#archiveManifestData` JSON block. Self-mounting, so a
+ * page only has to include it.
  */
 
 const t = (key, fallback) => window.i18n?.archiveTree?.[key] || fallback;
@@ -101,8 +100,8 @@ const SEGMENT_CLASS = {
     connector: "folder-tree-connector",
 };
 
-// One DOM node per line, rebuilt on every page view: a large archive would otherwise make
-// the file page crawl before the reader has decided they want the whole listing.
+// One DOM node per line, rebuilt on every page view, so a large archive is not drawn in
+// full until the reader asks for it.
 export const INITIAL_TREE_LINES = 500;
 
 function lineElement(segments) {

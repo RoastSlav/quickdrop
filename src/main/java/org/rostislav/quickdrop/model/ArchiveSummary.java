@@ -5,9 +5,8 @@ package org.rostislav.quickdrop.model;
  *
  * <p>{@code bundle} distinguishes the two things an archive can be: a picked directory,
  * where every entry sits under one shared top-level folder, or a loose multi-file
- * selection, where it does not. The browser knows which it built, but nothing is stored
- * to say so -- the manifest already carries the answer, so it is read back out here
- * rather than kept in a column of its own.
+ * selection, where it does not. Nothing is stored to say which -- the manifest already
+ * carries the answer, so it is read back out rather than kept in a column of its own.
  *
  * @param fileCount number of files, directory entries excluded
  * @param bundle    {@code true} for a loose selection, {@code false} for one folder

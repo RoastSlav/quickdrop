@@ -55,7 +55,7 @@ public class FileEntityView {
     public boolean archiveUpload;
 
     /**
-     * Display name of the archive's root.
+     * Label for the top of the contents tree, not the stored file name.
      */
     public String archiveName;
 
@@ -72,8 +72,7 @@ public class FileEntityView {
 
     /**
      * {@code true} when the archive is a loose multi-file selection rather than one picked
-     * folder. Derived from the manifest, so it costs nothing beyond the parse {@link
-     * #itemCount} already needs.
+     * folder. Derived from the manifest, not stored.
      */
     public boolean bundle;
 

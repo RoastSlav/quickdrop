@@ -8,6 +8,8 @@ import org.rostislav.quickdrop.model.RequesterInfo;
 import org.rostislav.quickdrop.model.ShortLinkResult;
 import org.rostislav.quickdrop.model.UploadRequest;
 import org.rostislav.quickdrop.repository.ActivityLogRepository;
+
+
 import org.rostislav.quickdrop.repository.UploadRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,11 +19,14 @@ import org.springframework.stereotype.Service;
 
 import org.rostislav.quickdrop.storage.StorageService;
 
+import java.security.SecureRandom;
 import java.time.LocalDate;
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.rostislav.quickdrop.util.DataValidator.validateObjects;
 import static org.rostislav.quickdrop.util.FileUtils.getRequesterInfo;
+import static org.rostislav.quickdrop.util.FileUtils.summarizeArchive;
 
 /**
  * Write service for file and paste lifecycle — creation, soft-deletion, field updates,
@@ -35,6 +40,11 @@ import static org.rostislav.quickdrop.util.FileUtils.getRequesterInfo;
 @Service
 public class FileLifecycleService {
     private static final Logger logger = LoggerFactory.getLogger(FileLifecycleService.class);
+
+    private static final String BUNDLE_CODE_ALPHABET = "abcdefghijklmnopqrstuvwxyz0123456789";
+    private static final int BUNDLE_CODE_LENGTH = 4;
+    private static final int MAX_BUNDLE_NAME_ATTEMPTS = 20;
+    private static final SecureRandom RANDOM = new SecureRandom();
 
     private final UploadRepository uploadRepository;
     private final ActivityLogRepository activityLogRepository;
@@ -338,12 +348,12 @@ public class FileLifecycleService {
             upload = paste;
         } else {
             StoredFile storedFile = new StoredFile();
-            storedFile.folderUpload = request.folderUpload;
-            storedFile.folderName = request.folderName;
-            storedFile.folderManifest = request.folderManifest;
+            storedFile.archiveUpload = request.archiveUpload;
+            storedFile.archiveName = request.archiveName;
+            storedFile.archiveManifest = request.archiveManifest;
             upload = storedFile;
         }
-        upload.name = request.fileName;
+        upload.name = isLooseBundle(request) ? distinctBundleName(request.fileName) : request.fileName;
         upload.uuid = uuid;
         upload.description = request.description;
         upload.size = request.fileSize;
@@ -356,5 +366,40 @@ public class FileLifecycleService {
             upload.passwordHash = passwordEncoder.encode(request.password);
         }
         return upload;
+    }
+
+    private static boolean isLooseBundle(UploadRequest request) {
+        return !request.paste && request.archiveUpload
+                && summarizeArchive(request.archiveManifest).bundle();
+    }
+
+    /**
+     * A multi-file bundle arrives named for its date alone ({@code files-2692.zip}) because
+     * the browser cannot see which names are already taken. The distinguishing code is added
+     * here instead, so two bundles uploaded on the same day never present the same name --
+     * they would otherwise be indistinguishable in the file list and collide in a
+     * recipient's downloads folder.
+     */
+    private String distinctBundleName(String proposed) {
+        int dot = proposed.lastIndexOf('.');
+        String stem = dot > 0 ? proposed.substring(0, dot) : proposed;
+        String extension = dot > 0 ? proposed.substring(dot) : "";
+
+        for (int attempt = 0; attempt < MAX_BUNDLE_NAME_ATTEMPTS; attempt++) {
+            String candidate = stem + "-" + bundleCode() + extension;
+            if (!uploadRepository.existsByNameAndNotDeleted(candidate)) {
+                return candidate;
+            }
+        }
+        // 1.6M codes and every attempt taken is not credible, but a name is still owed.
+        return stem + "-" + UUID.randomUUID().toString().substring(0, 8) + extension;
+    }
+
+    private String bundleCode() {
+        StringBuilder code = new StringBuilder(BUNDLE_CODE_LENGTH);
+        for (int i = 0; i < BUNDLE_CODE_LENGTH; i++) {
+            code.append(BUNDLE_CODE_ALPHABET.charAt(RANDOM.nextInt(BUNDLE_CODE_ALPHABET.length())));
+        }
+        return code.toString();
     }
 }

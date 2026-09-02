@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import org.rostislav.quickdrop.entity.ShortLink;
 import org.rostislav.quickdrop.entity.Upload;
+import org.rostislav.quickdrop.model.ArchiveSummary;
 import org.rostislav.quickdrop.model.RequesterInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -375,33 +376,53 @@ public class FileUtils {
     }
 
     /**
-     * Number of files inside an archive upload, read from its manifest. Directory entries
-     * only describe the tree's shape, so they are not counted. Anything unreadable counts
-     * as zero rather than throwing -- a list page must not fail to render because one row
-     * carries a malformed manifest.
+     * Reads an archive upload's manifest: how many files it holds, and whether those files
+     * all sit under one shared top-level directory (a picked folder) or not (a loose
+     * selection). Anything unreadable summarises as empty rather than throwing -- a list
+     * page must not fail to render because one row carries a malformed manifest.
+     *
+     * <p>The rule matches {@code deriveRootFolder} in {@code upload/zip-builder.js}, which is
+     * what the browser used when it named the archive; the two must agree or a folder would
+     * be labelled a bundle on the very page that shows its folder name.
      *
      * @param manifest the stored manifest JSON, or {@code null}
      */
-    public static int countArchiveFiles(String manifest) {
+    public static ArchiveSummary summarizeArchive(String manifest) {
         if (manifest == null || manifest.isBlank()) {
-            return 0;
+            return ArchiveSummary.EMPTY;
         }
         try {
             JsonNode root = MANIFEST_MAPPER.readTree(manifest);
             if (!root.isArray()) {
-                return 0;
+                return ArchiveSummary.EMPTY;
             }
-            int count = 0;
+
+            int fileCount = 0;
+            String sharedRoot = null;
+            boolean bundle = false;
+
             for (JsonNode entry : root) {
                 // Matches the tree renderer, which also treats a typeless entry as a file.
-                if (!"dir".equals(entry.path("type").asText(null))) {
-                    count++;
+                if ("dir".equals(entry.path("type").asText(null))) {
+                    continue;
+                }
+                fileCount++;
+
+                String path = entry.path("path").asText("").replace('\\', '/');
+                String[] parts = path.split("/");
+                if (parts.length < 2 || parts[0].isEmpty()) {
+                    bundle = true;
+                } else if (sharedRoot == null) {
+                    sharedRoot = parts[0];
+                } else if (!sharedRoot.equals(parts[0])) {
+                    bundle = true;
                 }
             }
-            return count;
+
+            return new ArchiveSummary(fileCount, bundle || sharedRoot == null);
         } catch (Exception e) {
             logger.warn("Unreadable archive manifest: {}", e.getMessage());
-            return 0;
+            return ArchiveSummary.EMPTY;
         }
     }
 }

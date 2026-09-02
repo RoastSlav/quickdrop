@@ -256,7 +256,7 @@ public class AsyncFileMergeService {
             task.future = executorService.submit(task);
             return task;
         });
-        mergeTask.applyFolderMetadata(request);
+        mergeTask.applyArchiveMetadata(request);
         boolean isLastChunk = (chunkNumber == request.totalChunks - 1);
         if (!mergeTask.enqueueChunk(new ChunkInfo(chunkNumber, savedChunk, isLastChunk))) {
             throw new UploadAbortedException("Upload was aborted");
@@ -540,17 +540,17 @@ public class AsyncFileMergeService {
             return true;
         }
 
-        public void applyFolderMetadata(UploadRequest latestRequest) {
-            if (!latestRequest.folderUpload) {
+        public void applyArchiveMetadata(UploadRequest latestRequest) {
+            if (!latestRequest.archiveUpload) {
                 return;
             }
             synchronized (request) {
-                request.folderUpload = true;
-                if (latestRequest.folderName != null && !latestRequest.folderName.isBlank()) {
-                    request.folderName = latestRequest.folderName;
+                request.archiveUpload = true;
+                if (latestRequest.archiveName != null && !latestRequest.archiveName.isBlank()) {
+                    request.archiveName = latestRequest.archiveName;
                 }
-                if (latestRequest.folderManifest != null && !latestRequest.folderManifest.isBlank()) {
-                    request.folderManifest = latestRequest.folderManifest;
+                if (latestRequest.archiveManifest != null && !latestRequest.archiveManifest.isBlank()) {
+                    request.archiveManifest = latestRequest.archiveManifest;
                 }
             }
         }

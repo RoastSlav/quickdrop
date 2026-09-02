@@ -31,7 +31,7 @@ export async function preprocessFileForMetadata(
     };
 }
 
-/** One row per file, matching what buildFolderCandidates produces, so the review panel
+/** One row per file, matching what buildArchiveCandidates produces, so the review panel
  *  renders a lone file and an archive the same way. */
 function reviewRow(file, failureReason, fileWarnings) {
     return {
@@ -48,9 +48,9 @@ export async function buildSingleCandidates(file, metadataEnabled) {
         file,
         name: file.name,
         size: file.size,
-        folderUpload: false,
-        folderName: null,
-        folderManifest: null,
+        archiveUpload: false,
+        archiveName: null,
+        archiveManifest: null,
     };
 
     if (!metadataEnabled) {

@@ -48,18 +48,18 @@ public class UploadRequest {
     /**
      * Whether this upload is a folder (ZIP archive with a manifest).
      */
-    public boolean folderUpload;
+    public boolean archiveUpload;
 
     /**
-     * Display name of the uploaded folder (only set when {@link #folderUpload} is {@code true}).
+     * Display name of the uploaded folder (only set when {@link #archiveUpload} is {@code true}).
      */
-    public String folderName;
+    public String archiveName;
 
     /**
      * JSON array describing the folder's file tree, sanitised for safe storage.
      * {@code null} for single-file uploads.
      */
-    public String folderManifest;
+    public String archiveManifest;
 
     /**
      * {@code true} when this request represents a text paste rather than a binary file.
@@ -82,15 +82,15 @@ public class UploadRequest {
     public UploadRequest(String description, boolean keepIndefinitely, String password, boolean hidden,
                          String fileName, int totalChunks, Long fileSize,
                          String uploaderIp, String uploaderUserAgent,
-                         boolean folderUpload, String folderName, String folderManifest, boolean paste) {
+                         boolean archiveUpload, String archiveName, String archiveManifest, boolean paste) {
         this(description, keepIndefinitely, password, hidden, fileName, totalChunks, fileSize,
-                uploaderIp, uploaderUserAgent, folderUpload, folderName, folderManifest, paste, false, false);
+                uploaderIp, uploaderUserAgent, archiveUpload, archiveName, archiveManifest, paste, false, false);
     }
 
     public UploadRequest(String description, boolean keepIndefinitely, String password, boolean hidden,
                          String fileName, int totalChunks, Long fileSize,
                          String uploaderIp, String uploaderUserAgent,
-                         boolean folderUpload, String folderName, String folderManifest, boolean paste,
+                         boolean archiveUpload, String archiveName, String archiveManifest, boolean paste,
                          boolean editOnly, boolean immutable) {
         this.description = description;
         this.keepIndefinitely = keepIndefinitely;
@@ -101,9 +101,9 @@ public class UploadRequest {
         this.fileSize = fileSize;
         this.uploaderIp = uploaderIp;
         this.uploaderUserAgent = uploaderUserAgent;
-        this.folderUpload = folderUpload;
-        this.folderName = folderName;
-        this.folderManifest = folderManifest;
+        this.archiveUpload = archiveUpload;
+        this.archiveName = archiveName;
+        this.archiveManifest = archiveManifest;
         this.paste = paste;
         this.editOnly = editOnly;
         this.immutable = immutable;

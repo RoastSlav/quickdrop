@@ -8,7 +8,7 @@ import {
     UploadState,
 } from "./state.js";
 import {buildSingleCandidates} from "./metadata-pipeline.js";
-import {buildFolderCandidates, describeSelection, parseSize} from "./zip-builder.js";
+import {buildArchiveCandidates, describeSelection, parseSize} from "./zip-builder.js";
 import {formatBytes} from "./format.js";
 import {uploadCandidate} from "./network.js";
 
@@ -162,14 +162,14 @@ export function initUploadPage(config = {}) {
             failureMessage: isBundle
                 ? i18nUpload("filesFailed", "Unable to prepare the files for upload.")
                 : i18nUpload("folderFailed", "Unable to prepare folder for upload."),
-            build: (options) => buildFolderCandidates(files, {metadataEnabled, ...options}),
+            build: (options) => buildArchiveCandidates(files, {metadataEnabled, ...options}),
             describe: (candidates) => ({
                 name: `${candidates.cleanCandidate.name} (${formatBytes(candidates.cleanCandidate.size)})`,
                 hint: candidates.isBundle
                     ? i18nUpload("filesSelected", "{0} files selected")
                         .replace("{0}", candidates.fileCount)
                     : i18nUpload("folderSelected", "Folder selected: {0} ({1} items)")
-                        .replace("{0}", candidates.rootFolder)
+                        .replace("{0}", candidates.archiveName)
                         .replace("{1}", candidates.fileCount),
             }),
         };

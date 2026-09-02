@@ -2,7 +2,9 @@ package org.rostislav.quickdrop.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
 import org.rostislav.quickdrop.entity.Paste;
+import org.rostislav.quickdrop.entity.StoredFile;
 import org.rostislav.quickdrop.entity.Upload;
+import org.rostislav.quickdrop.model.ArchiveSummary;
 import org.rostislav.quickdrop.model.ActivityLogEntry;
 import org.rostislav.quickdrop.model.FileEntityView;
 import org.rostislav.quickdrop.model.RequesterInfo;
@@ -371,5 +373,10 @@ public class FileViewController {
         model.addAttribute("file", fileEntity);
         model.addAttribute("fileSize", formatFileSize(fileEntity.size));
         model.addAttribute("downloadLink", getDownloadLink(request, fileEntity));
+        // This page renders the entity rather than FileEntityView, so the manifest summary
+        // it needs to tell a folder from a loose bundle has to come across separately.
+        model.addAttribute("archive", fileEntity instanceof StoredFile storedFile && storedFile.archiveUpload
+                ? summarizeArchive(storedFile.archiveManifest)
+                : ArchiveSummary.EMPTY);
     }
 }

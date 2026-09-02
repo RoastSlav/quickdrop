@@ -29,6 +29,16 @@ export function parseSize(sizeLabel) {
     return value * (units[unit] || 1);
 }
 
+/**
+ * Date part of a loose bundle's name: two-digit year, then month and day without leading
+ * zeros, so 2 September 2026 reads 2692. The distinguishing code that follows it is added
+ * server-side, which is the only place that can see whether a name is already taken.
+ */
+export function bundleDateStamp(date = new Date()) {
+    const year = String(date.getFullYear() % 100).padStart(2, "0");
+    return `${year}${date.getMonth() + 1}${date.getDate()}`;
+}
+
 const normalizePath = (file) => getRelativePath(file).replace(/\\/g, "/");
 
 /** Preparation runs per file and can take a while, so it has to be interruptible. */
@@ -99,17 +109,17 @@ export function collectSelectionEntries(fileList) {
  * this before the (potentially slow) zip build, to phrase what they show while it runs.
  */
 export function describeSelection(fileList) {
-    const rootFolder = deriveRootFolder(Array.from(fileList, normalizePath));
+    const archiveName = deriveRootFolder(Array.from(fileList, normalizePath));
     return {
-        rootFolder: rootFolder || DEFAULT_BUNDLE_NAME,
-        isBundle: rootFolder === null,
+        archiveName: archiveName || DEFAULT_BUNDLE_NAME,
+        isBundle: archiveName === null,
     };
 }
 
 /**
  * @param {{file: File, path: string}[]} entries from {@link collectSelectionEntries}
  */
-export function buildFolderManifest(entries) {
+export function buildArchiveManifest(entries) {
     const manifestSet = new Set();
     let totalOriginalSize = 0;
     const derivedRoot = deriveRootFolder(entries.map((entry) => entry.path));
@@ -129,7 +139,7 @@ export function buildFolderManifest(entries) {
 
     return {
         manifestArray: Array.from(manifestSet).map((s) => JSON.parse(s)),
-        rootFolder: derivedRoot || DEFAULT_BUNDLE_NAME,
+        archiveName: derivedRoot || DEFAULT_BUNDLE_NAME,
         isBundle: derivedRoot === null,
         totalOriginalSize,
     };
@@ -386,13 +396,13 @@ async function* streamZip64(entries) {
     yield makeEndRecord();
 }
 
-function makeStreamingCandidate(entries, zipName, rootFolder, manifestArray) {
+function makeStreamingCandidate(entries, zipName, archiveName, manifestArray) {
     return {
         name: zipName,
         size: estimateZip64Size(entries),
-        folderUpload: true,
-        folderName: rootFolder,
-        folderManifest: JSON.stringify(manifestArray),
+        archiveUpload: true,
+        archiveName: archiveName,
+        archiveManifest: JSON.stringify(manifestArray),
         streamUpload: true,
         createStream: () => streamZip64(entries.map((entry) => ({...entry}))),
     };
@@ -405,10 +415,10 @@ function makeStreamingCandidate(entries, zipName, rootFolder, manifestArray) {
  * in-memory zipping throws a blob-related error.
  * @returns {{cleanCandidate: object, fallbackCandidate: object, failures: object[], warnings: object[]}}
  */
-export async function buildFolderCandidates(fileList, {metadataEnabled, onProgress, signal}) {
+export async function buildArchiveCandidates(fileList, {metadataEnabled, onProgress, signal}) {
     const selectionEntries = collectSelectionEntries(fileList);
-    const {manifestArray, rootFolder, isBundle, totalOriginalSize} =
-        buildFolderManifest(selectionEntries);
+    const {manifestArray, archiveName, isBundle, totalOriginalSize} =
+        buildArchiveManifest(selectionEntries);
     const processedEntries = [];
     const failures = [];
     const warnings = [];
@@ -441,7 +451,7 @@ export async function buildFolderCandidates(fileList, {metadataEnabled, onProgre
     }
 
     throwIfAborted(signal);
-    const zipName = `${rootFolder}.zip`;
+    const zipName = isBundle ? `${archiveName}-${bundleDateStamp()}.zip` : `${archiveName}.zip`;
     const cleanStreamEntries = processedEntries.map((entry) =>
         makeStreamEntry(entry.path, entry.file)
     );
@@ -453,13 +463,13 @@ export async function buildFolderCandidates(fileList, {metadataEnabled, onProgre
         const cleanCandidate = makeStreamingCandidate(
             cleanStreamEntries,
             zipName,
-            rootFolder,
+            archiveName,
             manifestArray
         );
         const fallbackCandidate = makeStreamingCandidate(
             failures.length > 0 ? fallbackStreamEntries : cleanStreamEntries,
             zipName,
-            rootFolder,
+            archiveName,
             manifestArray
         );
 
@@ -470,7 +480,7 @@ export async function buildFolderCandidates(fileList, {metadataEnabled, onProgre
             warnings,
             results,
             manifestArray,
-            rootFolder,
+            archiveName,
             totalOriginalSize,
             isBundle,
             fileCount: selectionEntries.length,
@@ -493,13 +503,13 @@ export async function buildFolderCandidates(fileList, {metadataEnabled, onProgre
         const cleanCandidate = makeStreamingCandidate(
             cleanStreamEntries,
             zipName,
-            rootFolder,
+            archiveName,
             manifestArray
         );
         const fallbackCandidate = makeStreamingCandidate(
             failures.length > 0 ? fallbackStreamEntries : cleanStreamEntries,
             zipName,
-            rootFolder,
+            archiveName,
             manifestArray
         );
 
@@ -510,7 +520,7 @@ export async function buildFolderCandidates(fileList, {metadataEnabled, onProgre
             warnings,
             results,
             manifestArray,
-            rootFolder,
+            archiveName,
             totalOriginalSize,
             isBundle,
             fileCount: selectionEntries.length,
@@ -522,9 +532,9 @@ export async function buildFolderCandidates(fileList, {metadataEnabled, onProgre
         file: zipBlob,
         name: zipName,
         size: zipBlob.size,
-        folderUpload: true,
-        folderName: rootFolder,
-        folderManifest: JSON.stringify(manifestArray),
+        archiveUpload: true,
+        archiveName: archiveName,
+        archiveManifest: JSON.stringify(manifestArray),
     };
     const fallbackCandidate = {
         ...cleanCandidate,
@@ -539,7 +549,7 @@ export async function buildFolderCandidates(fileList, {metadataEnabled, onProgre
         warnings,
         results,
         manifestArray,
-        rootFolder,
+        archiveName,
         totalOriginalSize,
         isBundle,
         fileCount: selectionEntries.length,

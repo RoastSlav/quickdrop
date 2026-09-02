@@ -55,15 +55,15 @@
             <!-- Contents are withheld until the fragment key is verified: with needsKeyAuth
                  the token alone has not yet proved access, and the file names say more than
                  the archive's own name does. -->
-            <div class="mb-6" th:if="${file.folderUpload and !needsKeyAuth}">
+            <div class="mb-6" th:if="${file.archiveUpload and !needsKeyAuth}">
                 <p class="section-eyebrow mb-2">
-                    <span th:text="#{page.fileView.folderContents}">Folder contents</span>
+                    <span th:text="#{page.fileView.archiveContents}">Folder contents</span>
                     <span style="color:var(--c-text-faint)" th:if="${file.itemCount > 0}"
                           th:text="'· ' + ${#messages.msg('badge.items', file.itemCount)}">· 3 items</span>
                 </p>
-                <div class="folder-tree-box" id="folderTree"
-                     th:attr="data-folder-name=${file.folderName}"></div>
-                <script id="folderManifestData" th:utext="${file.folderManifest}"
+                <div class="folder-tree-box" id="archiveTree"
+                     th:attr="data-archive-name=${file.archiveName}"></div>
+                <script id="archiveManifestData" th:utext="${file.archiveManifest}"
                         type="application/json"></script>
             </div>
 
@@ -89,17 +89,17 @@
 
 </main>
 
-<script th:if="${file.folderUpload and !needsKeyAuth}" th:inline="javascript">
+<script th:if="${file.archiveUpload and !needsKeyAuth}" th:inline="javascript">
     /*<![CDATA[*/
     window.i18n = window.i18n || {};
-    window.i18n.folderTree = {
-        fallbackName: /*[[#{page.fileView.folderFallbackName}]]*/ 'folder',
-        noManifest:   /*[[#{page.fileView.folderNoManifest}]]*/ 'No manifest available.',
-        renderFailed: /*[[#{page.fileView.folderRenderFailed}]]*/ 'Unable to render folder contents.'
+    window.i18n.archiveTree = {
+        fallbackName: /*[[#{page.archiveTree.fallbackName}]]*/ 'folder',
+        noManifest:   /*[[#{page.archiveTree.noManifest}]]*/ 'No manifest available.',
+        renderFailed: /*[[#{page.archiveTree.renderFailed}]]*/ 'Unable to render folder contents.'
     };
     /*]]>*/
 </script>
-<script th:if="${file.folderUpload and !needsKeyAuth}" src="/js/folder-tree.js" type="module"></script>
+<script th:if="${file.archiveUpload and !needsKeyAuth}" src="/js/archive-tree.js" type="module"></script>
 
 <th:block th:replace="~{fragments/layout :: pageScripts}"></th:block>
 <script th:if="${needsKeyAuth}" th:inline="javascript">

@@ -82,8 +82,8 @@ public class FileRestController {
         this.qrCodeService = qrCodeService;
     }
 
-    private static String sanitizeFolderManifest(String manifest, boolean isFolderUpload) {
-        if (!isFolderUpload || manifest == null || manifest.isBlank()) {
+    private static String sanitizeArchiveManifest(String manifest, boolean isArchiveUpload) {
+        if (!isArchiveUpload || manifest == null || manifest.isBlank()) {
             return null;
         }
         try {
@@ -105,9 +105,9 @@ public class FileRestController {
             @RequestParam(value = "keepIndefinitely", defaultValue = "false") Boolean keepIndefinitely,
             @RequestParam(value = "password", required = false) String password,
             @RequestParam(value = "hidden", defaultValue = "false") Boolean hidden,
-            @RequestParam(value = "folderUpload", defaultValue = "false") Boolean folderUpload,
-            @RequestParam(value = "folderName", required = false) String folderName,
-            @RequestParam(value = "folderManifest", required = false) String folderManifest,
+            @RequestParam(value = "archiveUpload", defaultValue = "false") Boolean archiveUpload,
+            @RequestParam(value = "archiveName", required = false) String archiveName,
+            @RequestParam(value = "archiveManifest", required = false) String archiveManifest,
             @RequestParam(value = "uploadId", required = false) String uploadId,
             HttpServletRequest request) {
 
@@ -160,8 +160,8 @@ public class FileRestController {
 
             String effectivePassword = uploadPasswordEnabled ? password : null;
 
-            String safeManifest = sanitizeFolderManifest(folderManifest, Boolean.TRUE.equals(folderUpload));
-            if (safeManifest == null && folderManifest != null) {
+            String safeManifest = sanitizeArchiveManifest(archiveManifest, Boolean.TRUE.equals(archiveUpload));
+            if (safeManifest == null && archiveManifest != null) {
                 return ResponseEntity.badRequest().body("{\"error\": \"Invalid folder manifest: must be a JSON array\"}");
             }
 
@@ -176,7 +176,7 @@ public class FileRestController {
                     ? uploadId
                     : UUID.randomUUID().toString();
 
-            UploadRequest fileUploadRequest = new UploadRequest(description, keepIndefinitelyValue, effectivePassword, hiddenValue, fileName, totalChunks, fileSize, uploaderIp, uploaderUserAgent, Boolean.TRUE.equals(folderUpload), folderName, safeManifest, false);
+            UploadRequest fileUploadRequest = new UploadRequest(description, keepIndefinitelyValue, effectivePassword, hiddenValue, fileName, totalChunks, fileSize, uploaderIp, uploaderUserAgent, Boolean.TRUE.equals(archiveUpload), archiveName, safeManifest, false);
             fileUploadRequest.uploadId = effectiveUploadId;
             boolean isLastChunk = chunkNumber == totalChunks - 1;
             Upload upload = asyncFileMergeService.submitChunk(fileUploadRequest, file, chunkNumber, false);

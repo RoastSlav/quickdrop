@@ -27,6 +27,7 @@ import java.util.UUID;
 
 import static org.rostislav.quickdrop.util.FileUtils.validateShareToken;
 import static org.springframework.http.ResponseEntity.ok;
+import static org.rostislav.quickdrop.util.FileUtils.formatFileSize;
 
 /**
  * REST API for file upload, share-link generation, and share-link downloads.
@@ -136,6 +137,13 @@ public class FileRestController {
         }
         if (fileName == null || fileName.isBlank()) {
             return ResponseEntity.badRequest().body(Map.of("error", "fileName is required."));
+        }
+        // Fails an honest client at the first chunk instead of after staging the whole upload;
+        // AsyncFileMergeService still measures what actually arrives, for the other kind.
+        long maxFileSize = applicationSettingsService.getMaxFileSize();
+        if (fileSize != null && fileSize > maxFileSize) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "error", "File exceeds the maximum size of " + formatFileSize(maxFileSize) + "."));
         }
         if (totalChunks <= 0) {
             return ResponseEntity.badRequest().body(Map.of("error", "totalChunks must be greater than zero."));

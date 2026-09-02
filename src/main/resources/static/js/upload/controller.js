@@ -234,6 +234,15 @@ export function initUploadPage(config = {}) {
         if (token !== processingToken) return;
         preparation = null;
 
+        // plan.totalSize was the sum of the selected files; the archive that actually gets
+        // uploaded carries zip headers on top, so a selection just under the limit can
+        // still produce an archive just over it. Check what will really be sent.
+        if (candidates.cleanCandidate.size > maxSize) {
+            resetFileSelection();
+            setDropZoneText(plan.limitMessage.replace("{0}", maxSizeLabel));
+            return;
+        }
+
         const {name, hint} = plan.describe(candidates);
         if (fileNameEl) {
             fileNameEl.textContent = name;

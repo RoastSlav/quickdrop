@@ -1,0 +1,4 @@
+{
+  "type": "module",
+  "comment": "Marks the browser modules under main/resources/static/js as ES modules so `npm test` can import them with node --test. Not a package: it is never installed, never published, and sits above the Maven resource root so it is not packaged into the jar. The browser does not read it."
+}

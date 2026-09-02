@@ -39,8 +39,10 @@ hand out expiring share links, and administer everything from a web admin panel 
 
 - Chunked uploads — the browser splits files into 4 MB chunks and the server merges them in the background, so large
   uploads survive flaky connections.
-- Folder uploads — a picked directory is zipped in the browser (ZIP64, stored uncompressed) with a JSON manifest of the
-  original paths and sizes.
+- Folder and multi-file uploads — a picked directory, or several files selected at once, is zipped in the browser
+  (ZIP64, stored uncompressed) with a JSON manifest of the original paths and sizes. One upload, one download, and the
+  file page lists the contents as a tree. A selection that shares a single top-level directory keeps that directory's
+  name; anything else is bundled as `files.zip`.
 - Configurable maximum file size and default retention period; users can renew a file to reset its deletion date.
 - `Keep indefinitely` exempts a file from scheduled deletion. `Hide from list` keeps it off the public file list. Either
   toggle can be restricted to admins.
@@ -394,8 +396,10 @@ they appear in the settings tabs.
 
 ## Usage
 
-**Upload a file.** Go to `/file/upload`, drag in a file or folder, optionally set a password and a description, and
-upload. You get a file page at `/file/{uuid}` with the download link, the deletion date, and a renew button.
+**Upload a file.** Go to `/file/upload`, drag in a file, several files, or a folder — or use the buttons to pick them —
+optionally set a password and a description, and upload. You get a file page at `/file/{uuid}` with the download link,
+the deletion date, and a renew button. Anything but a single file arrives as one zip, with its contents listed on the
+file page.
 
 **Create a paste.** Go to `/file/paste/new`, pick plain text or Markdown, optionally set a password, edit-only mode or
 the immutable flag, and save.

@@ -4,6 +4,7 @@ import org.rostislav.quickdrop.interceptor.AdminPasswordInterceptor;
 import org.rostislav.quickdrop.interceptor.AdminPasswordSetupInterceptor;
 import org.rostislav.quickdrop.interceptor.FilePasswordInterceptor;
 import org.rostislav.quickdrop.interceptor.RateLimitInterceptor;
+import org.rostislav.quickdrop.util.AppPaths;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.CacheControl;
@@ -86,7 +87,7 @@ public class WebConfig implements WebMvcConfigurer {
      */
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        Path brandingDir = Path.of("branding").toAbsolutePath();
+        Path brandingDir = AppPaths.BRANDING.toAbsolutePath();
         registry.addResourceHandler("/branding/**")
                 .addResourceLocations("file:" + brandingDir + "/")
                 .setCacheControl(CacheControl.maxAge(1, TimeUnit.DAYS).cachePublic());

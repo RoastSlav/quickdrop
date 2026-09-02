@@ -3,6 +3,7 @@ package org.rostislav.quickdrop;
 import jakarta.annotation.PostConstruct;
 import org.rostislav.quickdrop.service.ApplicationSettingsService;
 import org.rostislav.quickdrop.service.PendingRestoreApplier;
+import org.rostislav.quickdrop.util.AppPaths;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
@@ -41,7 +42,8 @@ public class QuickdropApplication {
     public static void main(String[] args) {
         try {
             Files.createDirectories(Path.of("./db"));
-            Files.createDirectories(Path.of("./db-backups"));
+            Files.createDirectories(AppPaths.BACKUPS);
+            AppPaths.migrateLegacyDirectories();
         } catch (Exception e) {
             logger.error("Error creating directory for database", e);
         }

@@ -221,11 +221,8 @@ docker run -d \
   -p 8080:8080 \
   --restart unless-stopped \
   -v /path/to/db:/app/db \
-  -v /path/to/db-backups:/app/db-backups \
   -v /path/to/files:/app/files \
   -v /path/to/log:/app/log \
-  -v /path/to/branding:/app/branding \
-  -v /path/to/reputation-feeds:/app/reputation-feeds \
   roastslav/quickdrop:latest
 ```
 
@@ -293,12 +290,13 @@ All paths are relative to the process working directory (`/app` in the image).
 
 | Path                | Contents                                                                                                                | Declared as a Docker volume |
 |---------------------|-------------------------------------------------------------------------------------------------------------------------|-----------------------------|
-| `db/`               | SQLite database `quickdrop.db`                                                                                          | Yes                         |
-| `db-backups/`       | Database backups                                                                                                        | Yes                         |
-| `files/`            | Uploaded files, plus `.upload-chunks/` staging during chunked uploads. Only used when the storage backend is Local disk | Yes                         |
+| `db/`               | SQLite database `quickdrop.db`, plus `backups/` (database backups) and `branding/` (custom logo)                                                                                          | Yes                         |
+| `files/`            | `reputation-feeds/` (cached Phishing Army and URLhaus feeds), plus — when the storage backend is Local disk — the uploaded files themselves and `.upload-chunks/` staging during chunked uploads | Yes                         |
 | `log/`              | `quickdrop.log`. Relocatable via the **Log storage path** runtime setting, which takes effect on the next restart       | Yes                         |
-| `branding/`         | Uploaded custom logo                                                                                                    | Yes                         |
-| `reputation-feeds/` | Cached Phishing Army and URLhaus feeds                                                                                  | Yes                         |
+
+Backups, branding and threat feeds used to sit in top-level `db-backups/`, `branding/` and
+`reputation-feeds/`. Anything left in those is moved into the paths above on startup, so those
+three mounts can simply be dropped from an existing setup.
 
 ### Runtime settings
 
@@ -363,7 +361,7 @@ they appear in the settings tabs.
 | Setting           | Default  | Description                                                    |
 |-------------------|----------|----------------------------------------------------------------|
 | App name          | empty    | Replaces "QuickDrop" in the UI and browser tab                 |
-| Logo              | none     | Uploaded to `branding/`, replaces the default logo and favicon |
+| Logo              | none     | Uploaded to `db/branding/`, replaces the default logo and favicon |
 | Default language  | `en`     | Default UI language for new visitors                           |
 | Default home page | `upload` | Where `/` redirects: `upload`, `list` or `paste`               |
 

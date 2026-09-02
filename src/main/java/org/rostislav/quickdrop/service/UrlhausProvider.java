@@ -1,6 +1,7 @@
 package org.rostislav.quickdrop.service;
 
 import org.rostislav.quickdrop.util.Fnv1aHash;
+import org.rostislav.quickdrop.util.AppPaths;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.restclient.RestTemplateBuilder;
 import org.springframework.stereotype.Service;
@@ -34,7 +35,7 @@ public class UrlhausProvider extends AbstractHashFeedProvider implements Reputat
 
     @Autowired
     public UrlhausProvider(RestTemplateBuilder restTemplateBuilder, ApplicationSettingsService applicationSettingsService) {
-        this(restTemplateBuilder, applicationSettingsService, Path.of("reputation-feeds", "urlhaus.csv"));
+        this(restTemplateBuilder, applicationSettingsService, AppPaths.REPUTATION_FEEDS.resolve("urlhaus.csv"));
     }
 
     /** Lets tests redirect the on-disk feed file to a {@code @TempDir}. */

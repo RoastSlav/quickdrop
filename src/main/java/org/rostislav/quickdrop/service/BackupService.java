@@ -3,6 +3,7 @@ package org.rostislav.quickdrop.service;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import org.rostislav.quickdrop.model.EventType;
+import org.rostislav.quickdrop.util.AppPaths;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -70,7 +71,7 @@ public class BackupService {
 
     @Autowired
     public BackupService(ApplicationSettingsService applicationSettingsService, AnalyticsService analyticsService, DataSource dataSource) {
-        this(applicationSettingsService, analyticsService, dataSource, Path.of("db", "quickdrop.db"), Path.of("db-backups"));
+        this(applicationSettingsService, analyticsService, dataSource, Path.of("db", "quickdrop.db"), AppPaths.BACKUPS);
     }
 
     /** Lets tests redirect the db file and backup directory to a {@code @TempDir}. */

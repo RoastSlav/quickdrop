@@ -53,7 +53,9 @@ COPY --from=builder /build/target/quickdrop.jar /app/quickdrop.jar
 
 WORKDIR /app
 
-VOLUME ["/app/db", "/app/db-backups", "/app/log", "/app/files", "/app/branding", "/app/reputation-feeds"]
+# Everything the app writes lives under these three: backups in db/backups, branding in
+# db/branding, the threat feeds in files/reputation-feeds.
+VOLUME ["/app/db", "/app/log", "/app/files"]
 
 EXPOSE 8080
 

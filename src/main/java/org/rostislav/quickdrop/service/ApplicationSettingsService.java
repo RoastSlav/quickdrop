@@ -6,6 +6,7 @@ import org.rostislav.quickdrop.model.ApplicationSettingsViewModel;
 import org.rostislav.quickdrop.model.EventCategory;
 import org.rostislav.quickdrop.repository.ApplicationSettingsRepository;
 import org.rostislav.quickdrop.storage.*;
+import org.rostislav.quickdrop.util.AppPaths;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -528,7 +529,7 @@ public class ApplicationSettingsService {
                     logger.warn("Rejecting logo filename starting with dot: {}", sanitizedName);
                     return;
                 }
-                Path brandingDir = Path.of("branding").toAbsolutePath();
+                Path brandingDir = AppPaths.BRANDING.toAbsolutePath();
                 Files.createDirectories(brandingDir);
                 // Fix 2b: path-confinement check
                 Path resolvedPath = brandingDir.resolve(sanitizedName).normalize();
@@ -1377,7 +1378,7 @@ public class ApplicationSettingsService {
         if (fileName == null || fileName.isBlank()) {
             return "/images/favicon.png";
         }
-        Path brandingDir = Path.of("branding").toAbsolutePath();
+        Path brandingDir = AppPaths.BRANDING.toAbsolutePath();
         // Fix 2: path-confinement check when serving the stored filename
         Path candidate = brandingDir.resolve(fileName).normalize();
         if (!candidate.startsWith(brandingDir.normalize())) {

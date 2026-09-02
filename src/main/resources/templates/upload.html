@@ -111,7 +111,7 @@
                         <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden"/>
                         <input name="uuid" th:value="${uuid}" type="hidden"/>
 
-                        <div aria-label="File drop area — use the buttons below to select a file" class="dropzone"
+                        <div aria-label="File drop area — use the buttons below to select files or a folder" class="dropzone"
                              id="dropZone" role="region">
                             <div class="dropzone-body">
                                 <div class="dropzone-icon">
@@ -157,7 +157,7 @@
                             </div>
                         </div>
 
-                        <input class="hidden" id="file" name="file" type="file"/>
+                        <input class="hidden" id="file" multiple name="file" type="file"/>
                         <input class="hidden" id="folderInput" multiple name="folderInput" type="file" webkitdirectory/>
 
                         <div class="form-row">
@@ -344,13 +344,17 @@
         metadataPrivacyNotice: /*[[#{page.upload.metadataPrivacyNotice}]]*/ 'All known metadata will be removed, but this format may still contain details that give information about your identity.',
         fileExceedsLimit:      /*[[#{page.upload.validation.fileExceedsLimit}]]*/ 'File exceeds the {0} limit.',
         folderExceedsLimit:    /*[[#{page.upload.validation.folderExceedsLimit}]]*/ 'Folder exceeds the {0} limit.',
+        filesExceedLimit:      /*[[#{page.upload.validation.filesExceedLimit}]]*/ 'Selected files exceed the {0} limit.',
         processingFolder:      /*[[#{page.upload.processingFolder}]]*/ 'Processing folder...',
+        processingFiles:       /*[[#{page.upload.processingFiles}]]*/ 'Processing files...',
         folderSelected:        /*[[#{page.upload.folderSelected}]]*/ 'Folder selected: {0} ({1} items)',
+        filesSelected:         /*[[#{page.upload.filesSelected}]]*/ '{0} files selected',
         noCandidate:           /*[[#{page.upload.noCandidate}]]*/ 'No upload candidate is available.',
         uploadFailed:          /*[[#{notification.upload.failed}]]*/ 'Upload failed. Please try again.',
         noFileInfo:            /*[[#{notification.upload.noFileInfo}]]*/ 'Upload finished but no file information was returned from the server.',
         selectionRequired:     /*[[#{notification.selection.required}]]*/ 'Select a file or folder to upload first.',
-        folderFailed:          /*[[#{notification.folder.processingFailed}]]*/ 'Unable to prepare folder for upload.'
+        folderFailed:          /*[[#{notification.folder.processingFailed}]]*/ 'Unable to prepare folder for upload.',
+        filesFailed:           /*[[#{notification.files.processingFailed}]]*/ 'Unable to prepare the files for upload.'
     };
     /*]]>*/
 </script>

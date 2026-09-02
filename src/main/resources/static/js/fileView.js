@@ -872,7 +872,7 @@ function renderFolderTree() {
     const root = createTreeRoot(folderName);
     entries.forEach((entry) => {
         if (!entry || !entry.path) return;
-        addPathToTree(root, entry.path, folderName);
+        addPathToTree(root, entry.path, folderName, entry.type === "dir");
     });
 
     const lines = [];
@@ -917,24 +917,22 @@ function createTreeRoot(name) {
  * @param {{ name: string, children: object[], files: string[] }} root
  * @param {string} path       - Slash-separated manifest path
  * @param {string} folderName - Root folder name used to detect duplicate prefix
+ * @param {boolean} isDir     - The entry's own manifest type. Guessing from a dot in the
+ *                              name instead would file Makefile under directories.
  */
-function addPathToTree(root, path, folderName) {
+function addPathToTree(root, path, folderName, isDir = false) {
     const parts = path.split(/[\\/]/).filter(Boolean);
     let idx = 0;
     if (parts[0] === folderName) {
         idx = 1; // skip duplicated root segment
     }
 
+    const leafIsDir = isDir || Boolean(path && path.endsWith("/"));
     let node = root;
     for (; idx < parts.length; idx++) {
         const part = parts[idx];
-        const isFile = idx === parts.length - 1;
-        if (isFile && path && path.endsWith("/")) {
-            // directory marker encoded with trailing slash
-            const dirNode = createTreeRoot(part);
-            node.children.push(dirNode);
-            node = dirNode;
-        } else if (isFile && part.includes(".")) {
+        const isLeaf = idx === parts.length - 1;
+        if (isLeaf && !leafIsDir) {
             node.files.push(part);
         } else {
             let child = node.children.find((c) => c.name === part);

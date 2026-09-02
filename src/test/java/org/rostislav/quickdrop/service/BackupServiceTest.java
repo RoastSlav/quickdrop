@@ -183,6 +183,18 @@ class BackupServiceTest extends QuickdropIntegrationTest {
         assertEquals(2, backups.size(), "only the 2 newest backups should remain after pruning");
     }
 
+    @Test
+    void createBackup_retentionOfZeroFallsBackToTheDefaultInsteadOfDeletingEverything() throws Exception {
+        setMaxBackups(0);
+
+        backupService.createBackup();
+        Thread.sleep(5);
+        backupService.createBackup();
+
+        assertEquals(2, backupService.listBackups().size(),
+                "a zero retention must not wipe the backups, including the one just created");
+    }
+
     // -------------------------------------------------------------------------
     // restoreBackup
     // -------------------------------------------------------------------------

@@ -16,6 +16,8 @@ import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.*;
 
+import static org.rostislav.quickdrop.util.FileUtils.formatFileSize;
+
 /**
  * Merges chunked file uploads into a single file asynchronously.
  *
@@ -571,6 +573,9 @@ public class AsyncFileMergeService {
         @Override
         public void run() {
             boolean shouldEncrypt = fileQueryService.shouldEncrypt(request);
+            // Read once so a settings change mid-upload cannot move the goalposts.
+            long maxFileSize = applicationSettingsService.getMaxFileSize();
+            long mergedBytes = 0;
             try {
                 OutputStream baseOut = storageService.getOutputStream(uuid);
                 OutputStream finalOut = shouldEncrypt
@@ -587,7 +592,14 @@ public class AsyncFileMergeService {
                         while (pendingChunks.containsKey(nextExpectedChunk)) {
                             ChunkInfo toWrite = pendingChunks.remove(nextExpectedChunk);
                             try (InputStream in = new BufferedInputStream(new FileInputStream(toWrite.chunkFile))) {
-                                in.transferTo(finalOut);
+                                mergedBytes += in.transferTo(finalOut);
+                            }
+                            // The declared fileSize is the client's word; this is what actually
+                            // arrived, so it is the only size check an uncooperative client
+                            // cannot talk its way past. Checked per chunk to stop early.
+                            if (mergedBytes > maxFileSize) {
+                                throw new IOException("Upload exceeds the maximum file size of "
+                                        + formatFileSize(maxFileSize) + ".");
                             }
                             if (!toWrite.chunkFile.delete()) {
                                 logger.warn("Failed to delete chunk file: {}", toWrite.chunkFile.getAbsolutePath());

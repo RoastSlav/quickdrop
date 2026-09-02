@@ -14,9 +14,7 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class LinkGuardTest {
 
-    // Left unstubbed on purpose: getShortenerDomainRuleMode() returns null by default from
-    // a bare Mockito mock, and LinkGuard treats a null mode the same as "OFF" -- exercising
-    // that fallback is as good a check of the domain-rule wiring as stubbing "OFF" explicitly.
+    // Left unstubbed on purpose: a bare mock returns null from getShortenerDomainRuleMode(), and LinkGuard treats null the same as "OFF".
     @Mock
     private ApplicationSettingsService applicationSettingsService;
 
@@ -24,14 +22,9 @@ class LinkGuardTest {
 
     @BeforeEach
     void setUp() {
-        // Constructed here, not as a field initializer -- @Mock fields aren't injected until
-        // after the test instance is constructed, so building LinkGuard too early would
-        // capture a null ApplicationSettingsService.
-        //
-        // A real ReputationCheckService with no providers and the same mocked settings service
-        // is used rather than a mock of ReputationCheckService itself: isReputationCheckEnabled()
-        // defaults to false on a bare Mockito mock, so check() short-circuits to "allowed"
-        // without needing an explicit stub -- one less thing for every test here to know about.
+        // Built here, not as a field initializer, since @Mock fields aren't injected until after construction.
+        // A real (provider-less) ReputationCheckService is used instead of a mock of it: isReputationCheckEnabled()
+        // defaults to false on a bare mock, so check() short-circuits to "allowed" without an explicit stub.
         linkGuard = new LinkGuard(new UrlNormalizationService(), new UrlSafetyValidator(), applicationSettingsService,
                 new ReputationCheckService(java.util.List.of(), applicationSettingsService));
     }
@@ -79,9 +72,7 @@ class LinkGuardTest {
 
     @Test
     void checkForRedirectReRejectsAUrlThatHasBecomeUnsafe() {
-        // Simulates DNS rebinding: a URL that was safe at creation time now resolves
-        // (or was always) to a private address — checkForRedirect must catch it, not
-        // just checkForCreation.
+        // Simulates DNS rebinding: checkForRedirect must catch an unsafe destination too, not just checkForCreation.
         LinkVerdict verdict = linkGuard.checkForRedirect("http://192.168.1.1/");
         assertFalse(verdict.allowed());
         assertEquals("unsafe_destination", verdict.reasonCode());
@@ -108,11 +99,7 @@ class LinkGuardTest {
 
     @Test
     void blocklistRejectsASubdomainOfAListedDomain() {
-        // www.example.com is used here (not e.g. sub.evil.com) because UrlSafetyValidator
-        // performs a real DNS lookup before the domain-rule check ever runs -- a made-up
-        // subdomain wouldn't resolve and would be rejected earlier for the wrong reason
-        // (unsafe_destination instead of domain_rejected), leaving the domain-rule stubs
-        // unexercised.
+        // www.example.com (a real, resolvable domain) is used because UrlSafetyValidator's DNS lookup runs before the domain-rule check; a made-up subdomain would fail for unsafe_destination first, leaving the domain-rule stubs unexercised.
         when(applicationSettingsService.getShortenerDomainRuleMode()).thenReturn("BLOCKLIST");
         when(applicationSettingsService.getShortenerDomainRules()).thenReturn("example.com");
 
@@ -132,12 +119,7 @@ class LinkGuardTest {
 
     @Test
     void blocklistDoesNotFalsePositiveOnASuffixThatIsNotADomainBoundary() {
-        // "notevil.com" contains "evil.com" as a suffix of its label, but is a different
-        // domain -- domainMatches must compare on a dot boundary, not raw string suffix.
-        // Unlike the other domain-rule tests, "notevil.com" isn't a registered domain, so
-        // routing it through the real UrlSafetyValidator (which does a live DNS lookup)
-        // would fail it for "unsafe_destination" before the boundary logic under test ever
-        // runs -- a mocked, always-safe validator isolates this test from DNS entirely.
+        // domainMatches must compare on a dot boundary, not raw string suffix. "notevil.com" isn't a registered domain, so a mocked always-safe validator isolates this from the real DNS lookup.
         UrlSafetyValidator alwaysSafe = mock(UrlSafetyValidator.class);
         when(alwaysSafe.validate(org.mockito.ArgumentMatchers.any())).thenReturn(java.util.Optional.empty());
         LinkGuard guardWithoutDnsCheck = new LinkGuard(new UrlNormalizationService(), alwaysSafe,
@@ -188,8 +170,7 @@ class LinkGuardTest {
 
     @Test
     void checkForRedirectAlsoAppliesDomainRules() {
-        // The domain blocklist must apply on every resolve, not just at creation -- an admin
-        // can add a domain to the blocklist after links to it already exist.
+        // The domain blocklist must apply on every resolve, not just creation -- an admin can blocklist a domain after links to it already exist.
         when(applicationSettingsService.getShortenerDomainRuleMode()).thenReturn("BLOCKLIST");
         when(applicationSettingsService.getShortenerDomainRules()).thenReturn("evil.com");
 

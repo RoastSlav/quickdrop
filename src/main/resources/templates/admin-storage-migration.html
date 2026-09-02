@@ -25,7 +25,6 @@
             </div>
         </div>
 
-        <!-- Backend overview card — one column per backend -->
         <div class="card p-6 mb-6 animate-in animate-in-delay-1">
             <div class="flex items-center gap-3 mb-5">
                 <h2 class="font-semibold" th:text="#{page.migration.backendStatus.title}">Backend Status</h2>
@@ -33,10 +32,8 @@
                 <span class="badge badge-teal" th:text="${currentBackend}">LOCAL</span>
             </div>
 
-            <!-- Responsive grid: 2 cols on mobile → 3 on sm → 5 on lg -->
             <div class="backend-grid">
 
-                <!-- LOCAL -->
                 <div class="flex flex-col gap-2 p-3 rounded-xl"
                      style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
                     <p class="text-sm font-semibold" th:text="#{page.migration.backend.local}">Local Filesystem</p>
@@ -45,7 +42,6 @@
                     <span class="text-xs text-muted" th:text="#{page.migration.test.notApplicable}">—</span>
                 </div>
 
-                <!-- S3 -->
                 <div class="flex flex-col gap-2 p-3 rounded-xl"
                      style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
                     <p class="text-sm font-semibold" th:text="#{page.migration.backend.s3}">S3</p>
@@ -63,7 +59,6 @@
                     </div>
                 </div>
 
-                <!-- AZURE -->
                 <div class="flex flex-col gap-2 p-3 rounded-xl"
                      style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
                     <p class="text-sm font-semibold" th:text="#{page.migration.backend.azure}">Azure Blob</p>
@@ -81,7 +76,6 @@
                     </div>
                 </div>
 
-                <!-- SFTP -->
                 <div class="flex flex-col gap-2 p-3 rounded-xl"
                      style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
                     <p class="text-sm font-semibold" th:text="#{page.migration.backend.sftp}">SFTP</p>
@@ -99,7 +93,6 @@
                     </div>
                 </div>
 
-                <!-- WEBDAV -->
                 <div class="flex flex-col gap-2 p-3 rounded-xl"
                      style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
                     <p class="text-sm font-semibold" th:text="#{page.migration.backend.webdav}">WebDAV</p>
@@ -124,7 +117,6 @@
                th:text="#{page.migration.testHint}">Test source and destination before starting.</p>
         </div>
 
-        <!-- Progress card (shown when migration has run) -->
         <div aria-atomic="true" aria-live="polite" class="card p-6 mb-6 animate-in animate-in-delay-2"
              id="progressCard"
              th:if="${state.status.name() != 'IDLE'}">
@@ -148,14 +140,12 @@
                 </span>
             </div>
 
-            <!-- Progress bar -->
             <div class="w-full rounded-full h-2 mb-4" style="background:rgba(255,255,255,0.1)"
                  th:if="${state.total > 0}">
                 <div class="h-2 rounded-full transition-all" style="background:var(--c-teal)"
                      th:style="'width:' + (${state.migrated} * 100 / ${state.total}) + '%'"></div>
             </div>
 
-            <!-- Error list -->
             <div th:if="${!#lists.isEmpty(state.errors)}">
                 <p class="text-sm font-medium mb-2" style="color:var(--c-danger)"
                    th:text="#{page.migration.progress.errors}">Errors:</p>
@@ -165,14 +155,12 @@
             </div>
         </div>
 
-        <!-- Start migration form -->
         <div class="card p-6 animate-in animate-in-delay-3">
             <h2 class="font-semibold mb-4" th:text="#{page.migration.start.title}">Start Migration</h2>
 
             <form action="/admin/storage-migration/start" id="migrationForm" method="post">
                 <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden"/>
 
-                <!-- Source + dest selects -->
                 <div class="migration-selects mb-4">
                     <div class="flex flex-col gap-2 flex-1 min-w-0">
                         <label class="text-sm font-medium" for="sourceSelect"
@@ -198,7 +186,6 @@
                         </select>
                     </div>
                 </div>
-                <!-- Start button — full-width on mobile, auto on larger screens -->
                 <button class="btn btn-gradient migration-start-btn mb-4"
                         id="startBtn"
                         onclick="startMigration()"

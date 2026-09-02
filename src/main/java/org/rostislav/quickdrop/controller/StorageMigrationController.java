@@ -138,13 +138,9 @@ public class StorageMigrationController {
             return ResponseEntity.status(403).build();
         }
 
-        // Validate the configured endpoint/host before making any live network connection.
-        // requiresHostCheck distinguishes "this backend type has no host field to validate"
-        // (LOCAL, AZURE -- endpointToCheck is null by design) from "this backend needs a host
-        // but none has been configured yet" (S3/WEBDAV/SFTP with a never-set, genuinely-null
-        // column) -- collapsing both into a single null check previously let the
-        // never-configured case skip validation entirely and NPE deeper in
-        // testBackendConnection() when it tried to build credentials from a null value.
+        // Separate flag (not just a null check) — LOCAL/AZURE legitimately have no host field,
+        // but a never-configured S3/WEBDAV/SFTP host is also null and must still be rejected here
+        // rather than NPE-ing later in testBackendConnection().
         boolean requiresHostCheck = switch (backend) {
             case S3, WEBDAV, SFTP -> true;
             default -> false; // LOCAL, AZURE — no user-supplied host to validate here
@@ -194,7 +190,6 @@ public class StorageMigrationController {
             String host;
             if (url.startsWith("http://") || url.startsWith("https://")) {
                 java.net.URI uri = new java.net.URI(url);
-                // Require HTTPS for URL-form endpoints
                 if (!"https".equalsIgnoreCase(uri.getScheme())) return false;
                 host = uri.getHost();
             } else {

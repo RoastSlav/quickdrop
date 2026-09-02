@@ -21,24 +21,14 @@ public class UploadRequest {
      */
     public String fileName;
 
-    /**
-     * Total number of chunks expected for this upload.
-     */
     public int totalChunks;
 
     /**
-     * Total file size in bytes as declared by the client.
+     * File size in bytes as declared by the client (not verified server-side).
      */
     public Long fileSize;
 
-    /**
-     * Optional human-readable description provided by the uploader.
-     */
     public String description;
-
-    /**
-     * Whether the file should be exempt from the scheduled age-based deletion.
-     */
     public boolean keepIndefinitely;
 
     /**
@@ -46,9 +36,6 @@ public class UploadRequest {
      */
     public String password;
 
-    /**
-     * Whether the file should be hidden from the public listing.
-     */
     public boolean hidden;
 
     /**
@@ -56,9 +43,6 @@ public class UploadRequest {
      */
     public String uploaderIp;
 
-    /**
-     * User-Agent header value from the upload request.
-     */
     public String uploaderUserAgent;
 
     /**

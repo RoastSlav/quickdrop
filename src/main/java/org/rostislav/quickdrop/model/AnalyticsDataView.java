@@ -8,9 +8,6 @@ package org.rostislav.quickdrop.model;
  * {@link org.rostislav.quickdrop.util.FileUtils#formatFileSize(long)}.
  */
 public class AnalyticsDataView {
-    /**
-     * Total number of file download events recorded in the history log.
-     */
     private long totalDownloads;
 
     /**
@@ -28,9 +25,6 @@ public class AnalyticsDataView {
      */
     private long totalFileCount;
 
-    /**
-     * Number of paste entries in the database.
-     */
     private long totalPastes;
 
     /**
@@ -38,9 +32,6 @@ public class AnalyticsDataView {
      */
     private long totalPasteViews;
 
-    /**
-     * Human-readable average byte length of paste content.
-     */
     private String averagePasteLength;
 
     /**

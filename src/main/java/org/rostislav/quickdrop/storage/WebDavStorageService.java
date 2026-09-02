@@ -33,7 +33,7 @@ public class WebDavStorageService implements StorageService {
 
     public synchronized void refreshClient() {
         WebDavConfig cfg = configSupplier.get();
-        // Fix 5: Warn when plain HTTP is used so credentials are not silently transmitted in cleartext.
+        // Warn when plain HTTP is used so credentials are not silently transmitted in cleartext.
         String url = cfg.url();
         if (url != null && url.startsWith("http://")) {
             logger.warn("WebDAV URL uses plain HTTP ({}). Credentials will be transmitted in cleartext. " +
@@ -76,8 +76,8 @@ public class WebDavStorageService implements StorageService {
 
     @Override
     public OutputStream getOutputStream(String key) throws IOException {
-        // Fix 4: Buffer to a temp file, then stream it to the server via PUT on close.
-        // This avoids loading the entire file into a byte[] (OOM risk for large uploads).
+        // Buffer to a temp file, then stream it to the server via PUT on close,
+        // avoiding loading the entire file into a byte[] (OOM risk for large uploads).
         try {
             java.nio.file.Path tmp = java.nio.file.Files.createTempFile("qd-webdav-", ".tmp");
             OutputStream base = java.nio.file.Files.newOutputStream(tmp);

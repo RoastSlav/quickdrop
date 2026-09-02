@@ -199,30 +199,6 @@ public interface ShortLinkRepository extends JpaRepository<ShortLink, Long> {
     List<String> findShareSidecarKeys();
 
     /**
-     * Returns a filtered, sorted, paginated page of currently-active upload-share links.
-     * A link is active when its expiry date is {@code null} or in the future AND its
-     * use allowance is {@code null} or greater than zero.
-     *
-     * <p>Any filter parameter that represents "no constraint" should be passed as
-     * {@code null} / {@code false}:
-     * <ul>
-     *   <li>{@code isPaste = null} — include links for both files and pastes</li>
-     *   <li>{@code noExpiry = false} — include links with and without an expiry date</li>
-     *   <li>{@code unlimited = false} — include links with and without a use cap</li>
-     *   <li>{@code query = null} — no name/code substring filter</li>
-     * </ul>
-     *
-     * @param today     today's date used as the expiry cutoff (pass {@code LocalDate.now()})
-     * @param isPaste   {@code true} = pastes only, {@code false} = files only,
-     *                  {@code null} = both
-     * @param noExpiry  when {@code true} restrict to links with no expiry date
-     * @param unlimited when {@code true} restrict to links with no use cap
-     * @param query     optional case-insensitive substring matched against upload name
-     *                  and code string; pass {@code null} to skip
-     * @param pageable  pagination and sort configuration
-     * @return page of matching active links
-     */
-    /**
      * Counts still-active upload-share links, using the same "active" predicate as
      * {@link #findFiltered} (not expired, uses remaining) minus the user filters.
      *
@@ -249,6 +225,30 @@ public interface ShortLinkRepository extends JpaRepository<ShortLink, Long> {
             "(s.remainingUses IS NULL OR s.remainingUses > 0)")
     long countActiveRedirectLinks(@Param("today") LocalDate today);
 
+    /**
+     * Returns a filtered, sorted, paginated page of currently-active upload-share links.
+     * A link is active when its expiry date is {@code null} or in the future AND its
+     * use allowance is {@code null} or greater than zero.
+     *
+     * <p>Any filter parameter that represents "no constraint" should be passed as
+     * {@code null} / {@code false}:
+     * <ul>
+     *   <li>{@code isPaste = null} — include links for both files and pastes</li>
+     *   <li>{@code noExpiry = false} — include links with and without an expiry date</li>
+     *   <li>{@code unlimited = false} — include links with and without a use cap</li>
+     *   <li>{@code query = null} — no name/code substring filter</li>
+     * </ul>
+     *
+     * @param today     today's date used as the expiry cutoff (pass {@code LocalDate.now()})
+     * @param isPaste   {@code true} = pastes only, {@code false} = files only,
+     *                  {@code null} = both
+     * @param noExpiry  when {@code true} restrict to links with no expiry date
+     * @param unlimited when {@code true} restrict to links with no use cap
+     * @param query     optional case-insensitive substring matched against upload name
+     *                  and code string; pass {@code null} to skip
+     * @param pageable  pagination and sort configuration
+     * @return page of matching active links
+     */
     @Query(value = "SELECT s FROM UploadShareLink s JOIN FETCH s.upload WHERE " +
             "(s.expirationDate IS NULL OR s.expirationDate >= :today) AND " +
             "(s.remainingUses IS NULL OR s.remainingUses > 0) AND " +

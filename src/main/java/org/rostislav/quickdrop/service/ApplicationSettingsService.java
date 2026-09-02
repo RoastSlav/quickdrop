@@ -402,11 +402,8 @@ public class ApplicationSettingsService {
         entity.setShortenerEnabled(shortenerEnabled);
         entity.setShortenerAdminOnly(shortenerEnabled && settings.isShortenerAdminOnly());
         entity.setShortenerCodeLength(settings.getShortenerCodeLength() > 0 ? settings.getShortenerCodeLength() : 5);
-        // Floored at 8, not just >0: this token is the only thing standing between an
-        // anonymous caller and the file's bytes, and an admin lowering it to 4 "to make
-        // links prettier" silently reopens the enumeration the split exists to close.
-        // The shortener code length above stays freely adjustable — guessing one of those
-        // only reveals a destination URL.
+        // Floored at 8, not just >0: this token gates the file's bytes, unlike the freely
+        // adjustable shortener code length above (which only guards a destination URL).
         entity.setShareTokenLength(Math.max(settings.getShareTokenLength(), 8));
         boolean shortenerCustomAliasEnabled = shortenerEnabled && settings.isShortenerCustomAliasEnabled();
         entity.setShortenerCustomAliasEnabled(shortenerCustomAliasEnabled);
@@ -438,10 +435,8 @@ public class ApplicationSettingsService {
         entity.setActivityRetentionSystemDays(Math.max(settings.getActivityRetentionSystemDays(), 0));
         entity.setUrlhausAuthKey(settings.getUrlhausAuthKey());
         entity.setSafeBrowsingApiKey(settings.getSafeBrowsingApiKey());
-        // Each provider can only be (re-)enabled through #acceptReputationProviderTerms, never
-        // through this general settings save -- turning it off here also clears the acceptance
-        // timestamp, so re-enabling later always re-prompts for licence acceptance, per the
-        // "off then back on re-prompts" requirement.
+        // Can only be (re-)enabled via #acceptReputationProviderTerms; disabling here also
+        // clears the acceptance timestamp so re-enabling always re-prompts for the licence.
         entity.setReputationPhishingArmyEnabled(settings.isReputationPhishingArmyEnabled() && entity.getPhishingArmyTermsAcceptedAt() != null);
         if (!entity.isReputationPhishingArmyEnabled()) {
             entity.setPhishingArmyTermsAcceptedAt(null);

@@ -60,10 +60,7 @@ class ShortLinkServiceTest extends QuickdropIntegrationTest {
 
     @Test
     void createRedirectLinkRejectsReservedAlias() {
-        // createdByAdmin=true here: custom aliases default to admin-only (see
-        // createRedirectLinkRejectsCustomAliasForNonAdmin), and both rejection paths share
-        // the "invalid_alias" reason code -- passing false would make this test pass for
-        // the wrong reason (the admin gate, never reaching the reserved-word check at all).
+        // createdByAdmin=true: the admin gate and reserved-word check share the "invalid_alias" code, so passing false would pass for the wrong reason.
         LinkRejectedException ex = assertThrows(LinkRejectedException.class,
                 () -> shortLinkService.createRedirectLink("example.com", null, null, "admin", true, "127.0.0.1"));
         assertEquals("invalid_alias", ex.getReasonCode());

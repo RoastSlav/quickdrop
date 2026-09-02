@@ -74,8 +74,7 @@ class ApplicationSettingsServiceTest extends QuickdropIntegrationTest {
 
         applicationSettingsService.updateApplicationSettings(vm, null, null, false);
 
-        // getMaxFileSize() is only correct post-update if the @CacheEvict actually fired --
-        // otherwise this would still return the stale cached value read above.
+        // Only correct if @CacheEvict actually fired -- otherwise this returns the stale cached value read above.
         assertEquals(originalMax + 999_999L, applicationSettingsService.getMaxFileSize());
         assertEquals(1, applicationSettingsRepository.count(), "update must never insert a second settings row");
     }
@@ -92,19 +91,11 @@ class ApplicationSettingsServiceTest extends QuickdropIntegrationTest {
         assertEquals(12, applicationSettingsService.getMaxFileLifeTime());
     }
 
-    // -------------------------------------------------------------------------
-    // Logo upload validation (private validateLogoFile, exercised via updateApplicationSettings)
-    // -------------------------------------------------------------------------
-    // None of these reach disk: validateLogoFile() throws before updateApplicationSettings()
-    // ever creates the branding/ directory or calls transferTo(), so rejection is safe to
-    // test without touching the real filesystem or needing a @TempDir redirect.
+    // validateLogoFile() throws before updateApplicationSettings() touches disk, so these rejections need no @TempDir.
 
     @Test
     void updateApplicationSettings_rejectsSvgDisguisedWithPngContentType() {
-        // The actual attack this validation exists for: an SVG payload (which can carry
-        // <script>) uploaded with a spoofed image/png Content-Type and a .png filename, so
-        // the declared MIME type and extension checks alone would both pass it through.
-        // Only the magic-byte sniff (checking the decoded body for "<svg") catches this.
+        // The attack this guards against: an SVG (which can carry <script>) uploaded with a spoofed image/png content type and .png filename, defeating MIME/extension checks alone.
         MockMultipartFile svgAsPng = new MockMultipartFile(
                 "appLogo", "logo.png", "image/png",
                 "<svg xmlns=\"http://www.w3.org/2000/svg\"><script>alert(1)</script></svg>"
@@ -130,8 +121,7 @@ class ApplicationSettingsServiceTest extends QuickdropIntegrationTest {
 
     @Test
     void updateApplicationSettings_rejectsSvgExtensionEvenWithAllowedContentType() {
-        // Extension check runs independently of the content-type check above -- a .svg
-        // filename is rejected even if the (also-spoofed) content type claims image/png.
+        // Extension check runs independently of the content-type check above.
         MockMultipartFile file = new MockMultipartFile(
                 "appLogo", "logo.svg", "image/png", "not actually svg content".getBytes(StandardCharsets.UTF_8));
         ApplicationSettingsViewModel vm = new ApplicationSettingsViewModel(applicationSettingsService.getApplicationSettings());
@@ -166,16 +156,7 @@ class ApplicationSettingsServiceTest extends QuickdropIntegrationTest {
 
     @Test
     void updateApplicationSettings_findingRejectedLogoAlsoDiscardsUnrelatedBundledChanges() {
-        // FINDING (not a regression guard -- documents current, arguably-surprising
-        // behavior): updateApplicationSettings() mutates its JPA entity in-memory for every
-        // field, including maxFileSize, THEN reaches the logo block, and only calls
-        // repository.save() at the very end. The catch block for a rejected logo does an
-        // early `return` before that save() -- so an admin bundling an unrelated settings
-        // change (e.g. raising max file size) with an invalid logo in the same form
-        // submission has BOTH silently discarded, with no error surfaced beyond a server log
-        // line. This test exists so a future fix (e.g. saving the non-logo fields regardless,
-        // or validating the logo before mutating the entity) has a test that must be
-        // consciously updated rather than one that just starts failing unnoticed.
+        // FINDING, not a regression guard: a rejected logo's early return skips repository.save(), so an unrelated bundled change (e.g. maxFileSize) is silently discarded too. Documents current behavior so a future fix must consciously update this test.
         long originalMax = applicationSettingsService.getMaxFileSize();
         ApplicationSettingsViewModel vm = new ApplicationSettingsViewModel(applicationSettingsService.getApplicationSettings());
         vm.setMaxFileSize(originalMax + 12_345L);
@@ -233,12 +214,7 @@ class ApplicationSettingsServiceTest extends QuickdropIntegrationTest {
             assertTrue(hash.startsWith("$2"));
             assertTrue(BCrypt.checkpw("app-access-pw", hash));
         } finally {
-            // Leaving the app password enabled would gate every route behind Spring Security
-            // authentication for every other test class sharing this context (no @Order
-            // relative to omittingAppPasswordFlagDisablesAppPassword pins execution order,
-            // so this must self-clean regardless of which runs last on a given JVM). Restore
-            // a safe state regardless of assertion outcome, matching the Discord webhook
-            // test's cleanup pattern above.
+            // Leaving this enabled would gate every route behind Spring Security auth for every other test class sharing this context; no @Order pins run-last here, so self-clean unconditionally.
             ApplicationSettingsViewModel cleanup = new ApplicationSettingsViewModel(applicationSettingsService.getApplicationSettings());
             cleanup.setAppPasswordEnabled(false);
             applicationSettingsService.updateApplicationSettings(cleanup, null, null, false);
@@ -247,13 +223,11 @@ class ApplicationSettingsServiceTest extends QuickdropIntegrationTest {
 
     @Test
     void omittingAppPasswordFlagDisablesAppPassword() {
-        // First enable it...
         ApplicationSettingsViewModel enableVm = new ApplicationSettingsViewModel(applicationSettingsService.getApplicationSettings());
         enableVm.setAppPasswordEnabled(true);
         applicationSettingsService.updateApplicationSettings(enableVm, "temp-pw", null, false);
         assertTrue(applicationSettingsService.isAppPasswordEnabled());
 
-        // ...then a save with the flag off (and no new password) must disable it again.
         ApplicationSettingsViewModel disableVm = new ApplicationSettingsViewModel(applicationSettingsService.getApplicationSettings());
         disableVm.setAppPasswordEnabled(false);
         applicationSettingsService.updateApplicationSettings(disableVm, null, null, false);
@@ -314,11 +288,8 @@ class ApplicationSettingsServiceTest extends QuickdropIntegrationTest {
 
     /**
      * Restores upload/file-list/pastebin/home-page settings to their fresh-install defaults.
-     * None of the three tests above have an {@code @Order} relative to each other or to any
-     * test in another class sharing this context, so leaving {@code uploadEnabled=false} (or
-     * similar) behind would silently break upload-dependent tests elsewhere in the suite,
-     * non-deterministically depending on JVM method-reflection order -- the same class of bug
-     * fixed for {@code providingAppPasswordEnablesItAndStoresBCryptHash} above.
+     * Unordered relative to other tests sharing this context, so leaving a disabled flag behind
+     * would non-deterministically break upload-dependent tests elsewhere in the suite.
      */
     private void restoreUploadDefaults() {
         ApplicationSettingsViewModel cleanup = new ApplicationSettingsViewModel(applicationSettingsService.getApplicationSettings());
@@ -354,10 +325,7 @@ class ApplicationSettingsServiceTest extends QuickdropIntegrationTest {
             assertEquals("https://discord.com/api/webhooks/123/abc", applicationSettingsService.getDiscordWebhookUrl());
             assertTrue(applicationSettingsService.isDiscordWebhookEnabled());
         } finally {
-            // Every event type defaults to notifications-enabled (see ApplicationSettingsEntity),
-            // so leaving a live Discord webhook configured would make any later
-            // upload/download/paste test elsewhere in this shared-context suite fire a real
-            // network POST. Restore a safe state regardless of assertion outcome.
+            // Every event type defaults to notifications-enabled, so a leftover live webhook would make a later test elsewhere in this shared-context suite fire a real network POST.
             ApplicationSettingsViewModel cleanup = new ApplicationSettingsViewModel(applicationSettingsService.getApplicationSettings());
             cleanup.setDiscordWebhookEnabled(false);
             cleanup.setDiscordWebhookUrl("");
@@ -387,15 +355,7 @@ class ApplicationSettingsServiceTest extends QuickdropIntegrationTest {
         try {
             assertTrue(applicationSettingsService.isBackendConfigured(StorageBackend.S3));
         } finally {
-            // updateApplicationSettings() only ever overwrites s3SecretKey on a non-blank
-            // value (by design, so a settings save never accidentally wipes a saved
-            // secret) -- there is no public-API way to clear it back to blank. Go
-            // straight to the repository so this test's leftover S3 credentials don't
-            // leak into any other test in this shared-context suite (an inconsistent
-            // partial config -- blank access key but a leftover secret key -- was
-            // observed to throw a raw NPE from the AWS SDK in an unrelated test
-            // elsewhere in the run), then evict the settings cache manually since a
-            // direct repository write bypasses @CacheEvict.
+            // s3SecretKey is only ever overwritten on a non-blank value (by design), so there's no public API to clear it -- write via the repository directly and evict the cache manually, since a leftover secret key was observed to throw a raw NPE from the AWS SDK in an unrelated test.
             ApplicationSettingsEntity entity = applicationSettingsRepository.findById(1L).orElseThrow();
             entity.setS3Bucket("");
             entity.setS3AccessKey("");
@@ -407,10 +367,6 @@ class ApplicationSettingsServiceTest extends QuickdropIntegrationTest {
             }
         }
     }
-
-    // -------------------------------------------------------------------------
-    // Reputation-provider licence acceptance
-    // -------------------------------------------------------------------------
 
     private void resetReputationState() {
         ApplicationSettingsEntity entity = applicationSettingsRepository.findById(1L).orElseThrow();
@@ -444,8 +400,7 @@ class ApplicationSettingsServiceTest extends QuickdropIntegrationTest {
 
     @Test
     void settingsSaveCannotEnableAProviderWithoutPriorAcceptance() {
-        // Simulates a raw POST bypassing the licence modal entirely -- the server must not
-        // trust a bare "enabled=true" from the form without a recorded acceptance behind it.
+        // Simulates a raw POST bypassing the licence modal -- a bare "enabled=true" must not be trusted without a recorded acceptance.
         ApplicationSettingsViewModel vm = new ApplicationSettingsViewModel(applicationSettingsService.getApplicationSettings());
         vm.setReputationPhishingArmyEnabled(true);
 

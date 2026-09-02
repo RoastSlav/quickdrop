@@ -9,7 +9,6 @@ function getI18nStr(path, defaultStr) {
     return obj;
 }
 
-/** @returns {string} CSRF token from the page meta tag, or empty string */
 function getCsrfToken() {
     return document.querySelector('meta[name="_csrf"]')?.content ?? '';
 }
@@ -338,7 +337,7 @@ function createShareLink() {
 
     generateShareLink(fileUuid, effectiveDaysValid, effectiveDownloads)
         .then((shareLink) => {
-            updateShareLink(shareLink); // Update with the token-based link
+            updateShareLink(shareLink);
         })
         .catch((error) => {
             console.error(error);

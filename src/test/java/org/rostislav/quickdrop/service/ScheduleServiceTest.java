@@ -47,10 +47,6 @@ class ScheduleServiceTest extends QuickdropIntegrationTest {
         return fileRepository.save(saved);
     }
 
-    // -------------------------------------------------------------------------
-    // deleteOldFiles
-    // -------------------------------------------------------------------------
-
     @Test
     void deleteOldFilesRemovesExpiredNonPinnedFiles() {
         StoredFile expired = persistFile(LocalDate.now().minusDays(40), false);
@@ -85,17 +81,11 @@ class ScheduleServiceTest extends QuickdropIntegrationTest {
         assertDoesNotThrow(() -> scheduleService.deleteOldFiles(30));
     }
 
-    // -------------------------------------------------------------------------
-    // cleanDatabaseFromDeletedFiles (orphan-row cleanup)
-    // -------------------------------------------------------------------------
-
     @Test
     void cleanDatabaseFromDeletedFilesSoftDeletesOrphanedRows() throws Exception {
-        // Row exists in the DB but has no backing blob on disk -- an orphan.
         StoredFile orphan = persistFile(LocalDate.now(), false);
         assertFalse(storageService.exists(orphan.uuid), "precondition: no physical file was written for this uuid");
 
-        // A second file that DOES have a physical blob must be left alone.
         StoredFile healthy = persistFile(LocalDate.now(), false);
         try (var out = storageService.getOutputStream(healthy.uuid)) {
             out.write("real content".getBytes());
@@ -108,10 +98,6 @@ class ScheduleServiceTest extends QuickdropIntegrationTest {
         assertFalse(uploadRepository.findByUUID(healthy.uuid).orElseThrow().deleted,
                 "a file with a real backing blob must not be touched");
     }
-
-    // -------------------------------------------------------------------------
-    // cleanShortLinks
-    // -------------------------------------------------------------------------
 
     @Test
     void cleanShortLinksRemovesExpiredAndExhaustedTokensButKeepsValidOnes() {

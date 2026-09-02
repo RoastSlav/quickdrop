@@ -11,7 +11,6 @@
 
     <div class="w-full max-w-md animate-in">
 
-        <!-- Clock icon -->
         <div class="gate-icon gate-icon--primary mx-auto mb-6" style="width:5rem;height:5rem">
             <svg class="w-10 h-10" fill="none" stroke="currentColor" stroke-width="1.4" viewBox="0 0 24 24">
                 <path d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" stroke-linecap="round"
@@ -19,13 +18,11 @@
             </svg>
         </div>
 
-        <!-- Message -->
         <div class="text-center mb-6">
             <p class="section-eyebrow mb-2" th:text="#{page.share.title}">Shared File</p>
             <h1 class="text-2xl font-extrabold tracking-tight break-all mb-2" th:text="${fileName}">File Name</h1>
         </div>
 
-        <!-- Card -->
         <div class="gate-card animate-in animate-in-delay-1 text-center">
             <div class="mb-4">
                 <p class="text-base font-semibold mb-2" th:text="#{page.share.preparing.heading}">File is being

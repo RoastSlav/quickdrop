@@ -27,11 +27,7 @@ public class ShortCodeService {
      */
     public static final int DEFAULT_LENGTH = 5;
 
-    /**
-     * Default path prefix redirect links resolve under ({@code /s/{code}}). Hardcoded for
-     * now; a later change makes this a `shortenerPathPrefix` setting, read live so a change
-     * takes effect without a restart — the same pattern used throughout this app's settings.
-     */
+    /** Path prefix redirect links resolve under ({@code /s/{code}}). */
     public static final String DEFAULT_PATH_PREFIX = "s";
 
     private static final String ALPHABET = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
@@ -99,8 +95,7 @@ public class ShortCodeService {
     }
 
     /**
-     * @return {@code true} if {@code word} is reserved and can't be used as either a custom
-     *         alias or a {@code shortenerPathPrefix} setting
+     * @return {@code true} if {@code word} is reserved and can't be used as a custom alias
      */
     public boolean isReserved(String word) {
         return word != null && RESERVED_WORDS.contains(word.toLowerCase(Locale.ROOT));

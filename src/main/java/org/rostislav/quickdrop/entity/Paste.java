@@ -38,31 +38,16 @@ public class Paste extends Upload {
     @Column(name = "edit_only")
     public boolean editOnly;
 
-    /**
-     * Always returns {@code true} for paste entries.
-     *
-     * @return {@code true}
-     */
     @Override
     public boolean isPaste() {
         return true;
     }
 
-    /**
-     * Returns whether this paste is permanently immutable.
-     *
-     * @return the value of {@link #immutable}
-     */
     @Override
     public boolean isImmutable() {
         return immutable;
     }
 
-    /**
-     * Returns whether this paste's password only protects editing (not viewing).
-     *
-     * @return the value of {@link #editOnly}
-     */
     @Override
     public boolean isEditOnly() {
         return editOnly;

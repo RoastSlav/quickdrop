@@ -32,7 +32,6 @@
             const next = doc.getElementById(containerId);
             if (!next) return;
 
-            // Update the browser tab title from the fetched document
             if (doc.title) {
                 document.title = doc.title;
             }
@@ -88,10 +87,6 @@
         }
     }
 
-    /**
-     * Re-runs the count-up animation for stat values inside swapped content.
-     * @param {Element} root - container to scan
-     */
     function refreshCounters(root) {
         if (typeof window.QDCounters === 'function') window.QDCounters(root);
     }

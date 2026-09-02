@@ -38,14 +38,11 @@
             </div>
         </div>
 
-        <!-- Sidebar + Panels layout -->
         <div class="settings-layout animate-in animate-in-delay-1">
 
-            <!-- ── Sidebar navigation ── -->
             <nav aria-label="Settings navigation" class="settings-sidebar">
                 <div class="card p-2 settings-nav">
 
-                    <!-- Appearance -->
                     <button class="sn-btn flex-shrink-0" data-panel="appearance" onclick="switchPanel('appearance')"
                             type="button">
                         <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.8"
@@ -56,7 +53,6 @@
                         <span th:text="#{page.settings.branding.title}">Appearance</span>
                     </button>
 
-                    <!-- Features -->
                     <button class="sn-btn flex-shrink-0" data-panel="features" onclick="switchPanel('features')"
                             type="button">
                         <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.8"
@@ -67,7 +63,6 @@
                         <span th:text="#{page.settings.features.title}">Features</span>
                     </button>
 
-                    <!-- Files -->
                     <button class="sn-btn flex-shrink-0" data-panel="files" onclick="switchPanel('files')"
                             type="button">
                         <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.8"
@@ -78,7 +73,6 @@
                         <span th:text="#{page.settings.file.title}">Files</span>
                     </button>
 
-                    <!-- Security -->
                     <button class="sn-btn flex-shrink-0" data-panel="security" onclick="switchPanel('security')"
                             type="button">
                         <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.8"
@@ -89,7 +83,6 @@
                         <span th:text="#{page.settings.security.title}">Security</span>
                     </button>
 
-                    <!-- Notifications -->
                     <button class="sn-btn flex-shrink-0" data-panel="notifications"
                             onclick="switchPanel('notifications')" type="button">
                         <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.8"
@@ -100,7 +93,6 @@
                         <span th:text="#{page.settings.notifications.title}">Notifications</span>
                     </button>
 
-                    <!-- Storage -->
                     <button class="sn-btn flex-shrink-0" data-panel="storage" onclick="switchPanel('storage')"
                             type="button">
                         <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.8"
@@ -114,7 +106,6 @@
                     <span class="sn-divider"
                           style="display:none;height:1px;margin:0.25rem 0.25rem;background:var(--c-border)"></span>
 
-                    <!-- About -->
                     <button class="sn-btn flex-shrink-0" data-panel="about" onclick="switchPanel('about')"
                             type="button">
                         <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.8"
@@ -127,7 +118,6 @@
                 </div>
             </nav>
 
-            <!-- ── Content panels ── -->
             <div class="settings-content">
 
                 <form enctype="multipart/form-data" id="settingsForm" method="post" novalidate
@@ -153,7 +143,6 @@
                                     th:text="#{page.settings.branding.title}">Appearance</h2>
                             </div>
                             <div class="settings-list">
-                                <!-- App name -->
                                 <div class="settings-list-item">
                                     <label class="form-label" for="appName" th:text="#{page.settings.branding.appName}">Application
                                         name</label>
@@ -162,7 +151,6 @@
                                     <p class="form-hint" th:text="#{page.settings.branding.appName.help}">Shown in
                                         navbar, page titles, and share views.</p>
                                 </div>
-                                <!-- Logo -->
                                 <div class="settings-list-item">
                                     <label class="form-label" for="appLogo" th:text="#{page.settings.branding.logo}">Logo
                                         / favicon</label>
@@ -182,7 +170,6 @@
                                     <p class="form-hint" th:text="#{page.settings.branding.logo.help}">Square image
                                         recommended. Leave empty to keep current.</p>
                                 </div>
-                                <!-- Default language -->
                                 <div class="settings-list-item" style="max-width:20rem">
                                     <label class="form-label" for="defaultLanguage"
                                            th:text="#{page.settings.system.defaultLanguage}">Default Language</label>
@@ -220,7 +207,6 @@
                                     th:text="#{page.settings.features.title}">Features</h2>
                             </div>
 
-                            <!-- File Uploads -->
                             <section>
                                 <p class="settings-section-label"
                                    th:text="#{page.settings.features.uploads.section}">File Uploads</p>
@@ -249,7 +235,6 @@
                                 </div>
                             </section>
 
-                            <!-- Pastebin -->
                             <section>
                                 <p class="settings-section-label"
                                    th:text="#{page.settings.system.pastebin}">Pastebin</p>
@@ -266,7 +251,6 @@
                                 </div>
                             </section>
 
-                            <!-- File Discovery -->
                             <section>
                                 <p class="settings-section-label"
                                    th:text="#{page.settings.features.discovery.section}">File Discovery</p>
@@ -306,7 +290,6 @@
                                 </div>
                             </section>
 
-                            <!-- Share Links -->
                             <section>
                                 <p class="settings-section-label"
                                    th:text="#{page.settings.features.shareLinks.section}">Share Links</p>
@@ -338,7 +321,6 @@
                                 </div>
                             </section>
 
-                            <!-- Link Shortener -->
                             <section>
                                 <p class="settings-section-label"
                                    th:text="#{page.settings.features.shortener.section}">Link Shortener</p>
@@ -454,7 +436,6 @@
                                 </div>
                             </section>
 
-                            <!-- Threat Intelligence (reputation checking) -->
                             <section id="reputationSection">
                                 <p class="settings-section-label"
                                    th:text="#{page.settings.features.reputation.section}">Threat Intelligence</p>
@@ -471,7 +452,6 @@
                                         </label>
                                     </div>
 
-                                    <!-- Phishing Army -->
                                     <div class="rounded-2xl p-4" id="reputationPhishingArmyRow" style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
                                         <div class="flex flex-wrap items-center justify-between gap-3">
                                             <label class="form-check" th:if="${settings.phishingArmyTermsAcceptedAt != null}">
@@ -496,7 +476,6 @@
                                         </div>
                                     </div>
 
-                                    <!-- URLhaus -->
                                     <div class="rounded-2xl p-4" id="reputationUrlhausRow" style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
                                         <div class="flex flex-wrap items-center justify-between gap-3">
                                             <label class="form-check" th:if="${settings.urlhausTermsAcceptedAt != null}">
@@ -527,7 +506,6 @@
                                         </div>
                                     </div>
 
-                                    <!-- Google Safe Browsing -->
                                     <div class="rounded-2xl p-4" id="reputationSafeBrowsingRow" style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
                                         <div class="flex flex-wrap items-center justify-between gap-3">
                                             <label class="form-check" th:if="${settings.safeBrowsingTermsAcceptedAt != null}">
@@ -600,7 +578,7 @@
                                 </div>
                             </section>
 
-                            <!-- Reputation-provider licence modals (one parameterised fragment, three calls) -->
+                            <!-- One parameterised fragment reused for all three provider modals -->
                             <div th:replace="~{fragments/reputation :: licenceModal('phishingArmy', 'phishing_army',
                                  'page.settings.features.reputation.phishingArmy.name',
                                  'page.settings.features.reputation.phishingArmy.licence',
@@ -614,7 +592,6 @@
                                  'page.settings.features.reputation.safeBrowsing.licence',
                                  'page.settings.features.reputation.safeBrowsing.description')}"></div>
 
-                            <!-- Navigation -->
                             <section>
                                 <p class="settings-section-label"
                                    th:text="#{page.settings.features.navigation.section}">Navigation</p>
@@ -630,7 +607,6 @@
                                 </div>
                             </section>
 
-                            <!-- Activity log retention -->
                             <section id="activityRetentionSection">
                                 <p class="settings-section-label"
                                    th:text="#{page.settings.features.retention.section}">Activity Log Retention</p>
@@ -756,7 +732,6 @@
                                  th:text="#{validation.settings.invalid}">Invalid settings value.
                             </div>
 
-                            <!-- Limits & Storage -->
                             <section>
                                 <p class="settings-section-label"
                                    th:text="#{page.settings.files.storage.section}">Limits &amp; Storage</p>
@@ -792,7 +767,6 @@
                                                 file moves here after the next restart.</p>
                                         </div>
                                     </div>
-                                    <!-- Deletion cron -->
                                     <div class="settings-list-item">
                                         <div class="flex flex-col sm:flex-row gap-4 items-start">
                                             <div class="form-row flex-1 min-w-0">
@@ -843,7 +817,6 @@
                                 </div>
                             </section>
 
-                            <!-- Upload Options -->
                             <section id="uploadOptionsSection">
                                 <p class="settings-section-label"
                                    th:text="#{page.settings.files.uploadOptions.section}">Upload Options</p>
@@ -885,7 +858,6 @@
                                 </div>
                             </section>
 
-                            <!-- File Viewing -->
                             <section>
                                 <p class="settings-section-label"
                                    th:text="#{page.settings.files.viewing.section}">File Viewing</p>
@@ -913,7 +885,6 @@
                                 </div>
                             </section>
 
-                            <!-- Permissions -->
                             <section>
                                 <p class="settings-section-label"
                                    th:text="#{page.settings.files.permissions.section}">Permissions</p>
@@ -969,7 +940,6 @@
                                     th:text="#{page.settings.security.title}">Security</h2>
                             </div>
 
-                            <!-- Application Access -->
                             <section>
                                 <p class="settings-section-label"
                                    th:text="#{page.settings.security.appAccess.section}">Application Access</p>
@@ -992,7 +962,6 @@
                                 </div>
                             </section>
 
-                            <!-- Network -->
                             <section>
                                 <p class="settings-section-label"
                                    th:text="#{page.settings.security.network.section}">Network</p>
@@ -1008,7 +977,6 @@
                                 </div>
                             </section>
 
-                            <!-- Admin Access -->
                             <section>
                                 <p class="settings-section-label"
                                    th:text="#{page.settings.security.adminAccess.section}">Admin Access</p>
@@ -1026,7 +994,6 @@
                                 </div>
                             </section>
 
-                            <!-- Session -->
                             <section>
                                 <p class="settings-section-label"
                                    th:text="#{page.settings.security.session.section}">Session</p>
@@ -1067,7 +1034,6 @@
                             </div>
                             <div class="flex flex-col gap-4 mt-6">
 
-                                <!-- Discord -->
                                 <div class="rounded-2xl p-4 flex flex-col gap-3" style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
                                     <div class="flex items-start gap-3">
                                         <input id="discordWebhookEnabled"
@@ -1100,7 +1066,6 @@
                                     </div>
                                 </div>
 
-                                <!-- Email -->
                                 <div class="rounded-2xl p-4 flex flex-col gap-3" style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
                                     <div class="flex items-start gap-3">
                                         <input id="emailNotificationsEnabled"
@@ -1185,7 +1150,6 @@
                                     </div>
                                 </div>
 
-                                <!-- Batch -->
                                 <div class="rounded-2xl p-4 flex flex-col gap-3" id="notificationBatchRow" style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
                                     <div class="flex items-start gap-3">
                                         <input id="notificationBatchEnabled"
@@ -1293,7 +1257,6 @@
                         </div>
                         <div class="flex flex-col gap-6 mt-6">
 
-                            <!-- Backend unreachable banner -->
                             <div class="alert alert-danger flex items-center gap-3" role="alert" th:if="${s3Down}">
                                 <svg aria-hidden="true" class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor"
                                      stroke-width="2" viewBox="0 0 24 24">
@@ -1303,7 +1266,6 @@
                                 <span th:text="#{page.settings.storage.unreachableBanner}">The active storage backend is unreachable.</span>
                             </div>
 
-                            <!-- Backend selector -->
                             <div class="form-row">
                                 <label class="form-label" for="storageBackend"
                                        th:text="#{page.settings.storage.activeBackend}">Active Backend</label>
@@ -1327,7 +1289,6 @@
                                     completing a migration.</p>
                             </div>
 
-                            <!-- S3 fields -->
                             <div id="s3Fields" th:classappend="${settings.storageBackend?.name() != 'S3' ? ' hidden' : ''}">
                                 <div class="rounded-2xl p-4 flex flex-col gap-4" style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
 
@@ -1390,7 +1351,6 @@
                                         </div>
                                     </div>
 
-                                    <!-- Test connection -->
                                     <div class="flex items-center gap-3 pt-1">
                                         <button class="btn btn-secondary btn-sm" id="testS3Btn"
                                                 onclick="testBackend('S3', 's3TestResult', this)" th:text="#{page.settings.storage.testConnection}"
@@ -1401,7 +1361,6 @@
                                 </div>
                             </div>
 
-                            <!-- Azure Blob Storage fields -->
                             <div id="azureFields"
                                  th:classappend="${settings.storageBackend?.name() != 'AZURE' ? ' hidden' : ''}">
                                 <div class="rounded-2xl p-4 flex flex-col gap-4" style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
@@ -1443,7 +1402,6 @@
                                 </div>
                             </div>
 
-                            <!-- SFTP fields -->
                             <div id="sftpFields"
                                  th:classappend="${settings.storageBackend?.name() != 'SFTP' ? ' hidden' : ''}">
                                 <div class="rounded-2xl p-4 flex flex-col gap-4" style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
@@ -1515,7 +1473,6 @@
                                 </div>
                             </div>
 
-                            <!-- WebDAV fields -->
                             <div id="webdavFields"
                                  th:classappend="${settings.storageBackend?.name() != 'WEBDAV' ? ' hidden' : ''}">
                                 <div class="rounded-2xl p-4 flex flex-col gap-4" style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
@@ -1563,7 +1520,6 @@
                                 </div>
                             </div>
 
-                            <!-- Migration link -->
                             <div class="rounded-2xl p-4 flex items-center justify-between" style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
                                 <div>
                                     <p class="text-sm font-semibold"
@@ -1575,7 +1531,6 @@
                                    th:text="#{page.settings.storage.migrationLink.open}">Open Migration Tool →</a>
                             </div>
 
-                            <!-- Backups -->
                             <!-- Schedule/retention are edited on the Backups page itself; these carry the current
                                  values through unchanged so this form's general save doesn't reset them. -->
                             <input th:field="*{backupScheduleEnabled}" type="hidden"/>
@@ -1651,7 +1606,6 @@
                     </div>
                 </div>
 
-                <!-- Mobile save button -->
                 <div class="settings-save-bottom mt-6">
                     <button class="btn btn-gradient w-full flex items-center justify-center gap-2" form="settingsForm"
                             type="submit">

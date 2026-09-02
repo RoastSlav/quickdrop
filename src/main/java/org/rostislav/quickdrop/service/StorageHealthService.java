@@ -13,7 +13,7 @@ import org.springframework.stereotype.Service;
 /**
  * Maintains a background health-check result for the active storage backend.
  *
- * <p>A {@link Scheduled} probe fires every 30 seconds (with a 10-second initial delay
+ * <p>A {@link Scheduled} probe fires every 30 seconds (with a matching initial delay
  * to let the application fully start). The result is stored in a {@code volatile}
  * field so any thread can read it without synchronisation cost.
  *
@@ -98,7 +98,7 @@ public class StorageHealthService {
      * while waiting for the next scheduled probe cycle.
      */
     public void recheck() {
-        healthy = true;                          // optimistic reset — unblocks uploads immediately
+        healthy = true;
         Thread t = new Thread(this::checkHealth, "storage-health-recheck");
         t.setDaemon(true);
         t.start();

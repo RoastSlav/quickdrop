@@ -20,7 +20,6 @@
 
         <div th:class="${!isShareLinksEnabled or isDeleted} ? 'flex flex-col gap-6' : 'grid grid-cols-1 xl:grid-cols-4 gap-6 items-start'">
 
-            <!-- ── Main column ────────────────────────────────────────── -->
             <section th:class="${!isShareLinksEnabled or isDeleted} ? 'w-full' : 'xl:col-span-3'">
                 <div class="card-glass card-xl flex flex-col gap-5 animate-in" style="padding: 2rem">
 
@@ -33,7 +32,6 @@
                             available for download.</p>
                     </div>
 
-                    <!-- Sticky title bar -->
                     <div class="flex flex-wrap items-center justify-between gap-4 p-4 rounded-xl"
                          style="background: var(--c-surface-raised); border: 1px solid var(--c-border); position: sticky; top: calc(var(--nav-h, 4rem) + .5rem); z-index: 10">
                         <div class="flex items-center gap-3">
@@ -75,7 +73,6 @@
                         </div>
                     </div>
 
-                    <!-- View toggle -->
                     <div class="flex items-center gap-2">
                         <div class="segmented">
                             <button class="segmented-btn is-active" id="showRawBtn" th:text="#{page.pasteView.raw}"
@@ -89,18 +86,15 @@
                               th:text="#{page.pasteView.renderedHint}">Rendered markdown is enabled for this paste.</span>
                     </div>
 
-                    <!-- Raw content -->
                     <pre class="code-preview max-h-[72vh] overflow-auto text-sm font-mono whitespace-pre-wrap break-words"
                          id="rawPasteContent" th:text="${pasteContent}"></pre>
 
-                    <!-- Markdown content -->
                     <div class="markdown-content hidden max-h-[72vh] overflow-auto rounded-xl p-5"
                          id="markdownPasteContent"
                          style="border:1px solid var(--c-border);background:var(--c-surface-subtle)"></div>
                 </div>
             </section>
 
-            <!-- ── Sidebar ────────────────────────────────────────────── -->
             <aside class="xl:col-span-1" th:if="${isShareLinksEnabled and !isDeleted}">
                 <div class="card card-lg flex flex-col gap-4 animate-in animate-in-delay-1 accent-stripe accent-stripe--secondary"
                      id="sharePanel"
@@ -116,16 +110,13 @@
                         <span th:text="#{page.pasteView.share}">Share</span>
                     </h2>
 
-                    <!-- Public paste: direct link is all that's needed -->
                     <p class="text-sm" style="color: var(--c-text-muted)"
                        th:if="${isPubliclyAccessible}"
                        th:text="#{page.pasteView.sharePublicNotice}">This paste is publicly accessible.</p>
-                    <!-- Password-protected paste: share links bypass the password -->
                     <p class="text-sm" style="color: var(--c-text-muted)"
                        th:if="${!isPubliclyAccessible}"
                        th:text="#{page.fileView.shareBypassNotice}">Share links bypass file and app passwords.</p>
 
-                    <!-- Hint texts for protected pastes -->
                     <p class="text-xs" style="color: var(--c-warning-text)"
                        th:if="${!isPubliclyAccessible and !isSimplifiedShareLinksEnabled}"
                        th:text="#{page.fileView.shareAdvancedHint}">Add an expiration date and/or download limit.</p>
@@ -150,10 +141,9 @@
                         </div>
                     </div>
 
-                    <!-- Protected paste: auto-generate (simplified) or manual -->
                     <div class="flex flex-col gap-3" th:if="${!isPubliclyAccessible}">
 
-                        <!-- Simplified mode: spinner + label (auto-generates on load) -->
+                        <!-- Simplified mode auto-generates the link on page load -->
                         <div class="flex justify-end items-center gap-2" th:if="${isSimplifiedShareLinksEnabled}">
                             <div class="hidden animate-spin rounded-full h-4 w-4 border-2"
                                  id="spinnerShareAuto"
@@ -162,7 +152,6 @@
                                   th:text="#{page.fileView.autoShareLink}">Automatic share link</span>
                         </div>
 
-                        <!-- Non-simplified mode: Generate button -->
                         <div class="flex justify-end items-center gap-2" th:if="${!isSimplifiedShareLinksEnabled}">
                             <div class="hidden animate-spin rounded-full h-4 w-4 border-2"
                                  id="spinnerShare"

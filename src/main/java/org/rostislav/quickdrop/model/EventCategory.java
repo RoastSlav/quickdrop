@@ -7,28 +7,13 @@ package org.rostislav.quickdrop.model;
  * {@code name().startsWith("ADMIN")} / {@code name() == "STARTUP"} hacks.
  */
 public enum EventCategory {
-    /**
-     * Events directly tied to a regular (non-paste) file.
-     */
     FILE,
-    /**
-     * Events tied to a text paste.
-     */
     PASTE,
-    /**
-     * Events involving share tokens.
-     */
     SHARE,
     /**
-     * Events involving general-purpose short links (redirect links, {@code /s/{code}}).
+     * General-purpose short links (redirect links, {@code /s/{code}}), not upload-share tokens.
      */
     SHORTLINK,
-    /**
-     * Admin authentication and configuration events.
-     */
     ADMIN,
-    /**
-     * Application-level lifecycle events (not tied to any file).
-     */
     SYSTEM
 }

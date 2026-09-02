@@ -19,11 +19,9 @@
         <span hidden id="downloadLink" th:text="${downloadLink}"></span>
         <span hidden id="previewUrl" th:text="${previewUrl}"></span>
 
-        <!-- ── File hero banner ──────────────────────────────────────── -->
         <div class="card-glass card-xl mb-8 animate-in" style="padding: 2.5rem">
             <div class="flex flex-col lg:flex-row gap-6 lg:gap-10 items-start">
 
-                <!-- Large file icon -->
                 <div class="flex-shrink-0">
                     <div class="w-20 h-20 rounded-2xl flex items-center justify-center"
                          style="background: var(--c-primary-muted); color: var(--c-primary); box-shadow: 0 12px 32px -8px color-mix(in srgb, var(--c-primary) 30%, transparent)">
@@ -35,7 +33,6 @@
                     </div>
                 </div>
 
-                <!-- File info -->
                 <div class="min-w-0 flex-1">
                     <span class="section-eyebrow mb-1 block" th:text="#{page.fileView.kind}">File</span>
                     <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight break-all leading-tight"
@@ -43,7 +40,6 @@
                     <p class="mt-2 text-sm" style="color: var(--c-text-muted)"
                        th:if="${!#strings.isEmpty(file.description)}" th:text="${file.description}"></p>
 
-                    <!-- Status chips -->
                     <div class="flex flex-wrap gap-2 mt-4">
             <span class="badge badge-secondary" th:if="${file.passwordHash != null}">
               <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path
@@ -78,7 +74,6 @@
                     </div>
                 </div>
 
-                <!-- Action buttons (right-aligned on desktop) -->
                 <div class="flex flex-wrap gap-3 lg:flex-col lg:items-end flex-shrink-0">
                     <a class="btn btn-gradient btn-lg" id="downloadButton"
                        th:attr="aria-disabled=${isDeleted},tabindex=${isDeleted ? '-1' : null},data-show-preparing=${file.passwordHash != null and !isDeleted}"
@@ -109,16 +104,12 @@
             </div>
         </div>
 
-        <!-- ── Content grid ──────────────────────────────────────────── -->
-        <!-- Three columns only when a preview will actually render; otherwise the info
-             card and Share share the row evenly, so neither ends up as a tall box of air.
-             items-start keeps each card at its content height instead of stretching. -->
+        <!-- Three columns only when a preview will render; otherwise info card and Share split the row evenly -->
         <div th:class="${!isShareLinksEnabled or isDeleted} ? 'flex flex-col gap-6'
                        : (${hasPreview} ? 'grid grid-cols-1 md:grid-cols-3 gap-6 items-start'
                                         : 'grid grid-cols-1 md:grid-cols-2 gap-6 items-start')"
              th:with="hasPreview=${isPreviewEnabled and (isPreviewableImage or isPreviewableText or isPreviewablePdf)}">
 
-            <!-- ── Main column ────────────────────────────────────────── -->
             <section class="flex flex-col gap-6"
                      th:classappend="${!isShareLinksEnabled or isDeleted} ? 'w-full' : (${hasPreview} ? 'md:col-span-2' : '')">
 
@@ -133,7 +124,6 @@
 
                 <div class="card card-lg flex flex-col gap-6 animate-in animate-in-delay-1" id="fileInfoCard">
 
-                    <!-- Metadata -->
                     <div class="meta-grid">
                         <div class="meta-item">
                             <span class="meta-label"
@@ -152,7 +142,6 @@
                         </div>
                     </div>
 
-                    <!-- Owner toggles (hidden for deleted files) -->
                     <div class="flex flex-col gap-3" th:if="${!isDeleted}" th:with="
                 keepDisabled=${(isKeepIndefinitelyAdminOnly and !hasAdminSession) or (!hasAdminSession and file.passwordHash == null)},
                 hiddenDisabled=${(isHideFromListAdminOnly and !hasAdminSession) or (!hasAdminSession and file.passwordHash == null)}">
@@ -197,7 +186,6 @@
                         </div>
                     </div>
 
-                    <!-- Folder tree -->
                     <div th:if="${file.folderUpload}">
                         <p class="section-eyebrow mb-2" th:text="#{page.fileView.folderContents}">Folder contents</p>
                         <div class="folder-tree-box" id="folderTree"
@@ -206,12 +194,10 @@
                                 type="application/json"></script>
                     </div>
 
-                    <!-- Preparing -->
                     <div class="alert alert-info" hidden id="preparingMessage"
                          th:text="#{page.fileView.preparingDownload}">Preparing download…
                     </div>
 
-                    <!-- Delete -->
                     <form class="flex gap-2 items-center pt-2" data-confirm method="post"
                           style="border-top: 1px solid var(--c-border)"
                           th:action="@{/file/delete/{uuid}(uuid=${file.uuid})}"
@@ -225,7 +211,6 @@
                     </form>
                 </div>
 
-                <!-- Preview panel -->
                 <div class="card card-lg animate-in animate-in-delay-3" id="previewContainer"
                      th:attr="data-preview-url=${previewUrl},data-preview-image=${isPreviewableImage},data-preview-text=${isPreviewableText},data-preview-pdf=${isPreviewablePdf},data-preview-json=${isPreviewableJson},data-preview-csv=${isPreviewableCsv},data-preview-type=${previewType},data-file-name=${file.name},data-require-manual=${requireManualPreview},data-max-preview-mb=${maxPreviewSizeMB}"
                      th:if="${isPreviewEnabled and (isPreviewableImage or isPreviewableText or isPreviewablePdf)}">
@@ -251,10 +236,8 @@
                 </div>
             </section>
 
-            <!-- ── Sidebar ────────────────────────────────────────────── -->
             <aside class="md:col-span-1 flex flex-col gap-5" th:if="${isShareLinksEnabled and !isDeleted}">
 
-                <!-- Share panel -->
                 <div class="card card-lg flex flex-col gap-4 animate-in animate-in-delay-2 accent-stripe accent-stripe--gradient"
                      id="sharePanel"
                      th:attr="data-simplified-share-links=${isSimplifiedShareLinksEnabled},data-share-links-enabled=${isShareLinksEnabled},data-publicly-accessible=${isPubliclyAccessible}">
@@ -303,7 +286,6 @@
                         Simplified share links are enabled.
                     </p>
 
-                    <!-- Advanced options -->
                     <div class="flex flex-col gap-3" id="linkOptions"
                          th:if="${!isPubliclyAccessible and !isSimplifiedShareLinksEnabled}">
                         <div class="form-row">
@@ -367,7 +349,6 @@
                         </button>
                     </div>
 
-                    <!-- QR -->
                     <div class="text-center hidden p-3 rounded-xl"
                          id="shareQRCodeContainer"
                          style="background: var(--c-surface-raised); border: 1px solid var(--c-border)">

@@ -27,14 +27,7 @@
 
         <div class="gate-card animate-in animate-in-delay-1">
 
-            <!--
-              max-h + overflow-y-auto, not just break-all: the destination length is chosen by
-              whoever created the link, and URLs are allowed up to 2048 characters. Unbounded,
-              a long one grows this box to ~1000px and pushes the Continue button below the fold
-              on a phone -- burying the page's primary action behind ~2 screens of scrolling.
-              Capping the box keeps the full URL inspectable (it scrolls) while keeping Continue
-              on screen regardless of what the link creator put in.
-            -->
+            <!-- Capped height + scroll: URLs up to 2048 chars could otherwise push Continue off-screen. -->
             <div class="rounded-xl px-4 py-3 mb-6 break-all font-mono text-sm overflow-y-auto"
                  style="background:var(--c-surface-raised);border:1px solid var(--c-border);max-height:12rem"
                  th:text="${displayUrl}">example.com/some/page

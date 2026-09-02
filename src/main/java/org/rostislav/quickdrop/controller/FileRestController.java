@@ -165,14 +165,9 @@ public class FileRestController {
                 return ResponseEntity.badRequest().body("{\"error\": \"Invalid folder manifest: must be a JSON array\"}");
             }
 
-            // If the client did not supply an uploadId fall back to a random UUID.
-            // All chunks of the same upload MUST share the same uploadId, so the fallback
-            // is only safe for single-chunk uploads or legacy clients.
-            //
-            // A supplied id is format-checked here so a bad one returns 400 rather than
-            // surfacing as a 500 from the service's own guard. That guard is the actual
-            // security control (the id ends up in a filesystem path); this is the
-            // client-facing contract in front of it.
+            // A missing uploadId falls back to a random UUID, safe only for single-chunk/legacy
+            // clients since all chunks of one upload must share an id. Format-check a supplied
+            // id here so a bad one is a 400, not a 500 from the service's filesystem-path guard.
             if (uploadId != null && !uploadId.isBlank() && !SAFE_UPLOAD_ID.matcher(uploadId).matches()) {
                 return ResponseEntity.badRequest().body(Map.of(
                         "error", "uploadId must be 1-64 characters of letters, digits, '-' or '_'."));
@@ -292,21 +287,6 @@ public class FileRestController {
         ));
     }
 
-    /**
-     * Streams the file associated with the given share token.
-     *
-     * <p>Redirects (302) to {@code /share/{token}} when the token is missing, expired,
-     * exhausted, or the sidecar file has been removed — in the missing-sidecar case the
-     * broken token is deleted first so the share page renders the invalid view. Returns
-     * 503 when the token is valid but the sidecar re-encryption is still running in the
-     * background ({@link org.rostislav.quickdrop.entity.UploadShareLink#sidecarReady}
-     * is {@code false}). On success the response carries
-     * {@code Content-Disposition: attachment} so browsers prompt a save dialog.
-     *
-     * @param token   the share token string from the URL
-     * @param request the HTTP request (for session key lookup and history logging)
-     * @return 200 with the file byte stream, 302 redirect on invalid/missing token, 503 if not ready
-     */
     /**
      * Returns an SVG QR code for a file's own page URL, used by the share panel when nothing
      * gates the file.

@@ -228,15 +228,13 @@ public class PasteService {
      * @param syntax           syntax hint for filename extension
      * @param keepIndefinitely whether the paste should be exempt from scheduled deletion
      * @param setImmutable     when {@code true} the paste is locked permanently after this edit
-     * @param password         new access password; blank/{@code null} removes password
-     *                         protection entirely (matches the create form's own documented
-     *                         blank/{@code null} leaves the paste's current password state
-     *                         untouched (a password field can never be pre-filled with the
-     *                         real value, so treating blank as "remove" would silently strip
-     *                         protection any time someone edits content without retyping the
-     *                         password) -- mirrors the same convention
+     * @param password         new access password; blank/{@code null} leaves the paste's
+     *                         current password state untouched -- a password field can never
+     *                         be pre-filled with the real value, so treating blank as "remove"
+     *                         would silently strip protection any time someone edits content
+     *                         without retyping the password (mirrors the same convention
      *                         {@link ApplicationSettingsService#updateApplicationSettings}
-     *                         already uses for {@code appPassword}/{@code smtpPassword}. A
+     *                         already uses for {@code appPassword}/{@code smtpPassword}). A
      *                         non-blank value sets/changes it. {@code editOnly} is fixed at
      *                         creation and not editable here.
      * @param request          the HTTP request (provides session token and admin check)

@@ -116,7 +116,6 @@ function syncUploadPasswordSetting() {
 
     if (!uploadPwEnabled || !encryptionEnabled) return;
 
-    // If uploads are globally disabled, dim the whole upload options section
     const uploadOptionsSection = document.getElementById("uploadOptionsSection");
     if (uploadOptionsSection) {
         uploadOptionsSection.classList.toggle("opacity-60", !uploadEnabled);
@@ -464,7 +463,6 @@ function validateSettingsForm() {
 
     const storedAppPassword = hasStoredAppPassword();
 
-    // reset
     [
         maxFileSize, maxFileLife, fileStoragePath, fileDeletionCron,
         sessionLifeTime, maxPreviewSizeBytes, defaultHomePage,

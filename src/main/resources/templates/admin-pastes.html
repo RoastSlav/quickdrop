@@ -27,7 +27,6 @@
             </div>
         </div>
 
-        <!-- Stats row -->
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 lg:gap-5 mb-8 animate-in animate-in-delay-1">
             <div class="stat-hero stat-hero--primary">
                 <span class="stat-hero-label" th:text="#{page.dashboard.totalPastes}">Total Pastes</span>
@@ -51,7 +50,6 @@
             </div>
         </div>
 
-        <!-- Pastes section -->
         <div class="card card-xl animate-in animate-in-delay-2" id="pasteSectionWrapper">
 
             <div class="flex flex-col gap-5 mb-6">
@@ -70,7 +68,6 @@
                           th:text="${pastesPage.totalElements} + ' ' + #{page.dashboard.total}">0 total</span>
                 </div>
 
-                <!-- Active / Deleted tabs -->
                 <div class="flex gap-1">
                     <a class="btn btn-sm"
                        th:classappend="${!showDeleted} ? ' btn-primary' : ' btn-ghost'"
@@ -106,10 +103,8 @@
                 </form>
             </div>
 
-            <!-- Dynamic content -->
             <div id="pasteDynamicContent">
 
-                <!-- Empty state -->
                 <div class="text-center py-16" th:if="${pastesPage.totalElements == 0}">
                     <div class="gate-icon gate-icon--primary mx-auto mb-6">
                         <svg class="w-10 h-10" fill="none" stroke="currentColor" stroke-width="1.4" viewBox="0 0 24 24">
@@ -122,7 +117,6 @@
                        th:text="#{page.adminPastes.noFilesFound}">No pastes found.</p>
                 </div>
 
-                <!-- Paste cards -->
                 <div class="flex flex-col gap-2.5" th:if="${pastesPage.totalElements > 0}">
                     <div class="group flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 px-4 py-3.5 rounded-2xl transition-all duration-200 hover:shadow-md"
                          style="animation: qd-fade-in-up 350ms var(--ease-out-expo) both"
@@ -130,7 +124,6 @@
                          th:each="paste, iterStat : ${pastesPage.content}"
                          th:style="'animation-delay:' + ${iterStat.index * 35} + 'ms; background: var(--c-surface-raised); border: 1px solid var(--c-border); border-left: 4px solid ' + (${paste.deleted} ? 'var(--c-danger,var(--c-rose))' : (${paste.isMarkdown} ? 'var(--c-indigo,var(--c-primary))' : 'var(--c-primary)'))">
 
-                        <!-- Paste icon + name + meta -->
                         <div class="flex items-center gap-3 min-w-0 flex-1">
                             <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
                                  th:style="${paste.deleted} ? 'background:var(--c-rose-muted);color:var(--c-rose-badge-text)' : (${paste.isMarkdown} ? 'background:var(--c-indigo-muted);color:var(--c-indigo-badge-text)' : 'background:var(--c-primary-muted);color:var(--c-primary-badge-text)')">
@@ -170,7 +163,6 @@
                             </div>
                         </div>
 
-                        <!-- Actions -->
                         <div class="flex items-center gap-1.5 flex-shrink-0 pl-12 sm:pl-0">
                             <a class="btn btn-soft-primary btn-sm" th:href="@{/file/{uuid}(uuid=${paste.uuid})}"
                                th:title="#{button.view}">
@@ -211,7 +203,6 @@
                     </div>
                 </div>
 
-                <!-- Pagination -->
                 <div class="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 pt-6"
                      style="border-top: 1px solid var(--c-border)"
                      th:if="${pastesPage.totalElements > 0}">

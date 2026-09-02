@@ -7,7 +7,6 @@
     scripts             — shared CDN scripts (Alpine, htmx). Include in <head>.
 -->
 
-<!-- ─── Shared CDN scripts (Alpine + htmx) ──────────────────────────────── -->
 <th:block th:fragment="themePreload">
     <script>
         (function () {
@@ -54,18 +53,15 @@
     <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.3/dist/htmx.min.js"></script>
 </th:block>
 
-<!-- ─── Header ──────────────────────────────────────────────────────────── -->
 <a class="skip-link" href="#main-content" th:text="#{nav.skipToContent}">Skip to main content</a>
 <header class="nav-root" th:fragment="header(isAdminNav)" x-data="{ open: false }">
     <div class="nav-inner">
 
-        <!-- Brand -->
         <a class="nav-brand" href="/">
             <img alt="Logo" fetchpriority="high" src="/images/favicon.png" th:src="${appLogoPath}"/>
             <span th:text="${appName}">QuickDrop</span>
         </a>
 
-        <!-- Desktop links -->
         <nav aria-label="Main navigation" class="nav-links hidden md:flex">
 
             <th:block th:if="${isAdminNav}">
@@ -111,9 +107,7 @@
             </th:block>
         </nav>
 
-        <!-- Actions -->
         <div class="nav-actions">
-            <!-- Language picker (desktop) -->
             <div @click.outside="langOpen = false" class="relative hidden md:block" x-data="{ langOpen: false }">
                 <button :aria-expanded="langOpen ? 'true' : 'false'" @click="langOpen = !langOpen"
                         aria-controls="langMenu" aria-haspopup="menu" aria-label="Select language" class="lang-btn"
@@ -204,7 +198,6 @@
         </div>
     </div>
 
-    <!-- Mobile drawer -->
     <div :class="{ 'is-open': open }" class="nav-drawer md:hidden" x-cloak>
 
         <th:block th:if="${isAdminNav}">

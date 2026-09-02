@@ -34,7 +34,7 @@ public class SftpStorageService implements StorageService {
     }
 
     /**
-     * Fix 1 &amp; 2: Creates a fresh {@link Session} per call (no shared state).
+     * Creates a fresh {@link Session} per call (no shared state).
      * When knownHosts is blank, {@code StrictHostKeyChecking=no} is used but a
      * prominent WARNING is logged on every connection attempt. When knownHosts IS
      * configured, {@code StrictHostKeyChecking=yes} is set explicitly.
@@ -57,12 +57,10 @@ public class SftpStorageService implements StorageService {
             s.setPassword(cfg.password().getBytes(java.nio.charset.StandardCharsets.UTF_8));
         }
         if (cfg.knownHosts() == null || cfg.knownHosts().isBlank()) {
-            // Fix 1: Warn loudly on every connection when host key verification is off.
             logger.warn("SFTP WARNING: knownHosts is not configured. Host key verification is DISABLED. " +
                     "Configure sftpKnownHosts in settings to enable host verification and prevent MITM attacks.");
             s.setConfig("StrictHostKeyChecking", "no");
         } else {
-            // Fix 1: Explicitly enforce strict checking when knownHosts is provided.
             s.setConfig("StrictHostKeyChecking", "yes");
         }
         s.connect(10_000);
@@ -140,9 +138,7 @@ public class SftpStorageService implements StorageService {
         }
     }
 
-    /**
-     * Fix 3: Walk each path component individually so multi-level paths are created.
-     */
+    /** Walks each path component individually so multi-level paths are created. */
     private void ensureParentDirs(ChannelSftp ch, String path) {
         String[] parts = path.split("/");
         StringBuilder current = new StringBuilder();

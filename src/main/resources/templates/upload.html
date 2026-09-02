@@ -16,7 +16,6 @@
 <main class="flex-1 hero-scene" id="main-content">
     <div class="page-wrap">
 
-        <!-- Two-column layout: hero left, form right -->
         <div class="upload-grid">
             <div class="upload-aside animate-in">
             <header class="upload-head">
@@ -30,7 +29,7 @@
                 </div>
             </header>
 
-            <!-- Limits and guarantees, as one compact strip instead of a half-empty column -->
+            <!-- Combined into one strip rather than leave the column half-empty -->
             <div class="upload-facts">
                     <div class="upload-facts-stats">
                         <div class="stat-hero stat-hero--primary">
@@ -95,7 +94,6 @@
             </div>
 
         <div class="upload-form-card animate-in animate-in-delay-1">
-                <!-- Storage down banner -->
                 <div class="alert alert-danger flex items-center gap-3 mb-4" role="alert" th:if="${s3Down}">
                     <svg aria-hidden="true" class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor"
                          stroke-width="2" viewBox="0 0 24 24">
@@ -113,7 +111,6 @@
                         <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden"/>
                         <input name="uuid" th:value="${uuid}" type="hidden"/>
 
-                        <!-- Dropzone -->
                         <div aria-label="File drop area — use the buttons below to select a file" class="dropzone"
                              id="dropZone" role="region">
                             <div class="dropzone-body">
@@ -163,7 +160,6 @@
                         <input class="hidden" id="file" name="file" type="file"/>
                         <input class="hidden" id="folderInput" multiple name="folderInput" type="file" webkitdirectory/>
 
-                        <!-- Description -->
                         <div class="form-row">
                             <label class="form-label" for="description" th:text="#{form.description.placeholder}">Description</label>
                             <input
@@ -176,7 +172,6 @@
                             />
                         </div>
 
-                        <!-- Security & retention panel -->
                         <div
                                 class="fieldset"
                                 th:if="${canUseKeepIndefinitely or (isFileListPageEnabled and canHideFromList) or uploadPasswordEnabled}"
@@ -273,7 +268,6 @@
                             </div>
                         </div>
 
-                        <!-- Metadata strip warning -->
                         <div class="alert alert-warning hidden" id="uploadWarning">
                             <div id="uploadWarningText"></div>
                             <button
@@ -291,7 +285,6 @@
                             ></div>
                         </div>
 
-                        <!-- Action buttons -->
                         <div class="flex flex-wrap items-center gap-3 pt-2" id="uploadActions">
                             <button class="btn btn-gradient btn-xl" id="uploadPrimary" th:disabled="${s3Down}"
                                     type="button">
@@ -310,7 +303,6 @@
 
                     </form>
 
-                    <!-- Progress -->
                     <div class="hidden flex-col gap-3" id="uploadIndicator">
                         <p aria-live="polite" class="text-sm font-mono" id="uploadStatus"
                            style="color: var(--c-text-muted)">

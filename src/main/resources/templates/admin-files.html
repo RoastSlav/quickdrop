@@ -27,7 +27,6 @@
             </div>
         </div>
 
-        <!-- Stats row -->
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 lg:gap-5 mb-8 animate-in animate-in-delay-1">
             <div class="stat-hero stat-hero--primary">
                 <span class="stat-hero-label" th:text="#{page.dashboard.totalFiles}">Total Files</span>
@@ -49,7 +48,6 @@
             </div>
         </div>
 
-        <!-- Files section -->
         <div class="card card-xl animate-in animate-in-delay-2" id="fileSectionWrapper">
 
             <div class="flex flex-col gap-5 mb-6">
@@ -68,7 +66,6 @@
                           th:text="${filesPage.totalElements} + ' ' + #{page.dashboard.total}">0 total</span>
                 </div>
 
-                <!-- Active / Deleted tabs + row density -->
                 <div class="flex gap-1.5 items-center flex-wrap">
                     <a class="btn btn-sm"
                        th:classappend="${!showDeleted} ? ' btn-primary' : ' btn-ghost'"
@@ -115,10 +112,8 @@
                 </form>
             </div>
 
-            <!-- Dynamic content -->
             <div id="fileDynamicContent">
 
-                <!-- Empty state -->
                 <div class="text-center py-16" th:if="${filesPage.totalElements == 0}">
                     <div class="gate-icon gate-icon--primary mx-auto mb-6">
                         <svg class="w-10 h-10" fill="none" stroke="currentColor" stroke-width="1.4" viewBox="0 0 24 24">
@@ -131,7 +126,6 @@
                        th:text="#{page.dashboard.noFilesFound}">No files found.</p>
                 </div>
 
-                <!-- File cards -->
                 <div class="flex flex-col gap-2.5" th:if="${filesPage.totalElements > 0}">
                     <div class="group flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 px-4 py-3.5 rounded-2xl transition-all duration-200 hover:shadow-md"
                          style="animation: qd-fade-in-up 350ms var(--ease-out-expo) both"
@@ -139,7 +133,6 @@
                          th:each="file, iterStat : ${filesPage.content}"
                          th:style="'animation-delay:' + ${iterStat.index * 35} + 'ms; background: var(--c-surface-raised); border: 1px solid var(--c-border); border-left: 4px solid ' + (${file.deleted} ? 'var(--c-danger,var(--c-rose))' : (${file.keepIndefinitely and file.hidden} ? 'var(--c-rose)' : (${file.keepIndefinitely} ? 'var(--c-teal)' : (${file.hidden} ? 'var(--c-rose)' : 'var(--c-primary)'))))">
 
-                        <!-- File icon + name + meta -->
                         <div class="flex items-center gap-3 min-w-0 flex-1">
                             <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
                                  data-file-icon
@@ -175,7 +168,6 @@
                             </div>
                         </div>
 
-                        <!-- Toggles (hidden for soft-deleted files) -->
                         <div class="flex items-center gap-5 flex-shrink-0 pl-12 sm:pl-0" th:if="${!file.deleted}">
                             <form method="post" th:action="@{/admin/keep-indefinitely/{uuid}(uuid=${file.uuid})}">
                                 <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden"/>
@@ -207,7 +199,7 @@
                             </form>
                         </div>
 
-                        <!-- Actions: primary inline, the rest behind one menu -->
+                        <!-- View stays inline; History/Download/Delete are behind one menu to save row width -->
                         <div class="flex items-center gap-1.5 flex-shrink-0 pl-12 sm:pl-0">
                             <a class="btn btn-soft-primary btn-sm" th:href="@{/file/{uuid}(uuid=${file.uuid})}"
                                th:title="#{button.view}">
@@ -271,7 +263,6 @@
                     </div>
                 </div>
 
-                <!-- Pagination -->
                 <div class="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 pt-6"
                      style="border-top: 1px solid var(--c-border)"
                      th:if="${filesPage.totalElements > 0}">

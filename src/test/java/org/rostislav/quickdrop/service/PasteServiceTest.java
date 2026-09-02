@@ -62,10 +62,6 @@ class PasteServiceTest extends QuickdropIntegrationTest {
         return request;
     }
 
-    // -------------------------------------------------------------------------
-    // createPaste
-    // -------------------------------------------------------------------------
-
     @Test
     void createPastePersistsPlainTextContent() throws Exception {
         Upload saved = pasteService.createPaste("My Title", "Hello World", "text",
@@ -109,13 +105,8 @@ class PasteServiceTest extends QuickdropIntegrationTest {
         assertNotNull(saved);
         assertFalse(saved.encrypted, "edit-only content must be stored in plaintext so it can be viewed without a password");
         assertTrue(saved.isEditOnly());
-        // Publicly readable without any session.
         assertEquals("visible to all", pasteService.getPasteContent(saved.uuid, new MockHttpServletRequest()));
     }
-
-    // -------------------------------------------------------------------------
-    // updatePaste
-    // -------------------------------------------------------------------------
 
     @Test
     void updatePasteOverwritesContentAndLogsEdit() throws Exception {
@@ -223,10 +214,6 @@ class PasteServiceTest extends QuickdropIntegrationTest {
                 "must be decryptable with the NEW password");
     }
 
-    // -------------------------------------------------------------------------
-    // logPasteView
-    // -------------------------------------------------------------------------
-
     @Test
     void logPasteViewRecordsAnActivityLogEntry() throws Exception {
         Upload saved = pasteService.createPaste("Viewed", "content", "text", false, null, false, false, new MockHttpServletRequest());
@@ -241,14 +228,9 @@ class PasteServiceTest extends QuickdropIntegrationTest {
         assertDoesNotThrow(() -> pasteService.logPasteView("no-such-uuid", new MockHttpServletRequest()));
     }
 
-    // -------------------------------------------------------------------------
-    // Listings & analytics
-    // -------------------------------------------------------------------------
-
     @Test
     void paginatedPastesExcludeDeletedAndDeletedListingIncludesOnlyDeleted() throws Exception {
-        // Tagged titles let the search-scoped query find just these two pastes,
-        // regardless of how many other pastes already exist in the shared test DB.
+        // Tagged title so the search-scoped query finds just these two amid the shared test DB.
         String tag = "tag" + UUID.randomUUID().toString().replace("-", "");
         Upload live = pasteService.createPaste("Live-" + tag, "c1", "text", false, null, false, false, new MockHttpServletRequest());
         Upload toDelete = pasteService.createPaste("Gone-" + tag, "c2", "text", false, null, false, false, new MockHttpServletRequest());

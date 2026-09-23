@@ -18,6 +18,7 @@ hand out expiring share links, and administer everything from a web admin panel 
 - [Installation](#installation)
     - [Docker](#docker)
     - [Docker Compose](#docker-compose)
+    - [Running behind a reverse proxy](#running-behind-a-reverse-proxy)
     - [Build and run manually](#build-and-run-manually)
 - [Configuration](#configuration)
     - [Startup properties](#startup-properties)
@@ -159,7 +160,8 @@ without a restart.
 - Rate limiting: 10 requests per 60-second window per client address on the file-password, admin-password, share,
   share-download, link-creation and `/s/{code}` endpoints; over the limit returns HTTP 429 with `Retry-After: 60`.
 - Cookie-based CSRF protection on state-changing requests; session cookies are `HttpOnly` and
-  `SameSite=Strict`.
+  `SameSite=Strict`. Both cookies get the `Secure` flag when behind a reverse proxy — see
+  [Running behind a reverse proxy](#running-behind-a-reverse-proxy).
 - Configurable session timeout; admin and file sessions are tracked and bounded in memory.
 - Outbound URLs (Discord webhook, remote storage backends, short-link destinations) are blocked from resolving to
   internal network addresses.
@@ -251,6 +253,61 @@ The repository ships a `docker-compose.yml`:
 docker compose up -d
 ```
 
+### Running behind a reverse proxy
+
+QuickDrop's session and CSRF cookies only get their `Secure` flag automatically when the request
+QuickDrop itself sees is HTTPS. A TLS-terminating reverse proxy (nginx, Caddy, Traefik, ...) talks
+plain HTTP to the app behind it, so without one of the two opt-ins below, both cookies are sent
+without `Secure` even though the real, external connection is HTTPS.
+
+**Option 1 — trust the proxy's `X-Forwarded-Proto` header (recommended).** Turn on **Trust reverse
+proxy headers** in Admin → Settings (`quickdrop.trustedProxyEnabled`, off by default) — the same
+setting that already governs trusting `X-Forwarded-For`/`X-Real-IP` for client-IP logging and rate
+limiting. With it on, QuickDrop marks both cookies `Secure` whenever a request carries
+`X-Forwarded-Proto: https`, and does nothing otherwise — so your proxy must actually set that
+header. Example config:
+
+```nginx
+# nginx
+location / {
+    proxy_pass http://127.0.0.1:8080;
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Real-IP $remote_addr;
+}
+```
+
+```caddyfile
+# Caddyfile
+example.com {
+    reverse_proxy 127.0.0.1:8080 {
+        header_up X-Forwarded-Proto {scheme}
+        header_up X-Forwarded-For {remote_host}
+    }
+}
+```
+
+Caddy sets `X-Forwarded-Proto`/`X-Forwarded-For` automatically for `reverse_proxy`; the
+`header_up` lines above are shown for clarity, not strictly required.
+
+**Option 2 — force it unconditionally.** If your proxy doesn't (or can't) send
+`X-Forwarded-Proto`, set `SERVER_SERVLET_SESSION_COOKIE_SECURE=true` (or
+`server.servlet.session.cookie.secure=true`) instead. This forces both cookies `Secure` on every
+response, regardless of what any request header says, and doesn't require `trustedProxyEnabled`.
+
+> [!WARNING]
+> Never expose the app's own port (`8080` by default) directly to the internet, or otherwise let
+> it be reached by anything other than your reverse proxy, while either option is enabled. With
+> option 1, a caller connecting directly could send a fake `X-Forwarded-Proto: https` over plain
+> HTTP and have QuickDrop treat the connection as secure when it isn't. With option 2, a direct
+> plain-HTTP caller simply can't use the app at all — the browser silently drops `Secure` cookies
+> sent over HTTP, breaking login and CSRF-protected requests. Bind the app to `127.0.0.1` or a
+> private network, or firewall the port, so the proxy is the only path in.
+
+Neither option is needed, and both default to off, for a plain-HTTP local install — cookies
+behave exactly as before.
+
 ### Build and run manually
 
 ```bash
@@ -294,6 +351,7 @@ equivalent environment variable using Spring Boot's relaxed binding (`SERVER_POR
 | `spring.threads.virtual.enabled`          | `true`                                                           | Tomcat's request executor and Spring's `@Async` executor run on virtual threads                                                                                                              |
 | `server.servlet.session.cookie.same-site` | `strict`                                                         | Session cookie `SameSite`                                                                                                                                                                    |
 | `server.servlet.session.cookie.http-only` | `true`                                                           | Session cookie `HttpOnly`                                                                                                                                                                    |
+| `server.servlet.session.cookie.secure`    | unset                                                            | Session and CSRF cookie `Secure` override; see [Running behind a reverse proxy](#running-behind-a-reverse-proxy)                                                                             |
 | `spring.flyway.baseline-on-migrate`       | `true`                                                           | Migrations run automatically at startup                                                                                                                                                      |
 | `app.version`                             | `2.0.0`                                                          | Version shown in the admin About tab                                                                                                                                                         |
 

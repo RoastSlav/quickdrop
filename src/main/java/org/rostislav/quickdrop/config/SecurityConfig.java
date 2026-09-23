@@ -4,6 +4,7 @@ import org.rostislav.quickdrop.service.ApplicationSettingsService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.web.server.autoconfigure.ServerProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationProvider;
@@ -22,6 +23,8 @@ import org.springframework.security.web.access.intercept.RequestAuthorizationCon
 import org.springframework.security.crypto.bcrypt.BCrypt;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.boot.tomcat.servlet.TomcatServletWebServerFactory;
+import org.springframework.boot.web.server.WebServerFactoryCustomizer;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.csrf.*;
 import org.springframework.web.cors.CorsConfiguration;
@@ -50,18 +53,26 @@ import java.util.List;
  * <p>CSRF protection uses a cookie-based token repository (readable by JavaScript).
  * {@code X-Frame-Options} is disabled; {@code Content-Security-Policy: frame-ancestors *}
  * is set instead.
+ *
+ * <p>The session and CSRF cookies' {@code Secure} flag defaults to {@code request.isSecure()}
+ * per request, which {@link TrustedProxySecureSchemeValve} corrects for a TLS-terminating
+ * reverse proxy when {@code trustedProxyEnabled} is on. Setting
+ * {@code server.servlet.session.cookie.secure} explicitly overrides that for both cookies
+ * instead (for a proxy that doesn't send {@code X-Forwarded-Proto}).
  */
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
     private static final Logger logger = LoggerFactory.getLogger(SecurityConfig.class);
     private final ApplicationSettingsService applicationSettingsService;
+    private final ServerProperties serverProperties;
 
     @Value("${quickdrop.cors.allowed-origins:*}")
     private String corsAllowedOrigins;
 
-    public SecurityConfig(ApplicationSettingsService applicationSettingsService) {
+    public SecurityConfig(ApplicationSettingsService applicationSettingsService, ServerProperties serverProperties) {
         this.applicationSettingsService = applicationSettingsService;
+        this.serverProperties = serverProperties;
     }
 
     /**
@@ -93,8 +104,20 @@ public class SecurityConfig {
                 .defaultSuccessUrl("/", true)
         ).authenticationProvider(authenticationProvider());
 
+        // Session cookie's own Secure flag (server.servlet.session.cookie.secure) is null
+        // unless an admin sets it explicitly; when null, both this and the CSRF cookie below
+        // already fall back to request.isSecure() per request on their own -- which
+        // TrustedProxySecureSchemeValve (registered via trustedProxySecureSchemeCustomizer,
+        // below) is what makes correct behind a reverse proxy. Only force an override here
+        // when one is actually configured.
+        CookieCsrfTokenRepository csrfTokenRepository = CookieCsrfTokenRepository.withHttpOnlyFalse();
+        Boolean cookieSecureOverride = serverProperties.getServlet().getSession().getCookie().getSecure();
+        if (cookieSecureOverride != null) {
+            csrfTokenRepository.setCookieCustomizer(builder -> builder.secure(cookieSecureOverride));
+        }
+
         http.csrf(csrf -> csrf
-                .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                .csrfTokenRepository(csrfTokenRepository)
                 .csrfTokenRequestHandler(new XorCsrfTokenRequestAttributeHandler())
         ).headers(headers -> headers
                 .frameOptions(HeadersConfigurer.FrameOptionsConfig::disable)
@@ -107,6 +130,17 @@ public class SecurityConfig {
         .addFilterAfter(new CsrfCookieFilter(), CsrfFilter.class);
 
         return http.build();
+    }
+
+    /**
+     * Registers {@link TrustedProxySecureSchemeValve} on the embedded Tomcat, so a
+     * {@code trustedProxyEnabled} X-Forwarded-Proto match is visible to Tomcat's own
+     * connector-level request — including its session-cookie-secure decision — not just to
+     * Spring code reading {@code HttpServletRequest.isSecure()} through the Filter chain.
+     */
+    @Bean
+    public WebServerFactoryCustomizer<TomcatServletWebServerFactory> trustedProxySecureSchemeCustomizer() {
+        return factory -> factory.addContextValves(new TrustedProxySecureSchemeValve(applicationSettingsService));
     }
 
     /**

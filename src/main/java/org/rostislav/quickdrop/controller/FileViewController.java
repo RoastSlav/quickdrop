@@ -226,9 +226,15 @@ public class FileViewController {
             return "redirect:/file/list";
         }
 
-        if (fileEntity.passwordHash != null && !fileEntity.passwordHash.isBlank()) {
-            if (!fileQueryService.isAuthorizedForFile(uuid, request)
-                    && !sessionService.hasValidAdminSession(request)) {
+        // History exposes every visitor's IP address and user agent, so unlike view/download
+        // it must never be world-readable just because the file itself has no password --
+        // it always needs either a validated file-session token or an admin session.
+        boolean hasPassword = fileEntity.passwordHash != null && !fileEntity.passwordHash.isBlank();
+        if (!sessionService.hasValidAdminSession(request)) {
+            if (!hasPassword) {
+                return "redirect:/admin/password";
+            }
+            if (!fileQueryService.isAuthorizedForFile(uuid, request)) {
                 return "redirect:/file/password/" + uuid;
             }
         }

@@ -201,11 +201,11 @@ class FileViewControllerTest extends ControllerTestSupport {
     }
 
     // -- GET /file/history/{uuid} -----------------------------------------------
-    // Regression: /file/history/* used to be unconditionally covered by
-    // AdminPasswordInterceptor, making it admin-only regardless of the file's own password
-    // state and leaving FileViewController#viewFileHistory's own "file session OR admin
-    // session" check unreachable dead code. WebConfig now excludes this route from both
-    // blanket interceptors so that check is the sole authority.
+    // /file/history/* is excluded from both blanket interceptors (WebConfig) so
+    // FileViewController#viewFileHistory's own check is the sole authority: admin session,
+    // or a validated file-session token for a password-protected file. A non-password file
+    // has no file-session equivalent, so its history is admin-only -- it leaks every past
+    // visitor's IP/user-agent, which must not be as open as the file itself.
 
     @Test
     void fileHistory_adminSession_returns200() throws Exception {
@@ -218,15 +218,15 @@ class FileViewControllerTest extends ControllerTestSupport {
     }
 
     @Test
-    void fileHistory_anonymousOnPlainNonPasswordFile_returns200() throws Exception {
-        // A non-password file's history is publicly viewable, consistent with the file
-        // itself -- the controller's own auth-check block is skipped entirely when
-        // passwordHash is null.
+    void fileHistory_anonymousOnPlainNonPasswordFile_redirectsToAdminLogin() throws Exception {
+        // History leaks every visitor's IP/user-agent, so unlike the file itself it must not
+        // be world-readable just because the file has no password -- a non-password file's
+        // history is admin-only, with no file-session equivalent to gate it on instead.
         ensureAdminPasswordSet();
         StoredFile file = createFile("a.txt", "hi".getBytes());
         mockMvc.perform(get("/file/history/" + file.uuid))
-                .andExpect(status().isOk())
-                .andExpect(view().name("file-history"));
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/admin/password"));
     }
 
     @Test

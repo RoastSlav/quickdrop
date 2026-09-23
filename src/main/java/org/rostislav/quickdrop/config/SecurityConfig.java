@@ -27,6 +27,11 @@ import org.springframework.boot.tomcat.servlet.TomcatServletWebServerFactory;
 import org.springframework.boot.web.server.WebServerFactoryCustomizer;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.csrf.*;
+import org.springframework.security.web.header.writers.ContentSecurityPolicyHeaderWriter;
+import org.springframework.security.web.header.writers.DelegatingRequestMatcherHeaderWriter;
+import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
+import org.springframework.security.web.util.matcher.OrRequestMatcher;
+import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -51,8 +56,12 @@ import java.util.List;
  * immediately, with no dependency on a config refresh rebuilding the chain.
  *
  * <p>CSRF protection uses a cookie-based token repository (readable by JavaScript).
- * {@code X-Frame-Options} is disabled; {@code Content-Security-Policy: frame-ancestors *}
- * is set instead.
+ * {@code X-Frame-Options} is disabled; {@code Content-Security-Policy: frame-ancestors} is set
+ * instead, per-route: {@code /admin/**} and the app-password login page get {@code 'none'} — no
+ * legitimate embedding use case for either was ever found (checked git history, README, docs,
+ * and the frontend for anything embed-aware; the permissive default traces to a single
+ * undocumented commit) — everything else keeps {@code *}, since public file/share/paste pages
+ * are plausibly meant to be embeddable and carry no session state a clickjack could exploit.
  *
  * <p>The session and CSRF cookies' {@code Secure} flag defaults to {@code request.isSecure()}
  * per request, which {@link TrustedProxySecureSchemeValve} corrects for a TLS-terminating
@@ -66,6 +75,19 @@ import java.util.List;
 @EnableWebSecurity
 public class SecurityConfig {
     private static final Logger logger = LoggerFactory.getLogger(SecurityConfig.class);
+
+    /**
+     * Routes that get {@code frame-ancestors 'none'} instead of the app-wide {@code *}: the
+     * entire admin surface (covers its own {@code /admin/password} login) and the site-wide
+     * app-password login page. A framed login page, admin or app-wide, is exactly the
+     * clickjacking target CSP's {@code frame-ancestors} exists to stop -- an invisible overlay
+     * tricking a real admin into submitting a password into an attacker-controlled frame.
+     */
+    private static final RequestMatcher RESTRICTED_FRAMING_ROUTES = new OrRequestMatcher(
+            PathPatternRequestMatcher.pathPattern("/admin/**"),
+            PathPatternRequestMatcher.pathPattern("/password/login")
+    );
+
     private final ApplicationSettingsService applicationSettingsService;
     private final ServerProperties serverProperties;
 
@@ -123,7 +145,13 @@ public class SecurityConfig {
                 .csrfTokenRequestHandler(new XorCsrfTokenRequestAttributeHandler())
         ).headers(headers -> headers
                 .frameOptions(HeadersConfigurer.FrameOptionsConfig::disable)
-                .contentSecurityPolicy(csp -> csp.policyDirectives("frame-ancestors *;"))
+                // ContentSecurityPolicyHeaderWriter only sets the header when the response
+                // doesn't already carry one, so the restrictive, path-matched writer must run
+                // BEFORE the permissive app-wide one -- first writer wins, not last.
+                .addHeaderWriter(new DelegatingRequestMatcherHeaderWriter(
+                        RESTRICTED_FRAMING_ROUTES,
+                        new ContentSecurityPolicyHeaderWriter("frame-ancestors 'none';")))
+                .addHeaderWriter(new ContentSecurityPolicyHeaderWriter("frame-ancestors *;"))
         ).cors(Customizer.withDefaults())
         // CsrfToken resolution is deferred by default (cookie only written once something
         // calls getToken()); our chunked responses can commit before Thymeleaf gets to it

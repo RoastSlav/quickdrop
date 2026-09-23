@@ -280,6 +280,15 @@ public class ApplicationSettingsEntity {
     private boolean trustedProxyEnabled;
 
     /**
+     * When {@code true}, the session and CSRF cookies' {@code Secure} flag is forced on
+     * unconditionally, regardless of {@link #trustedProxyEnabled} or any request header.
+     * Live, DB-backed equivalent of the {@code server.servlet.session.cookie.secure} startup
+     * property, for a reverse proxy that doesn't send {@code X-Forwarded-Proto}. Defaults to
+     * {@code false} so a plain-HTTP local install is unaffected.
+     */
+    private boolean forceSecureCookiesEnabled;
+
+    /**
      * When {@code true}, resolving a short link (either type) writes an audit-log row.
      * The link's own use counters always update regardless of this setting — it only
      * controls whether individual visits show up on the activity log.
@@ -1032,6 +1041,14 @@ public class ApplicationSettingsEntity {
 
     public void setTrustedProxyEnabled(boolean trustedProxyEnabled) {
         this.trustedProxyEnabled = trustedProxyEnabled;
+    }
+
+    public boolean isForceSecureCookiesEnabled() {
+        return forceSecureCookiesEnabled;
+    }
+
+    public void setForceSecureCookiesEnabled(boolean forceSecureCookiesEnabled) {
+        this.forceSecureCookiesEnabled = forceSecureCookiesEnabled;
     }
 
     public boolean isShortenerClickLoggingEnabled() {

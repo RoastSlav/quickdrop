@@ -75,6 +75,7 @@ public class ApplicationSettingsViewModel {
     private String shortenerDomainRuleMode;
     private String shortenerDomainRules;
     private boolean trustedProxyEnabled;
+    private boolean forceSecureCookiesEnabled;
     private boolean shortenerClickLoggingEnabled;
     private boolean reputationCheckEnabled;
     private boolean reputationPhishingArmyEnabled;
@@ -195,6 +196,7 @@ public class ApplicationSettingsViewModel {
         this.shortenerDomainRuleMode = settings.getShortenerDomainRuleMode();
         this.shortenerDomainRules = settings.getShortenerDomainRules();
         this.trustedProxyEnabled = settings.isTrustedProxyEnabled();
+        this.forceSecureCookiesEnabled = settings.isForceSecureCookiesEnabled();
         this.shortenerClickLoggingEnabled = settings.isShortenerClickLoggingEnabled();
         this.reputationCheckEnabled = settings.isReputationCheckEnabled();
         this.reputationPhishingArmyEnabled = settings.isReputationPhishingArmyEnabled();
@@ -633,6 +635,14 @@ public class ApplicationSettingsViewModel {
 
     public void setTrustedProxyEnabled(boolean trustedProxyEnabled) {
         this.trustedProxyEnabled = trustedProxyEnabled;
+    }
+
+    public boolean isForceSecureCookiesEnabled() {
+        return forceSecureCookiesEnabled;
+    }
+
+    public void setForceSecureCookiesEnabled(boolean forceSecureCookiesEnabled) {
+        this.forceSecureCookiesEnabled = forceSecureCookiesEnabled;
     }
 
     public boolean isShortenerClickLoggingEnabled() {

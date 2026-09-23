@@ -78,6 +78,31 @@ class TrustedProxySecureSchemeValveTest {
         assertFalse(request.isSecure());
     }
 
+    @Test
+    void forceSecureCookiesEnabled_noHeaderNoTrustedProxy_marksRequestSecureAnyway() throws Exception {
+        Mockito.when(settings.isForceSecureCookiesEnabled()).thenReturn(true);
+        Request request = newRequest();
+
+        valve.invoke(request, newResponse());
+
+        assertTrue(next.invoked);
+        assertTrue(request.isSecure());
+        assertEquals("https", request.getScheme());
+    }
+
+    @Test
+    void forceSecureCookiesDisabled_trustedProxyDisabled_requestUnchanged() throws Exception {
+        Mockito.when(settings.isForceSecureCookiesEnabled()).thenReturn(false);
+        Mockito.when(settings.isTrustedProxyEnabled()).thenReturn(false);
+        Request request = newRequest();
+        request.getCoyoteRequest().getMimeHeaders().addValue("X-Forwarded-Proto").setString("https");
+
+        valve.invoke(request, newResponse());
+
+        assertTrue(next.invoked);
+        assertFalse(request.isSecure());
+    }
+
     private static Request newRequest() {
         Connector connector = new Connector();
         connector.setService(new org.apache.catalina.core.StandardService());

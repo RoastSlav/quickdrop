@@ -292,9 +292,13 @@ Caddy sets `X-Forwarded-Proto`/`X-Forwarded-For` automatically for `reverse_prox
 `header_up` lines above are shown for clarity, not strictly required.
 
 **Option 2 — force it unconditionally.** If your proxy doesn't (or can't) send
-`X-Forwarded-Proto`, set `SERVER_SERVLET_SESSION_COOKIE_SECURE=true` (or
-`server.servlet.session.cookie.secure=true`) instead. This forces both cookies `Secure` on every
-response, regardless of what any request header says, and doesn't require `trustedProxyEnabled`.
+`X-Forwarded-Proto`, turn on **Force cookies to Secure** in Admin → Settings
+(`quickdrop.forceSecureCookiesEnabled`, off by default, next to Option 1's toggle) instead. This
+forces both cookies `Secure` on every response, regardless of what any request header says or
+whether Trust reverse proxy headers is on, and takes effect immediately — no restart. For
+deployments that prefer env-var-managed config over a DB-stored toggle, setting
+`SERVER_SERVLET_SESSION_COOKIE_SECURE=true` (or `server.servlet.session.cookie.secure=true`) as a
+startup property has the same effect.
 
 > [!WARNING]
 > Never expose the app's own port (`8080` by default) directly to the internet, or otherwise let

@@ -56,9 +56,11 @@ import java.util.List;
  *
  * <p>The session and CSRF cookies' {@code Secure} flag defaults to {@code request.isSecure()}
  * per request, which {@link TrustedProxySecureSchemeValve} corrects for a TLS-terminating
- * reverse proxy when {@code trustedProxyEnabled} is on. Setting
- * {@code server.servlet.session.cookie.secure} explicitly overrides that for both cookies
- * instead (for a proxy that doesn't send {@code X-Forwarded-Proto}).
+ * reverse proxy when either {@code trustedProxyEnabled} (only with a matching
+ * {@code X-Forwarded-Proto} header) or {@code forceSecureCookiesEnabled} (unconditionally, for
+ * a proxy that doesn't send that header) is on. Setting
+ * {@code server.servlet.session.cookie.secure} as a startup property is a third, static way to
+ * force the same outcome, for deployments that prefer env-var-managed config over a DB setting.
  */
 @Configuration
 @EnableWebSecurity

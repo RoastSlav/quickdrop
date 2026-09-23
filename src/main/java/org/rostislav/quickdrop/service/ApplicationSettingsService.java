@@ -158,6 +158,7 @@ public class ApplicationSettingsService {
             defaults.setShortenerDomainRuleMode("OFF");
             defaults.setShortenerDomainRules("");
             defaults.setTrustedProxyEnabled(false);
+            defaults.setForceSecureCookiesEnabled(false);
             defaults.setShortenerClickLoggingEnabled(true);
             defaults.setReputationCheckEnabled(false);
             defaults.setReputationPhishingArmyEnabled(false);
@@ -419,6 +420,7 @@ public class ApplicationSettingsService {
                         ? domainRuleMode : "OFF");
         entity.setShortenerDomainRules(settings.getShortenerDomainRules() != null ? settings.getShortenerDomainRules() : "");
         entity.setTrustedProxyEnabled(settings.isTrustedProxyEnabled());
+        entity.setForceSecureCookiesEnabled(settings.isForceSecureCookiesEnabled());
         entity.setShortenerClickLoggingEnabled(settings.isShortenerClickLoggingEnabled());
         entity.setReputationCheckEnabled(settings.isReputationCheckEnabled());
         entity.setReputationFailClosed(settings.isReputationFailClosed());
@@ -984,6 +986,15 @@ public class ApplicationSettingsService {
      */
     public boolean isTrustedProxyEnabled() {
         return self.getApplicationSettings().isTrustedProxyEnabled();
+    }
+
+    /**
+     * @return {@code true} if the session and CSRF cookies' {@code Secure} flag should be
+     *         forced on unconditionally, regardless of {@link #isTrustedProxyEnabled()} or any
+     *         request header — for a reverse proxy that doesn't send {@code X-Forwarded-Proto}
+     */
+    public boolean isForceSecureCookiesEnabled() {
+        return self.getApplicationSettings().isForceSecureCookiesEnabled();
     }
 
     /**

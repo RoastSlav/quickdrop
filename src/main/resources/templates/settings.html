@@ -965,15 +965,27 @@
                             <section>
                                 <p class="settings-section-label"
                                    th:text="#{page.settings.security.network.section}">Network</p>
-                                <div class="rounded-2xl p-4" style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
-                                    <label class="form-check">
-                                        <input id="trustedProxyEnabled" th:field="*{trustedProxyEnabled}"
-                                               type="checkbox"/>
-                                        <span>
-                      <span class="text-sm font-semibold" th:text="#{page.settings.security.trustedProxyEnabled}">Trust reverse proxy headers</span>
-                      <span class="form-hint block mt-0.5" th:text="#{page.settings.security.trustedProxyEnabled.help}">Only enable this if QuickDrop runs behind a real reverse proxy. It governs which client IP is used for the activity log and rate limiting (X-Forwarded-For / X-Real-IP); enabling it without a real proxy in front lets any visitor spoof their logged IP and bypass rate limits.</span>
-                    </span>
-                                    </label>
+                                <div class="flex flex-col gap-3">
+                                    <div class="rounded-2xl p-4" style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
+                                        <label class="form-check">
+                                            <input id="trustedProxyEnabled" th:field="*{trustedProxyEnabled}"
+                                                   type="checkbox"/>
+                                            <span>
+                        <span class="text-sm font-semibold" th:text="#{page.settings.security.trustedProxyEnabled}">Trust reverse proxy headers</span>
+                        <span class="form-hint block mt-0.5" th:text="#{page.settings.security.trustedProxyEnabled.help}">Only enable this if QuickDrop runs behind a real reverse proxy. It governs which client IP is used for the activity log and rate limiting (X-Forwarded-For / X-Real-IP), and marks the session/CSRF cookies Secure when a request carries X-Forwarded-Proto: https; enabling it without a real proxy in front lets any visitor spoof their logged IP and bypass rate limits.</span>
+                      </span>
+                                        </label>
+                                    </div>
+                                    <div class="rounded-2xl p-4" style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
+                                        <label class="form-check">
+                                            <input id="forceSecureCookiesEnabled" th:field="*{forceSecureCookiesEnabled}"
+                                                   type="checkbox"/>
+                                            <span>
+                        <span class="text-sm font-semibold" th:text="#{page.settings.security.forceSecureCookiesEnabled}">Force cookies to Secure</span>
+                        <span class="form-hint block mt-0.5" th:text="#{page.settings.security.forceSecureCookiesEnabled.help}">Marks the session and CSRF cookies Secure unconditionally, regardless of Trust reverse proxy headers or any request header. Use this if your reverse proxy terminates TLS but doesn't send X-Forwarded-Proto. Never enable this unless a real reverse proxy is the only way to reach this instance — otherwise plain-HTTP visitors silently can't log in, since browsers drop Secure cookies sent over HTTP.</span>
+                      </span>
+                                        </label>
+                                    </div>
                                 </div>
                             </section>
 

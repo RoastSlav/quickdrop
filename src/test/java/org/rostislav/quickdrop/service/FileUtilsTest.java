@@ -8,7 +8,11 @@ import org.rostislav.quickdrop.entity.StoredFile;
 import org.rostislav.quickdrop.entity.Upload;
 import org.rostislav.quickdrop.util.FileUtils;
 import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.time.LocalDate;
 import java.util.Locale;
 
@@ -236,6 +240,35 @@ class FileUtilsTest {
         assertTrue(FileUtils.isPreviewableJson(fileWithName("data.json")));
         assertTrue(FileUtils.isPreviewableCsvOrTsv(fileWithName("table.csv")));
         assertFalse(FileUtils.isPreviewableText(fileWithName("archive.zip")));
+    }
+
+    /**
+     * Used by {@code FileDownloadService#previewFile} for non-SVG previews, including
+     * encrypted files, whose decryption is lazy (see {@code EncryptionService}) -- a wrong
+     * password or corrupted ciphertext only fails on a later {@code read()}, after the
+     * response may already be committed with a 200 status. That must not propagate out of
+     * the {@link StreamingResponseBody} and risk leaking exception detail to the client.
+     */
+    @Test
+    void getStreamingResponseBody_midStreamFailure_doesNotPropagate() throws Exception {
+        InputStream failsAfterOneByte = new InputStream() {
+            private boolean served = false;
+
+            @Override
+            public int read() throws IOException {
+                if (!served) {
+                    served = true;
+                    return 'x';
+                }
+                throw new IOException("simulated decrypt failure");
+            }
+        };
+
+        StreamingResponseBody body = FileUtils.getStreamingResponseBody(failsAfterOneByte);
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+
+        assertDoesNotThrow(() -> body.writeTo(out));
+        assertArrayEquals(new byte[]{'x'}, out.toByteArray());
     }
 
     private static Upload fileWithUuid(String uuid) {

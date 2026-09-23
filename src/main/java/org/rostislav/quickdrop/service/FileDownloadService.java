@@ -247,14 +247,8 @@ public class FileDownloadService {
             logHistory(upload, request, EventType.SHARE_DOWNLOAD);
             return outputStream -> {
                 try {
-                    InputStream decIn;
-                    try {
-                        InputStream raw = storageService.getInputStream(sidecarKey);
-                        decIn = encryptionService.getDecryptedInputStream(raw, shareKey);
-                    } catch (Exception e) {
-                        throw new IOException("Failed to decrypt share sidecar", e);
-                    }
-                    try (decIn) {
+                    InputStream raw = storageService.getInputStream(sidecarKey);
+                    try (InputStream decIn = encryptionService.getDecryptedInputStream(raw, shareKey)) {
                         byte[] buffer = new byte[8192];
                         int bytesRead;
                         while ((bytesRead = decIn.read(buffer)) != -1) {
@@ -262,6 +256,12 @@ public class FileDownloadService {
                         }
                         outputStream.flush();
                     }
+                } catch (Exception e) {
+                    // Same reasoning as createFileDownloadResponse: decryption is lazy (see
+                    // EncryptionService), so a wrong/corrupted share key can fail mid-stream,
+                    // after the response is already committed. Log server-side, never let the
+                    // detail reach the client.
+                    logger.warn("Error streaming share sidecar {}: {}", sidecarKey, e.getMessage());
                 } finally {
                     updateShareTokenAfterDownload(shareTokenEntity, upload);
                 }
@@ -313,6 +313,14 @@ public class FileDownloadService {
                     outputStream.write(buffer, 0, bytesRead);
                 }
                 outputStream.flush();
+            } catch (Exception e) {
+                // Wrong password, a corrupted/tampered ciphertext, and a genuine storage I/O
+                // error all surface here identically -- for an encrypted file, decryption is
+                // lazy (see EncryptionService), so this can fail mid-stream, after some bytes
+                // may already be sent and the response already committed; the status/body
+                // can't change at that point regardless, so the only thing left to control is
+                // that no exception detail reaches the client. Log server-side and stop.
+                logger.warn("Error streaming file {}: {}", upload.uuid, e.getMessage());
             } finally {
                 try {
                     inputStream.close();

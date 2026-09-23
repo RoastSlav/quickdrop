@@ -120,6 +120,46 @@ class FileDownloadServiceTest {
         assertEquals(500, response.getStatusCode().value());
     }
 
+    /**
+     * EncryptionService decrypts lazily (see its own docs): a wrong password or a corrupted
+     * authentication tag/padding is only discovered on the first {@code read()} of the
+     * returned stream, not when {@code getDecryptedInputStream} itself is called -- so it
+     * always manifests as a mid-stream failure like this, never as the upfront 500 the
+     * previous test covers. Before this fix, that mid-stream exception propagated out of the
+     * {@link StreamingResponseBody}; now it's caught, logged, and the stream just ends --
+     * same observable shape (200 status, silent truncation, no error text) regardless of
+     * whether the underlying cause was a wrong password or a corrupted ciphertext.
+     */
+    @Test
+    void downloadFile_encryptedMidStreamDecryptFailure_doesNotPropagateAndTruncatesSilently() throws Exception {
+        StoredFile encrypted = file("u5", "secret.txt", true);
+        when(storageHealthService.isStorageDown()).thenReturn(false);
+        when(uploadRepository.findByUUID("u5")).thenReturn(java.util.Optional.of(encrypted));
+        when(fileQueryService.getFilePasswordFromSessionToken(any())).thenReturn("some-password");
+        when(storageService.getInputStream("u5")).thenReturn(new ByteArrayInputStream(new byte[]{1, 2, 3}));
+
+        InputStream failsAfterTwoBytes = new InputStream() {
+            private int position = 0;
+            private final byte[] goodBytes = {'h', 'i'};
+
+            @Override
+            public int read() throws IOException {
+                if (position < goodBytes.length) {
+                    return goodBytes[position++];
+                }
+                throw new IOException("simulated bad padding");
+            }
+        };
+        when(encryptionService.getDecryptedInputStream(any(InputStream.class), anyString())).thenReturn(failsAfterTwoBytes);
+
+        ResponseEntity<StreamingResponseBody> response = newService().downloadFile("u5", request());
+        assertEquals(200, response.getStatusCode().value());
+
+        ByteArrayOutputStream captured = new ByteArrayOutputStream();
+        assertDoesNotThrow(() -> response.getBody().writeTo(captured));
+        assertArrayEquals(new byte[]{'h', 'i'}, captured.toByteArray());
+    }
+
     @Test
     void downloadFile_plainOpenFailure_returns404() throws Exception {
         StoredFile plain = file("u3", "plain.txt", false);
@@ -391,6 +431,44 @@ class FileDownloadServiceTest {
         verify(notificationService).notifyFileAction(eq(upload), eq(org.rostislav.quickdrop.model.EventType.SHARE_DOWNLOAD));
         // numberOfAllowedDownloads is now 0 on the re-fetched entity -> invalid -> cleaned up.
         verify(shareTokenRepository).deleteByIdTransactional(any());
+    }
+
+    /**
+     * Same reasoning as {@code downloadFile_encryptedMidStreamDecryptFailure_...}: decryption
+     * is lazy, so a wrong/corrupted share key fails mid-stream, after the response may already
+     * be committed. That must not propagate out of the {@link StreamingResponseBody}, and
+     * post-stream cleanup (the {@code finally} in the production code) must still run.
+     */
+    @Test
+    void streamFileByShareToken_midStreamDecryptFailure_doesNotPropagateAndStillCleansUp() throws Exception {
+        StoredFile upload = file("u9", "f.txt", true);
+        UploadShareLink token = new UploadShareLink("tok", upload, null, 1);
+        token.shareKeyHash = "hash";
+        when(storageHealthService.isStorageDown()).thenReturn(false);
+        when(shareTokenRepository.decrementDownloadCount(any())).thenReturn(1);
+        when(storageService.exists("u9-share-tok")).thenReturn(true);
+        when(storageService.getInputStream("u9-share-tok")).thenReturn(new ByteArrayInputStream("shared".getBytes()));
+        InputStream failsImmediately = new InputStream() {
+            @Override
+            public int read() throws IOException {
+                throw new IOException("simulated auth tag failure");
+            }
+        };
+        when(encryptionService.getDecryptedInputStream(any(InputStream.class), eq("share-key")))
+                .thenReturn(failsImmediately);
+        when(shareTokenRepository.findUploadLinkById(any())).thenReturn(java.util.Optional.of(token));
+
+        MockHttpServletRequest req = request();
+        req.getSession().setAttribute("share-key-tok", "share-key");
+
+        StreamingResponseBody body = newService().streamFileByShareToken(token, req);
+        assertNotNull(body);
+
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        assertDoesNotThrow(() -> body.writeTo(out));
+        assertEquals(0, out.size());
+        // Cleanup (in the finally block) must still run even though streaming failed.
+        verify(shareTokenRepository).findUploadLinkById(any());
     }
 
     @Test

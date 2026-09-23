@@ -80,6 +80,13 @@ public class FileUtils {
      * {@code FileInputStream} holds an OS-level file lock that prevents other
      * operations (e.g. overwriting the same file) from succeeding.
      *
+     * <p>A mid-stream failure (an encrypted source decrypting lazily -- wrong password,
+     * corrupted ciphertext -- or a genuine storage I/O error) is caught and logged
+     * server-side rather than left to propagate: by the time {@code inputStream.read()} can
+     * fail, the response may already be committed with a 200 status, so there is no status
+     * code left to change, and letting the exception escape risks its message reaching the
+     * client via a container error page.
+     *
      * @param inputStream source stream; ownership is transferred to the returned body
      * @return a streaming response body
      */
@@ -92,6 +99,8 @@ public class FileUtils {
                     outputStream.write(buffer, 0, bytesRead);
                 }
                 outputStream.flush();
+            } catch (Exception e) {
+                logger.warn("Error streaming response body: {}", e.getMessage());
             }
         };
     }

@@ -227,6 +227,8 @@ docker run -d \
   --name quickdrop \
   -p 8080:8080 \
   --restart unless-stopped \
+  -e PUID=1000 \
+  -e PGID=1000 \
   -v /path/to/db:/app/db \
   -v /path/to/files:/app/files \
   -v /path/to/log:/app/log \
@@ -234,6 +236,12 @@ docker run -d \
 ```
 
 Open <http://localhost:8080> and follow the admin setup prompt to set the admin password.
+
+The container runs the app as an unprivileged `quickdrop` user, not root. `PUID`/`PGID` (default
+`1000`/`1000`) set that user's UID/GID; set them to match whoever owns `/path/to/db`, `/path/to/files`
+and `/path/to/log` on the host if that isn't `1000:1000` — the entrypoint fixes ownership of those
+three directories to match on every start, so a mismatch only costs one extra `chown` on the next
+boot rather than breaking startup.
 
 ### Docker Compose
 
@@ -289,7 +297,9 @@ equivalent environment variable using Spring Boot's relaxed binding (`SERVER_POR
 | `spring.flyway.baseline-on-migrate`       | `true`                                                           | Migrations run automatically at startup                                                                                                                                                      |
 | `app.version`                             | `2.0.0`                                                          | Version shown in the admin About tab                                                                                                                                                         |
 
-The published image sets no application-specific environment variables of its own.
+The published image sets no application-specific environment variables of its own. `PUID`/`PGID` are
+the exception — they're consumed by the container's entrypoint script, not the Spring application, to
+pick the UID/GID the process runs as; see [Docker](#docker).
 
 ### Data directories
 

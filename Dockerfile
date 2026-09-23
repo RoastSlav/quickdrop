@@ -45,11 +45,20 @@ RUN "$JAVA_HOME/bin/jlink" \
 # Stage 3 — runtime
 FROM alpine:3.22
 
+# su-exec drops root after entrypoint.sh fixes ownership; -S/-H/-D make quickdrop a
+# passwordless system account with no home dir. UID/GID 1000 is just the built-in
+# default -- entrypoint.sh remaps both at container start when PUID/PGID differ.
+RUN apk add --no-cache su-exec \
+    && addgroup -g 1000 -S quickdrop \
+    && adduser -u 1000 -S -H -D -G quickdrop quickdrop
+
 ENV JAVA_HOME=/jre
 ENV PATH="${JAVA_HOME}/bin:${PATH}"
 
 COPY --from=jre-builder /slim_jre $JAVA_HOME
 COPY --from=builder /build/target/quickdrop.jar /app/quickdrop.jar
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 
 WORKDIR /app
 
@@ -59,4 +68,9 @@ VOLUME ["/app/db", "/app/log", "/app/files"]
 
 EXPOSE 8080
 
-ENTRYPOINT ["java", "-jar", "/app/quickdrop.jar"]
+# entrypoint.sh runs as root just long enough to remap PUID/PGID and fix directory
+# ownership, then execs java via su-exec as the quickdrop user -- so java itself ends
+# up as PID 1 (su-exec exec's into it, it doesn't fork), preserving signal handling
+# and graceful shutdown. CMD stays overridable exactly as the plain ENTRYPOINT was.
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["java", "-jar", "/app/quickdrop.jar"]

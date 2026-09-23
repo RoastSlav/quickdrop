@@ -5,6 +5,11 @@ services:
             - 8080:8080
         environment:
             - TZ=Etc/UTC
+            # UID/GID the app runs as inside the container (default 1000:1000). Set these
+            # to match the owner of ./db, ./log, ./files on the host if it isn't 1000:1000 --
+            # the entrypoint chowns those directories to match on startup either way.
+            - PUID=1000
+            - PGID=1000
         volumes:
             - ./db:/app/db
             - ./log:/app/log

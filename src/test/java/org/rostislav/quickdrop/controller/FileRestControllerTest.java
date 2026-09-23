@@ -407,14 +407,78 @@ class FileRestControllerTest extends ControllerTestSupport {
                 .andExpect(status().isBadRequest());
     }
 
+    /**
+     * Abort/status are bound to whichever HTTP session submitted the upload's chunks (see
+     * FileRestController#ownsUpload); a caller who never touched this uploadId, and so never
+     * had it recorded in their session, isn't allowed to abort it even though the id itself
+     * is well-formed.
+     */
     @Test
-    void uploadAbort_validId_returns204() throws Exception {
+    void uploadAbort_idNoSessionOwns_returns400() throws Exception {
         ensureAdminPasswordSet();
         mockMvc.perform(post("/api/file/upload-abort").with(csrf()).param("uploadId", "never-started"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void uploadAbort_ownUploadId_returns204() throws Exception {
+        ensureAdminPasswordSet();
+        MockHttpSession session = new MockHttpSession();
+        MockMultipartFile part = new MockMultipartFile("file", "big.bin", "application/octet-stream", new byte[]{1, 2, 3});
+        String uploadId = java.util.UUID.randomUUID().toString();
+        mockMvc.perform(multipart("/api/file/upload-chunk").file(part).session(session).with(csrf())
+                        .param("fileName", "big.bin")
+                        .param("chunkNumber", "0")
+                        .param("totalChunks", "2")
+                        .param("uploadId", uploadId))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(post("/api/file/upload-abort").session(session).with(csrf()).param("uploadId", uploadId))
                 .andExpect(status().isNoContent());
     }
 
+    @Test
+    void uploadAbort_anotherSessionsUploadId_returns400() throws Exception {
+        ensureAdminPasswordSet();
+        MockHttpSession uploaderSession = new MockHttpSession();
+        MockMultipartFile part = new MockMultipartFile("file", "big.bin", "application/octet-stream", new byte[]{1, 2, 3});
+        String uploadId = java.util.UUID.randomUUID().toString();
+        mockMvc.perform(multipart("/api/file/upload-chunk").file(part).session(uploaderSession).with(csrf())
+                        .param("fileName", "big.bin")
+                        .param("chunkNumber", "0")
+                        .param("totalChunks", "2")
+                        .param("uploadId", uploadId))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(post("/api/file/upload-abort").with(csrf()).param("uploadId", uploadId))
+                .andExpect(status().isBadRequest());
+
+        // Clean up the still-pending upload so it doesn't linger against the shared executor.
+        asyncFileMergeService.abortUpload(uploadId);
+    }
+
     // -- GET /api/file/upload-status/{uploadId} ----------------------------------
+
+    @Test
+    void uploadStatus_ownSession_seesRealProgress() throws Exception {
+        ensureAdminPasswordSet();
+        MockHttpSession session = new MockHttpSession();
+        MockMultipartFile part = new MockMultipartFile("file", "big.bin", "application/octet-stream", new byte[]{1, 2, 3});
+        String uploadId = java.util.UUID.randomUUID().toString();
+        mockMvc.perform(multipart("/api/file/upload-chunk").file(part).session(session).with(csrf())
+                        .param("fileName", "big.bin")
+                        .param("chunkNumber", "0")
+                        .param("totalChunks", "2")
+                        .param("uploadId", uploadId))
+                .andExpect(status().isOk());
+
+        // "processing", not "unknown" -- the owning session can see the upload actually exists.
+        mockMvc.perform(get("/api/file/upload-status/" + uploadId).session(session))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("processing"));
+
+        asyncFileMergeService.abortUpload(uploadId);
+    }
 
     @Test
     void uploadStatus_unknownId_returns200WithUnknownStatus() throws Exception {
@@ -422,6 +486,27 @@ class FileRestControllerTest extends ControllerTestSupport {
         mockMvc.perform(get("/api/file/upload-status/does-not-exist"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("unknown"));
+    }
+
+    @Test
+    void uploadStatus_anotherSessionsUploadId_returnsUnknownNotRealStatus() throws Exception {
+        ensureAdminPasswordSet();
+        MockHttpSession uploaderSession = new MockHttpSession();
+        MockMultipartFile part = new MockMultipartFile("file", "big.bin", "application/octet-stream", new byte[]{1, 2, 3});
+        String uploadId = java.util.UUID.randomUUID().toString();
+        mockMvc.perform(multipart("/api/file/upload-chunk").file(part).session(uploaderSession).with(csrf())
+                        .param("fileName", "big.bin")
+                        .param("chunkNumber", "0")
+                        .param("totalChunks", "2")
+                        .param("uploadId", uploadId))
+                .andExpect(status().isOk());
+
+        // A different (or absent) session can't observe that this id is actually in progress.
+        mockMvc.perform(get("/api/file/upload-status/" + uploadId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("unknown"));
+
+        asyncFileMergeService.abortUpload(uploadId);
     }
 
     // -- POST /api/file/share/{uuid} ---------------------------------------------

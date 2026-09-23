@@ -1,6 +1,7 @@
 package org.rostislav.quickdrop.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import org.rostislav.quickdrop.entity.UploadShareLink;
 import org.rostislav.quickdrop.entity.Upload;
 import org.rostislav.quickdrop.model.ShortLinkResult;
@@ -195,6 +196,11 @@ public class FileRestController {
             String effectiveUploadId = (uploadId != null && !uploadId.isBlank())
                     ? uploadId
                     : UUID.randomUUID().toString();
+            // Binds status/abort access to whichever HTTP session sent this chunk, so a caller
+            // who merely knows/guesses another session's uploadId can't poll its status or
+            // abort it. Set on every chunk (idempotent) rather than only chunk 0, since chunk
+            // arrival order isn't guaranteed.
+            request.getSession(true).setAttribute(uploadOwnerSessionAttribute(effectiveUploadId), Boolean.TRUE);
 
             UploadRequest fileUploadRequest = new UploadRequest(description, keepIndefinitelyValue, effectivePassword, hiddenValue, fileName, totalChunks, fileSize, uploaderIp, uploaderUserAgent, Boolean.TRUE.equals(archiveUpload), archiveName, safeManifest, false);
             fileUploadRequest.uploadId = effectiveUploadId;
@@ -221,8 +227,9 @@ public class FileRestController {
 
     @PostMapping("/upload-abort")
     public ResponseEntity<Void> abortChunkUpload(
-            @RequestParam(value = "uploadId", required = false) String uploadId) {
-        if (uploadId == null || uploadId.isBlank()) {
+            @RequestParam(value = "uploadId", required = false) String uploadId,
+            HttpServletRequest request) {
+        if (uploadId == null || uploadId.isBlank() || !ownsUpload(request, uploadId)) {
             return ResponseEntity.badRequest().build();
         }
 
@@ -231,8 +238,32 @@ public class FileRestController {
     }
 
     @GetMapping("/upload-status/{uploadId}")
-    public ResponseEntity<AsyncFileMergeService.UploadProgress> getUploadStatus(@PathVariable String uploadId) {
+    public ResponseEntity<AsyncFileMergeService.UploadProgress> getUploadStatus(@PathVariable String uploadId,
+                                                                                HttpServletRequest request) {
+        if (!ownsUpload(request, uploadId)) {
+            // Same shape as a genuinely unknown id -- doesn't tell a caller who doesn't own
+            // it whether the id is in use by someone else or not in use at all.
+            return ResponseEntity.ok(new AsyncFileMergeService.UploadProgress("unknown", null, "Upload not found", null, null));
+        }
         return ResponseEntity.ok(asyncFileMergeService.getUploadStatus(uploadId));
+    }
+
+    /** Session attribute name recording that the current session started chunk uploads for {@code uploadId}. */
+    private static String uploadOwnerSessionAttribute(String uploadId) {
+        return "upload-owner-" + uploadId;
+    }
+
+    /**
+     * Whether the caller's own HTTP session was the one that submitted a chunk for
+     * {@code uploadId} -- the only thing that binds this otherwise-unauthenticated,
+     * caller-chosen id to a particular requester.
+     */
+    private boolean ownsUpload(HttpServletRequest request, String uploadId) {
+        if (uploadId == null || uploadId.isBlank()) {
+            return false;
+        }
+        HttpSession session = request.getSession(false);
+        return session != null && Boolean.TRUE.equals(session.getAttribute(uploadOwnerSessionAttribute(uploadId)));
     }
 
     /**

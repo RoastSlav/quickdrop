@@ -5,6 +5,7 @@ import org.rostislav.quickdrop.service.ApplicationSettingsService;
 import org.rostislav.quickdrop.service.SessionService;
 import org.rostislav.quickdrop.service.StorageMigrationService;
 import org.rostislav.quickdrop.service.StorageMigrationService.MigrationDirection;
+import org.rostislav.quickdrop.service.UrlSafetyValidator;
 import org.rostislav.quickdrop.storage.StorageBackend;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,7 +14,6 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
-import java.net.InetAddress;
 import java.util.Map;
 
 /**
@@ -35,13 +35,16 @@ public class StorageMigrationController {
     private final StorageMigrationService migrationService;
     private final ApplicationSettingsService applicationSettingsService;
     private final SessionService sessionService;
+    private final UrlSafetyValidator urlSafetyValidator;
 
     public StorageMigrationController(StorageMigrationService migrationService,
                                       ApplicationSettingsService applicationSettingsService,
-                                      SessionService sessionService) {
+                                      SessionService sessionService,
+                                      UrlSafetyValidator urlSafetyValidator) {
         this.migrationService = migrationService;
         this.applicationSettingsService = applicationSettingsService;
         this.sessionService = sessionService;
+        this.urlSafetyValidator = urlSafetyValidator;
     }
 
     @GetMapping("/storage-migration")
@@ -169,15 +172,18 @@ public class StorageMigrationController {
 
     /**
      * Returns {@code true} when {@code url} (or bare hostname) does NOT resolve to a
-     * loopback or RFC-1918 private address, and — for URL-form inputs — uses HTTPS.
+     * loopback, link-local, site-local/RFC-1918, or otherwise reserved address, and — for
+     * URL-form inputs — uses HTTPS.
      *
      * <p>Rules:
      * <ul>
      *   <li>For URL-form inputs (starts with {@code http://} or {@code https://}):
      *       scheme must be {@code https}; host is extracted then resolved.</li>
      *   <li>For bare hostnames (SFTP host field): resolved directly.</li>
-     *   <li>Rejected address ranges: loopback (127.x, ::1), link-local (169.254.x),
-     *       and RFC-1918 private ranges (10.x, 172.16-31.x, 192.168.x).</li>
+     *   <li>Address safety, including checking every address a multi-A-record host resolves
+     *       to (not just the first), is delegated to {@link UrlSafetyValidator} — the same
+     *       check {@link org.rostislav.quickdrop.service.LinkGuard} uses for redirect-link
+     *       destinations, so this doesn't drift from that logic.</li>
      *   <li>{@code localhost} is always rejected.</li>
      * </ul>
      *
@@ -203,24 +209,7 @@ public class StorageMigrationController {
             String lowerHost = host.toLowerCase();
             if (lowerHost.equals("localhost") || lowerHost.startsWith("localhost.")) return false;
 
-            InetAddress addr = InetAddress.getByName(host);
-            byte[] b = addr.getAddress();
-
-            if (addr.isLoopbackAddress()) return false;
-            if (addr.isLinkLocalAddress()) return false;
-
-            if (b.length == 4) {
-                int b0 = b[0] & 0xFF;
-                int b1 = b[1] & 0xFF;
-                // 10.x.x.x
-                if (b0 == 10) return false;
-                // 172.16.x.x – 172.31.x.x
-                if (b0 == 172 && b1 >= 16 && b1 <= 31) return false;
-                // 192.168.x.x
-                if (b0 == 192 && b1 == 168) return false;
-            }
-
-            return true;
+            return urlSafetyValidator.resolvesToOnlyPublicAddresses(host);
         } catch (Exception e) {
             // Resolution failure or malformed URL — treat as unsafe
             return false;

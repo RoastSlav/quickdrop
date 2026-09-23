@@ -1,7 +1,10 @@
 package org.rostislav.quickdrop.service;
 
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 
+import java.net.InetAddress;
 import java.net.URI;
 import java.util.Optional;
 
@@ -87,5 +90,36 @@ class UrlSafetyValidatorTest {
     @Test
     void unresolvableHostIsRejected() {
         assertTrue(validator.validate(URI.create("http://this-host-does-not-exist.invalid/")).isPresent());
+    }
+
+    // -- resolvesToOnlyPublicAddresses(): every resolved address is checked, not just the first --
+    // A host with one public and one private A/AAAA record must not slip past a check that only
+    // looked at InetAddress.getByName()'s first result. Literal IPs are resolved locally by the
+    // JVM with no real DNS lookup; getAllByName() itself is mocked to return both addresses for
+    // one hostname, since no real DNS name is guaranteed to be multi-homed like this.
+
+    @Test
+    void resolvesToOnlyPublicAddresses_hostWithOnePrivateAddressAmongOthers_isRejected() throws Exception {
+        InetAddress publicAddr = InetAddress.getByName("93.184.216.34");
+        InetAddress privateAddr = InetAddress.getByName("10.0.0.5");
+        try (MockedStatic<InetAddress> mockedInetAddress = Mockito.mockStatic(InetAddress.class, Mockito.CALLS_REAL_METHODS)) {
+            mockedInetAddress.when(() -> InetAddress.getAllByName("multi-homed.example"))
+                    .thenReturn(new InetAddress[]{publicAddr, privateAddr});
+
+            assertFalse(validator.resolvesToOnlyPublicAddresses("multi-homed.example"),
+                    "one private address among several resolved ones must still reject the host");
+        }
+    }
+
+    @Test
+    void resolvesToOnlyPublicAddresses_hostWithOnlyPublicAddresses_isAccepted() throws Exception {
+        InetAddress publicAddr1 = InetAddress.getByName("93.184.216.34");
+        InetAddress publicAddr2 = InetAddress.getByName("8.8.8.8");
+        try (MockedStatic<InetAddress> mockedInetAddress = Mockito.mockStatic(InetAddress.class, Mockito.CALLS_REAL_METHODS)) {
+            mockedInetAddress.when(() -> InetAddress.getAllByName("multi-public.example"))
+                    .thenReturn(new InetAddress[]{publicAddr1, publicAddr2});
+
+            assertTrue(validator.resolvesToOnlyPublicAddresses("multi-public.example"));
+        }
     }
 }

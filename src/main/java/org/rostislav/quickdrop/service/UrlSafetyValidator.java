@@ -45,13 +45,35 @@ public class UrlSafetyValidator {
             return Optional.of("That address couldn't be resolved.");
         }
 
-        for (InetAddress address : addresses) {
-            if (isPrivateOrReserved(address)) {
-                return Optional.of("Links pointing into a private network aren't allowed.");
-            }
+        if (anyPrivateOrReserved(addresses)) {
+            return Optional.of("Links pointing into a private network aren't allowed.");
         }
 
         return Optional.empty();
+    }
+
+    /**
+     * @return {@code true} if {@code host} resolves to at least one address and none of its
+     *         resolved addresses is loopback/link-local/site-local/reserved — every resolved
+     *         address is checked, not just the first, since a multi-A-record host could
+     *         otherwise slip a private address past a check that only looked at one. A host
+     *         that fails to resolve at all is treated as unsafe.
+     */
+    public boolean resolvesToOnlyPublicAddresses(String host) {
+        try {
+            return !anyPrivateOrReserved(InetAddress.getAllByName(host));
+        } catch (UnknownHostException e) {
+            return false;
+        }
+    }
+
+    private boolean anyPrivateOrReserved(InetAddress[] addresses) {
+        for (InetAddress address : addresses) {
+            if (isPrivateOrReserved(address)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private boolean isPrivateOrReserved(InetAddress address) {

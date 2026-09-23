@@ -49,6 +49,18 @@ class SecurityConfigTest extends ControllerTestSupport {
     }
 
     @Test
+    void passwordAdminRoute_getsRestrictiveFrameAncestors() throws Exception {
+        // Regression guard: /password/admin (PasswordViewController) renders the actual admin
+        // login form and sits outside /admin/**, so it needs its own matcher entry -- it was
+        // originally missed, leaving the real login page framable while its POST target
+        // (/admin/password, under /admin/**) was already covered.
+        ensureAdminPasswordSet();
+
+        mockMvc.perform(get("/password/admin"))
+                .andExpect(header().string("Content-Security-Policy", "frame-ancestors 'none';"));
+    }
+
+    @Test
     void publicFileListRoute_keepsPermissiveFrameAncestors() throws Exception {
         ensureAdminPasswordSet();
 

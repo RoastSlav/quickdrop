@@ -78,14 +78,17 @@ public class SecurityConfig {
 
     /**
      * Routes that get {@code frame-ancestors 'none'} instead of the app-wide {@code *}: the
-     * entire admin surface (covers its own {@code /admin/password} login) and the site-wide
-     * app-password login page. A framed login page, admin or app-wide, is exactly the
-     * clickjacking target CSP's {@code frame-ancestors} exists to stop -- an invisible overlay
-     * tricking a real admin into submitting a password into an attacker-controlled frame.
+     * entire admin surface (covers its own {@code /admin/password} login), the site-wide
+     * app-password login page, and the page that renders the admin login form itself
+     * ({@code /password/admin} -- outside {@code /admin/**}, so it needs its own entry). A
+     * framed login page, admin or app-wide, is exactly the clickjacking target CSP's
+     * {@code frame-ancestors} exists to stop -- an invisible overlay tricking a real admin
+     * into submitting a password into an attacker-controlled frame.
      */
     private static final RequestMatcher RESTRICTED_FRAMING_ROUTES = new OrRequestMatcher(
             PathPatternRequestMatcher.pathPattern("/admin/**"),
-            PathPatternRequestMatcher.pathPattern("/password/login")
+            PathPatternRequestMatcher.pathPattern("/password/login"),
+            PathPatternRequestMatcher.pathPattern("/password/admin")
     );
 
     private final ApplicationSettingsService applicationSettingsService;

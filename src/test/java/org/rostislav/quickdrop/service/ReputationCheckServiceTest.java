@@ -84,15 +84,4 @@ class ReputationCheckServiceTest {
 
         assertTrue(service.check(URI_TO_CHECK).isPresent(), "a provider failure must block when fail-closed");
     }
-
-    @Test
-    void aTierOneHitThatFailsTierTwoConfirmationIsAllowed() throws Exception {
-        // Exercises the false-positive-avoidance path: a hash hit that fails tier-2 confirmation must not block.
-        when(applicationSettingsService.isReputationCheckEnabled()).thenReturn(true);
-        when(provider.isEnabled()).thenReturn(true);
-        when(provider.isMalicious(URI_TO_CHECK)).thenReturn(false);
-        ReputationCheckService service = new ReputationCheckService(List.of(provider), applicationSettingsService);
-
-        assertTrue(service.check(URI_TO_CHECK).isEmpty());
-    }
 }

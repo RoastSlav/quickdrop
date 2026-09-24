@@ -56,6 +56,8 @@ import static org.rostislav.quickdrop.util.FileUtils.formatFileSize;
 @RequestMapping("/api/file")
 public class FileRestController {
     private static final Logger logger = LoggerFactory.getLogger(FileRestController.class);
+    private static final String ERROR_KEY = "error";
+    private static final String MESSAGE_KEY = "message";
     private static final JsonMapper OBJECT_MAPPER = JsonMapper.builder().build();
     /** Mirrors {@code AsyncFileMergeService}'s own check so a bad id yields 400, not 500. */
     private static final java.util.regex.Pattern SAFE_UPLOAD_ID =
@@ -123,33 +125,33 @@ public class FileRestController {
         boolean isAdmin = sessionService.hasValidAdminSession(request);
         if (!isAdmin && !applicationSettingsService.isUploadEnabled()) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(Map.of("error", "File uploads are currently disabled."));
+                    .body(Map.of(ERROR_KEY, "File uploads are currently disabled."));
         }
         if (!isAdmin && applicationSettingsService.isUploadAdminOnly()) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(Map.of("error", "Uploads are restricted to administrators."));
+                    .body(Map.of(ERROR_KEY, "Uploads are restricted to administrators."));
         }
 
         // Reject zero-byte uploads early: S3 multipart upload requires at least one byte,
         // and there is no value in storing an empty file regardless of backend.
         if (file.isEmpty()) {
-            return ResponseEntity.badRequest().body(Map.of("error", "Empty files cannot be uploaded."));
+            return ResponseEntity.badRequest().body(Map.of(ERROR_KEY, "Empty files cannot be uploaded."));
         }
         if (fileName == null || fileName.isBlank()) {
-            return ResponseEntity.badRequest().body(Map.of("error", "fileName is required."));
+            return ResponseEntity.badRequest().body(Map.of(ERROR_KEY, "fileName is required."));
         }
         // Fails an honest client at the first chunk instead of after staging the whole upload;
         // AsyncFileMergeService still measures what actually arrives, for the other kind.
         long maxFileSize = applicationSettingsService.getMaxFileSize();
         if (fileSize != null && fileSize > maxFileSize) {
             return ResponseEntity.badRequest().body(Map.of(
-                    "error", "File exceeds the maximum size of " + formatFileSize(maxFileSize) + "."));
+                    ERROR_KEY, "File exceeds the maximum size of " + formatFileSize(maxFileSize) + "."));
         }
         if (totalChunks <= 0) {
-            return ResponseEntity.badRequest().body(Map.of("error", "totalChunks must be greater than zero."));
+            return ResponseEntity.badRequest().body(Map.of(ERROR_KEY, "totalChunks must be greater than zero."));
         }
         if (chunkNumber < 0 || chunkNumber >= totalChunks) {
-            return ResponseEntity.badRequest().body(Map.of("error", "chunkNumber must be between 0 and totalChunks - 1."));
+            return ResponseEntity.badRequest().body(Map.of(ERROR_KEY, "chunkNumber must be between 0 and totalChunks - 1."));
         }
 
         if (chunkNumber == 0) {
@@ -178,7 +180,7 @@ public class FileRestController {
 
             if (archiveManifest != null && archiveManifest.length() > MAX_MANIFEST_LENGTH) {
                 return ResponseEntity.badRequest().body(Map.of(
-                        "error", "Archive manifest exceeds " + MAX_MANIFEST_LENGTH + " characters."));
+                        ERROR_KEY, "Archive manifest exceeds " + MAX_MANIFEST_LENGTH + " characters."));
             }
 
             String safeManifest = sanitizeArchiveManifest(archiveManifest, Boolean.TRUE.equals(archiveUpload));
@@ -191,7 +193,7 @@ public class FileRestController {
             // id here so a bad one is a 400, not a 500 from the service's filesystem-path guard.
             if (uploadId != null && !uploadId.isBlank() && !SAFE_UPLOAD_ID.matcher(uploadId).matches()) {
                 return ResponseEntity.badRequest().body(Map.of(
-                        "error", "uploadId must be 1-64 characters of letters, digits, '-' or '_'."));
+                        ERROR_KEY, "uploadId must be 1-64 characters of letters, digits, '-' or '_'."));
             }
             String effectiveUploadId = (uploadId != null && !uploadId.isBlank())
                     ? uploadId
@@ -217,7 +219,7 @@ public class FileRestController {
             // I/O failure below gets.
             logger.info("Chunk {} for file {} rejected: upload was aborted", chunkNumber, fileName);
             return ResponseEntity.status(HttpStatus.CONFLICT)
-                    .body(Map.of("error", "This upload was aborted."));
+                    .body(Map.of(ERROR_KEY, "This upload was aborted."));
         } catch (IOException e) {
             logger.error("Error processing chunk {} for file {}: {}", chunkNumber, fileName, e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -289,7 +291,7 @@ public class FileRestController {
                                                                      HttpServletRequest request) {
         if (!applicationSettingsService.isShareLinksEnabled()) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(Map.of("message", "Share links are disabled."));
+                    .body(Map.of(MESSAGE_KEY, "Share links are disabled."));
         }
         if (applicationSettingsService.isSimplifiedShareLinksEnabled()) {
             expirationDate = null;
@@ -297,12 +299,12 @@ public class FileRestController {
         }
         Upload fileEntity = fileQueryService.getFile(uuid).orElse(null);
         if (fileEntity == null) {
-            return ResponseEntity.badRequest().body(Map.of("message", "File not found."));
+            return ResponseEntity.badRequest().body(Map.of(MESSAGE_KEY, "File not found."));
         }
 
         if (numberOfDownloads != null && numberOfDownloads < 0) {
             return ResponseEntity.badRequest()
-                    .body(Map.of("message", "Number of downloads cannot be negative."));
+                    .body(Map.of(MESSAGE_KEY, "Number of downloads cannot be negative."));
         }
 
         String sharePath;
@@ -312,7 +314,7 @@ public class FileRestController {
             String sessionToken = (String) request.getSession().getAttribute(SessionService.FILE_SESSION_TOKEN_ATTR);
             if (sessionToken == null || !sessionService.validateFileSessionToken(sessionToken, uuid)) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                        .body(Map.of("message", "Invalid file session."));
+                        .body(Map.of(MESSAGE_KEY, "Invalid file session."));
             }
             ShortLinkResult result = fileLifecycleService.generateShareToken(uuid, expirationDate, sessionToken, numberOfDownloads);
             tokenString = result.link().code;

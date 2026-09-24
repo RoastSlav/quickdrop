@@ -2,7 +2,6 @@ package org.rostislav.quickdrop.service;
 
 import jakarta.servlet.http.HttpServletRequest;
 import org.rostislav.quickdrop.entity.ActivityLog;
-import org.rostislav.quickdrop.entity.ShortLink;
 import org.rostislav.quickdrop.entity.UploadShareLink;
 import org.rostislav.quickdrop.entity.Upload;
 import org.rostislav.quickdrop.model.EventType;

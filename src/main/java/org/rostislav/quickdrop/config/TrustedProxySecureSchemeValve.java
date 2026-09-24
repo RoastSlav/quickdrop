@@ -38,6 +38,21 @@ import java.io.IOException;
  * before the Filter chain and mutates the real underlying request, so every downstream
  * consumer — Tomcat's own included — sees the same corrected value. This mirrors what Tomcat's
  * own {@code RemoteIpValve} does unconditionally; this class only adds the live on/off gates.
+ *
+ * <p>Also corrects {@code getServerPort()}, or every server-generated absolute redirect breaks
+ * behind a proxy. When the inbound {@code Host} header carries no explicit port (the normal case
+ * — the client connected on its scheme's default port, so its browser omits it), Tomcat's own
+ * request parser defaults {@code serverPort} from the scheme it sees <em>at parse time</em> —
+ * still plain {@code http} here, since that's genuinely what the embedded connector is — landing
+ * on {@code 80}, not this app's real listening port. That happens before this valve ever runs, so
+ * once the scheme above flips to {@code https}, {@code getServerPort()} is left stuck at the
+ * wrong default: any code that builds an absolute URL from the request (notably Tomcat's own
+ * {@code Response.toAbsolute()}, which every relative {@code redirect:} view goes through) then
+ * emits {@code https://host:80/...} — a URL a browser will actually attempt a TLS handshake
+ * against, and fail. Same fix {@link org.rostislav.quickdrop.util.FileUtils#getBaseUrl} already
+ * applies for share-link/QR URLs: honor {@code X-Forwarded-Port} when the proxy sends it,
+ * otherwise assume the scheme's standard port, since that's true for effectively every
+ * reverse-proxy deployment.
  */
 public class TrustedProxySecureSchemeValve extends ValveBase {
     private final ApplicationSettingsService applicationSettingsService;
@@ -54,6 +69,7 @@ public class TrustedProxySecureSchemeValve extends ValveBase {
         if (forceSecure || trustedForwardedHttps) {
             request.setSecure(true);
             request.getCoyoteRequest().scheme().setString("https");
+            request.setServerPort(resolveForwardedPort(request));
         }
         getNext().invoke(request, response);
     }
@@ -61,5 +77,17 @@ public class TrustedProxySecureSchemeValve extends ValveBase {
     private boolean isForwardedHttps(Request request) {
         String proto = request.getHeader("X-Forwarded-Proto");
         return proto != null && proto.split(",")[0].trim().equalsIgnoreCase("https");
+    }
+
+    private int resolveForwardedPort(Request request) {
+        String forwardedPort = request.getHeader("X-Forwarded-Port");
+        if (forwardedPort != null) {
+            try {
+                return Integer.parseInt(forwardedPort.split(",")[0].trim());
+            } catch (NumberFormatException e) {
+                // Fall through to the scheme default below.
+            }
+        }
+        return 443;
     }
 }

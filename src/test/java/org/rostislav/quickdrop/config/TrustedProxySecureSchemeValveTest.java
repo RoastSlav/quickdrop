@@ -44,15 +44,44 @@ class TrustedProxySecureSchemeValveTest {
     }
 
     @Test
+    void trustedProxyEnabled_forwardedHttps_noForwardedPort_correctsServerPortTo443() throws Exception {
+        // Host header carried no port, so Tomcat's parser already defaulted serverPort to 80
+        // (its own http-scheme default at parse time) before this valve ever runs.
+        Mockito.when(settings.isTrustedProxyEnabled()).thenReturn(true);
+        Request request = newRequest();
+        request.getCoyoteRequest().getMimeHeaders().addValue("X-Forwarded-Proto").setString("https");
+        request.setServerPort(80);
+
+        valve.invoke(request, newResponse());
+
+        assertEquals(443, request.getServerPort());
+    }
+
+    @Test
+    void trustedProxyEnabled_forwardedHttps_withForwardedPort_honorsForwardedPort() throws Exception {
+        Mockito.when(settings.isTrustedProxyEnabled()).thenReturn(true);
+        Request request = newRequest();
+        request.getCoyoteRequest().getMimeHeaders().addValue("X-Forwarded-Proto").setString("https");
+        request.getCoyoteRequest().getMimeHeaders().addValue("X-Forwarded-Port").setString("8443");
+        request.setServerPort(80);
+
+        valve.invoke(request, newResponse());
+
+        assertEquals(8443, request.getServerPort());
+    }
+
+    @Test
     void trustedProxyDisabled_forwardedHttps_requestUnchanged() throws Exception {
         Mockito.when(settings.isTrustedProxyEnabled()).thenReturn(false);
         Request request = newRequest();
         request.getCoyoteRequest().getMimeHeaders().addValue("X-Forwarded-Proto").setString("https");
+        request.setServerPort(80);
 
         valve.invoke(request, newResponse());
 
         assertTrue(next.invoked);
         assertFalse(request.isSecure());
+        assertEquals(80, request.getServerPort());
     }
 
     @Test
@@ -82,12 +111,14 @@ class TrustedProxySecureSchemeValveTest {
     void forceSecureCookiesEnabled_noHeaderNoTrustedProxy_marksRequestSecureAnyway() throws Exception {
         Mockito.when(settings.isForceSecureCookiesEnabled()).thenReturn(true);
         Request request = newRequest();
+        request.setServerPort(80);
 
         valve.invoke(request, newResponse());
 
         assertTrue(next.invoked);
         assertTrue(request.isSecure());
         assertEquals("https", request.getScheme());
+        assertEquals(443, request.getServerPort());
     }
 
     @Test

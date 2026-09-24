@@ -62,6 +62,11 @@ public class AdminViewController {
 
     /** Number of activity-log entries shown in the dashboard feed. */
     private static final int RECENT_ACTIVITY_LIMIT = 6;
+    private static final String ANALYTICS_ATTR = "analytics";
+    private static final String PAGE_SIZE_ATTR = "pageSize";
+    private static final String QUERY_PARAM = "query";
+    private static final String REDIRECT_ADMIN_DASHBOARD = "redirect:/admin/dashboard";
+    private static final String REDIRECT_ADMIN_PREFIX = "redirect:/admin/";
     private static final Logger logger = LoggerFactory.getLogger(AdminViewController.class);
     private final ApplicationSettingsService applicationSettingsService;
     private final AnalyticsService analyticsService;
@@ -96,7 +101,7 @@ public class AdminViewController {
     @GetMapping("/dashboard")
     public String getDashboardPage(Model model) {
         AnalyticsDataView analytics = analyticsService.getAnalytics();
-        model.addAttribute("analytics", analytics);
+        model.addAttribute(ANALYTICS_ATTR, analytics);
         // Signal, not just counters: what is about to happen, and what just happened.
         model.addAttribute("expiringSoonCount", fileQueryService.countFilesExpiringWithin(
                 applicationSettingsService.getMaxFileLifeTime(), EXPIRING_SOON_WINDOW_DAYS));
@@ -109,7 +114,7 @@ public class AdminViewController {
     @GetMapping("/files")
     public String getFilesPage(@RequestParam(name = "page", defaultValue = "0") int page,
                                @RequestParam(name = "size", defaultValue = "20") int size,
-                               @RequestParam(name = "query", required = false) String query,
+                               @RequestParam(name = QUERY_PARAM, required = false) String query,
                                @RequestParam(name = "deleted", defaultValue = "false") boolean showDeleted,
                                Model model) {
         int pageNumber = clampPage(page);
@@ -119,12 +124,12 @@ public class AdminViewController {
                 ? fileQueryService.getDeletedFilesWithDownloadCounts(PageRequest.of(pageNumber, pageSize), query)
                 : fileQueryService.getFilesWithDownloadCounts(PageRequest.of(pageNumber, pageSize), query);
         model.addAttribute("filesPage", filesPage);
-        model.addAttribute("pageSize", pageSize);
-        model.addAttribute("query", query == null ? "" : query);
+        model.addAttribute(PAGE_SIZE_ATTR, pageSize);
+        model.addAttribute(QUERY_PARAM, query == null ? "" : query);
         model.addAttribute("showDeleted", showDeleted);
 
         AnalyticsDataView analytics = analyticsService.getAnalytics();
-        model.addAttribute("analytics", analytics);
+        model.addAttribute(ANALYTICS_ATTR, analytics);
 
         return "admin-files";
     }
@@ -132,7 +137,7 @@ public class AdminViewController {
     @GetMapping("/pastes")
     public String getPastesPage(@RequestParam(name = "page", defaultValue = "0") int page,
                                 @RequestParam(name = "size", defaultValue = "20") int size,
-                                @RequestParam(name = "query", required = false) String query,
+                                @RequestParam(name = QUERY_PARAM, required = false) String query,
                                 @RequestParam(name = "deleted", defaultValue = "false") boolean showDeleted,
                                 Model model) {
         int pageNumber = clampPage(page);
@@ -142,12 +147,12 @@ public class AdminViewController {
                 ? pasteService.getDeletedPaginatedPastes(PageRequest.of(pageNumber, pageSize), query)
                 : pasteService.getPaginatedPastes(PageRequest.of(pageNumber, pageSize), query);
         model.addAttribute("pastesPage", pastesPage);
-        model.addAttribute("pageSize", pageSize);
-        model.addAttribute("query", query == null ? "" : query);
+        model.addAttribute(PAGE_SIZE_ATTR, pageSize);
+        model.addAttribute(QUERY_PARAM, query == null ? "" : query);
         model.addAttribute("showDeleted", showDeleted);
 
         AnalyticsDataView analytics = analyticsService.getAnalytics();
-        model.addAttribute("analytics", analytics);
+        model.addAttribute(ANALYTICS_ATTR, analytics);
 
         return "admin-pastes";
     }
@@ -183,7 +188,7 @@ public class AdminViewController {
     public String setAdminPassword(String adminPassword) {
         // Guard: if admin password is already set, refuse to overwrite via unauthenticated POST
         if (applicationSettingsService.isAdminPasswordSet()) {
-            return "redirect:/admin/dashboard";
+            return REDIRECT_ADMIN_DASHBOARD;
         }
         if (adminPassword == null || adminPassword.isBlank()) {
             return "redirect:setup";
@@ -395,7 +400,7 @@ public class AdminViewController {
 
     @GetMapping({"", "/"})
     public String getAdminRoot() {
-        return "redirect:/admin/dashboard";
+        return REDIRECT_ADMIN_DASHBOARD;
     }
 
     @PostMapping("/logout")
@@ -421,7 +426,7 @@ public class AdminViewController {
                                          @RequestParam(defaultValue = "files") String source,
                                          HttpServletRequest request) {
         fileLifecycleService.updateKeepIndefinitely(uuid, keepIndefinitely, request);
-        return "redirect:/admin/" + safeAdminSource(source);
+        return REDIRECT_ADMIN_PREFIX + safeAdminSource(source);
     }
 
     @PostMapping("/toggle-hidden/{uuid}")
@@ -429,7 +434,7 @@ public class AdminViewController {
                                @RequestParam(defaultValue = "files") String source,
                                HttpServletRequest request) {
         fileLifecycleService.toggleHidden(uuid, request);
-        return "redirect:/admin/" + safeAdminSource(source);
+        return REDIRECT_ADMIN_PREFIX + safeAdminSource(source);
     }
 
     private static boolean isAjaxRequest(HttpServletRequest request) {
@@ -447,7 +452,7 @@ public class AdminViewController {
                     ? ResponseEntity.noContent().build()
                     : ResponseEntity.internalServerError().build();
         }
-        return "redirect:/admin/" + safeAdminSource(source);
+        return REDIRECT_ADMIN_PREFIX + safeAdminSource(source);
     }
 
     /**
@@ -512,8 +517,8 @@ public class AdminViewController {
         long[] linkCounts = fileQueryService.countActiveLinksByKind();
         model.addAttribute("shareLinkCount", linkCounts[0]);
         model.addAttribute("redirectLinkCount", linkCounts[1]);
-        model.addAttribute("pageSize", pageSize);
-        model.addAttribute("query", query == null ? "" : query);
+        model.addAttribute(PAGE_SIZE_ATTR, pageSize);
+        model.addAttribute(QUERY_PARAM, query == null ? "" : query);
         model.addAttribute("type", type == null ? "" : type);
         model.addAttribute("noExpiry", noExpiry);
         model.addAttribute("unlimited", unlimited);
@@ -649,7 +654,7 @@ public class AdminViewController {
         // Resolve the display value after the service has normalised it.
         String resolvedSourceType = (sourceType == null || sourceType.isBlank()) ? "" : sourceType.toLowerCase();
         model.addAttribute("activityPage", activityPage);
-        model.addAttribute("pageSize", pageSize);
+        model.addAttribute(PAGE_SIZE_ATTR, pageSize);
         model.addAttribute("eventTypes", Arrays.asList(EventType.values()));
         model.addAttribute("eventTypesByCategory", eventTypesByCategory());
         model.addAttribute("selectedEventType", eventType == null ? "" : eventType);

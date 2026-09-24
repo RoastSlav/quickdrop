@@ -85,9 +85,11 @@ public class SecurityConfig {
      * {@code frame-ancestors} exists to stop -- an invisible overlay tricking a real admin
      * into submitting a password into an attacker-controlled frame.
      */
+    private static final String PASSWORD_LOGIN_PATH = "/password/login";
+
     private static final RequestMatcher RESTRICTED_FRAMING_ROUTES = new OrRequestMatcher(
             PathPatternRequestMatcher.pathPattern("/admin/**"),
-            PathPatternRequestMatcher.pathPattern("/password/login"),
+            PathPatternRequestMatcher.pathPattern(PASSWORD_LOGIN_PATH),
             PathPatternRequestMatcher.pathPattern("/password/admin")
     );
 
@@ -111,7 +113,7 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http.authorizeHttpRequests(authz -> authz
                 .requestMatchers(
-                        "/password/login",
+                        PASSWORD_LOGIN_PATH,
                         "/favicon.ico",
                         "/error",
                         "/share/**",
@@ -125,9 +127,9 @@ public class SecurityConfig {
                 ).permitAll()
                 .anyRequest().access(appPasswordGate())
         ).formLogin(form -> form
-                .loginPage("/password/login")
+                .loginPage(PASSWORD_LOGIN_PATH)
                 .permitAll()
-                .failureUrl("/password/login?error")
+                .failureUrl(PASSWORD_LOGIN_PATH + "?error")
                 .defaultSuccessUrl("/", true)
         ).authenticationProvider(authenticationProvider());
 

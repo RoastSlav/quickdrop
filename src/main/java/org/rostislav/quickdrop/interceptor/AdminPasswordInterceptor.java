@@ -15,6 +15,8 @@ import org.springframework.web.servlet.HandlerInterceptor;
 @Component
 public class AdminPasswordInterceptor implements HandlerInterceptor {
 
+    private static final String ADMIN_PASSWORD_PATH = "/admin/password";
+
     private final SessionService sessionService;
 
     public AdminPasswordInterceptor(SessionService sessionService) {
@@ -36,16 +38,16 @@ public class AdminPasswordInterceptor implements HandlerInterceptor {
         }
         HttpSession session = request.getSession(false);
         if (session == null) {
-            response.sendRedirect("/admin/password");
+            response.sendRedirect(ADMIN_PASSWORD_PATH);
             return false;
         }
         Object sessionToken = session.getAttribute("admin-session-token");
         if (sessionToken == null || sessionToken.toString().isEmpty()) {
-            response.sendRedirect("/admin/password");
+            response.sendRedirect(ADMIN_PASSWORD_PATH);
             return false;
         }
         if (!sessionService.validateAdminToken(sessionToken.toString())) {
-            response.sendRedirect("/admin/password");
+            response.sendRedirect(ADMIN_PASSWORD_PATH);
             return false;
         }
         return true;

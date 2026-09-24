@@ -44,6 +44,16 @@
         window.QD_I18N = {
             navigationFailed: /*[[#{notification.navigationFailed}]]*/ 'Navigation failed. Please try again.'
         };
+        // Read by tailwindTheme.js, which runs on every page (including the chrome-less
+        // gate pages), so it lives here rather than in a per-page i18n blob.
+        window.QD_THEME_I18N = {
+            light: /*[[#{theme.light}]]*/ 'Light',
+            dark: /*[[#{theme.dark}]]*/ 'Dark',
+            system: /*[[#{theme.system}]]*/ 'System',
+            systemWithResolved: /*[[#{theme.systemWithResolved}]]*/ 'System ({0})',
+            ariaLabel: /*[[#{theme.ariaLabel}]]*/ 'Theme: {0}. Switch to {1} theme',
+            title: /*[[#{theme.title}]]*/ 'Theme: {0}'
+        };
         window.QD_CONFIRM_I18N = {
             title: /*[[#{confirm.defaultTitle}]]*/ 'Are you sure?',
             confirm: /*[[#{button.confirm}]]*/ 'Confirm',

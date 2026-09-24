@@ -156,14 +156,16 @@
 
         <div class="editor-wrapper paste-editor">
                 <div class="custom-editor-toolbar" id="customEditorToolbar">
-                    <button aria-label="Bold" data-action="bold" title="Bold" type="button">
+                    <button data-action="bold" type="button"
+                            th:aria-label="#{page.paste.toolbar.bold}" th:title="#{page.paste.toolbar.bold}">
                         <svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
                              stroke-width="2" viewBox="0 0 24 24">
                             <path d="M6 4h7a4 4 0 1 1 0 8H6z"/>
                             <path d="M6 12h8a4 4 0 1 1 0 8H6z"/>
                         </svg>
                     </button>
-                    <button aria-label="Italic" data-action="italic" title="Italic" type="button">
+                    <button data-action="italic" type="button"
+                            th:aria-label="#{page.paste.toolbar.italic}" th:title="#{page.paste.toolbar.italic}">
                         <svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
                              stroke-width="2" viewBox="0 0 24 24">
                             <line x1="19" x2="10" y1="4" y2="4"/>
@@ -171,7 +173,8 @@
                             <line x1="15" x2="9" y1="4" y2="20"/>
                         </svg>
                     </button>
-                    <button aria-label="Heading" data-action="heading" title="Heading" type="button">
+                    <button data-action="heading" type="button"
+                            th:aria-label="#{page.paste.toolbar.heading}" th:title="#{page.paste.toolbar.heading}">
                         <svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
                              stroke-width="2" viewBox="0 0 24 24">
                             <path d="M5 4v16"/>
@@ -179,15 +182,17 @@
                             <path d="M5 12h14"/>
                         </svg>
                     </button>
-                    <button aria-label="Quote" data-action="quote" title="Quote" type="button">
+                    <button data-action="quote" type="button"
+                            th:aria-label="#{page.paste.toolbar.quote}" th:title="#{page.paste.toolbar.quote}">
                         <svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
                              stroke-width="2" viewBox="0 0 24 24">
                             <path d="M8 17H5a2 2 0 0 1-2-2v-3a6 6 0 0 1 6-6h1"/>
                             <path d="M19 17h-3a2 2 0 0 1-2-2v-3a6 6 0 0 1 6-6h1"/>
                         </svg>
                     </button>
-                    <button aria-label="Bulleted list" data-action="unordered-list" title="Bulleted list"
-                            type="button">
+                    <button data-action="unordered-list"
+                            type="button" th:aria-label="#{page.paste.toolbar.unorderedList}"
+                            th:title="#{page.paste.toolbar.unorderedList}">
                         <svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
                              stroke-width="2" viewBox="0 0 24 24">
                             <line x1="9" x2="20" y1="6" y2="6"/>
@@ -198,8 +203,9 @@
                             <circle cx="4" cy="18" r="1"/>
                         </svg>
                     </button>
-                    <button aria-label="Numbered list" data-action="ordered-list" title="Numbered list"
-                            type="button">
+                    <button data-action="ordered-list"
+                            type="button" th:aria-label="#{page.paste.toolbar.orderedList}"
+                            th:title="#{page.paste.toolbar.orderedList}">
                         <svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
                              stroke-width="2" viewBox="0 0 24 24">
                             <line x1="9" x2="20" y1="6" y2="6"/>
@@ -210,14 +216,16 @@
                             <path d="M3 17c0-.7.5-1.2 1.2-1.2H5v2.4"/>
                         </svg>
                     </button>
-                    <button aria-label="Insert link" data-action="link" title="Insert link" type="button">
+                    <button data-action="link" type="button"
+                            th:aria-label="#{page.paste.toolbar.link}" th:title="#{page.paste.toolbar.link}">
                         <svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
                              stroke-width="2" viewBox="0 0 24 24">
                             <path d="M10 13a5 5 0 0 1 0-7l1.5-1.5a5 5 0 0 1 7 7L17 13"/>
                             <path d="M14 11a5 5 0 0 1 0 7L12.5 19.5a5 5 0 0 1-7-7L7 11"/>
                         </svg>
                     </button>
-                    <button aria-label="Insert image" data-action="image" title="Insert image" type="button">
+                    <button data-action="image" type="button"
+                            th:aria-label="#{page.paste.toolbar.image}" th:title="#{page.paste.toolbar.image}">
                         <svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
                              stroke-width="2" viewBox="0 0 24 24">
                             <rect height="16" rx="2" width="18" x="3" y="4"/>
@@ -225,7 +233,8 @@
                             <path d="M21 16l-4.5-4.5L7 21"/>
                         </svg>
                     </button>
-                    <button aria-label="Insert table" data-action="table" title="Insert table" type="button">
+                    <button data-action="table" type="button"
+                            th:aria-label="#{page.paste.toolbar.table}" th:title="#{page.paste.toolbar.table}">
                         <svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
                              stroke-width="2" viewBox="0 0 24 24">
                             <rect height="16" rx="2" width="18" x="3" y="4"/>
@@ -234,22 +243,25 @@
                             <path d="M15 4v16"/>
                         </svg>
                     </button>
-                    <button aria-label="Code block" data-action="code" title="Code block" type="button">
+                    <button data-action="code" type="button"
+                            th:aria-label="#{page.paste.toolbar.code}" th:title="#{page.paste.toolbar.code}">
                         <svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
                              stroke-width="2" viewBox="0 0 24 24">
                             <polyline points="8 6 2 12 8 18"/>
                             <polyline points="16 6 22 12 16 18"/>
                         </svg>
                     </button>
-                    <button aria-label="Horizontal rule" data-action="hr" title="Horizontal rule" type="button">
+                    <button data-action="hr" type="button"
+                            th:aria-label="#{page.paste.toolbar.hr}" th:title="#{page.paste.toolbar.hr}">
                         <svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
                              stroke-width="2" viewBox="0 0 24 24">
                             <line x1="3" x2="21" y1="12" y2="12"/>
                         </svg>
                     </button>
-                    <button aria-label="Preview" aria-pressed="false" class="preview-tool-button"
+                    <button aria-pressed="false" class="preview-tool-button"
                             data-action="preview"
-                            id="previewToolButton" title="Preview" type="button">
+                            id="previewToolButton" type="button"
+                            th:aria-label="#{page.paste.preview}" th:title="#{page.paste.preview}">
                         <svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
                              stroke-width="2" viewBox="0 0 24 24">
                             <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/>

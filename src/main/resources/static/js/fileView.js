@@ -382,7 +382,7 @@ function updateShareLink(link) {
     divider?.classList.toggle("hidden", !hasLink);
 
     if (hasLink) {
-        announceShareStatus("Share link generated.");
+        announceShareStatus(getI18nStr('shareLinkGenerated', 'Share link generated.'));
     }
 
     if (!link) {
@@ -592,7 +592,7 @@ function renderPdfPreview(container, objectUrl, fileName) {
     link.href = objectUrl;
     link.target = "_blank";
     link.rel = "noopener noreferrer";
-    link.textContent = getI18nStr('previewOpenInNewTab', 'Open {0} in a new tab').replace('{0}', fileName);
+    link.textContent = getI18nStr('openInNewTab', 'Open {0} in a new tab').replace('{0}', fileName);
     fallback.appendChild(link);
     frame.appendChild(fallback);
     container.appendChild(frame);
@@ -715,9 +715,9 @@ function renderCsvPreview(container, text, extension) {
     if (rows.length - 1 > maxRows) {
         const note = document.createElement("div");
         note.className = "text-xs text-gray-500 dark:text-gray-400 mt-2";
-        note.textContent = `Showing first ${maxRows} rows out of ${
-            rows.length - 1
-        }.`;
+        note.textContent = getI18nStr('csvShowingFirst', 'Showing first {0} rows out of {1}.')
+            .replace('{0}', maxRows)
+            .replace('{1}', rows.length - 1);
         container.appendChild(note);
     }
 }

@@ -46,23 +46,28 @@
         return preference === "dark" ? "light" : "system";
     };
 
+    const themeWord = (pref) => {
+        const t = window.QD_THEME_I18N || {};
+        return t[pref] || (pref.charAt(0).toUpperCase() + pref.slice(1));
+    };
+
     const updateToggleButtons = (preference, resolved) => {
         const next = nextPreference(preference, resolved);
+        const t = window.QD_THEME_I18N || {};
         const currentLabel = preference === "system"
-            ? `system (${resolved})`
-            : preference;
-        const nextLabel = next === "system" ? "system" : next;
+            ? (t.systemWithResolved || "System ({0})").replace("{0}", themeWord(resolved))
+            : themeWord(preference);
+        const nextLabel = themeWord(next);
 
         document.querySelectorAll(".theme-toggle, #themeToggle").forEach((btn) => {
             btn.dataset.themePreference = preference;
             btn.dataset.theme = resolved;
-            btn.setAttribute("aria-label", `Theme: ${currentLabel}. Switch to ${nextLabel} theme`);
-            btn.setAttribute("title", `Theme: ${currentLabel}`);
+            btn.setAttribute("aria-label", (t.ariaLabel || "Theme: {0}. Switch to {1} theme")
+                .replace("{0}", currentLabel).replace("{1}", nextLabel));
+            btn.setAttribute("title", (t.title || "Theme: {0}").replace("{0}", currentLabel));
 
             if (!btn.querySelector("svg")) {
-                btn.textContent = preference === "system"
-                    ? `System (${resolved})`
-                    : preference.charAt(0).toUpperCase() + preference.slice(1);
+                btn.textContent = currentLabel;
             }
         });
 

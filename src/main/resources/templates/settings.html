@@ -40,7 +40,7 @@
 
         <div class="settings-layout animate-in animate-in-delay-1">
 
-            <nav aria-label="Settings navigation" class="settings-sidebar">
+            <nav class="settings-sidebar" th:aria-label="#{nav.settingsNavigation}">
                 <div class="card p-2 settings-nav">
 
                     <button class="sn-btn flex-shrink-0" data-panel="appearance" onclick="switchPanel('appearance')"
@@ -1644,7 +1644,10 @@
         },
         cron: {
             locale: /*[[${#locale.language == 'zh' ? 'zh_CN' : #locale.language}]]*/ 'en'
-        }
+        },
+        saveSuccess:       /*[[#{settings.saveSuccess}]]*/ 'Settings saved',
+        saveFailedGeneric: /*[[#{settings.saveFailedGeneric}]]*/ 'Failed to save settings',
+        uploadAdminOnlyHint: /*[[#{settings.uploadAdminOnlyHint}]]*/ 'Upload is restricted to admins — not reachable for public visitors'
     };
 
     function switchPanel(name) {

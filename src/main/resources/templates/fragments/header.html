@@ -58,11 +58,11 @@
     <div class="nav-inner">
 
         <a class="nav-brand" href="/">
-            <img alt="Logo" fetchpriority="high" src="/images/favicon.png" th:src="${appLogoPath}"/>
+            <img fetchpriority="high" src="/images/favicon.png" th:alt="#{nav.logoAlt}" th:src="${appLogoPath}"/>
             <span th:text="${appName}">QuickDrop</span>
         </a>
 
-        <nav aria-label="Main navigation" class="nav-links hidden md:flex">
+        <nav class="nav-links hidden md:flex" th:aria-label="#{nav.mainNavigation}">
 
             <th:block th:if="${isAdminNav}">
                 <a class="nav-link" data-nav-match="/file/upload" href="/file/upload"
@@ -110,7 +110,8 @@
         <div class="nav-actions">
             <div @click.outside="langOpen = false" class="relative hidden md:block" x-data="{ langOpen: false }">
                 <button :aria-expanded="langOpen ? 'true' : 'false'" @click="langOpen = !langOpen"
-                        aria-controls="langMenu" aria-haspopup="menu" aria-label="Select language" class="lang-btn"
+                        aria-controls="langMenu" aria-haspopup="menu" class="lang-btn"
+                        th:aria-label="#{nav.selectLanguage}"
                         type="button">
                     <svg aria-hidden="true" class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="1.8"
                          viewBox="0 0 24 24">
@@ -159,7 +160,8 @@
                 </div>
             </div>
 
-            <button aria-label="Toggle theme" class="nav-icon-btn" id="themeToggle" title="Toggle theme" type="button">
+            <button class="nav-icon-btn" id="themeToggle" type="button"
+                    th:aria-label="#{nav.toggleTheme}" th:title="#{nav.toggleTheme}">
                 <svg aria-hidden="true" class="hidden w-5 h-5" fill="none" id="themeIconSun" stroke="currentColor"
                      stroke-width="1.6"
                      viewBox="0 0 24 24">

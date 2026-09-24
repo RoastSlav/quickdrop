@@ -113,7 +113,10 @@ async function waitForUploadCompletion(uploadId, statusElement, uploadPasswordEn
                 headers: {Accept: "application/json"},
             });
             if (!response.ok) {
-                throw new Error(`Upload status failed with status ${response.status}.`);
+                throw new Error(
+                    (window.i18n?.upload?.statusCheckFailed || "Upload status check failed (status {0}).")
+                        .replace("{0}", response.status)
+                );
             }
 
             const status = await response.json();
@@ -123,7 +126,7 @@ async function waitForUploadCompletion(uploadId, statusElement, uploadPasswordEn
                 return status;
             }
             if (status.status === "failed" || status.status === "aborted" || status.status === "unknown") {
-                const error = new Error(status.error || "Upload processing failed.");
+                const error = new Error(status.error || window.i18n?.upload?.processingFailed || "Upload processing failed.");
                 error.terminalUploadStatus = true;
                 throw error;
             }

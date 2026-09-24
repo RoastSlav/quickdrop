@@ -3,6 +3,12 @@
     const MB_LIMIT = 25; // matches METADATA_STRIP_MAX_BYTES in upload flow
     const MAX_BYTES = MB_LIMIT * 1024 * 1024;
 
+    // Surfaced verbatim in the upload review panel (state.js reviewRow), so these need
+    // translation like any other upload-page copy.
+    const t = (key, fallback) => window.i18n?.upload?.metadata?.[key] || fallback;
+    const engineUnavailable = (label) =>
+        t("engineUnavailable", "{0} engine unavailable").replace("{0}", label);
+
     const handlers = [];
 
     const readFileAsDataUrl = (file) =>
@@ -131,7 +137,7 @@
                     warnings: [],
                     errors: ["engine-unavailable"],
                     metadataRemoved: [],
-                    failureReason: `${label} engine unavailable`,
+                    failureReason: engineUnavailable(label),
                 };
             }
 
@@ -172,7 +178,7 @@
                 stripped: true,
                 wasModified: true,
                 warnings: [
-                    "Core/custom/app properties cleared; embedded content may still contain metadata.",
+                    t("ooxmlWarning", "Core/custom/app properties cleared; embedded content may still contain metadata."),
                 ],
                 errors: [],
                 metadataRemoved: [
@@ -207,7 +213,7 @@
                     warnings: [],
                     errors: ["engine-unavailable"],
                     metadataRemoved: [],
-                    failureReason: `${label} engine unavailable`,
+                    failureReason: engineUnavailable(label),
                 };
             }
 
@@ -253,7 +259,7 @@
                 stripped: true,
                 wasModified: true,
                 warnings: [
-                    "Rebuilt meta/settings; embedded objects may retain metadata.",
+                    t("odfWarning", "Rebuilt meta/settings; embedded objects may retain metadata."),
                 ],
                 errors: [],
                 metadataRemoved: ["meta.xml", "settings.xml"],
@@ -327,7 +333,7 @@
                     warnings: [],
                     errors: ["engine-unavailable"],
                     metadataRemoved: [],
-                    failureReason: "EPUB engine unavailable",
+                    failureReason: engineUnavailable("EPUB"),
                 };
             }
 
@@ -364,7 +370,7 @@
                     warnings: [],
                     errors: ["opf-missing"],
                     metadataRemoved: [],
-                    failureReason: "EPUB OPF not found",
+                    failureReason: t("epubOpfMissing", "EPUB OPF not found"),
                 };
             }
 
@@ -380,7 +386,7 @@
                     warnings: [],
                     errors: ["opf-read-failed"],
                     metadataRemoved: [],
-                    failureReason: "EPUB OPF read failed",
+                    failureReason: t("epubOpfReadFailed", "EPUB OPF read failed"),
                 };
             }
 
@@ -397,7 +403,7 @@
                 stripped: true,
                 wasModified: true,
                 warnings: [
-                    "OPF metadata cleared (creator/contributor/publisher/generator); identifiers neutralized. Embedded files may retain metadata.",
+                    t("epubWarning", "OPF metadata cleared (creator/contributor/publisher/generator); identifiers neutralized. Embedded files may retain metadata."),
                 ],
                 errors: [],
                 metadataRemoved: ["content.opf metadata"],
@@ -457,7 +463,7 @@
                     stripped: true,
                     wasModified: true,
                     warnings: [
-                        "Removed SVG metadata/comments; rendering should remain intact.",
+                        t("svgWarning", "Removed SVG metadata/comments; rendering should remain intact."),
                     ],
                     errors: [],
                     metadataRemoved: [
@@ -477,7 +483,7 @@
                     warnings: [],
                     errors: ["svg-strip-failed"],
                     metadataRemoved: [],
-                    failureReason: "SVG strip failed",
+                    failureReason: t("svgStripFailed", "SVG strip failed"),
                 };
             }
         },
@@ -499,14 +505,14 @@
         const handler = handlers.find((h) => matchesHandler(h, lowerName, mime));
         if (!handler) {
             res.errors.push("unsupported");
-            res.failureReason = "Unsupported type";
+            res.failureReason = t("unsupportedType", "Unsupported type");
             return res;
         }
 
         res.supported = true;
 
         if (file.size > MAX_BYTES) {
-            res.warnings.push(`Too large for stripping (${MB_LIMIT} MB limit)`);
+            res.warnings.push(t("tooLarge", "Too large for stripping ({0} MB limit)").replace("{0}", MB_LIMIT));
             res.failureReason = res.warnings[0];
             return res;
         }
@@ -522,7 +528,7 @@
         } catch (e) {
             console.error(`${handler.key} metadata stripping failed`, e);
             res.errors.push("failed");
-            res.failureReason = "Strip failed";
+            res.failureReason = t("stripFailed", "Strip failed");
             return res;
         }
     };
@@ -543,7 +549,7 @@
                     warnings: [],
                     errors: ["engine-unavailable"],
                     metadataRemoved: [],
-                    failureReason: "PDF engine unavailable",
+                    failureReason: engineUnavailable("PDF"),
                 };
             }
 
@@ -581,7 +587,7 @@
                 stripped: true,
                 wasModified: true,
                 warnings: [
-                    "Rebuilt PDF without doc info; some embedded metadata (e.g., within attachments or streams) may remain.",
+                    t("pdfWarning", "Rebuilt PDF without doc info; some embedded metadata (e.g., within attachments or streams) may remain."),
                 ],
                 errors: [],
                 metadataRemoved: ["info dictionary", "XMP"],
@@ -693,7 +699,7 @@
                     stripped: true,
                     wasModified: true,
                     warnings: [
-                        "Image re-encoded; minor quality or metadata differences possible.",
+                        t("imageWarning", "Image re-encoded; minor quality or metadata differences possible."),
                     ],
                     errors: [],
                     metadataRemoved: ["EXIF/IPTC/XMP dropped by re-encode"],
@@ -708,7 +714,7 @@
                     warnings: [],
                     errors: ["reencode-failed"],
                     metadataRemoved: [],
-                    failureReason: "Image re-encode failed",
+                    failureReason: t("imageReencodeFailed", "Image re-encode failed"),
                 };
             }
         },

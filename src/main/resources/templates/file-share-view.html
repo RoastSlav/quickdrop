@@ -78,7 +78,7 @@
                           stroke-linecap="round"
                           stroke-linejoin="round"/>
                 </svg>
-                <span id="downloadLabel" th:text="${needsKeyAuth} ? 'Verifying…' : #{button.download}">Download</span>
+                <span id="downloadLabel" th:text="${needsKeyAuth} ? #{page.share.verifying} : #{button.download}">Download</span>
             </a>
 
             <!-- Shown only when fragment key auth fails -->
@@ -104,6 +104,18 @@
 
 <th:block th:replace="~{fragments/layout :: pageScripts}"></th:block>
 <script th:if="${needsKeyAuth}" th:inline="javascript">
+    /*<![CDATA[*/
+    window.i18n = window.i18n || {};
+    window.i18n.share = {
+        accessDenied:    /*[[#{page.share.accessDenied}]]*/ 'Access denied',
+        missingKey:      /*[[#{page.share.missingKey}]]*/ 'Missing access key',
+        download:        /*[[#{button.download}]]*/ 'Download',
+        linkExpired:     /*[[#{page.share.linkExpired}]]*/ 'Link expired or not found',
+        invalidKey:      /*[[#{page.share.invalidKey}]]*/ 'Invalid access key',
+        requestTimedOut: /*[[#{page.share.requestTimedOut}]]*/ 'Request timed out',
+        networkError:    /*[[#{page.share.networkError}]]*/ 'Network error'
+    };
+    /*]]>*/
     (function () {
         const token = /*[[${downloadLink.substring(downloadLink.lastIndexOf('/') + 1)}]]*/ '';
         const btn = document.getElementById('downloadButton');
@@ -111,7 +123,7 @@
         const errMsg = document.getElementById('keyErrorMsg');
 
         function showError(msg) {
-            label.textContent = msg || 'Access denied';
+            label.textContent = msg || window.i18n?.share?.accessDenied || 'Access denied';
             errMsg.classList.remove('hidden');
             btn.classList.add('opacity-50', 'pointer-events-none');
         }
@@ -122,7 +134,7 @@
         const key = match ? decodeURIComponent(match[1]) : null;
 
         if (!key) {
-            showError('Missing access key');
+            showError(window.i18n?.share?.missingKey || 'Missing access key');
             return;
         }
 
@@ -147,17 +159,19 @@
             if (res.ok) {
                 btn.classList.remove('opacity-50', 'pointer-events-none');
                 btn.removeAttribute('aria-disabled');
-                label.textContent = 'Download';
+                label.textContent = window.i18n?.share?.download || 'Download';
                 // Remove the key fragment from the URL bar so it is not copied or bookmarked
                 history.replaceState(null, '', window.location.pathname + window.location.search);
             } else if (res.status === 404) {
-                showError('Link expired or not found');
+                showError(window.i18n?.share?.linkExpired || 'Link expired or not found');
             } else {
-                showError('Invalid access key');
+                showError(window.i18n?.share?.invalidKey || 'Invalid access key');
             }
         }).catch(function (err) {
             clearTimeout(timeoutId);
-            showError(err && err.name === 'AbortError' ? 'Request timed out' : 'Network error');
+            showError(err && err.name === 'AbortError'
+                ? (window.i18n?.share?.requestTimedOut || 'Request timed out')
+                : (window.i18n?.share?.networkError || 'Network error'));
         });
     })();
 </script>

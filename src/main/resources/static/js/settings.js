@@ -87,7 +87,7 @@ function syncDefaultHomePageOptions() {
     for (const opt of select.options) {
         if (opt.value === "upload") {
             opt.disabled = !uploadPubliclyAccessible;
-            opt.title = !uploadEnabled ? "" : (uploadAdminOnly ? "Upload is restricted to admins — not reachable for public visitors" : "");
+            opt.title = !uploadEnabled ? "" : (uploadAdminOnly ? (window.i18n?.settings?.uploadAdminOnlyHint || "Upload is restricted to admins — not reachable for public visitors") : "");
         } else if (opt.value === "list") {
             opt.disabled = !listEnabled;
         } else if (opt.value === "paste") {
@@ -710,12 +710,12 @@ document.addEventListener("DOMContentLoaded", function () {
             try {
                 await saveSettings(getCsrfToken());
                 dirtyGuard?.markClean();
-                window.toast?.("Settings saved", "success");
+                window.toast?.(window.i18n?.settings?.saveSuccess || "Settings saved", "success");
             } catch (err) {
                 window.toast?.(
                     err.message === "Validation failed"
                         ? sv('failed', 'Validation failed — check highlighted fields')
-                        : (err.message || "Failed to save settings"),
+                        : (err.message || window.i18n?.settings?.saveFailedGeneric || "Failed to save settings"),
                     "error"
                 );
             } finally {

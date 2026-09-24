@@ -361,7 +361,25 @@
         technicalInfo:         /*[[#{page.upload.technicalInfo}]]*/ 'Technical info',
         reviewAffected:        /*[[#{page.upload.review.affected}]]*/ '{0} of {1} files need a closer look',
         reviewStatusFailed:    /*[[#{page.upload.review.status.failed}]]*/ 'Metadata kept',
-        reviewStatusWarning:   /*[[#{page.upload.review.status.warning}]]*/ 'May still carry metadata'
+        reviewStatusWarning:   /*[[#{page.upload.review.status.warning}]]*/ 'May still carry metadata',
+        processingFailed:      /*[[#{notification.upload.processingFailed}]]*/ 'Upload processing failed.',
+        statusCheckFailed:     /*[[#{notification.upload.statusCheckFailed}]]*/ 'Upload status check failed (status {0}).'
+    };
+    window.i18n.upload.metadata = {
+        engineUnavailable:  /*[[#{page.upload.metadata.engineUnavailable}]]*/ '{0} engine unavailable',
+        ooxmlWarning:       /*[[#{page.upload.metadata.ooxmlWarning}]]*/ 'Core/custom/app properties cleared; embedded content may still contain metadata.',
+        odfWarning:         /*[[#{page.upload.metadata.odfWarning}]]*/ 'Rebuilt meta/settings; embedded objects may retain metadata.',
+        epubOpfMissing:     /*[[#{page.upload.metadata.epubOpfMissing}]]*/ 'EPUB OPF not found',
+        epubOpfReadFailed:  /*[[#{page.upload.metadata.epubOpfReadFailed}]]*/ 'EPUB OPF read failed',
+        epubWarning:        /*[[#{page.upload.metadata.epubWarning}]]*/ 'OPF metadata cleared (creator/contributor/publisher/generator); identifiers neutralized. Embedded files may retain metadata.',
+        svgWarning:         /*[[#{page.upload.metadata.svgWarning}]]*/ 'Removed SVG metadata/comments; rendering should remain intact.',
+        svgStripFailed:     /*[[#{page.upload.metadata.svgStripFailed}]]*/ 'SVG strip failed',
+        unsupportedType:    /*[[#{page.upload.metadata.unsupportedType}]]*/ 'Unsupported type',
+        tooLarge:           /*[[#{page.upload.metadata.tooLarge}]]*/ 'Too large for stripping ({0} MB limit)',
+        stripFailed:        /*[[#{page.upload.metadata.stripFailed}]]*/ 'Strip failed',
+        pdfWarning:         /*[[#{page.upload.metadata.pdfWarning}]]*/ 'Rebuilt PDF without doc info; some embedded metadata (e.g., within attachments or streams) may remain.',
+        imageWarning:       /*[[#{page.upload.metadata.imageWarning}]]*/ 'Image re-encoded; minor quality or metadata differences possible.',
+        imageReencodeFailed: /*[[#{page.upload.metadata.imageReencodeFailed}]]*/ 'Image re-encode failed'
     };
     /*]]>*/
 </script>

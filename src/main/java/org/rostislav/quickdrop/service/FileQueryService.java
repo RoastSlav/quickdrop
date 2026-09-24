@@ -85,7 +85,7 @@ public class FileQueryService {
         if (upload.passwordHash == null || upload.passwordHash.isBlank()) {
             return true;
         }
-        Object sessionToken = request.getSession().getAttribute("file-session-token");
+        Object sessionToken = request.getSession().getAttribute(SessionService.FILE_SESSION_TOKEN_ATTR);
         return sessionToken != null && sessionService.validateFileSessionToken(sessionToken.toString(), uuid);
     }
 
@@ -114,7 +114,7 @@ public class FileQueryService {
         if (upload.passwordHash == null || upload.passwordHash.isBlank()) {
             return false;
         }
-        Object sessionToken = request.getSession().getAttribute("file-session-token");
+        Object sessionToken = request.getSession().getAttribute(SessionService.FILE_SESSION_TOKEN_ATTR);
         return sessionToken != null && sessionService.validateFileSessionToken(sessionToken.toString(), uuid);
     }
 
@@ -235,7 +235,7 @@ public class FileQueryService {
      * files without exposing the session-token internals beyond this package.
      */
     String getFilePasswordFromSessionToken(HttpServletRequest request) {
-        Object sessionToken = request.getSession().getAttribute("file-session-token");
+        Object sessionToken = request.getSession().getAttribute(SessionService.FILE_SESSION_TOKEN_ATTR);
         if (sessionToken == null) {
             return null;
         }

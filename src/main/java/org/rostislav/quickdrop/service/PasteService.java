@@ -366,7 +366,7 @@ public class PasteService {
      * @return the file access password, or {@code null} if no session token is present
      */
     private String getFilePasswordFromSessionToken(HttpServletRequest request) {
-        Object sessionToken = request.getSession().getAttribute("file-session-token");
+        Object sessionToken = request.getSession().getAttribute(SessionService.FILE_SESSION_TOKEN_ATTR);
         if (sessionToken == null) {
             return null;
         }

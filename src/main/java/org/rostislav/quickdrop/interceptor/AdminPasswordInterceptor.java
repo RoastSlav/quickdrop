@@ -41,7 +41,7 @@ public class AdminPasswordInterceptor implements HandlerInterceptor {
             response.sendRedirect(ADMIN_PASSWORD_PATH);
             return false;
         }
-        Object sessionToken = session.getAttribute("admin-session-token");
+        Object sessionToken = session.getAttribute(SessionService.ADMIN_SESSION_TOKEN_ATTR);
         if (sessionToken == null || sessionToken.toString().isEmpty()) {
             response.sendRedirect(ADMIN_PASSWORD_PATH);
             return false;

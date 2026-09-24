@@ -269,7 +269,7 @@ public class FileViewController {
                                 RedirectAttributes redirectAttributes) {
         if (fileQueryService.checkFilePassword(uuid, password)) {
             String fileSessionToken = sessionService.addFileSessionToken(UUID.randomUUID().toString(), password, uuid);
-            request.getSession().setAttribute("file-session-token", fileSessionToken);
+            request.getSession().setAttribute(SessionService.FILE_SESSION_TOKEN_ATTR, fileSessionToken);
             logger.info("Token has been added to the session for file UUID: {}", uuid);
             return editMode ? "redirect:/file/paste/edit/" + uuid : "redirect:/file/" + uuid;
         } else {
@@ -333,7 +333,7 @@ public class FileViewController {
         if (fileEntity == null || fileEntity.passwordHash == null) {
             return false;
         }
-        Object sessionToken = request.getSession().getAttribute("file-session-token");
+        Object sessionToken = request.getSession().getAttribute(SessionService.FILE_SESSION_TOKEN_ATTR);
         return sessionToken != null && sessionService.validateFileSessionToken(sessionToken.toString(), uuid);
     }
 

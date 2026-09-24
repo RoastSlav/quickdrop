@@ -387,7 +387,7 @@ public class AdminViewController {
         if (BCrypt.checkpw(password, adminPasswordHash)) {
             String adminAccessToken = sessionService.addAdminToken(UUID.randomUUID().toString());
             HttpSession session = request.getSession();
-            session.setAttribute("admin-session-token", adminAccessToken);
+            session.setAttribute(SessionService.ADMIN_SESSION_TOKEN_ATTR, adminAccessToken);
             session.setAttribute("admin-ip", info.ipAddress());
             session.setAttribute("admin-ua", info.userAgent());
             analyticsService.logEvent(EventType.ADMIN_LOGIN, info.ipAddress(), info.userAgent());

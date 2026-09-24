@@ -31,6 +31,11 @@ import java.util.Set;
  */
 @Service
 public class SessionService implements HttpSessionListener {
+    /** HTTP session attribute key an admin login stores its token under. */
+    public static final String ADMIN_SESSION_TOKEN_ATTR = "admin-session-token";
+    /** HTTP session attribute key a file-password check stores its token under. */
+    public static final String FILE_SESSION_TOKEN_ATTR = "file-session-token";
+
     private static final Logger logger = LoggerFactory.getLogger(SessionService.class);
     private final Set<String> adminSessionTokens = Collections.synchronizedSet(
             Collections.newSetFromMap(new java.util.LinkedHashMap<String, Boolean>() {
@@ -93,7 +98,7 @@ public class SessionService implements HttpSessionListener {
     @Override
     public void sessionDestroyed(HttpSessionEvent se) {
         HttpSession session = se.getSession();
-        Object adminToken = session.getAttribute("admin-session-token");
+        Object adminToken = session.getAttribute(ADMIN_SESSION_TOKEN_ATTR);
         if (adminToken != null) {
             adminSessionTokens.remove(adminToken.toString());
             String at = adminToken.toString();
@@ -109,7 +114,7 @@ public class SessionService implements HttpSessionListener {
             }
         }
 
-        Object fileSessionToken = session.getAttribute("file-session-token");
+        Object fileSessionToken = session.getAttribute(FILE_SESSION_TOKEN_ATTR);
         if (fileSessionToken != null) {
             fileSessions.remove(fileSessionToken.toString());
             String ft = fileSessionToken.toString();
@@ -150,7 +155,7 @@ public class SessionService implements HttpSessionListener {
     public boolean hasValidAdminSession(HttpServletRequest request) {
         HttpSession session = request.getSession(false);
         if (session == null) return false;
-        Object token = session.getAttribute("admin-session-token");
+        Object token = session.getAttribute(ADMIN_SESSION_TOKEN_ATTR);
         return token != null && validateAdminToken(token.toString());
     }
 
@@ -160,10 +165,10 @@ public class SessionService implements HttpSessionListener {
             return;
         }
 
-        Object token = session.getAttribute("admin-session-token");
+        Object token = session.getAttribute(ADMIN_SESSION_TOKEN_ATTR);
         if (token != null) {
             adminSessionTokens.remove(token.toString());
-            session.removeAttribute("admin-session-token");
+            session.removeAttribute(ADMIN_SESSION_TOKEN_ATTR);
             String t = token.toString();
             logger.info("Admin session token invalidated (id: {}...)", t.length() > 8 ? t.substring(0, 8) : "***");
         }

@@ -309,7 +309,7 @@ public class FileRestController {
         String tokenString;
         boolean preparingMessage = false;
         if (fileEntity.passwordHash != null && !fileEntity.passwordHash.isEmpty()) {
-            String sessionToken = (String) request.getSession().getAttribute("file-session-token");
+            String sessionToken = (String) request.getSession().getAttribute(SessionService.FILE_SESSION_TOKEN_ATTR);
             if (sessionToken == null || !sessionService.validateFileSessionToken(sessionToken, uuid)) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
                         .body(Map.of("message", "Invalid file session."));

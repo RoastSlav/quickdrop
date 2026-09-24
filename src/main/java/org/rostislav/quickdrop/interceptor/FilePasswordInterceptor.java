@@ -70,7 +70,7 @@ public class FilePasswordInterceptor implements HandlerInterceptor {
             return true;
         }
 
-        String sessionToken = (String) request.getSession().getAttribute("file-session-token");
+        String sessionToken = (String) request.getSession().getAttribute(SessionService.FILE_SESSION_TOKEN_ATTR);
         if (upload.passwordHash != null &&
                 (sessionToken == null || !sessionService.validateFileSessionToken(sessionToken, uuid))) {
 

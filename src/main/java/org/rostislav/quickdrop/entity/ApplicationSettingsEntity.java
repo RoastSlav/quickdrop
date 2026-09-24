@@ -16,6 +16,8 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "app_settings")
 public class ApplicationSettingsEntity {
+    private static final String DAILY_4AM_CRON = "0 0 4 * * *";
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -273,7 +275,7 @@ public class ApplicationSettingsEntity {
      * Browsing has no feed to refresh — it is queried live per lookup, with its own
      * response-cache duration honoured separately.
      */
-    private String reputationFeedCron = "0 0 4 * * *";
+    private String reputationFeedCron = DAILY_4AM_CRON;
 
     /**
      * Master switch for activity-log retention. While off, nothing is ever archived or
@@ -437,7 +439,7 @@ public class ApplicationSettingsEntity {
 
     /** Spring cron expression that controls when the scheduled backup job runs. */
     @Column(name = "backup_cron")
-    private String backupCron = "0 0 4 * * *";
+    private String backupCron = DAILY_4AM_CRON;
 
     /** Number of most-recent backups to retain; older ones are pruned after each backup. */
     @Column(name = "max_backups")
@@ -521,7 +523,7 @@ public class ApplicationSettingsEntity {
         this.webDavPassword = settings.getWebDavPassword();
         this.webDavKeyPrefix = settings.getWebDavKeyPrefix() != null ? settings.getWebDavKeyPrefix() : "";
         this.backupScheduleEnabled = settings.isBackupScheduleEnabled();
-        this.backupCron = settings.getBackupCron() != null ? settings.getBackupCron() : "0 0 4 * * *";
+        this.backupCron = settings.getBackupCron() != null ? settings.getBackupCron() : DAILY_4AM_CRON;
         this.maxBackups = settings.getMaxBackups() > 0 ? settings.getMaxBackups() : 7;
     }
 

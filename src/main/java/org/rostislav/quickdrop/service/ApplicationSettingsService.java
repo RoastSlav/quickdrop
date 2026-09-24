@@ -55,6 +55,13 @@ public class ApplicationSettingsService {
      */
     public static final String DEFAULT_LOG_STORAGE_PATH = "log";
 
+    private static final String UPLOAD_PAGE = "upload";
+    private static final String PASTE_PAGE = "paste";
+    private static final String DEFAULT_APP_NAME = "QuickDrop";
+    private static final String DEFAULT_FAVICON_PATH = "/images/favicon.png";
+    private static final String INTERSTITIAL_NON_ADMIN = "NON_ADMIN";
+    private static final String DAILY_330AM_CRON = "0 30 3 * * *";
+
     private static final Logger logger = LoggerFactory.getLogger(ApplicationSettingsService.class);
 
     private final ApplicationSettingsRepository applicationSettingsRepository;
@@ -126,7 +133,7 @@ public class ApplicationSettingsService {
             defaults.setPreviewEnabled(true);
             defaults.setMetadataStrippingEnabled(false);
             defaults.setMaxPreviewSizeBytes(5L * 1024L * 1024L);
-            defaults.setDefaultHomePage("upload");
+            defaults.setDefaultHomePage(UPLOAD_PAGE);
             defaults.setKeepIndefinitelyAdminOnly(false);
             defaults.setHideFromListAdminOnly(false);
             defaults.setDiscordWebhookEnabled(false);
@@ -153,7 +160,7 @@ public class ApplicationSettingsService {
             defaults.setShareTokenLength(8);
             defaults.setShortenerCustomAliasEnabled(true);
             defaults.setShortenerCustomAliasAdminOnly(true);
-            defaults.setShortenerInterstitialMode("NON_ADMIN");
+            defaults.setShortenerInterstitialMode(INTERSTITIAL_NON_ADMIN);
             defaults.setShortenerDomainRuleMode("OFF");
             defaults.setShortenerDomainRules("");
             defaults.setTrustedProxyEnabled(false);
@@ -166,14 +173,14 @@ public class ApplicationSettingsService {
             defaults.setReputationFailClosed(false);
             defaults.setReputationFeedCron("0 0 4 * * *");
             defaults.setActivityRetentionEnabled(false);
-            defaults.setActivityRetentionCron("0 30 3 * * *");
+            defaults.setActivityRetentionCron(DAILY_330AM_CRON);
             defaults.setActivityRetentionFileDays(365);
             defaults.setActivityRetentionPasteDays(365);
             defaults.setActivityRetentionShareDays(365);
             defaults.setActivityRetentionShortlinkDays(365);
             defaults.setActivityRetentionAdminDays(365);
             defaults.setActivityRetentionSystemDays(365);
-            defaults.setAppName("QuickDrop");
+            defaults.setAppName(DEFAULT_APP_NAME);
             defaults.setLogoFileName(null);
             defaults.setDefaultLanguage("en");
             return applicationSettingsRepository.save(defaults);
@@ -181,7 +188,7 @@ public class ApplicationSettingsService {
 
         boolean dirty = false;
         if (settings.getAppName() == null || settings.getAppName().isBlank()) {
-            settings.setAppName("QuickDrop");
+            settings.setAppName(DEFAULT_APP_NAME);
             dirty = true;
         }
         if (settings.getMaxFileSize() == 0) {
@@ -205,7 +212,7 @@ public class ApplicationSettingsService {
             dirty = true;
         }
         if (settings.getDefaultHomePage() == null || settings.getDefaultHomePage().isBlank()) {
-            settings.setDefaultHomePage("upload");
+            settings.setDefaultHomePage(UPLOAD_PAGE);
             dirty = true;
         }
         if (settings.getDefaultLanguage() == null || settings.getDefaultLanguage().isBlank()) {
@@ -232,11 +239,11 @@ public class ApplicationSettingsService {
             dirty = true;
         }
         if (settings.getActivityRetentionCron() == null || settings.getActivityRetentionCron().isBlank()) {
-            settings.setActivityRetentionCron("0 30 3 * * *");
+            settings.setActivityRetentionCron(DAILY_330AM_CRON);
             dirty = true;
         }
         if (settings.getShortenerInterstitialMode() == null || settings.getShortenerInterstitialMode().isBlank()) {
-            settings.setShortenerInterstitialMode("NON_ADMIN");
+            settings.setShortenerInterstitialMode(INTERSTITIAL_NON_ADMIN);
             dirty = true;
         }
         if (settings.getShortenerDomainRuleMode() == null || settings.getShortenerDomainRuleMode().isBlank()) {
@@ -281,19 +288,19 @@ public class ApplicationSettingsService {
      */
     private String coerceDefaultHomePage(ApplicationSettingsViewModel settings) {
         String page = settings.getDefaultHomePage();
-        if (page == null) return "upload";
+        if (page == null) return UPLOAD_PAGE;
         boolean uploadPublic = settings.isUploadEnabled() && !settings.isUploadAdminOnly();
         boolean listEnabled = settings.isFileListPageEnabled();
         boolean pasteEnabled = settings.isPastebinEnabled();
         switch (page.toLowerCase()) {
-            case "upload":
-                if (!uploadPublic) page = listEnabled ? "list" : pasteEnabled ? "paste" : "none";
+            case UPLOAD_PAGE:
+                if (!uploadPublic) page = listEnabled ? "list" : pasteEnabled ? PASTE_PAGE : "none";
                 break;
             case "list":
-                if (!listEnabled) page = uploadPublic ? "upload" : pasteEnabled ? "paste" : "none";
+                if (!listEnabled) page = uploadPublic ? UPLOAD_PAGE : pasteEnabled ? PASTE_PAGE : "none";
                 break;
-            case "paste":
-                if (!pasteEnabled) page = uploadPublic ? "upload" : listEnabled ? "list" : "none";
+            case PASTE_PAGE:
+                if (!pasteEnabled) page = uploadPublic ? UPLOAD_PAGE : listEnabled ? "list" : "none";
                 break;
         }
         return page;
@@ -401,8 +408,8 @@ public class ApplicationSettingsService {
         entity.setShortenerCustomAliasAdminOnly(shortenerCustomAliasEnabled && settings.isShortenerCustomAliasAdminOnly());
         String interstitialMode = settings.getShortenerInterstitialMode();
         entity.setShortenerInterstitialMode(
-                java.util.Set.of("ALWAYS", "NEVER", "NON_ADMIN").contains(interstitialMode == null ? "" : interstitialMode)
-                        ? interstitialMode : "NON_ADMIN");
+                java.util.Set.of("ALWAYS", "NEVER", INTERSTITIAL_NON_ADMIN).contains(interstitialMode == null ? "" : interstitialMode)
+                        ? interstitialMode : INTERSTITIAL_NON_ADMIN);
         String domainRuleMode = settings.getShortenerDomainRuleMode();
         entity.setShortenerDomainRuleMode(
                 java.util.Set.of("OFF", "BLOCKLIST", "ALLOWLIST").contains(domainRuleMode == null ? "" : domainRuleMode)
@@ -417,7 +424,7 @@ public class ApplicationSettingsService {
         entity.setReputationFeedCron(reputationFeedCron != null && !reputationFeedCron.isBlank() ? reputationFeedCron : "0 0 4 * * *");
         entity.setActivityRetentionEnabled(settings.isActivityRetentionEnabled());
         String activityRetentionCron = settings.getActivityRetentionCron();
-        entity.setActivityRetentionCron(activityRetentionCron != null && !activityRetentionCron.isBlank() ? activityRetentionCron : "0 30 3 * * *");
+        entity.setActivityRetentionCron(activityRetentionCron != null && !activityRetentionCron.isBlank() ? activityRetentionCron : DAILY_330AM_CRON);
         // A negative would put the cutoff in the future and purge unexpired rows; 0 = forever.
         entity.setActivityRetentionFileDays(Math.max(settings.getActivityRetentionFileDays(), 0));
         entity.setActivityRetentionPasteDays(Math.max(settings.getActivityRetentionPasteDays(), 0));
@@ -442,7 +449,7 @@ public class ApplicationSettingsService {
             entity.setSafeBrowsingTermsAcceptedAt(null);
         }
         String requestedAppName = settings.getAppName();
-        entity.setAppName((requestedAppName == null || requestedAppName.isBlank()) ? "QuickDrop" : requestedAppName.trim());
+        entity.setAppName((requestedAppName == null || requestedAppName.isBlank()) ? DEFAULT_APP_NAME : requestedAppName.trim());
         entity.setDefaultLanguage(settings.getDefaultLanguage() != null && !settings.getDefaultLanguage().isBlank() ? settings.getDefaultLanguage() : "en");
         entity.setNotifyOnUpload(settings.isNotifyOnUpload());
         entity.setNotifyOnDownload(settings.isNotifyOnDownload());
@@ -1012,7 +1019,7 @@ public class ApplicationSettingsService {
      */
     public String getAppName() {
         String name = self.getApplicationSettings().getAppName();
-        return (name == null || name.isBlank()) ? "QuickDrop" : name;
+        return (name == null || name.isBlank()) ? DEFAULT_APP_NAME : name;
     }
 
     /**
@@ -1168,18 +1175,18 @@ public class ApplicationSettingsService {
     public String getLogoPath() {
         String fileName = self.getApplicationSettings().getLogoFileName();
         if (fileName == null || fileName.isBlank()) {
-            return "/images/favicon.png";
+            return DEFAULT_FAVICON_PATH;
         }
         Path brandingDir = AppPaths.BRANDING.toAbsolutePath();
         Path candidate = brandingDir.resolve(fileName).normalize();
         if (!candidate.startsWith(brandingDir.normalize())) {
             logger.warn("Stored logo filename escapes branding directory, ignoring: {}", fileName);
-            return "/images/favicon.png";
+            return DEFAULT_FAVICON_PATH;
         }
         if (Files.exists(candidate)) {
             return "/branding/" + candidate.getFileName();
         }
-        return "/images/favicon.png";
+        return DEFAULT_FAVICON_PATH;
     }
 
     /**

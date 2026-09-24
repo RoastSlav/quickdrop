@@ -36,6 +36,11 @@ import java.util.Locale;
 @Controller
 @RequestMapping("/file/paste")
 public class PasteViewController {
+    private static final String PASTE_ERROR_ATTR = "pasteError";
+    private static final String REDIRECT_HOME = "redirect:/";
+    private static final String REDIRECT_FILE_PREFIX = "redirect:/file/";
+    private static final String REDIRECT_PASTE_NEW = "redirect:/file/paste/new";
+    private static final String REDIRECT_PASTE_EDIT_PREFIX = "redirect:/file/paste/edit/";
     private static final Logger logger = LoggerFactory.getLogger(PasteViewController.class);
     private final FileQueryService fileQueryService;
     private final PasteService pasteService;
@@ -55,7 +60,7 @@ public class PasteViewController {
     @GetMapping("/new")
     public String showPastePage(Model model, HttpServletRequest request) {
         if (!applicationSettingsService.isPastebinEnabled() && !sessionService.hasValidAdminSession(request)) {
-            return "redirect:/";
+            return REDIRECT_HOME;
         }
 
         model.addAttribute("maxFileLifeTime", applicationSettingsService.getMaxFileLifeTime());
@@ -72,7 +77,7 @@ public class PasteViewController {
     @GetMapping("/edit/{uuid}")
     public String showPasteEditPage(@PathVariable String uuid, Model model, HttpServletRequest request) {
         if (!applicationSettingsService.isPastebinEnabled() && !sessionService.hasValidAdminSession(request)) {
-            return "redirect:/";
+            return REDIRECT_HOME;
         }
 
         Upload fileEntity = fileQueryService.getFile(uuid).orElse(null);
@@ -80,14 +85,14 @@ public class PasteViewController {
             return "redirect:/file/list";
         }
         if (!(fileEntity instanceof Paste paste)) {
-            return "redirect:/file/" + uuid;
+            return REDIRECT_FILE_PREFIX + uuid;
         }
 
         if (paste.deleted) {
-            return "redirect:/file/" + uuid;
+            return REDIRECT_FILE_PREFIX + uuid;
         }
         if (paste.immutable) {
-            return "redirect:/file/" + uuid;
+            return REDIRECT_FILE_PREFIX + uuid;
         }
 
         if (!fileQueryService.isAuthorizedToEdit(uuid, request)) {
@@ -96,7 +101,7 @@ public class PasteViewController {
 
         String content = pasteService.getPasteContent(uuid, request);
         if (content == null) {
-            return "redirect:/file/" + uuid;
+            return REDIRECT_FILE_PREFIX + uuid;
         }
 
         model.addAttribute("maxFileLifeTime", applicationSettingsService.getMaxFileLifeTime());
@@ -123,27 +128,27 @@ public class PasteViewController {
                               HttpServletRequest request,
                               RedirectAttributes redirectAttributes) {
         if (!applicationSettingsService.isPastebinEnabled() && !sessionService.hasValidAdminSession(request)) {
-            return "redirect:/";
+            return REDIRECT_HOME;
         }
         if (!applicationSettingsService.isUploadPasswordEnabled() && password != null && !password.isBlank()) {
-            redirectAttributes.addFlashAttribute("pasteError", "Upload passwords are disabled.");
-            return "redirect:/file/paste/new";
+            redirectAttributes.addFlashAttribute(PASTE_ERROR_ATTR, "Upload passwords are disabled.");
+            return REDIRECT_PASTE_NEW;
         }
 
         try {
             Upload created = pasteService.createPaste(title, content, syntax, keepIndefinitely, password, immutable, editOnly, request);
             if (created == null) {
-                redirectAttributes.addFlashAttribute("pasteError", "Could not create paste.");
-                return "redirect:/file/paste/new";
+                redirectAttributes.addFlashAttribute(PASTE_ERROR_ATTR, "Could not create paste.");
+                return REDIRECT_PASTE_NEW;
             }
-            return "redirect:/file/" + created.uuid;
+            return REDIRECT_FILE_PREFIX + created.uuid;
         } catch (IllegalArgumentException e) {
-            redirectAttributes.addFlashAttribute("pasteError", e.getMessage());
-            return "redirect:/file/paste/new";
+            redirectAttributes.addFlashAttribute(PASTE_ERROR_ATTR, e.getMessage());
+            return REDIRECT_PASTE_NEW;
         } catch (IOException e) {
             logger.error("Failed to create paste: {}", e.getMessage());
-            redirectAttributes.addFlashAttribute("pasteError", "Could not create paste.");
-            return "redirect:/file/paste/new";
+            redirectAttributes.addFlashAttribute(PASTE_ERROR_ATTR, "Could not create paste.");
+            return REDIRECT_PASTE_NEW;
         }
     }
 
@@ -158,35 +163,35 @@ public class PasteViewController {
                               HttpServletRequest request,
                               RedirectAttributes redirectAttributes) {
         if (!applicationSettingsService.isPastebinEnabled() && !sessionService.hasValidAdminSession(request)) {
-            return "redirect:/";
+            return REDIRECT_HOME;
         }
 
         Upload upload = fileQueryService.getFile(uuid).orElse(null);
         if (upload instanceof Paste paste && (paste.deleted || paste.immutable)) {
-            return "redirect:/file/" + uuid;
+            return REDIRECT_FILE_PREFIX + uuid;
         }
         if (!fileQueryService.isAuthorizedToEdit(uuid, request)) {
             return "redirect:/file/password/" + uuid + "?editMode=true";
         }
         if (!applicationSettingsService.isUploadPasswordEnabled() && password != null && !password.isBlank()) {
-            redirectAttributes.addFlashAttribute("pasteError", "Upload passwords are disabled.");
-            return "redirect:/file/paste/edit/" + uuid;
+            redirectAttributes.addFlashAttribute(PASTE_ERROR_ATTR, "Upload passwords are disabled.");
+            return REDIRECT_PASTE_EDIT_PREFIX + uuid;
         }
 
         try {
             Paste updated = pasteService.updatePaste(uuid, title, content, syntax, keepIndefinitely, setImmutable, password, request);
             if (updated == null) {
-                redirectAttributes.addFlashAttribute("pasteError", "Could not update paste.");
-                return "redirect:/file/paste/edit/" + uuid;
+                redirectAttributes.addFlashAttribute(PASTE_ERROR_ATTR, "Could not update paste.");
+                return REDIRECT_PASTE_EDIT_PREFIX + uuid;
             }
-            return "redirect:/file/" + updated.uuid;
+            return REDIRECT_FILE_PREFIX + updated.uuid;
         } catch (IllegalArgumentException e) {
-            redirectAttributes.addFlashAttribute("pasteError", e.getMessage());
-            return "redirect:/file/paste/edit/" + uuid;
+            redirectAttributes.addFlashAttribute(PASTE_ERROR_ATTR, e.getMessage());
+            return REDIRECT_PASTE_EDIT_PREFIX + uuid;
         } catch (IOException e) {
             logger.error("Failed to update paste {}: {}", uuid, e.getMessage());
-            redirectAttributes.addFlashAttribute("pasteError", "Could not update paste.");
-            return "redirect:/file/paste/edit/" + uuid;
+            redirectAttributes.addFlashAttribute(PASTE_ERROR_ATTR, "Could not update paste.");
+            return REDIRECT_PASTE_EDIT_PREFIX + uuid;
         }
     }
 }

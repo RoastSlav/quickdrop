@@ -39,8 +39,6 @@ public class I18nConfig implements WebMvcConfigurer {
 
     /**
      * Registers the reloadable message source backed by {@code messages*.properties} files.
-     *
-     * @return configured message source
      */
     @Bean
     public MessageSource messageSource() {
@@ -54,8 +52,6 @@ public class I18nConfig implements WebMvcConfigurer {
 
     /**
      * Cookie-based locale resolver whose default locale is driven by the application settings.
-     *
-     * @return configured locale resolver
      */
     @Bean
     public LocaleResolver localeResolver() {
@@ -75,8 +71,6 @@ public class I18nConfig implements WebMvcConfigurer {
 
     /**
      * Interceptor that switches the active locale when a {@code lang} query parameter is present.
-     *
-     * @return configured interceptor
      */
     @Bean
     public LocaleChangeInterceptor localeChangeInterceptor() {
@@ -87,9 +81,6 @@ public class I18nConfig implements WebMvcConfigurer {
 
     /**
      * Validator factory that uses the application's {@link MessageSource} for constraint messages.
-     *
-     * @param messageSource the message source to resolve validation messages from
-     * @return configured validator factory
      */
     @Bean
     public LocalValidatorFactoryBean validator(MessageSource messageSource) {

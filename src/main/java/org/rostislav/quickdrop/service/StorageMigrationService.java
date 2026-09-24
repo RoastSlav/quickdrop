@@ -155,10 +155,7 @@ public class StorageMigrationService {
         executor.submit(() -> runMigration(dir));
     }
 
-    /**
-     * Describes a migration operation as a source/destination pair of backends.
-     * Replaces the old {@code enum MigrationDirection {LOCAL_TO_S3, S3_TO_LOCAL}}.
-     */
+    /** Describes a migration operation as a source/destination pair of backends. */
     public record MigrationDirection(StorageBackend source, StorageBackend dest) {
     }
 

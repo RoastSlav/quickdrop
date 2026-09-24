@@ -7,7 +7,6 @@ package org.rostislav.quickdrop.util;
  */
 public class DataValidator {
     private DataValidator() {
-        // Prevent instantiation
     }
 
     /**

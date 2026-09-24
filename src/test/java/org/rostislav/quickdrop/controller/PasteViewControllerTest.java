@@ -16,7 +16,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 class PasteViewControllerTest extends ControllerTestSupport {
 
-    // -- GET /file/paste/new ---------------------------------------------------
+    // GET /file/paste/new
 
     @Test
     void newPastePage_pastebinEnabled_returns200() throws Exception {
@@ -47,7 +47,7 @@ class PasteViewControllerTest extends ControllerTestSupport {
                 .andExpect(status().isOk());
     }
 
-    // -- GET /file/paste/edit/{uuid} --------------------------------------------
+    // GET /file/paste/edit/{uuid}
 
     /**
      * IDOR regression (docs/test-reports/security-probes.md SEV-1): a paste with no password
@@ -128,7 +128,7 @@ class PasteViewControllerTest extends ControllerTestSupport {
                 .andExpect(redirectedUrl("/file/password/" + paste.uuid));
     }
 
-    // -- POST /file/paste (create) -----------------------------------------------
+    // POST /file/paste (create)
 
     @Test
     void createPaste_validContent_redirectsToPasteView() throws Exception {
@@ -202,7 +202,7 @@ class PasteViewControllerTest extends ControllerTestSupport {
         assertEquals(content, storedContent);
     }
 
-    // -- POST /file/paste/edit/{uuid} --------------------------------------------
+    // POST /file/paste/edit/{uuid}
 
     /**
      * IDOR regression (docs/test-reports/security-probes.md SEV-1): anonymous edit of a

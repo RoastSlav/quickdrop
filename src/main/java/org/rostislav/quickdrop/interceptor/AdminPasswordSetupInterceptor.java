@@ -26,9 +26,7 @@ public class AdminPasswordSetupInterceptor implements HandlerInterceptor {
      * Redirects to {@code /admin/setup} if no admin password has been set yet,
      * unless the request is already targeting the setup page or a static resource.
      *
-     * @param request  the incoming HTTP request
-     * @param response the HTTP response
-     * @param handler  the matched handler (unused)
+     * @param handler the matched handler (unused)
      * @return {@code true} to continue the handler chain; {@code false} after redirecting
      * @throws Exception if the redirect fails
      */

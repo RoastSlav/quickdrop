@@ -16,7 +16,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 class FileViewControllerTest extends ControllerTestSupport {
 
-    // -- GET /file/upload -----------------------------------------------------
+    // GET /file/upload
 
     @Test
     void uploadPage_defaultSettings_returns200() throws Exception {
@@ -46,7 +46,7 @@ class FileViewControllerTest extends ControllerTestSupport {
                 .andExpect(status().isOk());
     }
 
-    // -- GET /file/list -----------------------------------------------------
+    // GET /file/list
 
     @Test
     void listFiles_defaultSettings_returns200() throws Exception {
@@ -68,7 +68,7 @@ class FileViewControllerTest extends ControllerTestSupport {
                 .andExpect(redirectedUrl("/"));
     }
 
-    // -- GET /file/{uuid} -----------------------------------------------------
+    // GET /file/{uuid}
 
     @Test
     void filePage_existingFile_returns200() throws Exception {
@@ -163,7 +163,7 @@ class FileViewControllerTest extends ControllerTestSupport {
                 .andExpect(redirectedUrl("/file/password/" + file.uuid));
     }
 
-    // -- GET /file/preview/{uuid} ---------------------------------------------
+    // GET /file/preview/{uuid}
 
     @Test
     void previewFile_unauthorizedPasswordFile_isBlockedByInterceptor() throws Exception {
@@ -181,7 +181,7 @@ class FileViewControllerTest extends ControllerTestSupport {
                 .andExpect(status().isNotFound());
     }
 
-    // -- POST /file/download/log/{uuid} ------------------------------------------
+    // POST /file/download/log/{uuid}
 
     @Test
     void logDownload_authorizedPlainFile_returns204() throws Exception {
@@ -200,7 +200,7 @@ class FileViewControllerTest extends ControllerTestSupport {
                 .andExpect(redirectedUrl("/file/password/" + file.uuid));
     }
 
-    // -- GET /file/history/{uuid} -----------------------------------------------
+    // GET /file/history/{uuid}
     // /file/history/* is excluded from both blanket interceptors (WebConfig) so
     // FileViewController#viewFileHistory's own check is the sole authority: admin session,
     // or a validated file-session token for a password-protected file. A non-password file
@@ -252,7 +252,7 @@ class FileViewControllerTest extends ControllerTestSupport {
                 .andExpect(view().name("file-history"));
     }
 
-    // -- POST /file/password, GET /file/password/{uuid} -------------------------
+    // POST /file/password, GET /file/password/{uuid}
 
     @Test
     void checkPassword_correctPassword_redirectsToFileView() throws Exception {
@@ -286,7 +286,7 @@ class FileViewControllerTest extends ControllerTestSupport {
                 .andExpect(model().attribute("uuid", file.uuid));
     }
 
-    // -- GET /file/download/{uuid} ------------------------------------------
+    // GET /file/download/{uuid}
 
     @Test
     void downloadFile_authorizedPlainFile_streamsContent() throws Throwable {
@@ -311,7 +311,7 @@ class FileViewControllerTest extends ControllerTestSupport {
                 .andExpect(redirectedUrl("/file/password/" + file.uuid));
     }
 
-    // -- POST /file/extend/{uuid} ------------------------------------------------
+    // POST /file/extend/{uuid}
     // Regression check for the IDOR pattern (GHSA-q8mc-vr6g-xjwg): a no-password upload has
     // no credential to check a session token against, so -- matching the precedent
     // isAuthorizedToDelete/isAuthorizedToEdit already set -- only an admin session may extend
@@ -345,7 +345,7 @@ class FileViewControllerTest extends ControllerTestSupport {
         org.junit.jupiter.api.Assertions.assertEquals(java.time.LocalDate.now(), after.uploadDate);
     }
 
-    // -- POST /file/delete/{uuid} ------------------------------------------------
+    // POST /file/delete/{uuid}
 
     @Test
     void deleteFile_anonymousOnPlainFile_isDenied() throws Exception {
@@ -398,7 +398,7 @@ class FileViewControllerTest extends ControllerTestSupport {
                 .andExpect(status().isForbidden());
     }
 
-    // -- GET /file/search -----------------------------------------------------
+    // GET /file/search
 
     @Test
     void searchFiles_redirectsToListWithQuery() throws Exception {
@@ -416,7 +416,7 @@ class FileViewControllerTest extends ControllerTestSupport {
                 .andExpect(redirectedUrl("/file/list"));
     }
 
-    // -- POST /file/keep-indefinitely/{uuid}, /file/toggle-hidden/{uuid} --------
+    // POST /file/keep-indefinitely/{uuid}, /file/toggle-hidden/{uuid}
 
     @Test
     void keepIndefinitely_adminSession_updatesFlag() throws Exception {

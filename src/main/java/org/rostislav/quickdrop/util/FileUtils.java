@@ -53,7 +53,6 @@ public class FileUtils {
     private static final Set<String> CSV_TSV_EXTENSIONS = Set.of(".csv", ".tsv");
 
     private FileUtils() {
-        // Prevent instantiation
     }
 
     /**

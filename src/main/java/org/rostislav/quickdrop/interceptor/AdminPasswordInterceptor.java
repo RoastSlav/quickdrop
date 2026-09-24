@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 
 /**
- * Guards {@code /admin/**} and {@code /file/history/*} behind a valid admin session token.
+ * Guards {@code /admin/**} behind a valid admin session token.
  *
  * <p>The {@code /admin/logout} path bypasses this check.
  */
@@ -25,9 +25,7 @@ public class AdminPasswordInterceptor implements HandlerInterceptor {
      * Verifies that a valid admin session token is present in the HTTP session.
      * Redirects to {@code /admin/password} if the token is absent or invalid.
      *
-     * @param request  the incoming HTTP request
-     * @param response the HTTP response
-     * @param handler  the matched handler (unused)
+     * @param handler the matched handler (unused)
      * @return {@code true} to continue the handler chain; {@code false} after redirecting
      * @throws Exception if the redirect fails
      */

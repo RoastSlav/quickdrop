@@ -36,9 +36,7 @@ public class FilePasswordInterceptor implements HandlerInterceptor {
      * Extracts the {@code uuid} path variable and checks whether the file requires
      * a password. If so, verifies a valid file session token in the HTTP session.
      *
-     * @param request  the incoming HTTP request
-     * @param response the HTTP response
-     * @param handler  the matched handler (unused)
+     * @param handler the matched handler (unused)
      * @return {@code true} to continue the handler chain; {@code false} after redirecting or sending an error
      * @throws Exception if the redirect or error response fails
      */

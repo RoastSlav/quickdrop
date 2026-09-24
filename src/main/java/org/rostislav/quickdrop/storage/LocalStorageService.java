@@ -12,9 +12,8 @@ import java.util.List;
 /**
  * {@link StorageService} implementation backed by the local filesystem.
  *
- * <p>The root directory is supplied by {@link LocalStorageService#LocalStorageService(String)}
- * and is re-read from the delegating wrapper on each call so that admin changes to the
- * storage path take effect immediately.
+ * <p>The root directory is supplied as a {@code Supplier<String>} and re-read from it on
+ * each call, so that admin changes to the storage path take effect immediately.
  */
 public class LocalStorageService implements StorageService {
     private static final Logger logger = LoggerFactory.getLogger(LocalStorageService.class);

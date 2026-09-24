@@ -37,7 +37,7 @@ class BackupControllerTest extends ControllerTestSupport {
     @Autowired
     private ActivityLogRepository activityLogRepository;
 
-    // -- GET /admin/backups ---------------------------------------------------
+    // GET /admin/backups
 
     @Test
     void backupsPage_withAdminSession_returns200() throws Exception {
@@ -56,7 +56,7 @@ class BackupControllerTest extends ControllerTestSupport {
                 .andExpect(redirectedUrl("/admin/password"));
     }
 
-    // -- POST /admin/backups/schedule --------------------------------------------
+    // POST /admin/backups/schedule
 
     @Test
     void saveSchedule_validValues_persistsAndRedirectsWithSuccessFlash() throws Exception {
@@ -131,7 +131,7 @@ class BackupControllerTest extends ControllerTestSupport {
                 .andExpect(status().isForbidden());
     }
 
-    // -- POST /admin/backups/create --------------------------------------------
+    // POST /admin/backups/create
 
     @Test
     void createBackup_withAdminSession_createsFileAndRedirectsWithSuccessFlash() throws Exception {
@@ -162,7 +162,7 @@ class BackupControllerTest extends ControllerTestSupport {
                 .andExpect(status().isForbidden());
     }
 
-    // -- POST /admin/backups/upload ----------------------------------------------
+    // POST /admin/backups/upload
 
     @Test
     void uploadBackup_validFile_isAcceptedAndRedirectsWithSuccessFlash() throws Exception {
@@ -214,7 +214,7 @@ class BackupControllerTest extends ControllerTestSupport {
                 .andExpect(status().isForbidden());
     }
 
-    // -- POST /admin/backups/restore -------------------------------------------
+    // POST /admin/backups/restore
 
     @Test
     void restoreBackup_happyPath_rendersRestoringViewAndTriggersRestart() throws Exception {
@@ -273,7 +273,7 @@ class BackupControllerTest extends ControllerTestSupport {
                 .andExpect(status().isForbidden());
     }
 
-    // -- POST /admin/backups/delete ---------------------------------------------
+    // POST /admin/backups/delete
 
     @Test
     void deleteBackup_withAdminSession_removesFileAndRedirects() throws Exception {
@@ -313,7 +313,7 @@ class BackupControllerTest extends ControllerTestSupport {
                 .andExpect(status().isForbidden());
     }
 
-    // -- GET /admin/backups/download/{filename} ----------------------------------
+    // GET /admin/backups/download/{filename}
 
     @Test
     void downloadBackup_withAdminSession_streamsFileWithAttachmentHeader() throws Exception {

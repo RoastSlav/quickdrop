@@ -5,10 +5,10 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * Wires the {@link LocalStorageService} and {@link S3StorageService} beans with
- * suppliers that read live settings from {@link ApplicationSettingsService}. Using
- * suppliers rather than direct value injection means storage paths and S3 credentials
- * are re-read on every call, so admin changes to settings take effect immediately.
+ * Wires each {@link StorageService} backend bean with a supplier that reads live settings
+ * from {@link ApplicationSettingsService}. Using suppliers rather than direct value
+ * injection means storage paths and credentials are re-read on every call, so admin
+ * changes to settings take effect immediately.
  */
 @Configuration
 public class StorageConfiguration {

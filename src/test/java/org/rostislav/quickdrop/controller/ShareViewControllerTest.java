@@ -75,7 +75,7 @@ class ShareViewControllerTest extends ControllerTestSupport {
                 .andExpect(view().name("invalid-share-link"));
     }
 
-    // -- POST /share/{token}/auth ------------------------------------------------
+    // POST /share/{token}/auth
 
     @Test
     void validateShareKey_correctKey_returns200AndEstablishesSession() throws Exception {

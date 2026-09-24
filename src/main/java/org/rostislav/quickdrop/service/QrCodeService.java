@@ -26,8 +26,8 @@ import java.util.Map;
  * covering every dark module, scaled losslessly by the SVG viewBox rather than by
  * rendering a fixed pixel grid.
  *
- * <p>Serves both upload-share links and (once introduced) redirect links identically —
- * both resolve to a URL, and a QR code is just an encoding of that URL.
+ * <p>Serves both upload-share links and redirect links identically — both resolve to a
+ * URL, and a QR code is just an encoding of that URL.
  */
 @Service
 public class QrCodeService {

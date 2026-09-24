@@ -10,7 +10,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 class StorageMigrationControllerTest extends ControllerTestSupport {
 
-    // -- GET /admin/storage-migration ---------------------------------------
+    // GET /admin/storage-migration
 
     @Test
     void migrationPage_withAdminSession_returns200() throws Exception {
@@ -29,7 +29,7 @@ class StorageMigrationControllerTest extends ControllerTestSupport {
                 .andExpect(redirectedUrl("/admin/password"));
     }
 
-    // -- POST /admin/storage-migration/start -------------------------------------
+    // POST /admin/storage-migration/start
 
     @Test
     void startMigration_sameSourceAndDest_rejectedAndRedirects() throws Exception {
@@ -59,7 +59,7 @@ class StorageMigrationControllerTest extends ControllerTestSupport {
                 .andExpect(status().isForbidden());
     }
 
-    // -- GET /admin/api/migration-status -----------------------------------------
+    // GET /admin/api/migration-status
 
     @Test
     void migrationStatus_withAdminSession_returnsJson() throws Exception {
@@ -78,7 +78,7 @@ class StorageMigrationControllerTest extends ControllerTestSupport {
                 .andExpect(redirectedUrl("/admin/password"));
     }
 
-    // -- GET /admin/api/migration-preflight --------------------------------------
+    // GET /admin/api/migration-preflight
 
     @Test
     void migrationPreflight_withAdminSession_returnsCount() throws Exception {
@@ -88,7 +88,7 @@ class StorageMigrationControllerTest extends ControllerTestSupport {
                 .andExpect(jsonPath("$.count").exists());
     }
 
-    // -- GET /admin/api/test-backend ---------------------------------------------
+    // GET /admin/api/test-backend
 
     @Test
     void testBackend_local_succeeds() throws Exception {
@@ -127,7 +127,7 @@ class StorageMigrationControllerTest extends ControllerTestSupport {
                 .andExpect(redirectedUrl("/admin/password"));
     }
 
-    // -- isSafeEndpoint() SSRF guard, exercised through /admin/api/test-backend --------
+    // isSafeEndpoint() SSRF guard, exercised through /admin/api/test-backend
     // No real network connection is ever reached in these: a rejected endpoint returns
     // 400 before testBackendConnection() is called. Literal IPs (not hostnames) are used
     // throughout so InetAddress.getByName() resolves them locally with no DNS lookup.

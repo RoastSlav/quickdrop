@@ -187,7 +187,6 @@ export function clearStripWarning(ui = getUIRefs()) {
 }
 
 export function showMessage(type, text) {
-    // Prefer the global toast helper if available
     if (typeof window !== "undefined" && typeof window.toast === "function") {
         const kindMap = {danger: "error", success: "success", warning: "warning", info: "info"};
         window.toast(text, kindMap[type] || "info");
@@ -195,7 +194,7 @@ export function showMessage(type, text) {
     }
     const container = document.getElementById("messageContainer");
     if (!container) return;
-    // Fix 6: use DOM construction instead of innerHTML to avoid XSS
+    // DOM construction instead of innerHTML to avoid XSS
     container.textContent = "";
     const styles = {
         danger: "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-100",

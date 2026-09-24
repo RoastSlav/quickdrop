@@ -92,7 +92,7 @@ class UrlSafetyValidatorTest {
         assertTrue(validator.validate(URI.create("http://this-host-does-not-exist.invalid/")).isPresent());
     }
 
-    // -- resolvesToOnlyPublicAddresses(): every resolved address is checked, not just the first --
+    // resolvesToOnlyPublicAddresses(): every resolved address is checked, not just the first
     // A host with one public and one private A/AAAA record must not slip past a check that only
     // looked at InetAddress.getByName()'s first result. Literal IPs are resolved locally by the
     // JVM with no real DNS lookup; getAllByName() itself is mocked to return both addresses for

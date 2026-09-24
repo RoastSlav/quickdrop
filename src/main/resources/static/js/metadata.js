@@ -527,8 +527,6 @@
         }
     };
 
-    // --- Handlers ---
-
     register({
         key: "pdf",
         label: "PDF",

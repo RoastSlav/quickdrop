@@ -10,10 +10,6 @@ package org.rostislav.quickdrop.model;
  */
 public enum EventType {
 
-    // -------------------------------------------------------------------------
-    // FILE events
-    // -------------------------------------------------------------------------
-
     UPLOAD(EventCategory.FILE),
     DOWNLOAD(EventCategory.FILE),
     RENEWAL(EventCategory.FILE),
@@ -23,17 +19,9 @@ public enum EventType {
      */
     DELETION(EventCategory.FILE),
 
-    // -------------------------------------------------------------------------
-    // PASTE events
-    // -------------------------------------------------------------------------
-
     PASTE_CREATE(EventCategory.PASTE),
     PASTE_VIEW(EventCategory.PASTE),
     PASTE_EDIT(EventCategory.PASTE),
-
-    // -------------------------------------------------------------------------
-    // SHARE events
-    // -------------------------------------------------------------------------
 
     SHARE_CREATE(EventCategory.SHARE),
     SHARE_DOWNLOAD(EventCategory.SHARE),
@@ -45,10 +33,8 @@ public enum EventType {
 
     SHARE_REVOKE(EventCategory.SHARE),
 
-    // -------------------------------------------------------------------------
-    // SHORTLINK events (redirect links -- the general URL shortener)
-    // -------------------------------------------------------------------------
-
+    // SHORTLINK here means redirect links (the general URL shortener); upload-share-link
+    // events are recorded under SHARE instead.
     SHORTLINK_CREATE(EventCategory.SHORTLINK),
     SHORTLINK_VISIT(EventCategory.SHORTLINK),
     SHORTLINK_REVOKE(EventCategory.SHORTLINK),
@@ -64,10 +50,6 @@ public enum EventType {
      */
     SHORTLINK_BLOCKED(EventCategory.SHORTLINK),
 
-    // -------------------------------------------------------------------------
-    // ADMIN events
-    // -------------------------------------------------------------------------
-
     ADMIN_LOGIN(EventCategory.ADMIN),
     ADMIN_LOGIN_FAIL(EventCategory.ADMIN),
     ADMIN_LOGOUT(EventCategory.ADMIN),
@@ -82,10 +64,6 @@ public enum EventType {
     BACKUP_UPLOADED(EventCategory.ADMIN),
     BACKUP_RESTORED(EventCategory.ADMIN),
     BACKUP_FAILED(EventCategory.ADMIN),
-
-    // -------------------------------------------------------------------------
-    // SYSTEM events
-    // -------------------------------------------------------------------------
 
     STARTUP(EventCategory.SYSTEM),
     SHUTDOWN(EventCategory.SYSTEM),
@@ -112,8 +90,6 @@ public enum EventType {
      * A retention sweep could not archive a category, so nothing was deleted for it.
      */
     ACTIVITY_RETENTION_FAILED(EventCategory.SYSTEM);
-
-    // -------------------------------------------------------------------------
 
     private final EventCategory category;
 

@@ -20,7 +20,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 class FileRestControllerTest extends ControllerTestSupport {
 
-    // -- GET /api/file/{uuid}/qr.svg --------------------------------------------
+    // GET /api/file/{uuid}/qr.svg
 
     @Test
     void pageQr_publicFile_returnsSvg() throws Exception {
@@ -51,7 +51,7 @@ class FileRestControllerTest extends ControllerTestSupport {
                 .andExpect(status().isNotFound());
     }
 
-    // -- POST /api/file/upload-chunk --------------------------------------------
+    // POST /api/file/upload-chunk
 
     @Test
     void uploadChunk_singleChunkFile_returns202WithUploadId() throws Exception {
@@ -398,7 +398,7 @@ class FileRestControllerTest extends ControllerTestSupport {
                 .andExpect(jsonPath("$.error").value("This upload was aborted."));
     }
 
-    // -- POST /api/file/upload-abort ---------------------------------------------
+    // POST /api/file/upload-abort
 
     @Test
     void uploadAbort_missingUploadId_returns400() throws Exception {
@@ -457,7 +457,7 @@ class FileRestControllerTest extends ControllerTestSupport {
         asyncFileMergeService.abortUpload(uploadId);
     }
 
-    // -- GET /api/file/upload-status/{uploadId} ----------------------------------
+    // GET /api/file/upload-status/{uploadId}
 
     @Test
     void uploadStatus_ownSession_seesRealProgress() throws Exception {
@@ -509,7 +509,7 @@ class FileRestControllerTest extends ControllerTestSupport {
         asyncFileMergeService.abortUpload(uploadId);
     }
 
-    // -- POST /api/file/share/{uuid} ---------------------------------------------
+    // POST /api/file/share/{uuid}
 
     @Test
     void generateShareLink_forPlainFile_returns200WithToken() throws Exception {
@@ -563,7 +563,7 @@ class FileRestControllerTest extends ControllerTestSupport {
                 .andExpect(redirectedUrl("/file/password/" + file.uuid));
     }
 
-    // -- GET /api/file/download/{token} ------------------------------------------
+    // GET /api/file/download/{token}
 
     @Test
     void downloadByToken_unknownToken_redirectsToSharePage() throws Exception {

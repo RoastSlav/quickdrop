@@ -75,9 +75,9 @@ public class LinkGuard {
     /**
      * Re-validates a previously-stored absolute URL immediately before redirecting to it.
      *
-     * <p>Takes the already-normalized absolute URL string rather than a redirect-link
-     * entity — that entity type is introduced in a later change, at which point this method
-     * gains an overload rather than being changed, so callers added before then won't break.
+     * <p>Takes the already-normalized absolute URL string rather than a {@link
+     * org.rostislav.quickdrop.entity.RedirectLink} entity, so it works for any stored URL
+     * regardless of which {@link org.rostislav.quickdrop.entity.ShortLink} subtype holds it.
      *
      * @param storedAbsoluteUrl the URL exactly as persisted by {@link #checkForCreation}
      */

@@ -119,12 +119,10 @@ public class ApplicationSettingsViewModel {
     private boolean s3PathStyle;
     private String s3KeyPrefix;
 
-    // Azure Blob Storage
     private String azureConnectionString;
     private String azureContainerName;
     private String azureKeyPrefix;
 
-    // SFTP
     private String sftpHost;
     private Integer sftpPort;
     private String sftpUsername;
@@ -133,13 +131,11 @@ public class ApplicationSettingsViewModel {
     private String sftpBasePath;
     private String sftpKnownHosts;
 
-    // WebDAV
     private String webDavUrl;
     private String webDavUsername;
     private String webDavPassword;
     private String webDavKeyPrefix;
 
-    // Database backups
     private boolean backupScheduleEnabled;
     @NotBlank(message = "{validation.required}")
     private String backupCron;
@@ -239,11 +235,9 @@ public class ApplicationSettingsViewModel {
         this.s3SecretKey = settings.getS3SecretKey();
         this.s3PathStyle = settings.isS3PathStyle();
         this.s3KeyPrefix = settings.getS3KeyPrefix();
-        // Azure
         this.azureConnectionString = settings.getAzureConnectionString();
         this.azureContainerName = settings.getAzureContainerName();
         this.azureKeyPrefix = settings.getAzureKeyPrefix();
-        // SFTP
         this.sftpHost = settings.getSftpHost();
         this.sftpPort = settings.getSftpPort();
         this.sftpUsername = settings.getSftpUsername();
@@ -251,7 +245,6 @@ public class ApplicationSettingsViewModel {
         this.sftpPrivateKey = settings.getSftpPrivateKey();
         this.sftpBasePath = settings.getSftpBasePath();
         this.sftpKnownHosts = settings.getSftpKnownHosts();
-        // WebDAV
         this.webDavUrl = settings.getWebDavUrl();
         this.webDavUsername = settings.getWebDavUsername();
         this.webDavPassword = settings.getWebDavPassword();
@@ -927,7 +920,6 @@ public class ApplicationSettingsViewModel {
     public String getS3KeyPrefix() { return s3KeyPrefix; }
     public void setS3KeyPrefix(String s3KeyPrefix) { this.s3KeyPrefix = s3KeyPrefix; }
 
-    // Azure getters/setters
     public String getAzureConnectionString() {
         return azureConnectionString;
     }
@@ -952,7 +944,6 @@ public class ApplicationSettingsViewModel {
         this.azureKeyPrefix = v;
     }
 
-    // SFTP getters/setters
     public String getSftpHost() {
         return sftpHost;
     }
@@ -1009,7 +1000,6 @@ public class ApplicationSettingsViewModel {
         this.sftpKnownHosts = v;
     }
 
-    // WebDAV getters/setters
     public String getWebDavUrl() {
         return webDavUrl;
     }
@@ -1042,7 +1032,6 @@ public class ApplicationSettingsViewModel {
         this.webDavKeyPrefix = v;
     }
 
-    // Backup getters/setters
     public boolean isBackupScheduleEnabled() {
         return backupScheduleEnabled;
     }

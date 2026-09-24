@@ -113,11 +113,8 @@ class EncryptionServiceTest {
         };
     }
 
-    // -------------------------------------------------------------------------
     // Chunked AES/GCM format: [QDG2 4B][salt 32B][baseIV 12B][chunk size 4B]
     // then repeated [encrypted chunk length 4B][ciphertext+tag]. Header is 52 bytes.
-    // -------------------------------------------------------------------------
-
     private static final int CHUNKED_HEADER_LENGTH = 52; // 4 + 32 + 12 + 4
     private static final int GCM_TAG_BYTES = 16;
 

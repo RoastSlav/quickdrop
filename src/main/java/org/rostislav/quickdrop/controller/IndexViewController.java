@@ -10,14 +10,10 @@ import org.springframework.web.bind.annotation.GetMapping;
 /**
  * Handles the application root and generic error page.
  *
- * <p>The root {@code GET /} redirects to the configured default home page. The
- * effective destination depends on the {@code defaultHomePage} setting and whether
- * the targeted feature (paste or file list) is currently enabled:
- * <ol>
- *   <li>{@code "paste"} + pastebin enabled → {@code /file/paste/new}</li>
- *   <li>{@code "list"} + file list enabled → {@code /file/list}</li>
- *   <li>anything else → {@code /file/upload}</li>
- * </ol>
+ * <p>The root {@code GET /} redirects to the configured {@code defaultHomePage}
+ * ({@code "paste"}/{@code "list"}/{@code "upload"}) when its target feature is enabled,
+ * otherwise cascades through upload → list → paste → {@code service-unavailable} until it
+ * finds one that's on. {@code "none"} skips straight to {@code service-unavailable}.
  */
 @Controller
 public class IndexViewController {

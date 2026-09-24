@@ -2,6 +2,9 @@
  * Shared SPA utilities — exposes window.QD
  */
 (function (global) {
+    const prefersReducedMotion = () =>
+        window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
     /**
      * Replaces a DOM section with fresh server-rendered HTML without a full
      * page reload. Fades the container during fetch, then updates the browser
@@ -11,9 +14,6 @@
      * @param {string}  containerId ID of the element to swap
      * @param {{ replace?: boolean }} [opts]
      */
-    const prefersReducedMotion = () =>
-        window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
     async function loadDynamic(url, containerId, opts = {}) {
         const container = document.getElementById(containerId);
         if (!container) return;
@@ -192,9 +192,8 @@
         setTimeout(() => el.classList.remove('is-saved'), 800);
     }
 
-    /* ── Row overflow menus ───────────────────────────────────────────────
-       Delegated from the document so menus inside list sections keep working
-       after loadDynamic() replaces the container. */
+    // Row overflow menus are delegated from the document so they keep working
+    // after loadDynamic() replaces the container.
     function closeAllRowMenus(except) {
         document.querySelectorAll('.row-menu.is-open').forEach(m => {
             if (m !== except) {
@@ -223,8 +222,7 @@
         if (e.key === 'Escape') closeAllRowMenus(null);
     });
 
-    /* ── List density ─────────────────────────────────────────────────────
-       Remembered per list id so the choice survives navigation and swaps. */
+    // List density is remembered per list id so the choice survives navigation and swaps.
     function applyDensity(listId, compact) {
         const list = document.getElementById(listId);
         if (list) list.classList.toggle('is-compact', compact);

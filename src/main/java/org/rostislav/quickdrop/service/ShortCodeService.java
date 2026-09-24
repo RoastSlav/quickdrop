@@ -19,11 +19,10 @@ import java.util.regex.Pattern;
 @Service
 public class ShortCodeService {
     /**
-     * Default random-code length. Short on purpose — every code is namespaced under a path
-     * prefix (see {@code shortenerPathPrefix} setting) and the resolver route is
-     * rate-limited, which is the intended defense against enumeration rather than length
-     * alone. Admins running a higher-value instance can raise this in settings; a longer
-     * default doesn't invalidate codes already issued at 5, since lookup is by exact match.
+     * Default random-code length. Short on purpose — the resolver route is rate-limited,
+     * which is the intended defense against enumeration rather than length alone. Admins
+     * running a higher-value instance can raise this in settings; a longer default doesn't
+     * invalidate codes already issued at 5, since lookup is by exact match.
      */
     public static final int DEFAULT_LENGTH = 5;
 

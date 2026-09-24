@@ -26,10 +26,12 @@ import java.util.concurrent.TimeUnit;
  * <ol>
  *   <li>{@link AdminPasswordSetupInterceptor} — redirects every request to the
  *       first-time setup page until an admin password has been configured.</li>
- *   <li>{@link AdminPasswordInterceptor} — protects {@code /admin/**} and
- *       {@code /file/history/*} behind an admin session token.</li>
+ *   <li>{@link AdminPasswordInterceptor} — protects {@code /admin/**} behind an
+ *       admin session token.</li>
  *   <li>{@link FilePasswordInterceptor} — enforces per-file password requirements
- *       on the {@code /file/**} routes.</li>
+ *       on the {@code /file/**} routes. {@code /file/history/*} is excluded from both
+ *       this and {@code AdminPasswordInterceptor}, gated instead by
+ *       {@code FileViewController#viewFileHistory}'s own file-session-or-admin check.</li>
  *   <li>{@link RateLimitInterceptor} — sliding-window request limiting on
  *       password/login endpoints, share-token routes ({@code /share/**} and the
  *       {@code /api/file/download/**} endpoint that streams the bytes), and the

@@ -8,10 +8,9 @@ import java.time.LocalDateTime;
 /**
  * A short code that resolves to something else when visited at {@code /{prefix}/{code}}.
  *
- * <p>Single-table inheritance keyed on {@code target_type}: {@link UploadShareLink} is the
- * only subtype today (it is the renamed {@code ShareTokenEntity}, still served at the legacy
- * {@code /share/{token}} route). A {@code RedirectLink} subtype for plain URL shortening is
- * added in a later change.
+ * <p>Single-table inheritance keyed on {@code target_type}. {@link UploadShareLink} (the
+ * renamed {@code ShareTokenEntity}, still served at the legacy {@code /share/{token}} route)
+ * and {@link RedirectLink} (plain URL shortening, {@code /s/{code}}) are the two subtypes.
  *
  * <p>Two separate counters exist deliberately: {@link #remainingUses} preserves the exact
  * atomic-decrement semantics the old {@code number_of_allowed_downloads} column had (see

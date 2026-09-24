@@ -16,17 +16,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 @RequestMapping("/password")
 public class PasswordViewController {
 
-    /**
-     * @return the application-level access password page
-     */
     @GetMapping("/login")
     public String passwordPage() {
         return "app-password";
     }
 
-    /**
-     * @return the admin password entry page
-     */
     @GetMapping("/admin")
     public String adminPasswordPage() {
         return "admin-password";

@@ -37,7 +37,7 @@ public class AsyncFileMergeService {
     private static final Logger logger = LoggerFactory.getLogger(AsyncFileMergeService.class);
     private static final int MAX_CONCURRENT_MERGES = 20;
     private static final long TASK_TTL_MINUTES = 60;
-    // Fix 3: cap totalChunks to prevent DoS via Integer.MAX_VALUE
+    // Caps totalChunks to prevent DoS via Integer.MAX_VALUE
     private static final int MAX_TOTAL_CHUNKS = 10_000;
     private static final String CHUNK_DIR_NAME = ".upload-chunks";
 
@@ -210,7 +210,6 @@ public class AsyncFileMergeService {
 
     public Upload submitChunk(UploadRequest request, MultipartFile multipartChunk, int chunkNumber,
                               boolean waitForCompletion) throws IOException {
-        // Fix 3: reject absurdly large totalChunks to prevent DoS
         if (request.totalChunks > MAX_TOTAL_CHUNKS) {
             throw new IllegalArgumentException(
                     "totalChunks " + request.totalChunks + " exceeds the maximum allowed value of " + MAX_TOTAL_CHUNKS);
@@ -254,7 +253,7 @@ public class AsyncFileMergeService {
 
         MergeTask mergeTask = mergeTasks.computeIfAbsent(taskKey, key -> {
             MergeTask task = new MergeTask(request);
-            // Fix 4: store the Future so eviction can cancel the thread
+            // Store the Future so eviction can cancel the thread
             task.future = executorService.submit(task);
             return task;
         });
@@ -494,11 +493,11 @@ public class AsyncFileMergeService {
         private final BlockingQueue<ChunkInfo> queue = new LinkedBlockingQueue<>();
         private final CompletableFuture<Upload> mergeCompletionFuture = new CompletableFuture<>();
         private final UploadRequest request;
-        // Fix 4: held so eviction can cancel this thread.
+        // Held so eviction can cancel this thread.
         volatile Future<?> future;
-        // Fix 1: ordered assembly — TreeMap keyed by chunkNumber.
+        // Ordered assembly — TreeMap keyed by chunkNumber.
         private final TreeMap<Integer, ChunkInfo> pendingChunks = new TreeMap<>();
-        // Fix 2: dedup tracker — prevents duplicate queue entries on retry.
+        // Dedup tracker — prevents duplicate queue entries on retry.
         private final Set<Integer> receivedChunks = new HashSet<>();
         private int nextExpectedChunk = 0;
         private volatile int processedChunks = 0;
@@ -583,7 +582,6 @@ public class AsyncFileMergeService {
                         : new BufferedOutputStream(baseOut);
 
                 try (finalOut) {
-                    // Fix 1: ordered write loop — park chunks in TreeMap, write in sequence.
                     while (processedChunks < request.totalChunks) {
                         ChunkInfo info = queue.take();
                         pendingChunks.put(info.chunkNumber, info);

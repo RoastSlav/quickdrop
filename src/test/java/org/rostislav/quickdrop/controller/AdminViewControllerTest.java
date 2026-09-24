@@ -23,7 +23,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 class AdminViewControllerTest extends ControllerTestSupport {
 
-    // -- GET /admin/dashboard -------------------------------------------------
+    // GET /admin/dashboard
 
     @Test
     void dashboard_withAdminSession_returns200WithAnalytics() throws Exception {
@@ -42,7 +42,7 @@ class AdminViewControllerTest extends ControllerTestSupport {
                 .andExpect(redirectedUrl("/admin/password"));
     }
 
-    // -- GET /admin/files -------------------------------------------------------
+    // GET /admin/files
 
     @Test
     void filesPage_withAdminSession_returns200() throws Exception {
@@ -63,7 +63,7 @@ class AdminViewControllerTest extends ControllerTestSupport {
                 .andExpect(model().attribute("showDeleted", true));
     }
 
-    // -- GET /admin/pastes --------------------------------------------------
+    // GET /admin/pastes
 
     @Test
     void pastesPage_withAdminSession_returns200() throws Exception {
@@ -75,7 +75,7 @@ class AdminViewControllerTest extends ControllerTestSupport {
                 .andExpect(model().attributeExists("pastesPage"));
     }
 
-    // -- GET /admin/pastes/{uuid}/history -------------------------------------
+    // GET /admin/pastes/{uuid}/history
 
     @Test
     void pasteHistory_forPaste_returns200() throws Exception {
@@ -96,7 +96,7 @@ class AdminViewControllerTest extends ControllerTestSupport {
                 .andExpect(redirectedUrl("/admin/pastes"));
     }
 
-    // -- GET/POST /admin/setup ------------------------------------------------
+    // GET/POST /admin/setup
 
     @Test
     @DirtiesContext(methodMode = DirtiesContext.MethodMode.BEFORE_METHOD)
@@ -148,7 +148,7 @@ class AdminViewControllerTest extends ControllerTestSupport {
                 .andExpect(status().isForbidden());
     }
 
-    // -- GET /admin/settings ---------------------------------------------------
+    // GET /admin/settings
 
     @Test
     void settingsPage_withAdminSession_returns200() throws Exception {
@@ -159,7 +159,7 @@ class AdminViewControllerTest extends ControllerTestSupport {
                 .andExpect(model().attributeExists("settings", "aboutInfo"));
     }
 
-    // -- POST /admin/save & /admin/api/save -----------------------------------
+    // POST /admin/save & /admin/api/save
 
     // NB: ApplicationSettingsViewModel binds every unset boolean form field to Java's default
     // (false) -- since AdminViewController#saveSettings persists the *entire* view model,
@@ -241,7 +241,7 @@ class AdminViewControllerTest extends ControllerTestSupport {
                 .andExpect(status().isBadRequest());
     }
 
-    // -- POST /admin/settings/accept-reputation-terms ------------------------
+    // POST /admin/settings/accept-reputation-terms
 
     @Test
     @org.springframework.test.annotation.DirtiesContext
@@ -395,7 +395,7 @@ class AdminViewControllerTest extends ControllerTestSupport {
                 .andExpect(status().isOk());
     }
 
-    // -- POST /admin/password --------------------------------------------------
+    // POST /admin/password
 
     @Test
     void postPassword_correctPassword_redirectsToDashboardAndEstablishesSession() throws Exception {
@@ -422,7 +422,7 @@ class AdminViewControllerTest extends ControllerTestSupport {
                 .andExpect(redirectedUrl("/admin/setup"));
     }
 
-    // -- GET /admin, /admin/ ----------------------------------------------------
+    // GET /admin, /admin/
 
     @Test
     void adminRoot_redirectsToDashboard() throws Exception {
@@ -432,7 +432,7 @@ class AdminViewControllerTest extends ControllerTestSupport {
                 .andExpect(redirectedUrl("/admin/dashboard"));
     }
 
-    // -- POST /admin/logout -------------------------------------------------
+    // POST /admin/logout
 
     @Test
     void logout_redirectsToRootAndInvalidatesSession() throws Exception {
@@ -447,7 +447,7 @@ class AdminViewControllerTest extends ControllerTestSupport {
                 .andExpect(redirectedUrl("/admin/password"));
     }
 
-    // -- GET /admin/password (no auth required) ---------------------------------
+    // GET /admin/password (no auth required)
 
     @Test
     void adminPasswordPage_isPubliclyReachable() throws Exception {
@@ -457,7 +457,7 @@ class AdminViewControllerTest extends ControllerTestSupport {
                 .andExpect(view().name("admin-password"));
     }
 
-    // -- POST /admin/keep-indefinitely/{uuid} ------------------------------------
+    // POST /admin/keep-indefinitely/{uuid}
 
     @Test
     void keepIndefinitely_withAdminSession_redirectsToFiles() throws Exception {
@@ -478,7 +478,7 @@ class AdminViewControllerTest extends ControllerTestSupport {
                 .andExpect(redirectedUrl("/admin/password"));
     }
 
-    // -- POST /admin/toggle-hidden/{uuid} ----------------------------------------
+    // POST /admin/toggle-hidden/{uuid}
 
     @Test
     void toggleHidden_withAdminSession_redirectsToFiles() throws Exception {
@@ -489,7 +489,7 @@ class AdminViewControllerTest extends ControllerTestSupport {
                 .andExpect(redirectedUrl("/admin/files"));
     }
 
-    // -- POST /admin/delete/{uuid} -----------------------------------------------
+    // POST /admin/delete/{uuid}
 
     @Test
     void deleteFile_withAdminSession_nonAjax_redirects() throws Exception {
@@ -529,7 +529,7 @@ class AdminViewControllerTest extends ControllerTestSupport {
                 .andExpect(status().isForbidden());
     }
 
-    // -- GET /admin/links, POST /admin/links/revoke-share/{id}, /revoke-redirect/{id} -----------
+    // GET /admin/links, POST /admin/links/revoke-share/{id}, /revoke-redirect/{id}
 
     @Test
     void shareLinksPage_withAdminSession_returns200() throws Exception {
@@ -570,7 +570,7 @@ class AdminViewControllerTest extends ControllerTestSupport {
         assertTrue(shareTokenRepository.findById(token.getId()).isEmpty());
     }
 
-    // -- GET /admin/activity ------------------------------------------------
+    // GET /admin/activity
 
     @Test
     void activityPage_categoryFilter_returnsEveryTypeInThatCategory() throws Exception {
@@ -735,7 +735,7 @@ class AdminViewControllerTest extends ControllerTestSupport {
                 .andExpect(model().attributeExists("activityPage", "eventTypes", "eventTypesByCategory"));
     }
 
-    // -- GET /admin/activity/export ------------------------------------------
+    // GET /admin/activity/export
 
     @Test
     void activityExport_withAdminSession_returnsCsvAttachment() throws Exception {
@@ -775,7 +775,7 @@ class AdminViewControllerTest extends ControllerTestSupport {
         assertEquals(1, body.lines().count(), body);
     }
 
-    // -- POST /admin/notification-test -------------------------------------------
+    // POST /admin/notification-test
 
     @Test
     void notificationTest_unknownTarget_returns400() throws Exception {

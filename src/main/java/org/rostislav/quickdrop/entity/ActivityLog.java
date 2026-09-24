@@ -45,9 +45,6 @@ public class ActivityLog {
     @JoinColumn(name = "short_link_id", nullable = true)
     private ShortLink shortLink;
 
-    /**
-     * Category of the event.
-     */
     @Enumerated(EnumType.STRING)
     private EventType eventType;
 

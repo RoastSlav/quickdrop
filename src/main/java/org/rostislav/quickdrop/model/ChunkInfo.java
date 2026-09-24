@@ -25,11 +25,6 @@ public class ChunkInfo {
      */
     public boolean isLastChunk;
 
-    /**
-     * @param chunkNumber zero-based index of this chunk
-     * @param chunkFile   temporary file holding the chunk data
-     * @param isLastChunk whether this is the last chunk to be merged
-     */
     public ChunkInfo(int chunkNumber, File chunkFile, boolean isLastChunk) {
         this.chunkNumber = chunkNumber;
         this.chunkFile = chunkFile;

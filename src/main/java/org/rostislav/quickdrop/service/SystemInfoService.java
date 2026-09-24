@@ -49,11 +49,6 @@ public class SystemInfoService {
         return "Unknown";
     }
 
-    /**
-     * Returns the application version from the {@code app.version} property.
-     *
-     * @return application version string
-     */
     public String getAppVersion() {
         return appVersion;
     }
@@ -76,11 +71,7 @@ public class SystemInfoService {
         return System.getProperty("os.name") + " (" + System.getProperty("os.version") + ")";
     }
 
-    /**
-     * Assembles all system info fields into an {@link AboutInfoView}.
-     *
-     * @return populated about-info view-model
-     */
+    /** Assembles all system info fields into an {@link AboutInfoView}. */
     public AboutInfoView getAboutInfo() {
         return new AboutInfoView(getAppVersion(), getSqliteVersion(), getJavaVersion(), getOsInfo());
     }

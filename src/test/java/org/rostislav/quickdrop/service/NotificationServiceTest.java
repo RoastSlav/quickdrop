@@ -202,9 +202,7 @@ class NotificationServiceTest {
         verify(settings, timeout(2000).times(2)).getDiscordWebhookUrl();
     }
 
-    // -------------------------------------------------------------------------
-    // notifyFileAction's per-EventType message-description switch (paste/share events)
-    // -------------------------------------------------------------------------
+    // notifyFileAction's per-EventType message-description switch (paste/share events).
     // Reaching the switch only needs the toggle + a "channel configured" check to pass --
     // both happen synchronously before the async submit, so these don't need the dispatch
     // to actually complete. The timeout(2000).times(2) assertion (same pattern as the

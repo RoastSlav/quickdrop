@@ -29,8 +29,8 @@ import java.util.Optional;
  * did not need to change.
  *
  * <p>Queries scoped to {@code UploadShareLink} (rather than the {@link ShortLink} base type)
- * intentionally only ever match upload-share links; a future {@code RedirectLink} subtype
- * will not appear in their results. {@link #existsByShareToken} and
+ * intentionally only ever match upload-share links; {@link RedirectLink} rows never appear
+ * in their results. {@link #existsByShareToken} and
  * {@link #deleteByIdTransactional} are scoped to the base type since code uniqueness and
  * id-based deletion are meant to span every link type sharing the same table.
  */
@@ -47,8 +47,8 @@ public interface ShortLinkRepository extends JpaRepository<ShortLink, Long> {
 
     /**
      * Finds any {@link ShortLink} by its code, regardless of target type. Used by callers
-     * (QR generation today; the general resolver in a later change) that need to look a
-     * code up before knowing what kind of link it is.
+     * (QR generation, the general {@code /s/{code}} resolver) that need to look a code up
+     * before knowing what kind of link it is.
      *
      * @param code the code value to look up
      * @return the matching link, or empty if not found

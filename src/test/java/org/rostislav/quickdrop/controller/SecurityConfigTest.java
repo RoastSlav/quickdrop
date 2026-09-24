@@ -26,7 +26,7 @@ class SecurityConfigTest extends ControllerTestSupport {
                 .andExpect(header().doesNotExist("Access-Control-Allow-Credentials"));
     }
 
-    // -- frame-ancestors: restrictive on admin/login, permissive on public routes ------------
+    // frame-ancestors: restrictive on admin/login, permissive on public routes.
     // No legitimate embedding use case for /admin/** or the app-password login page was ever
     // found (checked git history, README, docs, frontend) -- the app-wide "frame-ancestors *"
     // traces to a single undocumented commit. Public routes keep it: they carry no session

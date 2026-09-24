@@ -20,9 +20,8 @@ public interface ReputationProvider {
     String id();
 
     /**
-     * @return {@code true} if this provider is enabled and should be consulted. Individual
-     *         providers are responsible for checking both the per-provider setting and the
-     *         master {@code reputationCheckEnabled} switch is left to the caller.
+     * @return {@code true} if this provider's own setting is enabled. Checking the master
+     *         {@code reputationCheckEnabled} switch is left to the caller ({@link ReputationCheckService}).
      */
     boolean isEnabled();
 

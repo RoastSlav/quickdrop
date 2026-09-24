@@ -28,7 +28,7 @@ class LogStoragePathEnvironmentPostProcessorTest {
     @TempDir
     Path tempDir;
 
-    // -- reading the setting ---------------------------------------------------
+    // reading the setting
 
     @Test
     void readsConfiguredPathFromTheSettingsRow() throws Exception {
@@ -82,7 +82,7 @@ class LogStoragePathEnvironmentPostProcessorTest {
         assertEquals(Optional.empty(), processor.readConfiguredDirectory("jdbc:sqlite::memory:"));
     }
 
-    // -- rejecting an unusable value -------------------------------------------
+    // rejecting an unusable value
 
     @Test
     void rejectsAPathThatEscapesTheApplicationDirectory() {
@@ -99,7 +99,7 @@ class LogStoragePathEnvironmentPostProcessorTest {
         assertTrue(processor.isUsable(tempDir.toString()));
     }
 
-    // -- contributing the property ---------------------------------------------
+    // contributing the property
 
     @Test
     void pointsLoggingFileNameAtTheConfiguredDirectoryAndCreatesIt() throws Exception {
@@ -137,7 +137,7 @@ class LogStoragePathEnvironmentPostProcessorTest {
         assertEquals("target/test-data/explicit.log", environment.getProperty("logging.file.name"));
     }
 
-    // -- helpers ---------------------------------------------------------------
+    // helpers
 
     private StandardEnvironment environmentWithDatabase(Path database) {
         StandardEnvironment environment = new StandardEnvironment();

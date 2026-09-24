@@ -79,10 +79,6 @@ public class PasteService {
         this.passwordEncoder = passwordEncoder;
     }
 
-    // -------------------------------------------------------------------------
-    // Analytics aggregates
-    // -------------------------------------------------------------------------
-
     /**
      * @return number of live (non-deleted) paste entries
      */
@@ -106,10 +102,6 @@ public class PasteService {
     public long getMarkdownPasteCount() {
         return pasteRepository.countMarkdownPastes();
     }
-
-    // -------------------------------------------------------------------------
-    // Paginated listings
-    // -------------------------------------------------------------------------
 
     /**
      * Returns a paginated list of pastes with pre-aggregated view counts, optionally
@@ -142,10 +134,6 @@ public class PasteService {
         }
         return pasteRepository.searchDeletedPastesWithViewCounts(query, pageable);
     }
-
-    // -------------------------------------------------------------------------
-    // CRUD
-    // -------------------------------------------------------------------------
 
     /**
      * Creates a new paste from the provided title, content, and syntax hint.
@@ -369,10 +357,6 @@ public class PasteService {
         RequesterInfo info = getRequesterInfo(request, applicationSettingsService.isTrustedProxyEnabled());
         activityLogRepository.save(new ActivityLog(paste, EventType.PASTE_VIEW, info.ipAddress(), info.userAgent()));
     }
-
-    // -------------------------------------------------------------------------
-    // Private helpers
-    // -------------------------------------------------------------------------
 
     /**
      * Extracts the cleartext file password from the file session token stored in the

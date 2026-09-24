@@ -1,4 +1,3 @@
-// Handles chunked upload network interaction
 const activeUploadIds = new Set();
 let unloadAbortListenerAttached = false;
 const UPLOAD_CHUNK_SIZE = 4 * 1024 * 1024;
@@ -543,7 +542,7 @@ function buildChunkFormData(
         formData.append("archiveUpload", candidate.archiveUpload ? "true" : "false");
         if (candidate.archiveUpload) {
             formData.append("archiveName", candidate.archiveName || "");
-            // Fix 5: only send the manifest on the last chunk to avoid wasted bandwidth
+            // Only send the manifest on the last chunk to avoid wasted bandwidth
             if (chunkNumber === totalChunks - 1) {
                 formData.append("archiveManifest", candidate.archiveManifest || "[]");
             }

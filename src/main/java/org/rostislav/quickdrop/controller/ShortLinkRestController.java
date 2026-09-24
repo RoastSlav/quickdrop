@@ -33,10 +33,8 @@ import static org.rostislav.quickdrop.util.FileUtils.validateShareToken;
 import static org.springframework.http.ResponseEntity.ok;
 
 /**
- * REST API for short-link-related media. Starts with QR code generation, which applies
- * immediately to every existing upload-share link with no new UI required; creation and
- * resolution endpoints for plain-URL redirect links ({@code POST /api/link}, etc.) are
- * added here in a later change.
+ * REST API for short links: QR code generation for any {@link ShortLink} (upload-share or
+ * redirect), and creation of new redirect links ({@code POST /api/link}).
  */
 @RestController
 @RequestMapping("/api/link")

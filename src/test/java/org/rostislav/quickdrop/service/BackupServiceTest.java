@@ -80,9 +80,7 @@ class BackupServiceTest extends QuickdropIntegrationTest {
         return fileRepository.save(file);
     }
 
-    // -------------------------------------------------------------------------
     // createBackup
-    // -------------------------------------------------------------------------
 
     @Test
     void createBackup_producesAValidStandaloneSqliteFileContainingCurrentData() throws Exception {
@@ -115,9 +113,7 @@ class BackupServiceTest extends QuickdropIntegrationTest {
         assertTrue(backupService.listBackups().isEmpty());
     }
 
-    // -------------------------------------------------------------------------
     // uploadBackup
-    // -------------------------------------------------------------------------
 
     @Test
     void uploadBackup_validSqliteFile_isAcceptedAndListed() throws Exception {
@@ -165,9 +161,7 @@ class BackupServiceTest extends QuickdropIntegrationTest {
         assertEquals(2, backupService.listBackups().size(), "an upload must be pruned like any other backup once past maxBackups");
     }
 
-    // -------------------------------------------------------------------------
     // pruning
-    // -------------------------------------------------------------------------
 
     @Test
     void createBackup_prunesOldestBackupsBeyondMaxBackups() throws Exception {
@@ -195,9 +189,7 @@ class BackupServiceTest extends QuickdropIntegrationTest {
                 "a zero retention must not wipe the backups, including the one just created");
     }
 
-    // -------------------------------------------------------------------------
     // restoreBackup
-    // -------------------------------------------------------------------------
 
     @Test
     void restoreBackup_happyPath_stagesFileWithoutTouchingLiveDatabaseOrSidecars() throws Exception {
@@ -267,9 +259,7 @@ class BackupServiceTest extends QuickdropIntegrationTest {
                 "a failed integrity check must not stage anything either");
     }
 
-    // -------------------------------------------------------------------------
     // deleteBackup
-    // -------------------------------------------------------------------------
 
     @Test
     void deleteBackup_removesAnExistingBackupOutsideThePruneCycle() {
@@ -287,9 +277,7 @@ class BackupServiceTest extends QuickdropIntegrationTest {
         assertFalse(result.success());
     }
 
-    // -------------------------------------------------------------------------
     // resolveForDownload
-    // -------------------------------------------------------------------------
 
     @Test
     void resolveForDownload_returnsPathForExistingBackup() {
@@ -311,9 +299,7 @@ class BackupServiceTest extends QuickdropIntegrationTest {
         assertNull(backupService.resolveForDownload("quickdrop-2099-01-01T00-00-00.db"));
     }
 
-    // -------------------------------------------------------------------------
     // updateSchedule / onSettingsChanged
-    // -------------------------------------------------------------------------
 
     @Test
     void updateSchedule_registersATaskWhenEnabled() {

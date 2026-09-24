@@ -85,7 +85,7 @@ class LinkGuardTest {
         assertEquals("invalid_url", verdict.reasonCode());
     }
 
-    // --------------------------------------------------------- domain rules
+    // domain rules
 
     @Test
     void blocklistRejectsAListedDomain() {

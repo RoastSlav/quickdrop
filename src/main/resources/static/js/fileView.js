@@ -392,9 +392,8 @@ function updateShareLink(link) {
     }
 
     qrContainer.classList.remove("hidden");
-    // The share link is always /share/{code} (or, once the general shortener resolver
-    // exists, /{prefix}/{code}) -- either way the code is the last path segment, so this
-    // works without needing generateShareLink() to separately thread the code through.
+    // The share link is always /share/{code} -- the code is the last path segment, so
+    // this works without needing generateShareLink() to separately thread it through.
     const code = new URL(link, window.location.origin).pathname.split("/").filter(Boolean).pop();
     qrImage.src = `/api/link/${encodeURIComponent(code)}/qr.svg?size=150`;
 }

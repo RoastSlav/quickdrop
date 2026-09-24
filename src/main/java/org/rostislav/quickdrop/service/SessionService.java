@@ -143,22 +143,10 @@ public class SessionService implements HttpSessionListener {
         return token;
     }
 
-    /**
-     * Checks whether a token is a currently registered admin session token.
-     *
-     * @param string the token string to check
-     * @return {@code true} if the token is valid
-     */
     public boolean validateAdminToken(String string) {
         return adminSessionTokens.contains(string);
     }
 
-    /**
-     * Checks whether the current HTTP request carries a valid admin session token.
-     *
-     * @param request the HTTP request
-     * @return {@code true} if the request has an active admin session
-     */
     public boolean hasValidAdminSession(HttpServletRequest request) {
         HttpSession session = request.getSession(false);
         if (session == null) return false;
@@ -166,11 +154,6 @@ public class SessionService implements HttpSessionListener {
         return token != null && validateAdminToken(token.toString());
     }
 
-    /**
-     * Invalidates the admin session token stored in the current HTTP session.
-     *
-     * @param request the HTTP request whose admin session should be invalidated
-     */
     public void invalidateAdminSession(HttpServletRequest request) {
         HttpSession session = request.getSession(false);
         if (session == null) {

@@ -30,14 +30,8 @@ public class ApplicationSettingsEntity {
      */
     private long maxFileLifeTime;
 
-    /**
-     * File-system path (relative or absolute) where uploaded files are stored.
-     */
     private String fileStoragePath;
 
-    /**
-     * File-system path for log output.
-     */
     private String logStoragePath;
 
     /**
@@ -45,9 +39,6 @@ public class ApplicationSettingsEntity {
      */
     private String fileDeletionCron;
 
-    /**
-     * Whether a site-wide application password is enforced for all users.
-     */
     private boolean appPasswordEnabled;
 
     /**
@@ -80,14 +71,8 @@ public class ApplicationSettingsEntity {
      */
     private boolean encryptionEnabled;
 
-    /**
-     * When {@code true}, upload-time passwords are accepted.
-     */
     private boolean uploadPasswordEnabled;
 
-    /**
-     * When {@code true}, in-browser file preview is enabled.
-     */
     private boolean previewEnabled;
 
     /**
@@ -105,19 +90,10 @@ public class ApplicationSettingsEntity {
      */
     private String defaultHomePage;
 
-    /**
-     * When {@code true}, only admins may pin files with "keep indefinitely".
-     */
     private boolean keepIndefinitelyAdminOnly;
 
-    /**
-     * When {@code true}, only admins may hide files from the public listing.
-     */
     private boolean hideFromListAdminOnly;
 
-    /**
-     * Whether Discord webhook notifications are enabled.
-     */
     private boolean discordWebhookEnabled;
 
     /**
@@ -125,9 +101,6 @@ public class ApplicationSettingsEntity {
      */
     private String discordWebhookUrl;
 
-    /**
-     * Whether email notifications are enabled.
-     */
     private boolean emailNotificationsEnabled;
 
     /**
@@ -140,9 +113,6 @@ public class ApplicationSettingsEntity {
      */
     private String emailTo;
 
-    /**
-     * SMTP server hostname.
-     */
     private String smtpHost;
 
     /**
@@ -150,14 +120,8 @@ public class ApplicationSettingsEntity {
      */
     private Integer smtpPort;
 
-    /**
-     * SMTP authentication username.
-     */
     private String smtpUsername;
 
-    /**
-     * SMTP authentication password.
-     */
     private String smtpPassword;
 
     /**
@@ -170,14 +134,8 @@ public class ApplicationSettingsEntity {
      */
     private boolean smtpUseSsl;
 
-    /**
-     * Whether notifications are queued and dispatched in periodic batches.
-     */
     private boolean notificationBatchEnabled;
 
-    /**
-     * Interval in minutes between batch notification flushes.
-     */
     private Integer notificationBatchMinutes;
 
     /**
@@ -186,24 +144,12 @@ public class ApplicationSettingsEntity {
      */
     private boolean simplifiedShareLinks;
 
-    /**
-     * When {@code true}, share-link generation is enabled.
-     */
     private boolean shareLinksEnabled;
 
-    /**
-     * When {@code true}, file uploads are enabled for all users.
-     */
     private boolean uploadEnabled = true;
 
-    /**
-     * When {@code true}, only admin sessions may upload files.
-     */
     private boolean uploadAdminOnly;
 
-    /**
-     * Whether the Pastebin feature is available.
-     */
     private boolean pastebinEnabled;
 
     /**
@@ -212,9 +158,6 @@ public class ApplicationSettingsEntity {
      */
     private boolean shortenerEnabled = true;
 
-    /**
-     * When {@code true}, only admin sessions may create redirect links.
-     */
     private boolean shortenerAdminOnly;
 
     /**
@@ -239,9 +182,6 @@ public class ApplicationSettingsEntity {
      */
     private int shareTokenLength = 8;
 
-    /**
-     * When {@code true}, users may request a human-chosen alias instead of a random code.
-     */
     private boolean shortenerCustomAliasEnabled = true;
 
     /**
@@ -407,54 +347,20 @@ public class ApplicationSettingsEntity {
      */
     private String defaultLanguage = "en";
 
-    /**
-     * Whether Discord/email notifications are sent for file upload events.
-     */
     private boolean notifyOnUpload = true;
-    /**
-     * Whether notifications are sent for direct file download events.
-     */
     private boolean notifyOnDownload = true;
-    /**
-     * Whether notifications are sent when a file's expiry is renewed.
-     */
     private boolean notifyOnRenewal = true;
-    /**
-     * Whether notifications are sent when a file is deleted.
-     */
     private boolean notifyOnDeletion = true;
-    /**
-     * Whether notifications are sent when a share token is created.
-     */
     private boolean notifyOnShareCreate = true;
-    /**
-     * Whether notifications are sent when a file is downloaded via a share token.
-     */
     private boolean notifyOnShareDownload = false;
-    /**
-     * Whether notifications are sent when a new paste is created.
-     */
     private boolean notifyOnPasteCreate = true;
-    /**
-     * Whether notifications are sent when a paste is viewed.
-     */
     private boolean notifyOnPasteView = false;
-    /**
-     * Whether notifications are sent when a paste is edited.
-     */
     private boolean notifyOnPasteEdit = true;
 
-    /**
-     * Whether notifications are sent when the active storage backend becomes unreachable.
-     */
     private boolean notifyOnStorageDown = true;
 
-    /**
-     * Whether notifications are sent when the active storage backend recovers.
-     */
     private boolean notifyOnStorageUp = true;
 
-    /** Active file storage backend (LOCAL or S3). */
     @Enumerated(EnumType.STRING)
     private StorageBackend storageBackend = StorageBackend.LOCAL;
 
@@ -462,7 +368,6 @@ public class ApplicationSettingsEntity {
     @Column(name = "s3_endpoint")
     private String s3Endpoint;
 
-    /** S3 bucket name. */
     @Column(name = "s3_bucket")
     private String s3Bucket;
 
@@ -470,11 +375,9 @@ public class ApplicationSettingsEntity {
     @Column(name = "s3_region")
     private String s3Region = "us-east-1";
 
-    /** S3 access key ID. */
     @Column(name = "s3_access_key")
     private String s3AccessKey;
 
-    /** S3 secret access key. */
     @Column(name = "s3_secret_key")
     private String s3SecretKey;
 
@@ -486,8 +389,6 @@ public class ApplicationSettingsEntity {
     @Column(name = "s3_key_prefix")
     private String s3KeyPrefix = "";
 
-    // ── Azure Blob Storage ────────────────────────────────────────────────────
-
     @Column(name = "azure_connection_string")
     private String azureConnectionString;
 
@@ -496,8 +397,6 @@ public class ApplicationSettingsEntity {
 
     @Column(name = "azure_key_prefix")
     private String azureKeyPrefix = "";
-
-    // ── SFTP ──────────────────────────────────────────────────────────────────
 
     @Column(name = "sftp_host")
     private String sftpHost;
@@ -520,8 +419,6 @@ public class ApplicationSettingsEntity {
     @Column(name = "sftp_known_hosts")
     private String sftpKnownHosts;
 
-    // ── WebDAV ────────────────────────────────────────────────────────────────
-
     @Column(name = "webdav_url")
     private String webDavUrl;
 
@@ -533,8 +430,6 @@ public class ApplicationSettingsEntity {
 
     @Column(name = "webdav_key_prefix")
     private String webDavKeyPrefix = "";
-
-    // ── Database backups ─────────────────────────────────────────────────────
 
     /** Whether the automatic backup schedule is active. Opt-in; "Backup Now" ignores this. */
     @Column(name = "backup_schedule_enabled")
@@ -554,8 +449,6 @@ public class ApplicationSettingsEntity {
     /**
      * Convenience constructor that copies values from a view-model.
      * Does not copy the app password — use {@link #setAppPasswordHash(String)} separately.
-     *
-     * @param settings the view-model populated from the settings form
      */
     public ApplicationSettingsEntity(ApplicationSettingsViewModel settings) {
         this.id = settings.getId();
@@ -613,11 +506,9 @@ public class ApplicationSettingsEntity {
         this.s3SecretKey = settings.getS3SecretKey();
         this.s3PathStyle = settings.isS3PathStyle();
         this.s3KeyPrefix = settings.getS3KeyPrefix() != null ? settings.getS3KeyPrefix() : "";
-        // Azure
         this.azureConnectionString = settings.getAzureConnectionString();
         this.azureContainerName = settings.getAzureContainerName();
         this.azureKeyPrefix = settings.getAzureKeyPrefix() != null ? settings.getAzureKeyPrefix() : "";
-        // SFTP
         this.sftpHost = settings.getSftpHost();
         this.sftpPort = settings.getSftpPort() != null ? settings.getSftpPort() : 22;
         this.sftpUsername = settings.getSftpUsername();
@@ -625,7 +516,6 @@ public class ApplicationSettingsEntity {
         this.sftpPrivateKey = settings.getSftpPrivateKey();
         this.sftpBasePath = settings.getSftpBasePath() != null ? settings.getSftpBasePath() : "/";
         this.sftpKnownHosts = settings.getSftpKnownHosts();
-        // WebDAV
         this.webDavUrl = settings.getWebDavUrl();
         this.webDavUsername = settings.getWebDavUsername();
         this.webDavPassword = settings.getWebDavPassword();
@@ -1316,7 +1206,6 @@ public class ApplicationSettingsEntity {
     public String getS3KeyPrefix() { return s3KeyPrefix; }
     public void setS3KeyPrefix(String s3KeyPrefix) { this.s3KeyPrefix = s3KeyPrefix; }
 
-    // Azure getters/setters
     public String getAzureConnectionString() {
         return azureConnectionString;
     }
@@ -1341,7 +1230,6 @@ public class ApplicationSettingsEntity {
         this.azureKeyPrefix = azureKeyPrefix;
     }
 
-    // SFTP getters/setters
     public String getSftpHost() {
         return sftpHost;
     }
@@ -1398,7 +1286,6 @@ public class ApplicationSettingsEntity {
         this.sftpKnownHosts = sftpKnownHosts;
     }
 
-    // WebDAV getters/setters
     public String getWebDavUrl() {
         return webDavUrl;
     }
@@ -1431,7 +1318,6 @@ public class ApplicationSettingsEntity {
         this.webDavKeyPrefix = webDavKeyPrefix;
     }
 
-    // Backup getters/setters
     public boolean isBackupScheduleEnabled() {
         return backupScheduleEnabled;
     }

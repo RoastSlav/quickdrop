@@ -39,6 +39,8 @@ import static org.springframework.http.ResponseEntity.ok;
 @RestController
 @RequestMapping("/api/link")
 public class ShortLinkRestController {
+    private static final String MESSAGE_KEY = "message";
+
     private final ShortLinkRepository shortLinkRepository;
     private final QrCodeService qrCodeService;
     private final ShortLinkService shortLinkService;
@@ -76,10 +78,10 @@ public class ShortLinkRestController {
         boolean isAdmin = sessionService.hasValidAdminSession(request);
         if (!applicationSettingsService.isShortenerEnabled()
                 || (applicationSettingsService.isShortenerAdminOnly() && !isAdmin)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("message", "The link shortener is disabled."));
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of(MESSAGE_KEY, "The link shortener is disabled."));
         }
         if (maxUses != null && maxUses < 0) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Max uses cannot be negative."));
+            return ResponseEntity.badRequest().body(Map.of(MESSAGE_KEY, "Max uses cannot be negative."));
         }
         String creatorIp = getRequesterInfo(request, applicationSettingsService.isTrustedProxyEnabled()).ipAddress();
         try {
@@ -95,7 +97,7 @@ public class ShortLinkRestController {
                     "qrPngUrl", "/api/link/" + link.code + "/qr.png"
             ));
         } catch (LinkRejectedException e) {
-            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+            return ResponseEntity.badRequest().body(Map.of(MESSAGE_KEY, e.getMessage()));
         }
     }
 

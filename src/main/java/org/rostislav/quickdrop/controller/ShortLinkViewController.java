@@ -47,6 +47,7 @@ import static org.rostislav.quickdrop.util.FileUtils.validateShareToken;
  */
 @Controller
 public class ShortLinkViewController {
+    private static final String INVALID_SHARE_LINK_VIEW = "invalid-share-link";
     private static final Logger logger = LoggerFactory.getLogger(ShortLinkViewController.class);
 
     private final ShortLinkRepository shortLinkRepository;
@@ -106,7 +107,7 @@ public class ShortLinkViewController {
     public String resolve(@PathVariable String code, HttpServletRequest request, Model model) {
         Optional<ShortLink> found = shortLinkRepository.findByCode(code);
         if (found.isEmpty() || !validateShareToken(found.get())) {
-            return "invalid-share-link";
+            return INVALID_SHARE_LINK_VIEW;
         }
         ShortLink link = found.get();
 
@@ -118,7 +119,7 @@ public class ShortLinkViewController {
         if (!linkGuard.checkForRedirect(redirectLink.targetUrl).allowed()) {
             RequesterInfo blockedInfo = getRequesterInfo(request, applicationSettingsService.isTrustedProxyEnabled());
             shortLinkService.logBlockedVisit(link, blockedInfo.ipAddress(), blockedInfo.userAgent());
-            return "invalid-share-link";
+            return INVALID_SHARE_LINK_VIEW;
         }
 
         boolean isAdmin = sessionService.hasValidAdminSession(request);
@@ -144,7 +145,7 @@ public class ShortLinkViewController {
     public String confirm(@PathVariable String code) {
         Optional<ShortLink> resolved = shortLinkService.resolveAndRecordVisit(code);
         if (resolved.isEmpty()) {
-            return "invalid-share-link";
+            return INVALID_SHARE_LINK_VIEW;
         }
         ShortLink link = resolved.get();
         if (link instanceof UploadShareLink) {

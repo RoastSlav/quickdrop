@@ -41,6 +41,11 @@ import static org.rostislav.quickdrop.util.FileUtils.*;
 @Controller
 @RequestMapping("/file")
 public class FileViewController {
+    private static final String IS_PUBLICLY_ACCESSIBLE_ATTR = "isPubliclyAccessible";
+    private static final String REDIRECT_HOME = "redirect:/";
+    private static final String REDIRECT_FILE_LIST = "redirect:/file/list";
+    private static final String REDIRECT_FILE_PASSWORD_PREFIX = "redirect:/file/password/";
+    private static final String REDIRECT_FILE_PREFIX = "redirect:/file/";
     private static final Logger logger = LoggerFactory.getLogger(FileViewController.class);
     private final FileQueryService fileQueryService;
     private final FileLifecycleService fileLifecycleService;
@@ -70,10 +75,10 @@ public class FileViewController {
     public String showUploadFile(Model model, HttpServletRequest request) {
         boolean isAdmin = sessionService.hasValidAdminSession(request);
         if (!isAdmin && !applicationSettingsService.isUploadEnabled()) {
-            return "redirect:/";
+            return REDIRECT_HOME;
         }
         if (!isAdmin && applicationSettingsService.isUploadAdminOnly()) {
-            return "redirect:/";
+            return REDIRECT_HOME;
         }
         model.addAttribute("maxFileSize", applicationSettingsService.getFormattedMaxFileSize());
         model.addAttribute("maxFileLifeTime", applicationSettingsService.getMaxFileLifeTime());
@@ -89,7 +94,7 @@ public class FileViewController {
                             HttpServletRequest request) {
         boolean hasAdminSession = sessionService.hasValidAdminSession(request);
         if (!applicationSettingsService.isFileListPageEnabled() && !hasAdminSession) {
-            return "redirect:/";
+            return REDIRECT_HOME;
         }
 
         int pageNumber = clampPage(page);
@@ -123,11 +128,11 @@ public class FileViewController {
         }
         if (fileEntity == null) {
             logger.info("File not found for UUID: {}", uuid);
-            return "redirect:/file/list";
+            return REDIRECT_FILE_LIST;
         }
 
         if (fileEntity.deleted && !sessionService.hasValidAdminSession(request)) {
-            return "redirect:/file/list";
+            return REDIRECT_FILE_LIST;
         }
 
         model.addAttribute("isDeleted", fileEntity.deleted);
@@ -142,16 +147,16 @@ public class FileViewController {
                 model.addAttribute("isMarkdownPaste", false);
                 model.addAttribute("isImmutable", paste.immutable);
                 model.addAttribute("isEditOnly", paste.editOnly);
-                model.addAttribute("isPubliclyAccessible", false);
+                model.addAttribute(IS_PUBLICLY_ACCESSIBLE_ATTR, false);
                 return "pasteView";
             }
 
             if (!fileQueryService.isAuthorizedForFile(uuid, request)) {
-                return "redirect:/file/password/" + uuid;
+                return REDIRECT_FILE_PASSWORD_PREFIX + uuid;
             }
             String pasteContent = pasteService.getPasteContent(uuid, request);
             if (pasteContent == null) {
-                return "redirect:/file/password/" + uuid;
+                return REDIRECT_FILE_PASSWORD_PREFIX + uuid;
             }
 
             pasteService.logPasteView(uuid, request);
@@ -165,7 +170,7 @@ public class FileViewController {
             // AND the app-wide password is not enabled.
             boolean noFileAuth = paste.passwordHash == null || paste.passwordHash.isBlank() || paste.editOnly;
             boolean noAppAuth = !applicationSettingsService.isAppPasswordEnabled();
-            model.addAttribute("isPubliclyAccessible", noFileAuth && noAppAuth);
+            model.addAttribute(IS_PUBLICLY_ACCESSIBLE_ATTR, noFileAuth && noAppAuth);
             return "pasteView";
         }
 
@@ -194,7 +199,7 @@ public class FileViewController {
         model.addAttribute("maxPreviewSizeMB", previewLimit / 1024 / 1024);
         // Nothing gates this file, so a share link would grant exactly what the page URL
         // already grants — the Share panel offers the page link instead of minting one.
-        model.addAttribute("isPubliclyAccessible",
+        model.addAttribute(IS_PUBLICLY_ACCESSIBLE_ATTR,
                 (fileEntity.passwordHash == null || fileEntity.passwordHash.isBlank())
                         && !applicationSettingsService.isAppPasswordEnabled());
 
@@ -223,7 +228,7 @@ public class FileViewController {
     public String viewFileHistory(@PathVariable String uuid, Model model, HttpServletRequest request) {
         Upload fileEntity = fileQueryService.getFile(uuid).orElse(null);
         if (fileEntity == null) {
-            return "redirect:/file/list";
+            return REDIRECT_FILE_LIST;
         }
 
         // History exposes every visitor's IP address and user agent, so unlike view/download
@@ -235,7 +240,7 @@ public class FileViewController {
                 return "redirect:/admin/password";
             }
             if (!fileQueryService.isAuthorizedForFile(uuid, request)) {
-                return "redirect:/file/password/" + uuid;
+                return REDIRECT_FILE_PASSWORD_PREFIX + uuid;
             }
         }
 
@@ -271,13 +276,13 @@ public class FileViewController {
             String fileSessionToken = sessionService.addFileSessionToken(UUID.randomUUID().toString(), password, uuid);
             request.getSession().setAttribute(SessionService.FILE_SESSION_TOKEN_ATTR, fileSessionToken);
             logger.info("Token has been added to the session for file UUID: {}", uuid);
-            return editMode ? "redirect:/file/paste/edit/" + uuid : "redirect:/file/" + uuid;
+            return editMode ? "redirect:/file/paste/edit/" + uuid : REDIRECT_FILE_PREFIX + uuid;
         } else {
             logger.info("Incorrect password attempt for file UUID: {}", uuid);
             redirectAttributes.addFlashAttribute("passwordError", true);
             return editMode
-                    ? "redirect:/file/password/" + uuid + "?editMode=true"
-                    : "redirect:/file/password/" + uuid;
+                    ? REDIRECT_FILE_PASSWORD_PREFIX + uuid + "?editMode=true"
+                    : REDIRECT_FILE_PASSWORD_PREFIX + uuid;
         }
     }
 
@@ -304,21 +309,21 @@ public class FileViewController {
     @PostMapping("/extend/{uuid}")
     public String extendFile(@PathVariable String uuid, HttpServletRequest request) {
         Upload file = fileQueryService.getFile(uuid).orElse(null);
-        if (file == null || file.deleted) return "redirect:/file/" + uuid;
+        if (file == null || file.deleted) return REDIRECT_FILE_PREFIX + uuid;
         fileLifecycleService.extendFile(uuid, request);
-        return "redirect:/file/" + uuid;
+        return REDIRECT_FILE_PREFIX + uuid;
     }
 
     @PostMapping("/delete/{uuid}")
     public String deleteFile(@PathVariable String uuid, HttpServletRequest request) {
         if (!isAuthorizedToDelete(uuid, request)) {
-            return "redirect:/file/" + uuid;
+            return REDIRECT_FILE_PREFIX + uuid;
         }
         RequesterInfo info = FileUtils.getRequesterInfo(request, applicationSettingsService.isTrustedProxyEnabled());
         if (fileLifecycleService.deleteFileFromDatabaseAndFileSystem(uuid, info.ipAddress(), info.userAgent())) {
-            return "redirect:/file/list";
+            return REDIRECT_FILE_LIST;
         } else {
-            return "redirect:/file/" + uuid;
+            return REDIRECT_FILE_PREFIX + uuid;
         }
     }
 
@@ -341,7 +346,7 @@ public class FileViewController {
     public String searchFiles(@RequestParam String query,
                               @RequestParam(name = "size", defaultValue = "20") int size) {
         if (query == null || query.isBlank()) {
-            return "redirect:/file/list";
+            return REDIRECT_FILE_LIST;
         }
         int pageSize = clampSize(size);
         String encodedQuery = UriUtils.encodeQueryParam(query, java.nio.charset.StandardCharsets.UTF_8);
@@ -353,26 +358,26 @@ public class FileViewController {
                                          @RequestParam(required = false, defaultValue = "false") boolean keepIndefinitely,
                                          HttpServletRequest request) {
         Upload f = fileQueryService.getFile(uuid).orElse(null);
-        if (f != null && f.deleted) return "redirect:/file/" + uuid;
+        if (f != null && f.deleted) return REDIRECT_FILE_PREFIX + uuid;
         Upload fileEntity = fileLifecycleService.updateKeepIndefinitely(uuid, keepIndefinitely, request);
         if (fileEntity != null) {
             logger.info("Updated keep indefinitely for file UUID: {} to {}", uuid, keepIndefinitely);
-            return "redirect:/file/" + fileEntity.uuid;
+            return REDIRECT_FILE_PREFIX + fileEntity.uuid;
         }
-        return "redirect:/file/list";
+        return REDIRECT_FILE_LIST;
     }
 
 
     @PostMapping("/toggle-hidden/{uuid}")
     public String toggleHidden(@PathVariable String uuid, HttpServletRequest request) {
         Upload f = fileQueryService.getFile(uuid).orElse(null);
-        if (f != null && f.deleted) return "redirect:/file/" + uuid;
+        if (f != null && f.deleted) return REDIRECT_FILE_PREFIX + uuid;
         Upload fileEntity = fileLifecycleService.toggleHidden(uuid, request);
         if (fileEntity != null) {
             logger.info("Updated hidden for file UUID: {} to {}", uuid, fileEntity.hidden);
-            return "redirect:/file/" + fileEntity.uuid;
+            return REDIRECT_FILE_PREFIX + fileEntity.uuid;
         }
-        return "redirect:/file/list";
+        return REDIRECT_FILE_LIST;
     }
 
     private void populateModelAttributes(Upload fileEntity, Model model, HttpServletRequest request) {

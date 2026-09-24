@@ -23,6 +23,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * Integration tests for {@link AsyncFileMergeService} against the real Spring context,
@@ -367,12 +369,12 @@ class AsyncFileMergeServiceTest extends QuickdropIntegrationTest {
      */
     @Test
     void tempDirResolvesToAnAbsolutePathEvenWhenFileStoragePathIsRelative() {
-        ApplicationSettingsService settings = org.mockito.Mockito.mock(ApplicationSettingsService.class);
+        ApplicationSettingsService settings = mock(ApplicationSettingsService.class);
         String relativePath = "target/regression-test-relative-storage-" + UUID.randomUUID();
-        org.mockito.Mockito.when(settings.getFileStoragePath()).thenReturn(relativePath);
+        when(settings.getFileStoragePath()).thenReturn(relativePath);
 
         AsyncFileMergeService service = new AsyncFileMergeService(
-                settings, null, null, null, null, org.mockito.Mockito.mock(StorageService.class));
+                settings, null, null, null, null, mock(StorageService.class));
         try {
             File tempDir = (File) ReflectionTestUtils.invokeMethod(service, "resolveTempDir");
             assertNotNull(tempDir);
@@ -398,12 +400,12 @@ class AsyncFileMergeServiceTest extends QuickdropIntegrationTest {
         File blocker = File.createTempFile("quickdrop-not-a-directory", ".tmp");
         blocker.deleteOnExit();
 
-        ApplicationSettingsService settings = org.mockito.Mockito.mock(ApplicationSettingsService.class);
-        org.mockito.Mockito.when(settings.getFileStoragePath())
+        ApplicationSettingsService settings = mock(ApplicationSettingsService.class);
+        when(settings.getFileStoragePath())
                 .thenReturn(new File(blocker, "storage").getPath());
 
         AsyncFileMergeService service = new AsyncFileMergeService(
-                settings, null, null, null, null, org.mockito.Mockito.mock(StorageService.class));
+                settings, null, null, null, null, mock(StorageService.class));
 
         File tempDir = (File) ReflectionTestUtils.invokeMethod(service, "resolveTempDir");
         assertNotNull(tempDir);

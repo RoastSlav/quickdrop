@@ -5,12 +5,13 @@ import org.apache.catalina.connector.Connector;
 import org.apache.catalina.connector.Request;
 import org.apache.catalina.connector.Response;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 import org.rostislav.quickdrop.service.ApplicationSettingsService;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * Plain unit test -- no Spring context, no MockMvc. MockMvc doesn't run requests through a
@@ -22,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 class TrustedProxySecureSchemeValveTest {
 
-    private final ApplicationSettingsService settings = Mockito.mock(ApplicationSettingsService.class);
+    private final ApplicationSettingsService settings = mock(ApplicationSettingsService.class);
     private final CapturingValve next = new CapturingValve();
     private final TrustedProxySecureSchemeValve valve = new TrustedProxySecureSchemeValve(settings);
 
@@ -32,7 +33,7 @@ class TrustedProxySecureSchemeValveTest {
 
     @Test
     void trustedProxyEnabled_forwardedHttps_marksRequestSecure() throws Exception {
-        Mockito.when(settings.isTrustedProxyEnabled()).thenReturn(true);
+        when(settings.isTrustedProxyEnabled()).thenReturn(true);
         Request request = newRequest();
         request.getCoyoteRequest().getMimeHeaders().addValue("X-Forwarded-Proto").setString("https");
 
@@ -47,7 +48,7 @@ class TrustedProxySecureSchemeValveTest {
     void trustedProxyEnabled_forwardedHttps_noForwardedPort_correctsServerPortTo443() throws Exception {
         // Host header carried no port, so Tomcat's parser already defaulted serverPort to 80
         // (its own http-scheme default at parse time) before this valve ever runs.
-        Mockito.when(settings.isTrustedProxyEnabled()).thenReturn(true);
+        when(settings.isTrustedProxyEnabled()).thenReturn(true);
         Request request = newRequest();
         request.getCoyoteRequest().getMimeHeaders().addValue("X-Forwarded-Proto").setString("https");
         request.setServerPort(80);
@@ -59,7 +60,7 @@ class TrustedProxySecureSchemeValveTest {
 
     @Test
     void trustedProxyEnabled_forwardedHttps_withForwardedPort_honorsForwardedPort() throws Exception {
-        Mockito.when(settings.isTrustedProxyEnabled()).thenReturn(true);
+        when(settings.isTrustedProxyEnabled()).thenReturn(true);
         Request request = newRequest();
         request.getCoyoteRequest().getMimeHeaders().addValue("X-Forwarded-Proto").setString("https");
         request.getCoyoteRequest().getMimeHeaders().addValue("X-Forwarded-Port").setString("8443");
@@ -72,7 +73,7 @@ class TrustedProxySecureSchemeValveTest {
 
     @Test
     void trustedProxyDisabled_forwardedHttps_requestUnchanged() throws Exception {
-        Mockito.when(settings.isTrustedProxyEnabled()).thenReturn(false);
+        when(settings.isTrustedProxyEnabled()).thenReturn(false);
         Request request = newRequest();
         request.getCoyoteRequest().getMimeHeaders().addValue("X-Forwarded-Proto").setString("https");
         request.setServerPort(80);
@@ -86,7 +87,7 @@ class TrustedProxySecureSchemeValveTest {
 
     @Test
     void trustedProxyEnabled_noForwardedProtoHeader_requestUnchanged() throws Exception {
-        Mockito.when(settings.isTrustedProxyEnabled()).thenReturn(true);
+        when(settings.isTrustedProxyEnabled()).thenReturn(true);
         Request request = newRequest();
 
         valve.invoke(request, newResponse());
@@ -97,7 +98,7 @@ class TrustedProxySecureSchemeValveTest {
 
     @Test
     void trustedProxyEnabled_forwardedProtoHttp_requestUnchanged() throws Exception {
-        Mockito.when(settings.isTrustedProxyEnabled()).thenReturn(true);
+        when(settings.isTrustedProxyEnabled()).thenReturn(true);
         Request request = newRequest();
         request.getCoyoteRequest().getMimeHeaders().addValue("X-Forwarded-Proto").setString("http");
 
@@ -109,7 +110,7 @@ class TrustedProxySecureSchemeValveTest {
 
     @Test
     void forceSecureCookiesEnabled_noHeaderNoTrustedProxy_marksRequestSecureAnyway() throws Exception {
-        Mockito.when(settings.isForceSecureCookiesEnabled()).thenReturn(true);
+        when(settings.isForceSecureCookiesEnabled()).thenReturn(true);
         Request request = newRequest();
         request.setServerPort(80);
 
@@ -123,8 +124,8 @@ class TrustedProxySecureSchemeValveTest {
 
     @Test
     void forceSecureCookiesDisabled_trustedProxyDisabled_requestUnchanged() throws Exception {
-        Mockito.when(settings.isForceSecureCookiesEnabled()).thenReturn(false);
-        Mockito.when(settings.isTrustedProxyEnabled()).thenReturn(false);
+        when(settings.isForceSecureCookiesEnabled()).thenReturn(false);
+        when(settings.isTrustedProxyEnabled()).thenReturn(false);
         Request request = newRequest();
         request.getCoyoteRequest().getMimeHeaders().addValue("X-Forwarded-Proto").setString("https");
 

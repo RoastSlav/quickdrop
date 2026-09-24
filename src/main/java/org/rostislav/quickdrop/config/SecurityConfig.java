@@ -219,7 +219,7 @@ public class SecurityConfig {
             @Override
             public Authentication authenticate(Authentication authentication) throws AuthenticationException {
                 String providedPassword = (String) authentication.getCredentials();
-                if (BCrypt.checkpw(providedPassword, applicationSettingsService.getAppPasswordHash())) {
+                if (providedPassword != null && BCrypt.checkpw(providedPassword, applicationSettingsService.getAppPasswordHash())) {
                     logger.info("Valid login - {}", authentication.getDetails());
                     return new UsernamePasswordAuthenticationToken("appUser", providedPassword, List.of());
                 } else {

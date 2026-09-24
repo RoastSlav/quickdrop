@@ -459,6 +459,11 @@ public class NotificationService {
         props.put("mail.smtp.connectiontimeout", "10000");
         props.put("mail.smtp.timeout", "10000");
         props.put("mail.smtp.writetimeout", "10000");
+        // Applies to both a direct SSL connection and a STARTTLS upgrade -- without it JavaMail
+        // negotiates TLS but never checks the cert's hostname against the configured SMTP host.
+        if (useSsl || useTls) {
+            props.put("mail.smtp.ssl.checkserveridentity", "true");
+        }
         if (useSsl) {
             props.put("mail.smtp.socketFactory.port", String.valueOf(Objects.requireNonNullElse(port, 465)));
             props.put("mail.smtp.socketFactory.class", "javax.net.ssl.SSLSocketFactory");

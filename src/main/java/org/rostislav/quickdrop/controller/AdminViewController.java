@@ -155,7 +155,7 @@ public class AdminViewController {
     @GetMapping("/pastes/{uuid}/history")
     public String getPasteHistoryPage(@PathVariable String uuid, Model model) {
         Upload fileEntity = fileQueryService.getFile(uuid).orElse(null);
-        if (fileEntity == null || !(fileEntity instanceof Paste)) {
+        if (!(fileEntity instanceof Paste)) {
             return "redirect:/admin/pastes";
         }
         long totalViews = analyticsService.getTotalViewsByPaste(uuid);

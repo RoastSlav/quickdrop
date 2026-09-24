@@ -93,7 +93,7 @@ public class GlobalControllerAdvice {
         model.addAttribute("isHideFromListAdminOnly", hideFromListAdminOnly);
         model.addAttribute("canHideFromList", !hideFromListAdminOnly || hasAdminSession);
         Locale activeLocale = LocaleContextHolder.getLocale();
-        String currentLang = activeLocale == null || activeLocale.getLanguage() == null || activeLocale.getLanguage().isBlank()
+        String currentLang = activeLocale.getLanguage() == null || activeLocale.getLanguage().isBlank()
                 ? "en"
                 : activeLocale.getLanguage();
         model.addAttribute("currentLang", currentLang);

@@ -58,6 +58,9 @@ import static org.rostislav.quickdrop.util.FileUtils.formatFileSize;
 public class BackupController {
     private static final Logger logger = LoggerFactory.getLogger(BackupController.class);
 
+    private static final String BACKUP_ERROR_ATTR = "backupError";
+    private static final String REDIRECT_ADMIN = "redirect:/admin";
+    private static final String REDIRECT_ADMIN_BACKUPS = "redirect:/admin/backups";
 
     /** Gives the browser time to receive the restore-success response before the process exits. */
     private static final long RESTART_DELAY_MILLIS = 2000;
@@ -81,7 +84,7 @@ public class BackupController {
     @GetMapping
     public String backupsPage(Model model, HttpServletRequest request) {
         if (!sessionService.hasValidAdminSession(request)) {
-            return "redirect:/admin";
+            return REDIRECT_ADMIN;
         }
         List<BackupService.BackupInfo> backups = backupService.listBackups();
         ApplicationSettingsEntity settings = applicationSettingsService.getApplicationSettings();
@@ -121,17 +124,17 @@ public class BackupController {
                                @RequestParam String backupCron, @RequestParam int maxBackups,
                                HttpServletRequest request, RedirectAttributes redirectAttributes) {
         if (!sessionService.hasValidAdminSession(request)) {
-            return "redirect:/admin";
+            return REDIRECT_ADMIN;
         }
         if (maxBackups < 1) {
-            redirectAttributes.addFlashAttribute("backupError", "Number of backups to keep must be at least 1");
-            return "redirect:/admin/backups";
+            redirectAttributes.addFlashAttribute(BACKUP_ERROR_ATTR, "Number of backups to keep must be at least 1");
+            return REDIRECT_ADMIN_BACKUPS;
         }
         try {
             CronExpression.parse(backupCron);
         } catch (IllegalArgumentException ex) {
-            redirectAttributes.addFlashAttribute("backupError", "Invalid backup cron expression");
-            return "redirect:/admin/backups";
+            redirectAttributes.addFlashAttribute(BACKUP_ERROR_ATTR, "Invalid backup cron expression");
+            return REDIRECT_ADMIN_BACKUPS;
         }
         ApplicationSettingsViewModel vm = new ApplicationSettingsViewModel(applicationSettingsService.getApplicationSettings());
         vm.setBackupScheduleEnabled(backupScheduleEnabled);
@@ -141,13 +144,13 @@ public class BackupController {
         RequesterInfo info = FileUtils.getRequesterInfo(request, applicationSettingsService.isTrustedProxyEnabled());
         analyticsService.logEvent(EventType.ADMIN_SETTINGS_CHANGE, info.ipAddress(), info.userAgent());
         redirectAttributes.addFlashAttribute("scheduleSuccess", true);
-        return "redirect:/admin/backups";
+        return REDIRECT_ADMIN_BACKUPS;
     }
 
     @PostMapping("/create")
     public String createBackup(HttpServletRequest request, RedirectAttributes redirectAttributes) {
         if (!sessionService.hasValidAdminSession(request)) {
-            return "redirect:/admin";
+            return REDIRECT_ADMIN;
         }
         RequesterInfo info = FileUtils.getRequesterInfo(request, applicationSettingsService.isTrustedProxyEnabled());
         BackupService.BackupResult result = backupService.createBackup();
@@ -156,16 +159,16 @@ public class BackupController {
             redirectAttributes.addFlashAttribute("backupSuccess", result.message());
         } else {
             analyticsService.logEvent(EventType.BACKUP_FAILED, info.ipAddress(), info.userAgent());
-            redirectAttributes.addFlashAttribute("backupError", result.message());
+            redirectAttributes.addFlashAttribute(BACKUP_ERROR_ATTR, result.message());
         }
-        return "redirect:/admin/backups";
+        return REDIRECT_ADMIN_BACKUPS;
     }
 
     @PostMapping("/upload")
     public String uploadBackup(@RequestParam("file") MultipartFile file,
                                HttpServletRequest request, RedirectAttributes redirectAttributes) {
         if (!sessionService.hasValidAdminSession(request)) {
-            return "redirect:/admin";
+            return REDIRECT_ADMIN;
         }
         RequesterInfo info = FileUtils.getRequesterInfo(request, applicationSettingsService.isTrustedProxyEnabled());
         BackupService.BackupResult result = backupService.uploadBackup(file);
@@ -174,9 +177,9 @@ public class BackupController {
             redirectAttributes.addFlashAttribute("backupSuccess", result.message());
         } else {
             analyticsService.logEvent(EventType.BACKUP_FAILED, info.ipAddress(), info.userAgent());
-            redirectAttributes.addFlashAttribute("backupError", result.message());
+            redirectAttributes.addFlashAttribute(BACKUP_ERROR_ATTR, result.message());
         }
-        return "redirect:/admin/backups";
+        return REDIRECT_ADMIN_BACKUPS;
     }
 
     /** On success, renders a dedicated view instead of redirecting — the app is about to exit. */
@@ -184,7 +187,7 @@ public class BackupController {
     public String restoreBackup(@RequestParam String filename,
                                 HttpServletRequest request, Model model, RedirectAttributes redirectAttributes) {
         if (!sessionService.hasValidAdminSession(request)) {
-            return "redirect:/admin";
+            return REDIRECT_ADMIN;
         }
         RequesterInfo info = FileUtils.getRequesterInfo(request, applicationSettingsService.isTrustedProxyEnabled());
         BackupService.BackupResult result = backupService.restoreBackup(filename);
@@ -197,21 +200,21 @@ public class BackupController {
         }
         analyticsService.logEvent(EventType.BACKUP_FAILED, info.ipAddress(), info.userAgent());
         logger.warn("Database restore rejected: {}", result.message());
-        redirectAttributes.addFlashAttribute("backupError", result.message());
-        return "redirect:/admin/backups";
+        redirectAttributes.addFlashAttribute(BACKUP_ERROR_ATTR, result.message());
+        return REDIRECT_ADMIN_BACKUPS;
     }
 
     @PostMapping("/delete")
     public String deleteBackup(@RequestParam String filename,
                                HttpServletRequest request, RedirectAttributes redirectAttributes) {
         if (!sessionService.hasValidAdminSession(request)) {
-            return "redirect:/admin";
+            return REDIRECT_ADMIN;
         }
         BackupService.BackupResult result = backupService.deleteBackup(filename);
         if (!result.success()) {
-            redirectAttributes.addFlashAttribute("backupError", result.message());
+            redirectAttributes.addFlashAttribute(BACKUP_ERROR_ATTR, result.message());
         }
-        return "redirect:/admin/backups";
+        return REDIRECT_ADMIN_BACKUPS;
     }
 
     @GetMapping("/download/{filename}")

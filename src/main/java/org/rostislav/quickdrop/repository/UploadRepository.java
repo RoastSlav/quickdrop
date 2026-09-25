@@ -21,13 +21,7 @@ import java.util.Optional;
  */
 public interface UploadRepository extends JpaRepository<Upload, Long> {
 
-    /**
-     * Looks up any upload (file or paste) by its UUID path segment.
-     * Returns soft-deleted records so admin controllers can still find them.
-     *
-     * @param uuid the upload's unique identifier
-     * @return the matching entity, or empty if not found
-     */
+    /** Returns soft-deleted records too, so admin controllers can still find them. */
     @Query("SELECT u FROM Upload u WHERE u.uuid = :uuid")
     Optional<Upload> findByUUID(@Param("uuid") String uuid);
 
@@ -39,54 +33,30 @@ public interface UploadRepository extends JpaRepository<Upload, Long> {
     boolean existsByNameAndNotDeleted(@Param("name") String name);
 
     /**
-     * Returns a paginated list of all non-deleted uploads (files and pastes) for
-     * the orphan-scan job.  Soft-deleted uploads are intentionally excluded because
-     * they legitimately have no file on disk.
-     *
-     * @param pageable pagination parameters
-     * @return page of non-deleted uploads
+     * For the orphan-scan job. Soft-deleted uploads are intentionally excluded because they
+     * legitimately have no file on disk.
      */
     @Query("SELECT u FROM Upload u WHERE u.deleted = false")
     Page<Upload> findAllNotDeleted(Pageable pageable);
 
-    /**
-     * Returns the total storage consumed by all live (non-deleted) uploads in bytes.
-     *
-     * @return sum of all upload sizes, or {@code null} if the table is empty
-     */
+    /** {@code null} if the table is empty. */
     @Query("SELECT SUM(u.size) FROM Upload u WHERE u.deleted = false")
     Long totalSizeOfAllUploads();
 
-    /**
-     * Returns all non-pinned, non-deleted uploads whose upload date is strictly
-     * before {@code thresholdDate}, eligible for scheduled deletion.
-     *
-     * @param thresholdDate uploads older than this date are returned
-     * @return list of uploads that should be deleted
-     */
+    /** Non-pinned ({@code keepIndefinitely = false}) uploads eligible for scheduled deletion. */
     @Query("SELECT u FROM Upload u WHERE u.keepIndefinitely = false AND u.deleted = false AND u.uploadDate < :thresholdDate")
     List<Upload> getUploadsForDeletion(@Param("thresholdDate") LocalDate thresholdDate);
 
     /**
-     * Counts uploads that will be auto-deleted on or before {@code thresholdDate}.
-     *
-     * <p>Same predicate as {@link #getUploadsForDeletion(LocalDate)} but returns only the
-     * count, so the admin dashboard can surface "expiring soon" without loading every
-     * matching entity.
-     *
-     * @param thresholdDate uploads older than this date are counted
-     * @return number of uploads due for deletion before the given date
+     * Same predicate as {@link #getUploadsForDeletion(LocalDate)} but returns only the count,
+     * so the admin dashboard can surface "expiring soon" without loading every matching entity.
      */
     @Query("SELECT COUNT(u) FROM Upload u WHERE u.keepIndefinitely = false AND u.deleted = false AND u.uploadDate < :thresholdDate")
     long countUploadsExpiringBefore(@Param("thresholdDate") LocalDate thresholdDate);
 
     /**
-     * Returns only the UUID strings of all non-deleted uploads.
-     *
-     * <p>Use this instead of {@link #findAll()} when only the UUID is needed (e.g. storage
-     * migration key building) to avoid loading full entity graphs into memory.
-     *
-     * @return list of UUIDs for non-deleted uploads
+     * Use instead of {@link #findAll()} when only the UUID is needed (e.g. storage migration
+     * key building), to avoid loading full entity graphs into memory.
      */
     @Query("SELECT u.uuid FROM Upload u WHERE u.deleted = false")
     List<String> findAllActiveUuids();

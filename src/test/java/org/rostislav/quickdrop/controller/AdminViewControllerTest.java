@@ -161,24 +161,18 @@ class AdminViewControllerTest extends ControllerTestSupport {
 
     // POST /admin/save & /admin/api/save
 
-    // NB: ApplicationSettingsViewModel binds every unset boolean form field to Java's default
-    // (false) -- since AdminViewController#saveSettings persists the *entire* view model,
-    // omitting a feature flag here would silently disable it for the rest of the suite (this
-    // context is cached/shared across test classes with identical config; see
-    // application-test.properties). Explicitly echo back the defaults for every flag so this
-    // helper models a realistic "admin edits one field, submits the whole form" save rather
-    // than "admin turns everything off". @DirtiesContext on the two tests that actually persist
-    // (below) is a second line of defense.
+    // Unset booleans bind to false, and saveSettings persists the whole view model, so omitting
+    // a flag here would silently disable it for the rest of the suite (shared cached context
+    // across test classes). Echo every flag's default explicitly; @DirtiesContext on the tests
+    // that actually persist is a second line of defense.
     private org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder settingsFormParams(
             org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder builder, String cron) {
         return settingsFormParams(builder, cron, "1024", "30", storageDir.toString());
     }
 
-    // Overload for tests that need to vary maxFileSize/maxFileLifeTime/fileStoragePath --
-    // MockHttpServletRequestBuilder#param() ACCUMULATES values for a repeated key rather than
-    // replacing them, so chaining an extra .param("maxFileSize", "-500") onto the single-arg
-    // overload above does NOT override its "1024" (Spring's binder took the first value,
-    // silently defeating the intended override) -- build the full param list in one place instead.
+    // Overload for tests that vary maxFileSize/maxFileLifeTime/fileStoragePath -- param()
+    // accumulates values for a repeated key rather than replacing them, so chaining an extra
+    // .param() onto the single-arg overload above would silently fail to override it.
     private org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder settingsFormParams(
             org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder builder, String cron,
             String maxFileSize, String maxFileLifeTime, String fileStoragePath) {
@@ -441,7 +435,6 @@ class AdminViewControllerTest extends ControllerTestSupport {
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/"));
 
-        // Session should no longer grant admin access.
         mockMvc.perform(get("/admin/dashboard").session(session))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/admin/password"));

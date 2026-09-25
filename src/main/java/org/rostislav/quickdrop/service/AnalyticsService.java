@@ -54,9 +54,6 @@ public class AnalyticsService {
      *
      * <p>Deliberately not cached: the dashboard feed is meant to reflect what just
      * happened, and the {@code analytics} cache is only evicted on file mutations.
-     *
-     * @param limit maximum number of entries to return
-     * @return recent activity entries
      */
     public List<ActivityLog> getRecentActivity(int limit) {
         return activityLogRepository
@@ -70,8 +67,6 @@ public class AnalyticsService {
      * <p>Aggregates total downloads (counting both direct {@code DOWNLOAD} and
      * {@code SHARE_DOWNLOAD} events), storage usage, file/paste counts, and paste
      * statistics in a single service call.
-     *
-     * @return cached analytics view-model
      */
     @Cacheable("analytics")
     public AnalyticsDataView getAnalytics() {
@@ -105,32 +100,18 @@ public class AnalyticsService {
     }
 
     /**
-     * Returns the total number of download events for a specific file, counting both
-     * direct downloads ({@code DOWNLOAD}) and share-link downloads ({@code SHARE_DOWNLOAD}).
-     *
-     * @param uuid UUID of the file
-     * @return combined download count
+     * Total download events for a file, counting both direct ({@code DOWNLOAD}) and
+     * share-link ({@code SHARE_DOWNLOAD}) downloads.
      */
     public long getTotalDownloadsByFile(String uuid) {
         return activityLogRepository.countByFileAndTypeIn(uuid, List.of(DOWNLOAD, SHARE_DOWNLOAD));
     }
 
-    /**
-     * Returns the total number of view events for a specific paste.
-     *
-     * @param uuid UUID of the paste
-     * @return view count
-     */
     public long getTotalViewsByPaste(String uuid) {
         return activityLogRepository.countByFileAndType(uuid, EventType.PASTE_VIEW);
     }
 
-    /**
-     * Returns all history log entries for a given file UUID, ordered most-recent first.
-     *
-     * @param fileUUID UUID of the file
-     * @return ordered list of history entries
-     */
+    /** All history log entries for a file, ordered most-recent first. */
     public List<ActivityLog> getHistoryByFile(String fileUUID) {
         return activityLogRepository.findByFileUuidOrderByEventDateDesc(fileUUID);
     }
@@ -142,9 +123,8 @@ public class AnalyticsService {
      * {@link org.rostislav.quickdrop.model.EventCategory#SYSTEM} events
      * (application startup / shutdown).
      *
-     * @param eventType the event type to record
-     * @param ip        requester IP address, or {@code null} for system events
-     * @param ua        requester User-Agent header value, or {@code null} for system events
+     * @param ip requester IP address, or {@code null} for system events
+     * @param ua requester User-Agent header value, or {@code null} for system events
      */
     @CacheEvict(value = "analytics", allEntries = true)
     public void logEvent(EventType eventType, String ip, String ua) {
@@ -154,10 +134,9 @@ public class AnalyticsService {
     /**
      * Records a non-file event together with specifics the event type alone doesn't convey.
      *
-     * @param eventType the event type to record
-     * @param ip        requester IP address, or {@code null} for system events
-     * @param ua        requester User-Agent header value, or {@code null} for system events
-     * @param detail    free-text specifics shown alongside the event, or {@code null}
+     * @param ip     requester IP address, or {@code null} for system events
+     * @param ua     requester User-Agent header value, or {@code null} for system events
+     * @param detail free-text specifics shown alongside the event, or {@code null}
      */
     @CacheEvict(value = "analytics", allEntries = true)
     public void logEvent(EventType eventType, String ip, String ua, String detail) {

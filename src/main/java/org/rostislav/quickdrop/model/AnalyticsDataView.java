@@ -10,38 +10,26 @@ package org.rostislav.quickdrop.model;
 public class AnalyticsDataView {
     private long totalDownloads;
 
-    /**
-     * Human-readable total storage consumed by all files (excludes pastes).
-     */
+    /** Excludes pastes. */
     private String totalSpaceUsed;
 
-    /**
-     * Human-readable average file size across non-paste uploads.
-     */
+    /** Non-paste uploads only. */
     private String averageFileSize;
 
-    /**
-     * Number of non-paste file entries in the database.
-     */
+    /** Excludes pastes. */
     private long totalFileCount;
 
     private long totalPastes;
 
-    /**
-     * Total number of PASTE_VIEW events recorded.
-     */
+    /** Count of PASTE_VIEW events. */
     private long totalPasteViews;
 
     private String averagePasteLength;
 
-    /**
-     * Number of paste entries whose name ends with {@code .md}.
-     */
+    /** Paste entries whose name ends with {@code .md}. */
     private long markdownPasteCount;
 
-    /**
-     * Number of paste entries that are plain text (totalPastes − markdownPasteCount).
-     */
+    /** {@code totalPastes - markdownPasteCount}. */
     private long plainTextPasteCount;
 
     public long getTotalDownloads() {

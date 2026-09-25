@@ -273,7 +273,6 @@
 
     <script>
         (function () {
-            // Theme icon sync
             function syncThemeIcons() {
                 const isDark = document.documentElement.classList.contains('dark');
                 const sun = document.getElementById('themeIconSun');
@@ -288,7 +287,6 @@
                 themeBtn.addEventListener('click', () => setTimeout(syncThemeIcons, 0));
             }
 
-            // Active link highlighting based on URL
             const path = window.location.pathname;
             document.querySelectorAll('[data-nav-match]').forEach(el => {
                 const match = el.getAttribute('data-nav-match');
@@ -297,7 +295,7 @@
                 }
             });
 
-            // Fade in nav logo once loaded (prevents pop-in)
+            // Prevents a pop-in flash while the logo loads.
             const navLogo = document.querySelector('.nav-brand img');
             if (navLogo) {
                 if (navLogo.complete) {

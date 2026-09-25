@@ -26,9 +26,6 @@ public class AppLifecycleListener {
         this.analyticsService = analyticsService;
     }
 
-    /**
-     * Fires after the application context is fully refreshed and ready to serve requests.
-     */
     @EventListener(ApplicationReadyEvent.class)
     public void onStartup() {
         try {
@@ -39,10 +36,7 @@ public class AppLifecycleListener {
         }
     }
 
-    /**
-     * Fires when the application context begins shutting down.
-     * The database connection pool is still open at this point.
-     */
+    /** The database connection pool is still open at this point. */
     @EventListener(ContextClosedEvent.class)
     public void onShutdown() {
         try {

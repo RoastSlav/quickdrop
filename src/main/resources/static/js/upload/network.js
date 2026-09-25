@@ -4,8 +4,7 @@ const UPLOAD_CHUNK_SIZE = 4 * 1024 * 1024;
 const UPLOAD_STATUS_POLL_INTERVAL_MS = 2000;
 const UPLOAD_STATUS_MAX_FAILURES = 15;
 
-// Extracts the server's {"error": "..."} message from a failed response body, if present,
-// so callers can surface the specific reason instead of a generic fallback.
+// So callers can surface the server's specific reason instead of a generic fallback.
 function parseServerErrorMessage(responseText) {
     if (!responseText) return null;
     try {

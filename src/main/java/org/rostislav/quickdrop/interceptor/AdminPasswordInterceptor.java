@@ -23,14 +23,6 @@ public class AdminPasswordInterceptor implements HandlerInterceptor {
         this.sessionService = sessionService;
     }
 
-    /**
-     * Verifies that a valid admin session token is present in the HTTP session.
-     * Redirects to {@code /admin/password} if the token is absent or invalid.
-     *
-     * @param handler the matched handler (unused)
-     * @return {@code true} to continue the handler chain; {@code false} after redirecting
-     * @throws Exception if the redirect fails
-     */
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
         if ("/admin/logout".equals(request.getRequestURI())) {

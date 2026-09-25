@@ -255,10 +255,6 @@ public class ApplicationSettingsService {
         }
     }
 
-    /**
-     * Fires the initial cleanup schedule once the application context is fully started,
-     * using the persisted cron expression and max file lifetime.
-     */
     @EventListener(ApplicationReadyEvent.class)
     public void onApplicationReady() {
         ApplicationSettingsEntity settings = self.getApplicationSettings();
@@ -266,9 +262,6 @@ public class ApplicationSettingsService {
         backupService.updateSchedule(settings.getBackupCron(), settings.isBackupScheduleEnabled());
     }
 
-    /**
-     * Loads the settings row (ID 1), caching it until the cache is evicted.
-     */
     @Cacheable("applicationSettings")
     public ApplicationSettingsEntity getApplicationSettings() {
         return applicationSettingsRepository.findById(1L).orElseThrow();

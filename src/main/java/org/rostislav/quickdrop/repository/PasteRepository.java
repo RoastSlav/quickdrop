@@ -19,42 +19,20 @@ import java.util.Optional;
  */
 public interface PasteRepository extends JpaRepository<Paste, Long> {
 
-    /**
-     * Looks up a paste by its UUID path segment.
-     * Returns soft-deleted records so admin controllers can still find them.
-     *
-     * @param uuid the paste's unique identifier
-     * @return the matching entity, or empty if not found (or if the UUID belongs to a file)
-     */
+    /** Returns soft-deleted records too, so admin controllers can still find them. */
     @Query("SELECT p FROM Paste p WHERE p.uuid = :uuid")
     Optional<Paste> findByUUID(@Param("uuid") String uuid);
 
-    /**
-     * Returns the total number of live (non-deleted) paste entries.
-     */
     @Query("SELECT COUNT(p) FROM Paste p WHERE p.deleted = false")
     long countPastes();
 
-    /**
-     * Returns the average byte length of live paste entries.
-     *
-     * @return average paste size in bytes, or {@code null} if there are no pastes
-     */
+    /** {@code null} if there are no pastes. */
     @Query("SELECT AVG(p.size) FROM Paste p WHERE p.deleted = false")
     Double averagePasteLength();
 
-    /**
-     * Returns the number of live paste entries whose name ends with {@code .md} (Markdown).
-     */
     @Query("SELECT COUNT(p) FROM Paste p WHERE p.deleted = false AND p.name LIKE '%.md'")
     long countMarkdownPastes();
 
-    /**
-     * Returns a paginated list of all live paste entries with their total view counts.
-     *
-     * @param pageable pagination parameters
-     * @return page of {@link PasteEntityView} projections
-     */
     @Query(value = """
                 SELECT new org.rostislav.quickdrop.model.PasteEntityView(
                     p,
@@ -69,13 +47,7 @@ public interface PasteRepository extends JpaRepository<Paste, Long> {
             countQuery = "SELECT COUNT(p) FROM Paste p WHERE p.deleted = false")
     Page<PasteEntityView> findPastesWithViewCounts(Pageable pageable);
 
-    /**
-     * Search variant of {@link #findPastesWithViewCounts} filtered by a query string.
-     *
-     * @param query    search string (case-insensitive, partial-match on name and UUID)
-     * @param pageable pagination parameters
-     * @return matching page of {@link PasteEntityView} projections
-     */
+    /** Search variant of {@link #findPastesWithViewCounts}. */
     @Query(value = """
                 SELECT new org.rostislav.quickdrop.model.PasteEntityView(
                     p,
@@ -94,12 +66,6 @@ public interface PasteRepository extends JpaRepository<Paste, Long> {
                     "OR LOWER(p.uuid) LIKE LOWER(CONCAT('%', :searchString, '%')))")
     Page<PasteEntityView> searchPastesWithViewCounts(@Param("searchString") String query, Pageable pageable);
 
-    /**
-     * Returns a paginated list of soft-deleted paste entries with their total view counts.
-     *
-     * @param pageable pagination parameters
-     * @return page of {@link PasteEntityView} projections for deleted pastes
-     */
     @Query(value = """
                 SELECT new org.rostislav.quickdrop.model.PasteEntityView(
                     p,
@@ -114,13 +80,7 @@ public interface PasteRepository extends JpaRepository<Paste, Long> {
             countQuery = "SELECT COUNT(p) FROM Paste p WHERE p.deleted = true")
     Page<PasteEntityView> findDeletedPastesWithViewCounts(Pageable pageable);
 
-    /**
-     * Search variant of {@link #findDeletedPastesWithViewCounts} filtered by a query string.
-     *
-     * @param query    search string (case-insensitive, partial-match on name and UUID)
-     * @param pageable pagination parameters
-     * @return matching page of deleted {@link PasteEntityView} projections
-     */
+    /** Search variant of {@link #findDeletedPastesWithViewCounts}. */
     @Query(value = """
                 SELECT new org.rostislav.quickdrop.model.PasteEntityView(
                     p,

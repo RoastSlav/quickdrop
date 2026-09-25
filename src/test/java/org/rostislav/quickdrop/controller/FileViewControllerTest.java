@@ -219,9 +219,6 @@ class FileViewControllerTest extends ControllerTestSupport {
 
     @Test
     void fileHistory_anonymousOnPlainNonPasswordFile_redirectsToAdminLogin() throws Exception {
-        // History leaks every visitor's IP/user-agent, so unlike the file itself it must not
-        // be world-readable just because the file has no password -- a non-password file's
-        // history is admin-only, with no file-session equivalent to gate it on instead.
         ensureAdminPasswordSet();
         StoredFile file = createFile("a.txt", "hi".getBytes());
         mockMvc.perform(get("/file/history/" + file.uuid))

@@ -51,7 +51,7 @@
     window.QDCounters = init;
 
     if (document.readyState === 'loading') {
-        // Wrapped: the listener would otherwise hand init the DOMContentLoaded event as its root.
+        // Wrapped so init() doesn't receive the DOMContentLoaded event as its root argument.
         document.addEventListener('DOMContentLoaded', () => init());
     } else {
         init();

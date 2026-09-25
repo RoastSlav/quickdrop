@@ -45,9 +45,6 @@ import java.util.Optional;
  */
 public class LogStoragePathEnvironmentPostProcessor implements EnvironmentPostProcessor, Ordered {
 
-    /**
-     * File name inside the configured directory. Unchanged from the previous hard-coded value.
-     */
     static final String LOG_FILE_NAME = "quickdrop.log";
 
     static final String LOGGING_FILE_NAME = "logging.file.name";

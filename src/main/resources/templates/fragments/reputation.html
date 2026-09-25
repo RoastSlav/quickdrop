@@ -3,15 +3,12 @@
 <body>
 
 <!--
-  Licence-acceptance modal for one reputation provider. Parameterised rather than repeated
-  three times inline in settings.html: the three providers differ only in their identifiers
-  and which message keys they read, so the markup, the accept-checkbox wiring and the
-  confirm-button contract stay in exactly one place.
+  Licence-acceptance modal for one reputation provider -- parameterized instead of repeated
+  three times in settings.html, since the providers differ only in ids and message keys.
 
-  modalKey   - camelCase key used for the element id and the data-open-reputation-modal
-               attribute the settings page's "Enable..." button targets (e.g. "phishingArmy")
-  providerId - snake_case id POSTed to /admin/settings/accept-reputation-terms, and matched
-               by ApplicationSettingsService#acceptReputationProviderTerms (e.g. "phishing_army")
+  modalKey   - camelCase id, used for the element id and settings.html's data-open-reputation-modal
+  providerId - snake_case id POSTed to /admin/settings/accept-reputation-terms, matched by
+               ApplicationSettingsService#acceptReputationProviderTerms (e.g. "phishing_army")
   nameKey / licenceKey / descriptionKey - message keys for this provider's copy
 -->
 <div th:fragment="licenceModal(modalKey, providerId, nameKey, licenceKey, descriptionKey)"

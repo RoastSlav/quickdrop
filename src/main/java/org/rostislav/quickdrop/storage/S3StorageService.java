@@ -41,7 +41,7 @@ public class S3StorageService implements StorageService {
         this.configSupplier = configSupplier;
     }
 
-    /** Rebuilds the S3 client from the current settings. Call after admin saves new S3 config. */
+    /** Call after admin saves new S3 config so the client picks up the change. */
     public synchronized void refreshClient() {
         if (client != null) {
             try { client.close(); } catch (Exception ignored) {}
@@ -157,7 +157,6 @@ public class S3StorageService implements StorageService {
                 response = getClient().listObjectsV2(req);
                 for (S3Object obj : response.contents()) {
                     String name = obj.key();
-                    // strip prefix to get the bare key
                     if (prefix != null && !prefix.isBlank()) {
                         name = name.startsWith(prefix.endsWith("/") ? prefix : prefix + "/")
                                 ? name.substring(prefix.length() + (prefix.endsWith("/") ? 0 : 1))
@@ -182,8 +181,7 @@ public class S3StorageService implements StorageService {
     }
 
     /**
-     * Tests the S3 connection by rebuilding the client and calling HeadBucket.
-     * Intended for the admin "Test Connection" flow where credentials may have just changed.
+     * Rebuilds the client before probing, since credentials may have just changed (admin "Test Connection" flow).
      *
      * @return {@code null} on success; an error message string on failure
      */
@@ -197,12 +195,7 @@ public class S3StorageService implements StorageService {
         }
     }
 
-    /**
-     * Probes the bucket using the existing client without rebuilding it.
-     * Intended for the periodic background health check — faster and non-disruptive.
-     *
-     * @return {@code true} if the bucket is reachable; {@code false} on any error
-     */
+    /** Uses the existing client (no rebuild) so the periodic health check stays cheap. */
     public boolean isReachable() {
         try {
             getClient().headBucket(HeadBucketRequest.builder().bucket(bucket()).build());

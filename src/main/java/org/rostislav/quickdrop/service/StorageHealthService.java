@@ -28,10 +28,7 @@ public class StorageHealthService {
     private final DelegatingStorageService delegatingService;
     private final NotificationService notificationService;
 
-    /**
-     * Optimistic initial state — avoids a false "storage down" banner during the first
-     * 10-second window before the first probe completes.
-     */
+    /** Optimistic initial state — avoids a false "storage down" banner before the first probe completes. */
     private volatile boolean healthy = true;
 
     public StorageHealthService(DelegatingStorageService delegatingService,
@@ -61,12 +58,7 @@ public class StorageHealthService {
         recheck();
     }
 
-    /**
-     * Probes the active storage backend every 30 seconds.
-     * The initial delay is aligned to the fixed delay since startup is now
-     * handled by {@link #onApplicationReady()}.
-     * Logs on transitions between healthy and unhealthy states.
-     */
+    /** Initial delay matches the fixed delay since startup's own probe is handled by {@link #onApplicationReady()}. */
     @Scheduled(fixedDelay = 30_000, initialDelay = 30_000)
     public void checkHealth() {
         boolean reachable = delegatingService.isReachable();
@@ -80,11 +72,7 @@ public class StorageHealthService {
         healthy = reachable;
     }
 
-    /**
-     * Returns {@code true} when the last health probe failed for the active backend.
-     *
-     * @return {@code true} if storage is currently unreachable; {@code false} if healthy
-     */
+    /** @return {@code true} if the last health probe found the active backend unreachable */
     public boolean isStorageDown() {
         return !healthy;
     }

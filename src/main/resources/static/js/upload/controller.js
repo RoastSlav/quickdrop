@@ -234,8 +234,8 @@ export function initUploadPage(config = {}) {
         if (token !== processingToken) return;
         preparation = null;
 
-        // plan.totalSize was the sum of the selected files, but the archive carries zip
-        // headers on top: a selection under the limit can still zip to over it.
+        // The archive carries zip headers on top of plan.totalSize, so a selection under
+        // the limit can still zip to over it.
         if (candidates.cleanCandidate.size > maxSize) {
             resetFileSelection();
             setDropZoneText(plan.limitMessage.replace("{0}", maxSizeLabel));
@@ -253,8 +253,8 @@ export function initUploadPage(config = {}) {
             dropZoneText.classList.add("hidden");
         }
 
-        // The candidates hold their own File references, so both pickers can be cleared --
-        // which also lets re-picking the same file or folder fire another change event.
+        // Candidates hold their own File references, so clearing both pickers here is safe
+        // and lets re-picking the same file or folder fire another change event.
         if (fileInput) fileInput.value = "";
         if (folderInput) folderInput.value = "";
 

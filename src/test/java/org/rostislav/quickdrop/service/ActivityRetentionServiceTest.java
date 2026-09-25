@@ -218,7 +218,6 @@ class ActivityRetentionServiceTest extends QuickdropIntegrationTest {
         assertTrue(key.endsWith(".csv"), key);
     }
 
-    /** Exercises the batching loop past a single page. */
     @Test
     void batchesLargerThanOnePageAreFullyArchived() {
         enableRetention(EventCategory.ADMIN, 365);

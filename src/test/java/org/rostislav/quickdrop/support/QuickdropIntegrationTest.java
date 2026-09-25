@@ -19,11 +19,10 @@ import java.io.UncheckedIOException;
 
 /**
  * Base class for Spring-context integration tests (controller slices, interceptors,
- * end-to-end service flows). Activates the "test" profile — see application-test.properties
- * for the per-context isolated SQLite DB — and redirects the settings row's fileStoragePath
- * to a fresh @TempDir before every test method, since that default ("files", relative to
- * process CWD) is DB-seeded, not a Spring property, and would otherwise write into the real
- * repo files/ directory.
+ * end-to-end service flows). Activates the "test" profile (see application-test.properties
+ * for the per-context isolated SQLite DB) and redirects fileStoragePath to a fresh @TempDir
+ * before every test -- that default is DB-seeded, not a Spring property, and would otherwise
+ * write into the real repo files/ directory.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
 @AutoConfigureMockMvc
@@ -68,11 +67,10 @@ public abstract class QuickdropIntegrationTest {
     }
 
     /**
-     * The rate limiter is a singleton holding per-(IP, endpoint group) counters, and every
-     * MockMvc request in the suite arrives from the same address. Without this, requests
-     * accumulate across test methods sharing a context and later tests get 429s unrelated
-     * to their own behaviour — which is exactly what happened once the share-download group
-     * grew to cover {@code /api/file/download/**} alongside {@code /share/**}.
+     * The rate limiter is a singleton keyed by (IP, endpoint group), and every MockMvc
+     * request in the suite shares one address, so counters would leak across test methods
+     * and cause unrelated 429s -- this happened once the share-download group grew to cover
+     * {@code /api/file/download/**} alongside {@code /share/**}.
      *
      * <p>Tests that assert the limiter's <em>own</em> behaviour drive it directly rather
      * than through MockMvc, so clearing here doesn't weaken them.

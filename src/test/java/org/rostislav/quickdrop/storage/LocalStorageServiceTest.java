@@ -63,9 +63,7 @@ class LocalStorageServiceTest extends StorageServiceContractTest {
 
     @Test
     void getOutputStreamCreatesParentDirectoriesForNestedKeys() throws IOException {
-        // Keys are usually flat UUIDs, but the implementation resolves them as paths --
-        // verify it doesn't blow up if a key happens to contain a path separator and
-        // creates the intermediate directory rather than failing.
+        // Keys are usually flat UUIDs, but a key containing a path separator must still work.
         String nestedKey = "sub/nested-key";
         try (OutputStream out = service.getOutputStream(nestedKey)) {
             out.write("nested".getBytes(StandardCharsets.UTF_8));

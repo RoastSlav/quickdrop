@@ -123,9 +123,7 @@ public class AzureBlobStorageService implements StorageService {
         return StorageBackend.AZURE;
     }
 
-    /**
-     * Tests the Azure connection by checking if the container exists. Returns null on success, error message on failure.
-     */
+    /** @return null on success, or the failure's error message */
     public String testConnection() {
         try {
             refreshClient();

@@ -36,7 +36,6 @@ public interface StorageService {
      */
     OutputStream getOutputStream(String key) throws IOException;
 
-    /** Returns {@code true} if an object with the given key exists. */
     boolean exists(String key);
 
     /**
@@ -52,7 +51,6 @@ public interface StorageService {
      */
     List<String> listKeySuffix(String suffix);
 
-    /** Returns the active storage backend type. */
     StorageBackend getBackend();
 
     /**

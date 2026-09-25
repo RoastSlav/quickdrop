@@ -82,9 +82,8 @@ pre.hljs, code.hljs {
     }
 }
 
-/* Stat hero on narrow screens: shrink the value so it doesn't overflow a 2-col card,
-   and tighten the padding — four tiles at 1.5rem padding pushed the real content on
-   admin pages well below the fold on a phone. */
+/* Shrink the stat value and tighten padding on narrow screens -- four tiles at
+   1.5rem padding pushed real content below the fold on a phone. */
 @media (max-width: 639px) {
     .stat-hero-value {
         font-size: clamp(1.25rem, 7vw, 2rem);
@@ -96,9 +95,8 @@ pre.hljs, code.hljs {
     }
 }
 
-/* ── EasyMDE / CodeMirror theming (pastebin editor) ─────────────────────
-   Third-party widget internals, so it belongs here rather than in the component
-   layer. Moved out of an inline <style> block in pastebin.html. */
+/* EasyMDE/CodeMirror theming (pastebin editor): third-party widget internals, so this
+   belongs here rather than in the component layer. */
 .editor-wrapper .CodeMirror {
     min-height: 22rem;
     height: auto;
@@ -227,10 +225,8 @@ pre.hljs, code.hljs {
 }
 
 
-/* ── Paste editor fill (editor-first shell) ─────────────────────────────
-   These must live here, not in @layer components: easymde.min.css and this
-   file are unlayered, and unlayered CSS beats any layered rule regardless of
-   specificity — the layered versions of these silently lost. */
+/* Paste editor fill: must live here, not in @layer components -- easymde.min.css and this
+   file are unlayered, and unlayered CSS beats layered rules regardless of specificity. */
 .paste-editor .EasyMDEContainer {
     display: flex;
     flex-direction: column;
@@ -263,10 +259,8 @@ pre.hljs, code.hljs {
 }
 
 
-/* ── View Transitions for partial navigation ────────────────────────────
-   ::view-transition-* are document-level pseudo-elements, so they cannot live
-   inside @layer components. Triggered by QD.loadDynamic when the browser
-   supports startViewTransition(). */
+/* View Transitions for partial navigation: ::view-transition-* are document-level
+   pseudo-elements, so they can't live inside @layer components. */
 ::view-transition-old(root),
 ::view-transition-new(root) {
     animation-duration: 220ms;

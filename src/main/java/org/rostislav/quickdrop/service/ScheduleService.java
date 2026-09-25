@@ -55,14 +55,7 @@ public class ScheduleService {
     private final ScheduleTransactionHelper scheduleTransactionHelper;
     private ScheduledFuture<?> scheduledTask;
 
-    /**
-     * The cron expression currently in use for the dynamic cleanup job.
-     */
     private volatile String currentCron;
-
-    /**
-     * The maxFileLifeTime (days) captured by the currently running cleanup task.
-     */
     private volatile long currentMaxFileLifeTime = -1;
 
     public ScheduleService(UploadRepository uploadRepository,
@@ -130,9 +123,6 @@ public class ScheduleService {
         logger.info("Scheduled cleanup with cron: {} and max life: {} days", cronExpression, maxFileLifeTime);
     }
 
-    /**
-     * Shuts down the dynamic-cleanup scheduler gracefully on application stop.
-     */
     @PreDestroy
     public void shutdown() {
         logger.info("Shutting down file cleanup scheduler");
@@ -201,7 +191,6 @@ public class ScheduleService {
         final int BATCH_SIZE = 100;
         Page<Upload> batch;
         do {
-            // Only scan non-deleted files; soft-deleted files legitimately have no file on disk.
             batch = uploadRepository.findAllNotDeleted(PageRequest.of(page++, BATCH_SIZE));
             for (Upload file : batch) {
                 if (!fileQueryService.fileExistsInFileSystem(file.uuid)) {
@@ -210,7 +199,6 @@ public class ScheduleService {
             }
         } while (batch.hasNext());
 
-        // Remove legacy plaintext {uuid}-decrypted sidecars that have no active share tokens
         storageService.listKeySuffix("-decrypted").forEach(key -> {
             String uuid = key.replace("-decrypted", "");
             uploadRepository.findByUUID(uuid).ifPresentOrElse(
@@ -250,7 +238,6 @@ public class ScheduleService {
         List<UploadShareLink> expiredShareLinks = shortLinkRepository.getShareTokenEntitiesForDeletion(LocalDate.now());
         if (!expiredShareLinks.isEmpty()) {
             expiredShareLinks.forEach(token -> fileDownloadService.deleteShareSidecar(token));
-            // Delete DB rows inside a transaction, then handle any sidecar cleanup.
             scheduleTransactionHelper.deleteExpiredShareTokens(expiredShareLinks);
             logger.info("Deleted {} invalid upload-share links", expiredShareLinks.size());
         } else {

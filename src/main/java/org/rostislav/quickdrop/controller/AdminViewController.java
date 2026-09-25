@@ -186,7 +186,7 @@ public class AdminViewController {
 
     @PostMapping("/setup")
     public String setAdminPassword(String adminPassword) {
-        // Guard: if admin password is already set, refuse to overwrite via unauthenticated POST
+        // Unauthenticated endpoint -- refuse to overwrite an existing password.
         if (applicationSettingsService.isAdminPasswordSet()) {
             return REDIRECT_ADMIN_DASHBOARD;
         }
@@ -308,9 +308,8 @@ public class AdminViewController {
         if (storagePath == null || storagePath.isBlank() || !isSafeStoragePath(storagePath)) {
             return "invalidStoragePath";
         }
-        // The log path field is optional (unlike fileStoragePath), and API callers may omit it
-        // entirely -- coerce a blank submission back to the default rather than persisting null,
-        // which would leave the startup lookup with nothing to read.
+        // Optional field; API callers may omit it -- coerce blank to the default rather than
+        // persisting null, which the startup lookup can't read.
         String logPath = settings.getLogStoragePath();
         if (logPath == null || logPath.isBlank()) {
             settings.setLogStoragePath(ApplicationSettingsService.DEFAULT_LOG_STORAGE_PATH);
@@ -335,13 +334,7 @@ public class AdminViewController {
             "/etc", "/bin", "/sbin", "/usr", "/sys", "/proc", "/boot", "/dev", "/root", "/var"
     );
 
-    /**
-     * Rejects a blank/traversal-escaping path and a short list of well-known OS-critical
-     * directories (e.g. {@code C:\Windows}), but otherwise allows absolute paths — Docker
-     * deployments legitimately mount the storage root at an absolute path
-     * (see README: {@code mount /app/db, /app/files, /app/log}), so "must be relative" would
-     * reject valid production configuration, not just dangerous ones.
-     */
+    /** Rejects traversal-escaping paths and OS-critical directories; absolute paths are otherwise allowed (see {@link #DANGEROUS_STORAGE_ROOTS}). */
     private boolean isSafeStoragePath(String storagePath) {
         try {
             java.nio.file.Path path = java.nio.file.Path.of(storagePath);
@@ -455,14 +448,7 @@ public class AdminViewController {
         return REDIRECT_ADMIN_PREFIX + safeAdminSource(source);
     }
 
-    /**
-     * Validates the {@code source} redirect parameter used by admin mutation endpoints.
-     * Only the known admin sub-pages are allowed; anything else falls back to {@code "files"}
-     * to prevent open redirects within the admin namespace.
-     *
-     * @param source the raw {@code source} request parameter
-     * @return a safe, whitelisted sub-path segment
-     */
+    /** Whitelists {@code source} to known admin sub-pages to prevent open redirects; anything else falls back to {@code "files"}. */
     private static String safeAdminSource(String source) {
         return java.util.Set.of("files", "pastes", "links").contains(source) ? source : "files";
     }
@@ -480,21 +466,9 @@ public class AdminViewController {
      * Displays the merged short-links admin page — upload-share links and general-purpose
      * redirect links, switchable via {@code kind} — with search, filters, sort, and pagination.
      *
-     * @param kind      {@code "share"} (default) for upload-share links, {@code "redirect"}
-     *                  for URL-shortener links
-     * @param page      zero-based page index (default 0)
-     * @param size      page size, clamped to [1, 100] (default 20)
-     * @param query     optional search string matched against file name/token (share) or
-     *                  destination URL/code (redirect)
-     * @param type      share-links-only: optional type filter {@code "file"}, {@code "paste"},
-     *                  or omitted for all
-     * @param noExpiry  when {@code true} show only links with no expiry date
-     * @param unlimited when {@code true} show only links with no use cap
-     * @param sortBy    sort field: {@code "created"} (default), {@code "name"} (share only),
-     *                  {@code "expiry"}, {@code "downloads"}
-     * @param sortDir   sort direction: {@code "desc"} (default) or {@code "asc"}
-     * @param model     Spring MVC model
-     * @return the {@code admin-links} template name
+     * @param kind   {@code "share"} (default) or {@code "redirect"}
+     * @param type   share-links only: {@code "file"}, {@code "paste"}, or omitted for all
+     * @param sortBy {@code "created"} (default), {@code "name"} (share only), {@code "expiry"}, or {@code "downloads"}
      */
     @GetMapping("/links")
     public String getLinksPage(@RequestParam(defaultValue = "share") String kind,
@@ -547,15 +521,7 @@ public class AdminViewController {
         return "admin-links";
     }
 
-    /**
-     * Builds a {@link Sort} for the share-links tab from the user-supplied field name
-     * and direction string.
-     *
-     * @param sortBy  field token: {@code "created"}, {@code "name"}, {@code "expiry"},
-     *                or {@code "downloads"}
-     * @param sortDir {@code "asc"} or {@code "desc"}
-     * @return the resolved {@link Sort}
-     */
+    /** Sort for the share-links tab. sortBy: created (default), name, expiry, or downloads. */
     private Sort buildShareSort(String sortBy, String sortDir) {
         Sort.Direction dir = "asc".equalsIgnoreCase(sortDir) ? Sort.Direction.ASC : Sort.Direction.DESC;
         return switch (sortBy) {
@@ -566,15 +532,7 @@ public class AdminViewController {
         };
     }
 
-    /**
-     * Builds a {@link Sort} for the redirect-links tab. No {@code "name"} option — redirect
-     * links have no associated upload to name-sort by; unrecognised values (including
-     * {@code "name"} itself) fall back to the {@code "created"} default.
-     *
-     * @param sortBy  field token: {@code "created"}, {@code "expiry"}, or {@code "downloads"}
-     * @param sortDir {@code "asc"} or {@code "desc"}
-     * @return the resolved {@link Sort}
-     */
+    /** Sort for the redirect-links tab; no "name" option since redirect links have no upload to sort by name. sortBy: created (default), expiry, or downloads. */
     private Sort buildRedirectLinkSort(String sortBy, String sortDir) {
         Sort.Direction dir = "asc".equalsIgnoreCase(sortDir) ? Sort.Direction.ASC : Sort.Direction.DESC;
         return switch (sortBy) {
@@ -584,26 +542,14 @@ public class AdminViewController {
         };
     }
 
-    /**
-     * Revokes an upload-share token by ID and redirects back to the merged links page.
-     *
-     * @param id      database ID of the share token to revoke
-     * @param request the HTTP request (for history log IP/user-agent metadata)
-     * @return redirect to {@code /admin/links}
-     */
+    /** Revokes an upload-share token and redirects back to the merged links page. */
     @PostMapping("/links/revoke-share/{id}")
     public String revokeShareToken(@PathVariable Long id, HttpServletRequest request) {
         fileLifecycleService.revokeShareToken(id, request);
         return "redirect:/admin/links";
     }
 
-    /**
-     * Revokes a redirect (URL-shortener) link by ID and redirects back to the redirect-links tab.
-     *
-     * @param id      database ID of the redirect link to revoke
-     * @param request the HTTP request (for the audit-log admin IP)
-     * @return redirect to {@code /admin/links?kind=redirect}
-     */
+    /** Revokes a redirect link and redirects back to the redirect-links tab. */
     @PostMapping("/links/revoke-redirect/{id}")
     public String revokeRedirectLink(@PathVariable Long id, HttpServletRequest request) {
         RequesterInfo info = FileUtils.getRequesterInfo(request, applicationSettingsService.isTrustedProxyEnabled());
@@ -612,20 +558,12 @@ public class AdminViewController {
     }
 
     /**
-     * Displays the global activity log with optional date-range, event-type, source-type,
-     * IP, and user-agent filters.
+     * Displays the activity log with optional date-range, event-type, source, IP, and
+     * user-agent filters.
      *
-     * @param startDate  optional lower bound on event timestamp (ISO date-time string)
-     * @param endDate    optional upper bound on event timestamp (ISO date-time string)
-     * @param eventType  optional exact event type filter ({@link EventType} name)
-     * @param ip         optional IP address substring filter
-     * @param ua         optional user-agent substring filter
-     * @param sourceType optional source category: {@code "file"}, {@code "paste"}, or
-     *                   {@code "system"}; omit or leave blank for all
-     * @param page       zero-based page index (default 0)
-     * @param size       page size, clamped to [1, 100] (default 30)
-     * @param model      Spring MVC model
-     * @return the {@code admin-activity} template name
+     * @param eventType  an {@link EventType} name, or an {@link EventCategory} name to
+     *                   include every type in that category
+     * @param sourceType {@code "file"}, {@code "paste"}, {@code "system"}, or blank for all
      */
     @GetMapping("/activity")
     public String getActivityPage(@RequestParam(required = false) String startDate,
@@ -666,10 +604,7 @@ public class AdminViewController {
         return "admin-activity";
     }
 
-    /**
-     * Streams the activity log as CSV using the same filters as {@link #getActivityPage}.
-     * Paged rather than materialised so an unfiltered export doesn't pull the table into heap.
-     */
+    /** Streams the activity log as CSV, paged internally so an unfiltered export doesn't pull the whole table into heap. */
     @GetMapping("/activity/export")
     public ResponseEntity<StreamingResponseBody> exportActivity(@RequestParam(required = false) String startDate,
                                                                 @RequestParam(required = false) String endDate,
@@ -723,10 +658,9 @@ public class AdminViewController {
     }
 
     /**
-     * Resolves the event-type filter value, which is either a single {@link EventType} name or an
-     * {@link EventCategory} name selected from the dropdown's category headings. A category
-     * expands to every type it contains. Returns {@code null} when absent or unrecognised, meaning
-     * no filter. The two enums share no constant names, so a value can only match one of them.
+     * Resolves the value as an {@link EventType} name, or an {@link EventCategory} name
+     * (expanding to every type in it) if that fails. The two enums share no constant names,
+     * so there's no ambiguity. Returns {@code null} if neither matches.
      */
     private static List<EventType> parseFilterEventType(String value) {
         if (value == null || value.isBlank()) {

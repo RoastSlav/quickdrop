@@ -13,15 +13,9 @@ class IndexViewControllerTest extends ControllerTestSupport {
     @Test
     @DirtiesContext(methodMode = DirtiesContext.MethodMode.BEFORE_METHOD)
     void indexPage_beforeAdminSetup_redirectsToAdminSetup() throws Exception {
-        // Needs a pristine "no admin password yet" database. QuickdropIntegrationTest-based
-        // contexts with identical configuration are cached and shared across ALL test classes
-        // (see application-test.properties), and JUnit does not run test methods in declaration
-        // order even within one class -- so this can't rely on being "the first test that runs"
-        // anywhere in the suite. Method-level BEFORE_METHOD forces a brand new context (and thus
-        // a freshly Flyway-migrated DB with no admin password set) immediately before this test.
-        //
-        // AdminPasswordSetupInterceptor forces every route to /admin/setup until an admin
-        // password exists -- this applies globally, including "/".
+        // Needs a pristine "no admin password yet" database. Contexts are cached/shared across
+        // test classes and JUnit doesn't guarantee method order, so BEFORE_METHOD forces a fresh
+        // context here. AdminPasswordSetupInterceptor gates every route, including "/".
         mockMvc.perform(get("/"))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/admin/setup"));

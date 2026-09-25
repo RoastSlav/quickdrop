@@ -97,11 +97,7 @@ public enum EventType {
         this.category = category;
     }
 
-    /**
-     * Returns the broad category this event belongs to.
-     *
-     * @return non-null {@link EventCategory}
-     */
+    /** @return non-null {@link EventCategory} */
     public EventCategory getCategory() {
         return category;
     }

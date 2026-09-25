@@ -27,11 +27,6 @@ import org.springframework.context.annotation.Configuration;
 @EnableCaching
 public class CacheConfig {
 
-    /**
-     * Registers the named caches used throughout the application.
-     *
-     * @return the configured cache manager
-     */
     @Bean
     public CacheManager cacheManager() {
         return new ConcurrentMapCacheManager("publicFiles", "adminFiles", "adminDeletedFiles", "adminPastes", "adminDeletedPastes", "analytics", "applicationSettings");

@@ -17,7 +17,6 @@
           x-data="{ options: false }">
         <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden"/>
 
-        <!-- Bar: the paste's own name, plus the two controls you always need. -->
         <div class="paste-bar">
             <label class="sr-only" for="pasteTitle" th:text="#{page.paste.field.title}">Title</label>
             <input class="paste-title" id="pasteTitle" maxlength="255" name="title" required
@@ -41,7 +40,6 @@
             </div>
         </div>
 
-        <!-- Everything that is not writing lives here, one keystroke away. -->
         <div class="paste-options" id="pasteOptions" x-cloak x-show="options">
             <div class="paste-options-grid">
 
@@ -81,8 +79,7 @@
 
             </div>
 
-            <!-- Protection and lifetime: uniform cards, so the tall password cell can't
-                 stretch a row of short editor fields and leave a void beside them. -->
+            <!-- Uniform cards so the tall password cell can't stretch shorter fields into a void. -->
             <div class="paste-options-cards">
 
                 <!-- On edit, blank means "leave password unchanged", not "remove" -- a password field

@@ -68,9 +68,6 @@ public class NotificationService {
     /**
      * Returns {@code true} if the per-event notification toggle for {@code type} is enabled.
      * System-only events ({@code SHARE_EXPIRE}, {@code SHARE_REVOKE}) are always silent.
-     *
-     * @param type the event type to check
-     * @return {@code true} if notifications for this event type are enabled
      */
     private boolean isNotificationEventEnabled(EventType type) {
         return switch (type) {
@@ -200,9 +197,6 @@ public class NotificationService {
      * Returns {@code true} only when {@code url} is an {@code https://} URL pointing at a
      * Discord-owned domain ({@code discord.com} or {@code discordapp.com} and their subdomains).
      * Rejects {@code null}, blank, non-HTTPS, and any other hostname to prevent SSRF.
-     *
-     * @param url the webhook URL to validate
-     * @return {@code true} if the URL is safe to call
      */
     private boolean isValidDiscordWebhookUrl(String url) {
         if (url == null || url.isBlank()) return false;
@@ -224,7 +218,6 @@ public class NotificationService {
      * pings by inserting a zero-width space after the {@code @} sign.
      *
      * @param text the raw text to escape; {@code null} returns an empty string
-     * @return the escaped string safe for inclusion in a Discord message
      */
     private String escapeDiscord(String text) {
         if (text == null) return "";
@@ -235,8 +228,6 @@ public class NotificationService {
     /**
      * Posts {@code content} to the configured Discord webhook URL.
      * Failures are logged as warnings and do not propagate.
-     *
-     * @param content the message text to send
      */
     private void sendDiscord(String content) {
         String webhookUrl = safeString(applicationSettingsService.getDiscordWebhookUrl());
@@ -340,7 +331,6 @@ public class NotificationService {
     /**
      * Truncates and sanitises an exception message for display in user-facing error strings.
      *
-     * @param message the raw exception message
      * @return a single-line string no longer than 160 characters
      */
     private String summarizeReason(String message) {
@@ -400,9 +390,6 @@ public class NotificationService {
     /**
      * Flushes all pending messages as a single batched notification.
      * Updates {@link #lastFlushEpochMillis} so the interval resets after each flush.
-     *
-     * @param sendDiscord whether to send to Discord
-     * @param sendEmail   whether to send via email
      */
     private void flushPending(boolean sendDiscord, boolean sendEmail) {
         List<String> drained = drainPendingMessages();
@@ -430,8 +417,6 @@ public class NotificationService {
     /**
      * Constructs a {@link JavaMailSenderImpl} from the current application settings.
      * Returns {@code null} if no SMTP host is configured.
-     *
-     * @return a configured mail sender, or {@code null} if the host is blank
      */
     private JavaMailSenderImpl resolveMailSender() {
         String host = safeString(applicationSettingsService.getSmtpHost());

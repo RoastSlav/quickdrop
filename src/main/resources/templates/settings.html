@@ -124,7 +124,6 @@
                       th:action="@{/admin/save}" th:attr="data-app-password-set=${isAppPasswordSet}"
                       th:object="${settings}">
 
-                    <!-- Panel: Appearance -->
                     <div class="settings-panel" id="panel-appearance">
                         <div class="card card-lg flex flex-col gap-6">
                             <div class="panel-header"
@@ -186,7 +185,6 @@
                         </div>
                     </div>
 
-                    <!-- Panel: Features -->
                     <div class="settings-panel hidden" id="panel-features">
                         <div class="card card-lg flex flex-col gap-6">
                             <div class="panel-header"
@@ -699,7 +697,6 @@
 
                     </div>
 
-                    <!-- Panel: Files -->
                     <div class="settings-panel hidden" id="panel-files">
                         <div class="card card-lg flex flex-col gap-6">
                             <div class="panel-header"
@@ -915,7 +912,6 @@
                         </div>
                     </div>
 
-                    <!-- Panel: Security -->
                     <div class="settings-panel hidden" id="panel-security">
                         <div class="card card-lg flex flex-col gap-6">
                             <div class="panel-header"
@@ -1018,7 +1014,6 @@
                         </div>
                     </div>
 
-                    <!-- Panel: Notifications -->
                     <div class="settings-panel hidden" id="panel-notifications">
                         <div class="card card-lg">
                             <div class="panel-header"
@@ -1174,7 +1169,6 @@
                                     </div>
                                 </div>
 
-                                <!-- Event Filters -->
                                 <div class="rounded-2xl p-4 flex flex-col gap-3" style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
                                     <p class="text-sm font-semibold"
                                        th:text="#{page.settings.notifications.events.title}">Event Filters</p>
@@ -1243,7 +1237,6 @@
                         </div>
                     </div>
 
-                <!-- Panel: Storage (S3 / local backend) -->
                 <div class="settings-panel hidden" id="panel-storage">
                     <div class="card card-lg">
                         <div class="panel-header" style="border-bottom:1px solid var(--c-border);padding-bottom:1rem">
@@ -1531,8 +1524,7 @@
                                    th:text="#{page.settings.storage.migrationLink.open}">Open Migration Tool →</a>
                             </div>
 
-                            <!-- Schedule/retention are edited on the Backups page itself; these carry the current
-                                 values through unchanged so this form's general save doesn't reset them. -->
+                            <!-- Schedule/retention are edited on the Backups page; these just carry the current values through so this form's save doesn't reset them. -->
                             <input th:field="*{backupScheduleEnabled}" type="hidden"/>
                             <input th:field="*{backupCron}" type="hidden"/>
                             <input th:field="*{maxBackups}" type="hidden"/>
@@ -1555,7 +1547,7 @@
 
                 </form>
 
-                <!-- Panel: About (outside form — read only) -->
+                <!-- Outside the form: read-only, nothing here is submitted. -->
                 <div class="settings-panel hidden" id="panel-about">
                     <div class="card card-lg">
                         <div class="panel-header" style="border-bottom:1px solid var(--c-border);padding-bottom:1rem">

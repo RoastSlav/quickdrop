@@ -123,9 +123,7 @@ public class ShareViewController {
      * Validates the share key POSTed by client JS (from the URL fragment) and stores
      * it in the HTTP session so subsequent downloads can decrypt the sidecar.
      *
-     * @param token   the share token
-     * @param key     the plaintext key read from {@code window.location.hash} by the client
-     * @param request HTTP request for session storage
+     * @param key the plaintext key read from {@code window.location.hash} by the client
      * @return 200 OK on success, 403 on wrong key, 404 on missing/expired token
      */
     @PostMapping("/{token}/auth")

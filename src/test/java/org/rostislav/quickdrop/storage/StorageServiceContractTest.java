@@ -64,8 +64,8 @@ abstract class StorageServiceContractTest {
 
     @Test
     void deleteOfMissingKeyIsIdempotentSuccess() {
-        // Per the StorageService contract, deleting an already-absent key is a success,
-        // not an error -- callers must not need to check existence first.
+        // Deleting an already-absent key must succeed, not error -- callers shouldn't need
+        // to check existence first.
         assertTrue(storageService().delete("was-never-there"));
     }
 
@@ -77,9 +77,8 @@ abstract class StorageServiceContractTest {
         assertTrue(storageService().delete("to-delete"));
 
         assertFalse(storageService().exists("to-delete"));
-        // A retried delete against a key that WAS present (as opposed to
-        // deleteOfMissingKeyIsIdempotentSuccess's never-existed case) must be just as
-        // idempotent -- this is the shape a failed migration retry actually takes.
+        // A retry after a successful delete (unlike the never-existed case above) must be
+        // just as idempotent -- this is the shape a failed migration retry takes.
         assertTrue(storageService().delete("to-delete"), "second delete of a just-deleted key must still report success");
     }
 

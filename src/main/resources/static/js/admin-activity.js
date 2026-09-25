@@ -112,9 +112,7 @@
             const source = srcBtn.getAttribute('data-sourcetype');
             const input = wrapper.querySelector('#sourceTypeInput');
             if (input) input.value = source;
-            // Fill in the matching category the way the range presets fill in the dates. A type
-            // left over from the previous source usually contradicts the new one (source System
-            // + event Viewed matches nothing), so it can't just be kept.
+            // A leftover event-type filter from a different source usually matches nothing, so switch it too.
             const evtType = wrapper.querySelector('#eventType');
             if (evtType) {
                 const category = SOURCE_CATEGORIES[source] || '';

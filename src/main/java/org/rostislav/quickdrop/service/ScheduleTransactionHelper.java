@@ -41,11 +41,6 @@ public class ScheduleTransactionHelper {
         this.activityLogRepository = activityLogRepository;
     }
 
-    /**
-     * Removes all database records for the given UUIDs within a single transaction.
-     *
-     * @param uuids UUIDs of uploads whose records should be removed from the database
-     */
     @Transactional
     public void softDeleteByUuids(List<String> uuids) {
         for (String uuid : uuids) {
@@ -54,15 +49,8 @@ public class ScheduleTransactionHelper {
     }
 
     /**
-     * Removes all expired/exhausted share token rows from the database within a
-     * single transaction.
-     *
-     * <p>DB rows are deleted first so that, in the event of a crash after this
-     * call returns, the tokens are already gone and any orphaned sidecars are
-     * cleaned up by the daily orphan scan rather than leaving dangling token
-     * records pointing at missing sidecars.
-     *
-     * @param tokens share token entities to delete
+     * DB rows are deleted first so a crash right after this call leaves orphaned sidecars
+     * (cleaned up by the daily orphan scan) rather than dangling token records.
      */
     @Transactional
     public void deleteExpiredShareTokens(List<UploadShareLink> tokens) {
@@ -70,14 +58,9 @@ public class ScheduleTransactionHelper {
     }
 
     /**
-     * Removes all expired/exhausted redirect links within a single transaction, writing a
-     * {@code SHORTLINK_EXPIRE} audit-log row for each first (system-triggered: no IP/user-agent).
-     *
-     * <p>Unlike {@link #deleteExpiredShareTokens}, this logs per link — redirect links have
-     * no associated {@code Upload} to carry history on, so the activity log is the only
-     * place an admin can see that a given link expired.
-     *
-     * @param links redirect link entities to log and delete
+     * Unlike {@link #deleteExpiredShareTokens}, logs a {@code SHORTLINK_EXPIRE} row per link
+     * first — a redirect link has no associated {@code Upload} to carry history on, so the
+     * activity log is the only place an admin can see it expired.
      */
     @Transactional
     public void deleteExpiredRedirectLinks(List<RedirectLink> links) {
@@ -85,11 +68,6 @@ public class ScheduleTransactionHelper {
         shortLinkRepository.deleteAll(links);
     }
 
-    /**
-     * Soft-deletes uploads with the given IDs within a single transaction.
-     *
-     * @param ids file IDs to soft-delete via {@link FileLifecycleService}
-     */
     @Transactional
     public void deleteFilesAndHistory(List<Long> ids) {
         ids.forEach(id -> uploadRepository.findById(id)

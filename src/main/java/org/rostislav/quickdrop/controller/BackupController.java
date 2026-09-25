@@ -91,8 +91,7 @@ public class BackupController {
         model.addAttribute("backups", backups);
         model.addAttribute("settings", settings);
 
-        // Lead with what an admin actually needs to know: how much is stored, how old the
-        // newest one is, and when the next automatic run happens.
+        // Admin priorities: total stored, newest backup's age, next scheduled run.
         model.addAttribute("backupTotalSize",
                 formatFileSize(backups.stream().mapToLong(BackupService.BackupInfo::sizeBytes).sum()));
         model.addAttribute("newestBackupAt",
@@ -113,8 +112,7 @@ public class BackupController {
             CronExpression cron = CronExpression.parse(settings.getBackupCron());
             return cron.next(LocalDateTime.now());
         } catch (IllegalArgumentException e) {
-            // An invalid cron is surfaced by the schedule form's own validation; the summary
-            // simply shows nothing rather than blowing up the whole page.
+            // The schedule form validates cron syntax; here we just show nothing instead of failing the page.
             return null;
         }
     }

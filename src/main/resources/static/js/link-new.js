@@ -100,14 +100,9 @@
     }
 
     /**
-     * Pairs an "unlimited"/"no expiration" checkbox with its number input: checked disables
-     * and clears the input, unchecked re-enables it and seeds `fallback` if it's empty.
-     *
-     * <p>Seeding the fallback is what stops the two controls from contradicting each other.
-     * submitLink() treats a blank/zero value as "no limit", so without it, unchecking the box
-     * and leaving the field empty would produce an unlimited link anyway — the form saying
-     * one thing and the created link doing another. Mirrors fileView.js's
-     * toggleExpirationLimit/toggleDownloadLimit, which seed 30 days / 1 download the same way.
+     * Pairs a "no limit" checkbox with its number input: checked disables and clears the
+     * input, unchecked re-enables it and seeds `fallback` if empty -- otherwise unchecking
+     * with a blank field would submit as unlimited anyway. Mirrors fileView.js's toggle functions.
      */
     function wireLimitToggle(checkboxId, inputId, fallback) {
         const checkbox = document.getElementById(checkboxId);

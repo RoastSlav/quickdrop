@@ -31,8 +31,7 @@ export async function preprocessFileForMetadata(
     };
 }
 
-/** One row per file, matching what buildArchiveCandidates produces, so the review panel
- *  renders a lone file and an archive the same way. */
+/** Matches buildArchiveCandidates' row shape, so the review panel renders a lone file and an archive the same way. */
 function reviewRow(file, failureReason, fileWarnings) {
     return {
         name: file.name,

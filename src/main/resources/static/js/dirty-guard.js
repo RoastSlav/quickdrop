@@ -79,9 +79,7 @@
                 dirty = true;
                 if (!bar) bar = buildBar(form, api);
                 bar.hidden = false;
-                // Force a reflow so the transition has a from-state, rather than waiting
-                // on requestAnimationFrame — rAF does not fire in a backgrounded tab, which
-                // would leave the bar present but permanently at opacity 0.
+                // Force reflow instead of rAF, which doesn't fire in a backgrounded tab.
                 void bar.offsetWidth;
                 bar.classList.add('is-visible');
             },
@@ -106,8 +104,7 @@
             e.returnValue = '';
         });
 
-        // In-app navigation: the browser prompt only covers unloads it initiates, and
-        // it cannot be styled. For ordinary link clicks we can do better.
+        // beforeunload only covers browser-initiated unloads and can't be styled; handle in-app link clicks ourselves.
         document.addEventListener('click', function (e) {
             if (!dirty) return;
             const link = e.target.closest('a[href]');

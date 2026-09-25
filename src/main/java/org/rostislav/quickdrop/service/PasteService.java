@@ -106,10 +106,6 @@ public class PasteService {
     /**
      * Returns a paginated list of pastes with pre-aggregated view counts, optionally
      * filtered by a search query. Results are cached per page/size/query combination.
-     *
-     * @param pageable pagination parameters
-     * @param query    optional search string
-     * @return a page of {@link PasteEntityView} projections
      */
     @Cacheable(value = "adminPastes", key = "'page:' + #pageable.pageNumber + ':size:' + #pageable.pageSize + ':q:' + (#query == null ? '' : #query.toLowerCase())")
     public Page<PasteEntityView> getPaginatedPastes(Pageable pageable, String query) {
@@ -122,10 +118,6 @@ public class PasteService {
     /**
      * Returns a paginated list of soft-deleted pastes with pre-aggregated view counts,
      * optionally filtered by a search query. Results are cached per page/size/query combination.
-     *
-     * @param pageable pagination parameters
-     * @param query    optional search string
-     * @return a page of {@link PasteEntityView} projections for deleted pastes
      */
     @Cacheable(value = "adminDeletedPastes", key = "'page:' + #pageable.pageNumber + ':size:' + #pageable.pageSize + ':q:' + (#query == null ? '' : #query.toLowerCase())")
     public Page<PasteEntityView> getDeletedPaginatedPastes(Pageable pageable, String query) {
@@ -140,15 +132,11 @@ public class PasteService {
      *
      * <p>The resulting entity is marked {@code hidden}.
      *
-     * @param title            paste title (used as the stored filename after sanitization)
-     * @param content          paste body text
-     * @param syntax           syntax hint: {@code "markdown"} or any other value for plain text
-     * @param keepIndefinitely whether the paste should be exempt from scheduled deletion
-     * @param password         optional access password (cleared when upload passwords are disabled)
-     * @param immutable        whether the paste should be permanently immutable after creation
-     * @param editOnly         when {@code true} the password guards editing only; viewing is public
-     *                         (also suppresses AES encryption so content can be served without a key)
-     * @param request          the HTTP request (provides requester metadata and admin session)
+     * @param title    paste title (used as the stored filename after sanitization)
+     * @param syntax   syntax hint: {@code "markdown"} or any other value for plain text
+     * @param password optional access password (cleared when upload passwords are disabled)
+     * @param editOnly when {@code true} the password guards editing only; viewing is public
+     *                 (also suppresses AES encryption so content can be served without a key)
      * @return the saved {@link Upload} (a {@link Paste} instance), or {@code null} on failure
      * @throws IOException if writing the paste to disk fails
      */
@@ -210,12 +198,7 @@ public class PasteService {
      * already immutable. Throws {@link IllegalArgumentException} if the paste is encrypted
      * but no valid session exists.
      *
-     * @param uuid             the paste UUID
      * @param title            new paste title (used to derive the filename)
-     * @param content          new paste body text
-     * @param syntax           syntax hint for filename extension
-     * @param keepIndefinitely whether the paste should be exempt from scheduled deletion
-     * @param setImmutable     when {@code true} the paste is locked permanently after this edit
      * @param password         new access password; blank/{@code null} leaves the paste's
      *                         current password state untouched -- a password field can never
      *                         be pre-filled with the real value, so treating blank as "remove"
@@ -225,7 +208,6 @@ public class PasteService {
      *                         already uses for {@code appPassword}/{@code smtpPassword}). A
      *                         non-blank value sets/changes it. {@code editOnly} is fixed at
      *                         creation and not editable here.
-     * @param request          the HTTP request (provides session token and admin check)
      * @return the updated {@link Paste}, or {@code null} if the UUID is not a paste or is immutable
      * @throws IOException              if writing the new content fails
      * @throws IllegalArgumentException if the paste is currently encrypted but no valid session exists
@@ -319,8 +301,6 @@ public class PasteService {
      * <p>Decrypts the content if the paste is encrypted. Returns {@code null} if the
      * UUID is not found, does not refer to a paste, or if an I/O error occurs.
      *
-     * @param uuid    the paste UUID
-     * @param request the HTTP request (provides session token for decryption)
      * @return paste content as a UTF-8 string, or {@code null} on failure
      */
     public String getPasteContent(String uuid, HttpServletRequest request) {
@@ -346,9 +326,6 @@ public class PasteService {
     /**
      * Logs a {@link EventType#PASTE_VIEW} event for a paste.
      * Does nothing if the UUID is not found.
-     *
-     * @param uuid    the paste UUID
-     * @param request the HTTP request providing requester metadata
      */
     @CacheEvict(value = {"adminPastes", "adminDeletedPastes", "analytics"}, allEntries = true)
     public void logPasteView(String uuid, HttpServletRequest request) {
@@ -362,7 +339,6 @@ public class PasteService {
      * Extracts the cleartext file password from the file session token stored in the
      * HTTP session, if present.
      *
-     * @param request the HTTP request
      * @return the file access password, or {@code null} if no session token is present
      */
     private String getFilePasswordFromSessionToken(HttpServletRequest request) {
@@ -378,11 +354,6 @@ public class PasteService {
     /**
      * Resolves the effective upload options for a paste based on admin session state
      * and global settings.
-     *
-     * @param keepIndefinitely requested keep-indefinitely flag
-     * @param password         requested access password
-     * @param request          the HTTP request (for admin session check)
-     * @return resolved {@link PasteUploadOptions}
      */
     private PasteUploadOptions resolvePasteUploadOptions(boolean keepIndefinitely,
                                                          String password,
@@ -396,9 +367,8 @@ public class PasteService {
     }
 
     /**
-     * Validates that the paste content does not exceed the configured maximum file size.
+     * Validates paste content against the configured max file size, hard-capped at 10 MB.
      *
-     * @param contentBytes paste content bytes
      * @throws IllegalArgumentException if the limit is exceeded
      */
     private void validatePasteSize(byte[] contentBytes) {
@@ -435,9 +405,7 @@ public class PasteService {
      * Writes byte content to a file, encrypting it if a password is provided and
      * encryption is enabled. Any pre-existing file at {@code outputPath} is deleted first.
      *
-     * @param outputPath   destination file path
-     * @param contentBytes raw content bytes
-     * @param password     optional encryption password; {@code null} or blank writes plaintext
+     * @param password optional encryption password; {@code null} or blank writes plaintext
      * @throws IOException if writing fails
      */
     private void writeContentToFile(Path outputPath, byte[] contentBytes, String password) throws IOException {

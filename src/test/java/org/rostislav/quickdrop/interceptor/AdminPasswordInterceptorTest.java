@@ -38,13 +38,8 @@ class AdminPasswordInterceptorTest extends InterceptorTestSupport {
 
     @Test
     void fileHistoryRoute_notGuardedByAdminInterceptor_regressionCheck() throws Exception {
-        // Regression check: this route used to be unconditionally covered by
-        // AdminPasswordInterceptor (admin-only regardless of the file's own password state
-        // or any file-session token). A file-session token alone -- no admin-session-token --
-        // reaching the controller (and succeeding, since FileViewController accepts it for a
-        // password-protected file's own history) proves this interceptor isn't intercepting
-        // the route; if it still guarded "/file/history/*" this would redirect to
-        // /admin/password instead, since this interceptor only recognizes admin-session-token.
+        // Regression check: this route used to be wrongly guarded by AdminPasswordInterceptor.
+        // A file-session token succeeding here (no admin-session-token) proves it no longer is.
         ensureAdminPasswordSet();
         StoredFile file = createFile("secret.txt", "hi".getBytes(), "historypw");
         MockHttpSession session = fileSession(file.uuid, "historypw");
@@ -55,8 +50,7 @@ class AdminPasswordInterceptorTest extends InterceptorTestSupport {
     @Test
     void logoutRoute_bypassesTheInterceptorEvenWithoutSession() throws Exception {
         ensureAdminPasswordSet();
-        // /admin/logout is explicitly excluded from the admin-session check so a stale/expired
-        // session can still complete a logout without bouncing back into a redirect loop.
+        // /admin/logout bypasses the admin-session check so a stale session can still log out.
         mockMvc.perform(post("/admin/logout").with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf()))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/"));

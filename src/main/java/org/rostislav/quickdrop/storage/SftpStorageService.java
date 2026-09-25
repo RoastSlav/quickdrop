@@ -81,7 +81,7 @@ public class SftpStorageService implements StorageService {
             ChannelSftp ch = (ChannelSftp) s.openChannel("sftp");
             ch.connect(10_000);
             InputStream raw = ch.get(remotePath(key));
-            // Wrap to close channel and disconnect session when the stream is closed.
+            // Ties channel/session lifecycle to the stream's close().
             return new FilterInputStream(raw) {
                 @Override
                 public void close() throws IOException {
@@ -232,9 +232,7 @@ public class SftpStorageService implements StorageService {
         return StorageBackend.SFTP;
     }
 
-    /**
-     * Returns null on success, error message on failure.
-     */
+    /** @return null on success, or the error message on failure */
     public String testConnection() {
         Session s = null;
         ChannelSftp ch = null;

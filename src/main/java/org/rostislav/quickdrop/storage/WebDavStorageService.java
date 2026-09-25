@@ -147,9 +147,7 @@ public class WebDavStorageService implements StorageService {
         return StorageBackend.WEBDAV;
     }
 
-    /**
-     * Returns null on success, error message on failure.
-     */
+    /** @return null on success, or the error message on failure */
     public String testConnection() {
         try {
             refreshClient();

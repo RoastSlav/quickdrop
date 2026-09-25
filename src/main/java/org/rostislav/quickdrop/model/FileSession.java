@@ -8,10 +8,6 @@ public class FileSession {
     private final String password;
     private final String fileUuid;
 
-    /**
-     * @param password cleartext file access password
-     * @param fileUuid UUID of the protected file
-     */
     public FileSession(String password, String fileUuid) {
         this.password = password;
         this.fileUuid = fileUuid;

@@ -65,8 +65,8 @@ public class ShortLinkRestController {
      * @param expirationDate  optional expiry date
      * @param maxUses         optional use limit; {@code null} means unlimited
      * @param customAlias     optional human-chosen code; a random one is generated when blank
-     * @return 200 with {@code code}/{@code shortUrl}/{@code qrSvgUrl}/{@code qrPngUrl}, 403 when
-     *         the feature (or, for non-admins, the feature itself) is disabled, or 400 with
+     * @return 200 with {@code code}/{@code shortUrl}/{@code qrSvgUrl}/{@code qrPngUrl}; 403 when
+     *         the shortener is disabled, or admin-only and the caller isn't an admin; 400 with
      *         {@code message} when the destination or alias is rejected
      */
     @PostMapping
@@ -104,7 +104,6 @@ public class ShortLinkRestController {
     /**
      * Returns an SVG QR code encoding the full URL for the given link code.
      *
-     * @param code the short link code
      * @param size rendered width/height in pixels; clamped by {@link QrCodeService}
      * @return 200 with the SVG body, or 404 if the code doesn't exist / is no longer valid
      */
@@ -127,7 +126,6 @@ public class ShortLinkRestController {
     /**
      * Returns a PNG QR code encoding the full URL for the given link code.
      *
-     * @param code the short link code
      * @param size rendered width/height in pixels; clamped by {@link QrCodeService}
      * @return 200 with the PNG body, or 404 if the code doesn't exist / is no longer valid
      */

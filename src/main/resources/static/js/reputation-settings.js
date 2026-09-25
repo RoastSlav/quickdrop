@@ -21,19 +21,14 @@ function syncReputationSettings() {
 document.addEventListener("DOMContentLoaded", function () {
     syncReputationSettings();
 
-    // The settings layout has ancestors with CSS transforms (the animate-in entrance
-    // animations), which makes `position: fixed` on a nested element behave like
-    // `position: absolute` relative to that ancestor instead of the viewport. Moving each
-    // modal to be a direct child of <body> sidesteps that CSS containing-block gotcha
-    // entirely rather than fighting it with more CSS.
+    // Ancestor CSS transforms (the entrance animations) turn `position: fixed` into a
+    // containing-block trap; reparenting each modal under <body> sidesteps it.
     document.querySelectorAll(".modal-overlay").forEach((modal) => {
         document.body.appendChild(modal);
     });
 
-    // This app pairs a cookie-based CSRF repository with XorCsrfTokenRequestAttributeHandler
-    // (BREACH-attack mitigation) -- the raw XSRF-TOKEN cookie value is NOT a valid header
-    // value under that handler, only the server-rendered (masked) _csrf.token is. Read it
-    // from the same meta tag link-new.js uses, rather than the cookie directly.
+    // The raw XSRF-TOKEN cookie isn't a valid header value here (XorCsrfTokenRequestAttributeHandler
+    // masks it for BREACH mitigation) -- read the masked token from the meta tag instead.
     function csrfToken() {
         return document.querySelector('meta[name="_csrf"]')?.getAttribute("content") || "";
     }
@@ -58,9 +53,8 @@ document.addEventListener("DOMContentLoaded", function () {
         button.addEventListener("click", () => closeModal(button.closest(".modal-overlay")));
     });
 
-    // The two dismissals every modal is expected to support besides its Cancel button.
-    // Both are deliberately "cancel" semantics only -- nothing here can enable a provider,
-    // which stays exclusively behind the explicit accept-then-confirm path.
+    // Backdrop click and Escape are cancel-only; nothing here can enable a provider --
+    // that stays behind the explicit accept-then-confirm path.
     document.querySelectorAll(".modal-overlay").forEach((modal) => {
         modal.addEventListener("click", (e) => {
             // Backdrop only: a click that lands inside the dialog card must not dismiss it.
@@ -84,9 +78,8 @@ document.addEventListener("DOMContentLoaded", function () {
         button.addEventListener("click", async () => {
             const providerId = button.dataset.confirmReputationModal;
 
-            // Accepting terms POSTs and then reloads, which would throw away any pending
-            // edits in the settings form -- including the "Enable reputation checking"
-            // master switch someone almost certainly just ticked. Commit them first.
+            // Accepting terms reloads the page, which would discard any unsaved settings
+            // edits (likely including the master switch just ticked) -- save first.
             if (window.QDSettings?.isDirty()) {
                 const t = window.QD_REPUTATION_I18N || {};
                 const ok = await window.confirmAction({
@@ -106,8 +99,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     return;
                 }
             }
-            // Stand the unsaved-changes guard down so the reload does not raise the
-            // browser's own "leave site?" prompt on a navigation we initiated.
+            // Stand the guard down so our own reload doesn't trigger a "leave site?" prompt.
             window.QDSettings?.standDownGuard();
 
             button.disabled = true;

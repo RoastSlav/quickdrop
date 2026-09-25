@@ -36,33 +36,19 @@ import java.util.Optional;
  */
 public interface ShortLinkRepository extends JpaRepository<ShortLink, Long> {
 
-    /**
-     * Finds an upload-share link by its short code string.
-     *
-     * @param shareToken the code value to look up
-     * @return the matching link, or empty if not found (or not an upload-share link)
-     */
+    /** {@code empty} if not found, or if the code belongs to a different link type. */
     @Query("SELECT s FROM UploadShareLink s WHERE s.code = :shareToken")
     Optional<UploadShareLink> findByShareToken(@Param("shareToken") String shareToken);
 
     /**
-     * Finds any {@link ShortLink} by its code, regardless of target type. Used by callers
-     * (QR generation, the general {@code /s/{code}} resolver) that need to look a code up
-     * before knowing what kind of link it is.
-     *
-     * @param code the code value to look up
-     * @return the matching link, or empty if not found
+     * Finds any {@link ShortLink} by code regardless of target type. Used by callers (QR
+     * generation, the general {@code /s/{code}} resolver) that need to look a code up before
+     * knowing what kind of link it is.
      */
     @Query("SELECT s FROM ShortLink s WHERE s.code = :code")
     Optional<ShortLink> findByCode(@Param("code") String code);
 
-    /**
-     * Checks whether a given code string already exists, across every link type sharing
-     * the {@code short_link} table.
-     *
-     * @param shareToken the candidate code string
-     * @return {@code true} if the code is already in use
-     */
+    /** Checked across every link type sharing the {@code short_link} table. */
     @Query("SELECT CASE WHEN COUNT(s) > 0 THEN true ELSE false END FROM ShortLink s WHERE s.code = :shareToken")
     boolean existsByShareToken(@Param("shareToken") String shareToken);
 
@@ -71,39 +57,22 @@ public interface ShortLinkRepository extends JpaRepository<ShortLink, Long> {
      * and {@code paypal} resolving to different links is a visual-confusability risk that
      * randomly-generated codes don't have, so alias validation checks this instead of
      * {@link #existsByShareToken}.
-     *
-     * @param code the candidate alias
-     * @return {@code true} if any link (of any target type) already uses this code, ignoring case
      */
     @Query("SELECT CASE WHEN COUNT(s) > 0 THEN true ELSE false END FROM ShortLink s WHERE LOWER(s.code) = LOWER(:code)")
     boolean existsByCodeIgnoreCase(@Param("code") String code);
 
-    /**
-     * Removes all upload-share links associated with a given upload.
-     *
-     * @param upload the upload whose links should be removed
-     */
     @Modifying
     @Transactional
     @Query("DELETE FROM UploadShareLink s WHERE s.upload = :upload")
     void deleteAllByFile(@Param("upload") Upload upload);
 
-    /**
-     * Returns all upload-share links that are no longer valid — either their expiry date
-     * has passed or their use allowance has been exhausted.
-     *
-     * @param today today's date, used as the expiry cutoff (pass {@code LocalDate.now()})
-     * @return list of links eligible for deletion
-     */
+    /** Expiry passed OR use allowance exhausted. */
     @Query("SELECT s FROM UploadShareLink s LEFT JOIN FETCH s.upload WHERE s.expirationDate < :today OR s.remainingUses = 0")
     List<UploadShareLink> getShareTokenEntitiesForDeletion(@Param("today") LocalDate today);
 
     /**
-     * Flips {@code sidecarReady} to {@code true} for a single link. Used by the
-     * background sidecar-encryption task to mark the link as ready without touching
-     * any other columns (avoiding spurious updates to {@code createdAt} etc.).
-     *
-     * @param id the link's database id
+     * Used by the background sidecar-encryption task to mark a link ready without touching
+     * any other columns (avoiding a spurious {@code createdAt} update, etc.).
      */
     @Modifying
     @Transactional
@@ -111,11 +80,8 @@ public interface ShortLinkRepository extends JpaRepository<ShortLink, Long> {
     void markSidecarReady(@Param("id") Long id);
 
     /**
-     * Deletes a link by id inside its own transaction. Used by the background
-     * sidecar-encryption task when encryption fails, so the caller doesn't need an
-     * active Spring-managed transaction.
-     *
-     * @param id the link's database id
+     * Deletes a link in its own transaction. Used by the background sidecar-encryption task
+     * on failure, so the caller doesn't need an active Spring-managed transaction.
      */
     @Modifying
     @Transactional
@@ -123,15 +89,8 @@ public interface ShortLinkRepository extends JpaRepository<ShortLink, Long> {
     void deleteByIdTransactional(@Param("id") Long id);
 
     /**
-     * Atomically decrements the remaining-uses counter for an upload-share link, but only
-     * when the counter is currently greater than zero. Returns the number of rows updated
-     * (1 on success, 0 if the counter was already exhausted by a concurrent request).
-     *
-     * <p>Using a single UPDATE prevents a read-then-write race where two concurrent
-     * downloads both observe {@code remainingUses = 1} and both succeed.
-     *
-     * @param id the link's database id
-     * @return 1 if the counter was decremented, 0 if it was already zero
+     * Single UPDATE, not read-then-write, so two concurrent downloads can't both observe
+     * {@code remainingUses = 1} and both succeed. Returns 1 if decremented, 0 if already zero.
      */
     @Modifying
     @Transactional
@@ -139,44 +98,24 @@ public interface ShortLinkRepository extends JpaRepository<ShortLink, Long> {
     int decrementDownloadCount(@Param("id") Long id);
 
     /**
-     * Finds an upload-share link by id. Distinct from the inherited {@link #findById}
-     * (which returns the base {@link ShortLink} type) so callers that need
-     * {@link UploadShareLink}-specific fields don't have to downcast.
-     *
-     * @param id the link's database id
-     * @return the matching upload-share link, or empty if not found (or a different subtype)
+     * Distinct from the inherited {@link #findById} (which returns the base {@link ShortLink}
+     * type) so callers needing {@link UploadShareLink}-specific fields don't have to downcast.
      */
     @Query("SELECT s FROM UploadShareLink s WHERE s.id = :id")
     Optional<UploadShareLink> findUploadLinkById(@Param("id") Long id);
 
-    /**
-     * Finds the first unlimited link (no expiry, no use cap) for a given upload.
-     * Used to reuse an existing unlimited link instead of creating a new one.
-     *
-     * @param upload the upload to look up the link for
-     * @return the existing unlimited link, or empty if none exists
-     */
+    /** Used to reuse an existing unlimited (no expiry, no use cap) link instead of creating a new one. */
     @Query("SELECT s FROM UploadShareLink s WHERE s.upload = :upload AND s.expirationDate IS NULL AND s.remainingUses IS NULL")
     Optional<UploadShareLink> findFirstByFileAndTokenExpirationDateIsNullAndNumberOfAllowedDownloadsIsNull(@Param("upload") Upload upload);
 
-    /**
-     * Returns all upload-share links for the given upload. Used when deleting an upload to
-     * clean up all associated sidecars before removing link rows.
-     *
-     * @param upload the upload whose links should be returned
-     * @return all links associated with the upload
-     */
+    /** Used when deleting an upload, to clean up all associated sidecars before removing link rows. */
     @Query("SELECT s FROM UploadShareLink s WHERE s.upload = :upload")
     List<UploadShareLink> findAllByFile(@Param("upload") Upload upload);
 
     /**
-     * Returns {@code true} if the upload has at least one upload-share link that has
-     * neither expired nor exhausted its use allowance. Used by the maintenance job to
-     * decide whether a legacy {@code {uuid}-decrypted} sidecar should be preserved.
-     *
-     * @param upload the upload to check
-     * @param today  today's date, used as the expiry cutoff (pass {@code LocalDate.now()})
-     * @return {@code true} if an active link exists
+     * True if the upload has a link that's neither expired nor exhausted. Used by the
+     * maintenance job to decide whether a legacy {@code {uuid}-decrypted} sidecar should be
+     * preserved.
      */
     @Query("SELECT CASE WHEN COUNT(s) > 0 THEN true ELSE false END FROM UploadShareLink s " +
             "WHERE s.upload = :upload " +
@@ -189,8 +128,6 @@ public interface ShortLinkRepository extends JpaRepository<ShortLink, Long> {
      * {@code {uuid}-share-{code}}. Uses a native SQL INNER JOIN so that any links
      * referencing a no-longer-existing upload are silently skipped, preventing
      * {@code EntityNotFoundException} during storage migration.
-     *
-     * @return list of sidecar storage keys for upload-share links that have a {@code shareKeyHash}
      */
     @Query(value = "SELECT u.uuid || '-share-' || sl.code " +
             "FROM short_link sl INNER JOIN upload u ON sl.upload_id = u.id " +
@@ -199,55 +136,24 @@ public interface ShortLinkRepository extends JpaRepository<ShortLink, Long> {
     List<String> findShareSidecarKeys();
 
     /**
-     * Counts still-active upload-share links, using the same "active" predicate as
-     * {@link #findFiltered} (not expired, uses remaining) minus the user filters.
-     *
-     * <p>Used to label the admin Links tabs, so switching between link kinds shows
-     * how many of each exist before you click.
-     *
-     * @param today current date
-     * @return number of active share links
+     * Same "active" predicate as {@link #findFiltered} minus the user filters. Used to label
+     * the admin Links tabs, so switching between link kinds shows counts before you click.
      */
     @Query("SELECT COUNT(s) FROM UploadShareLink s WHERE " +
             "(s.expirationDate IS NULL OR s.expirationDate >= :today) AND " +
             "(s.remainingUses IS NULL OR s.remainingUses > 0)")
     long countActiveShareLinks(@Param("today") LocalDate today);
 
-    /**
-     * Counts still-active redirect links. Mirror of {@link #countActiveShareLinks}
-     * for the other {@code ShortLink} subtype.
-     *
-     * @param today current date
-     * @return number of active redirect links
-     */
+    /** Mirror of {@link #countActiveShareLinks} for the other {@code ShortLink} subtype. */
     @Query("SELECT COUNT(s) FROM RedirectLink s WHERE " +
             "(s.expirationDate IS NULL OR s.expirationDate >= :today) AND " +
             "(s.remainingUses IS NULL OR s.remainingUses > 0)")
     long countActiveRedirectLinks(@Param("today") LocalDate today);
 
     /**
-     * Returns a filtered, sorted, paginated page of currently-active upload-share links.
-     * A link is active when its expiry date is {@code null} or in the future AND its
-     * use allowance is {@code null} or greater than zero.
-     *
-     * <p>Any filter parameter that represents "no constraint" should be passed as
-     * {@code null} / {@code false}:
-     * <ul>
-     *   <li>{@code isPaste = null} — include links for both files and pastes</li>
-     *   <li>{@code noExpiry = false} — include links with and without an expiry date</li>
-     *   <li>{@code unlimited = false} — include links with and without a use cap</li>
-     *   <li>{@code query = null} — no name/code substring filter</li>
-     * </ul>
-     *
-     * @param today     today's date used as the expiry cutoff (pass {@code LocalDate.now()})
-     * @param isPaste   {@code true} = pastes only, {@code false} = files only,
-     *                  {@code null} = both
-     * @param noExpiry  when {@code true} restrict to links with no expiry date
-     * @param unlimited when {@code true} restrict to links with no use cap
-     * @param query     optional case-insensitive substring matched against upload name
-     *                  and code string; pass {@code null} to skip
-     * @param pageable  pagination and sort configuration
-     * @return page of matching active links
+     * A link is active when its expiry is {@code null}/future AND its use allowance is
+     * {@code null}/positive. Each filter's "no constraint" value: {@code isPaste = null}
+     * (both), {@code noExpiry = false}, {@code unlimited = false}, {@code query = null}.
      */
     @Query(value = "SELECT s FROM UploadShareLink s JOIN FETCH s.upload WHERE " +
             "(s.expirationDate IS NULL OR s.expirationDate >= :today) AND " +
@@ -271,19 +177,7 @@ public interface ShortLinkRepository extends JpaRepository<ShortLink, Long> {
             @Param("query") String query,
             Pageable pageable);
 
-    /**
-     * Returns a filtered, sorted, paginated page of currently-active redirect
-     * (URL-shortener) links. A link is active when its expiry date is {@code null} or in
-     * the future AND its use allowance is {@code null} or greater than zero.
-     *
-     * @param today     today's date used as the expiry cutoff (pass {@code LocalDate.now()})
-     * @param noExpiry  when {@code true} restrict to links with no expiry date
-     * @param unlimited when {@code true} restrict to links with no use cap
-     * @param query     optional case-insensitive substring matched against the destination
-     *                  URL and code string; pass {@code null} to skip
-     * @param pageable  pagination and sort configuration
-     * @return page of matching active redirect links
-     */
+    /** Redirect-link counterpart of {@link #findFiltered}; see its javadoc for filter semantics. */
     @Query(value = "SELECT s FROM RedirectLink s WHERE " +
             "(s.expirationDate IS NULL OR s.expirationDate >= :today) AND " +
             "(s.remainingUses IS NULL OR s.remainingUses > 0) AND " +
@@ -304,24 +198,13 @@ public interface ShortLinkRepository extends JpaRepository<ShortLink, Long> {
             Pageable pageable);
 
     /**
-     * Finds a redirect link by id. Distinct from the inherited {@link #findById}
-     * (which returns the base {@link ShortLink} type) so callers that need
-     * {@link RedirectLink}-specific fields don't have to downcast.
-     *
-     * @param id the link's database id
-     * @return the matching redirect link, or empty if not found (or a different subtype)
+     * Distinct from the inherited {@link #findById} (which returns the base {@link ShortLink}
+     * type) so callers needing {@link RedirectLink}-specific fields don't have to downcast.
      */
     @Query("SELECT s FROM RedirectLink s WHERE s.id = :id")
     Optional<RedirectLink> findRedirectLinkById(@Param("id") Long id);
 
-    /**
-     * Returns all redirect links that are no longer valid — either their expiry date has
-     * passed or their use allowance has been exhausted. Mirrors
-     * {@link #getShareTokenEntitiesForDeletion} for the {@link RedirectLink} subtype.
-     *
-     * @param today today's date, used as the expiry cutoff (pass {@code LocalDate.now()})
-     * @return list of redirect links eligible for deletion
-     */
+    /** Mirrors {@link #getShareTokenEntitiesForDeletion} for the {@link RedirectLink} subtype. */
     @Query("SELECT s FROM RedirectLink s WHERE s.expirationDate < :today OR s.remainingUses = 0")
     List<RedirectLink> getRedirectLinksForDeletion(@Param("today") LocalDate today);
 }

@@ -32,14 +32,6 @@ public class FilePasswordInterceptor implements HandlerInterceptor {
         this.sessionService = sessionService;
     }
 
-    /**
-     * Extracts the {@code uuid} path variable and checks whether the file requires
-     * a password. If so, verifies a valid file session token in the HTTP session.
-     *
-     * @param handler the matched handler (unused)
-     * @return {@code true} to continue the handler chain; {@code false} after redirecting or sending an error
-     * @throws Exception if the redirect or error response fails
-     */
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
         @SuppressWarnings("unchecked")

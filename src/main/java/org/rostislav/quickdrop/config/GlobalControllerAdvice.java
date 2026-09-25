@@ -37,29 +37,6 @@ public class GlobalControllerAdvice {
         this.storageHealthService = storageHealthService;
     }
 
-    /**
-     * Adds global model attributes available to every view.
-     *
-     * <p>Attributes injected:
-     * <ul>
-     *   <li>Feature flags: {@code isFileListPageEnabled}, {@code isAdminDashboardButtonEnabled},
-     *       {@code isEncryptionEnabled}, {@code uploadPasswordEnabled}, {@code isPreviewEnabled},
-     *       {@code isMetadataStrippingEnabled}, {@code isSimplifiedShareLinksEnabled},
-     *       {@code isShareLinksEnabled}, {@code isUploadEnabled}, {@code isUploadAdminOnly},
-     *       {@code isPastebinEnabled}, {@code isShortenerEnabled}, {@code isShortenerAdminOnly},
-     *       {@code canUseShortener}</li>
-     *   <li>Session state: {@code hasAdminSession}, {@code hasAppSession}</li>
-     *   <li>Permission flags: {@code canUseKeepIndefinitely}, {@code canHideFromList},
-     *       {@code isKeepIndefinitelyAdminOnly}, {@code isHideFromListAdminOnly}</li>
-     *   <li>Branding: {@code appName}, {@code appLogoPath}</li>
-     *   <li>Locale: {@code currentLang} (BCP-47 language tag, defaults to "en")</li>
-     *   <li>Storage health: {@code s3Down} ({@code true} when the active storage backend
-     *       is unreachable according to the last health probe)</li>
-     * </ul>
-     *
-     * @param model   the Spring MVC model
-     * @param request the current HTTP request (used to resolve the admin session)
-     */
     @ModelAttribute
     public void addGlobalAttributes(Model model, HttpServletRequest request) {
         boolean hasAdminSession = sessionService.hasValidAdminSession(request);

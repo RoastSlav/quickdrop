@@ -6,31 +6,20 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 
 /**
- * Represents a binary or text file upload stored by the application.
+ * A file or bundle upload. {@code JOINED} inheritance from {@link Upload} -- discriminator
+ * {@code "0"} in {@code upload.paste}; archive fields live in the {@code file} table.
  *
- * <p>Extends {@link Upload} with archive-upload fields.  Maps to the {@code file}
- * table in a JPA {@code JOINED} inheritance hierarchy; the common fields live in
- * the {@code upload} base table.
+ * <p>An archive upload is a ZIP with a JSON manifest describing the original directory tree;
+ * when {@link #archiveUpload} is {@code false} the archive fields are null/false. Columns keep
+ * the original {@code folder_*} names -- renaming would need a migration for no gain.
  *
- * <p>A discriminator value of {@code "0"} in the {@code upload.paste} column
- * identifies rows belonging to this subtype.
- *
- * <p>Archive uploads are ZIP files accompanied by a JSON manifest that describes
- * the original directory tree.  When {@link #archiveUpload} is {@code false} the
- * archive fields are {@code null} / {@code false}.  Their columns keep the original
- * {@code folder_*} names: renaming them would need a migration and buy nothing.
- *
- * <p>All fields are {@code public} for direct access; there are no getter/setter
- * accessor methods.
+ * <p>Fields are public; there are no getters/setters.
  */
 @Entity
 @Table(name = "file")
 @DiscriminatorValue("0")
 public class StoredFile extends Upload {
 
-    /**
-     * Whether this entry represents an archive upload (browser-built ZIP with a manifest).
-     */
     @Column(name = "folder_upload")
     public boolean archiveUpload;
 

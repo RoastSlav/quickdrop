@@ -6,17 +6,10 @@ import org.rostislav.quickdrop.model.EventType;
 import java.time.LocalDateTime;
 
 /**
- * Audit record capturing a single event in the lifecycle of an {@link Upload}
- * (file or paste) or of the application itself.
+ * Audit record for one {@link EventType} event, tied to an {@link Upload}, a short link,
+ * or neither (admin/system events). Drives the analytics dashboard and per-file history page.
  *
- * <p>A new row is appended for every {@link EventType} event (upload, download,
- * renewal, deletion, paste operations, admin actions, application lifecycle). These
- * records drive the analytics dashboard and the per-file history page.
- *
- * <p>File-associated rows are <em>not</em> deleted when the parent file is soft-deleted;
- * they are retained so the activity log can still display the full history of a file
- * after deletion.
- *
+ * <p>Rows are kept even after the parent file is soft-deleted, so history stays viewable.
  */
 @Entity
 @Table(name = "activity_log", indexes = {
@@ -29,18 +22,12 @@ public class ActivityLog {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    /**
-     * The upload (file or paste) this event is associated with, or {@code null}
-     * for admin/system events.
-     */
+    /** Null for admin/system events. */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "file_id", nullable = true)
     private Upload file;
 
-    /**
-     * The short link (redirect or upload-share) this event is associated with, or
-     * {@code null} for events not tied to a short link.
-     */
+    /** Null for events not tied to a short link. */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "short_link_id", nullable = true)
     private ShortLink shortLink;
@@ -48,19 +35,12 @@ public class ActivityLog {
     @Enumerated(EnumType.STRING)
     private EventType eventType;
 
-    /**
-     * Timestamp when this record was created (set in the no-arg constructor).
-     */
     private LocalDateTime eventDate;
 
-    /**
-     * IP address of the requester, resolved from {@code X-Forwarded-For} or {@code X-Real-IP}.
-     */
+    /** Resolved from {@code X-Forwarded-For} or {@code X-Real-IP}. */
     private String ipAddress;
 
-    /**
-     * {@code User-Agent} header from the HTTP request, stored as TEXT to accommodate long values.
-     */
+    /** TEXT column since some User-Agent strings exceed a default VARCHAR limit. */
     @Column(columnDefinition = "TEXT")
     private String userAgent;
 
@@ -71,21 +51,10 @@ public class ActivityLog {
     @Column(columnDefinition = "TEXT")
     private String detail;
 
-    /**
-     * Creates an empty log entry and stamps {@link #eventDate} to now.
-     */
     public ActivityLog() {
         this.eventDate = LocalDateTime.now();
     }
 
-    /**
-     * Convenience constructor for the common case where all fields are known upfront.
-     *
-     * @param file      the upload (file or paste) the event occurred on
-     * @param eventType category of the event
-     * @param ipAddress requester IP address
-     * @param userAgent requester User-Agent header value
-     */
     public ActivityLog(Upload file, EventType eventType, String ipAddress, String userAgent) {
         this.file = file;
         this.eventType = eventType;
@@ -95,13 +64,9 @@ public class ActivityLog {
     }
 
     /**
-     * Convenience constructor for events that are not associated with a specific file —
-     * covers {@link EventCategory#ADMIN} events (login, logout, settings change) and
-     * {@link EventCategory#SYSTEM} events (application startup / shutdown).
-     *
-     * @param eventType category of the event
-     * @param ipAddress requester IP address, or {@code null} for system events
-     * @param userAgent requester User-Agent header value, or {@code null} for system events
+     * For events not tied to a file: {@link EventCategory#ADMIN} (login, logout, settings
+     * change) and {@link EventCategory#SYSTEM} (startup/shutdown). ipAddress/userAgent are
+     * null for system events.
      */
     public ActivityLog(EventType eventType, String ipAddress, String userAgent) {
         this.file = null;
@@ -111,14 +76,7 @@ public class ActivityLog {
         this.eventDate = LocalDateTime.now();
     }
 
-    /**
-     * Convenience constructor for {@link EventCategory#SHORTLINK} events.
-     *
-     * @param shortLink the short link (redirect or upload-share) the event occurred on
-     * @param eventType category of the event
-     * @param ipAddress requester IP address, or {@code null} for system-triggered events
-     * @param userAgent requester User-Agent header value, or {@code null} for system-triggered events
-     */
+    /** For {@link EventCategory#SHORTLINK} events; ipAddress/userAgent null if system-triggered. */
     public ActivityLog(ShortLink shortLink, EventType eventType, String ipAddress, String userAgent) {
         this.shortLink = shortLink;
         this.eventType = eventType;

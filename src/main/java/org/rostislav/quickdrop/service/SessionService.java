@@ -31,9 +31,7 @@ import java.util.Set;
  */
 @Service
 public class SessionService implements HttpSessionListener {
-    /** HTTP session attribute key an admin login stores its token under. */
     public static final String ADMIN_SESSION_TOKEN_ATTR = "admin-session-token";
-    /** HTTP session attribute key a file-password check stores its token under. */
     public static final String FILE_SESSION_TOKEN_ATTR = "file-session-token";
 
     private static final Logger logger = LoggerFactory.getLogger(SessionService.class);
@@ -92,8 +90,6 @@ public class SessionService implements HttpSessionListener {
      * inactivity (the explicit logout path removes the attribute before calling
      * {@code session.invalidate()}). In that case an {@link EventType#ADMIN_SESSION_EXPIRE}
      * event is written to the activity log using the IP and user-agent stored at login time.
-     *
-     * @param se the session event
      */
     @Override
     public void sessionDestroyed(HttpSessionEvent se) {
@@ -122,26 +118,13 @@ public class SessionService implements HttpSessionListener {
         }
     }
 
-    /**
-     * Registers a new admin session token.
-     *
-     * @param token the UUID token to register
-     * @return the same token (for chaining with {@code session.setAttribute})
-     */
+    /** Returns the same token, so callers can chain into {@code session.setAttribute}. */
     public String addAdminToken(String token) {
         adminSessionTokens.add(token);
         logger.info("Admin session token added (id: {}...)", token.length() > 8 ? token.substring(0, 8) : "***");
         return token;
     }
 
-    /**
-     * Registers a new file session token binding it to a password and file UUID.
-     *
-     * @param token    the UUID token to register
-     * @param password cleartext file access password
-     * @param fileUuid UUID of the protected file
-     * @return the same token
-     */
     public String addFileSessionToken(String token, String password, String fileUuid) {
         fileSessions.put(token, new FileSession(password, fileUuid));
         logger.info("File session token added (id: {}...)", token.length() > 8 ? token.substring(0, 8) : "***");
@@ -174,13 +157,6 @@ public class SessionService implements HttpSessionListener {
         }
     }
 
-    /**
-     * Checks whether a file session token is valid and grants access to the given file.
-     *
-     * @param sessionToken the token string from the HTTP session
-     * @param uuid         the UUID of the file being accessed
-     * @return {@code true} if the token exists and is bound to the specified file
-     */
     public boolean validateFileSessionToken(String sessionToken, String uuid) {
         FileSession fileSession = fileSessions.get(sessionToken);
 
@@ -191,12 +167,7 @@ public class SessionService implements HttpSessionListener {
         return fileSession.getFileUuid().equals(uuid);
     }
 
-    /**
-     * Returns the {@link FileSession} associated with a file session token.
-     *
-     * @param sessionToken the token string
-     * @return the file session (containing password and UUID), or {@code null} if not found
-     */
+    /** @return the file session, or {@code null} if not found */
     public FileSession getPasswordForFileSessionToken(String sessionToken) {
         return fileSessions.get(sessionToken);
     }

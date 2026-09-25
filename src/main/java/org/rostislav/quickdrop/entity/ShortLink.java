@@ -45,9 +45,6 @@ public abstract class ShortLink {
      */
     @Column(name = "use_count", nullable = false)
     public int useCount = 0;
-    /**
-     * Timestamp when this link was created.
-     */
     @Column(name = "created_at")
     public LocalDateTime createdAt;
     /**

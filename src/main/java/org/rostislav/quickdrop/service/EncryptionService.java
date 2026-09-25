@@ -162,9 +162,6 @@ public class EncryptionService {
         return new CipherInputStream(pb, cipher);
     }
 
-    /**
-     * Returns an encrypting stream using the new chunked AES/GCM format.
-     */
     public OutputStream getEncryptedOutputStream(OutputStream target, String password) throws Exception {
         try {
             byte[] salt = generateRandomBytes(GCM_SALT_LENGTH);
@@ -181,9 +178,6 @@ public class EncryptionService {
         }
     }
 
-    /**
-     * Returns an encrypting stream using the new chunked AES/GCM format.
-     */
     public OutputStream getEncryptedOutputStream(File finalFile, String password) throws Exception {
         FileOutputStream fos = new FileOutputStream(finalFile);
         try {

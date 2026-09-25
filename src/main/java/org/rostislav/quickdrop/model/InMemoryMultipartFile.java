@@ -57,9 +57,6 @@ public class InMemoryMultipartFile implements MultipartFile {
         return content.length;
     }
 
-    /**
-     * Returns a defensive copy of the underlying byte array.
-     */
     @Override
     public byte[] getBytes() {
         return content.clone();

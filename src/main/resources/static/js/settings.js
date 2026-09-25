@@ -78,7 +78,6 @@ function syncDefaultHomePageOptions() {
     const listEnabled = Boolean(document.getElementById("fileListPageEnabled")?.checked);
     const pasteEnabled = Boolean(document.getElementById("pastebinEnabled")?.checked);
 
-    // Upload is only a valid public home page if it's enabled AND not admin-only
     const uploadPubliclyAccessible = uploadEnabled && !uploadAdminOnly;
 
     const select = document.getElementById("defaultHomePage");
@@ -96,7 +95,6 @@ function syncDefaultHomePageOptions() {
         // "none" is always enabled
     }
 
-    // If selected option is now disabled, reset to first available
     const selectedOpt = select.options[select.selectedIndex];
     if (selectedOpt && selectedOpt.disabled) {
         for (const opt of select.options) {
@@ -206,8 +204,8 @@ function initCollapsibleSettingsSections() {
         });
     });
 
-    // A required field in a collapsed section isn't focusable, so the browser aborts the
-    // submit instead of showing its message. Re-open the owning section first.
+    // An invalid field in a collapsed section isn't focusable, so the browser silently
+    // aborts the submit -- re-open the owning section first.
     document.addEventListener("invalid", (e) => {
         const label = e.target?.closest?.("section")?.querySelector(":scope > .settings-section-label--toggle");
         if (label && label.getAttribute("aria-expanded") !== "true") {
@@ -267,11 +265,9 @@ function syncShortenerSettings() {
         if (!aliasAdminActive) aliasAdminInput.checked = false;
     }
 
-    // Interstitial mode and domain rules (below) are deliberately NOT gated by
-    // shortenerEnabled: both still apply when an existing redirect link is resolved
-    // (LinkGuard.checkForRedirect runs the domain check, and the resolver still shows/skips
-    // the interstitial) even after an admin disables new-link creation -- see the
-    // shortenerEnabled gating note on ShortLinkViewController#newLinkForm.
+    // Interstitial mode and domain rules are deliberately NOT gated by shortenerEnabled --
+    // both still apply to already-issued links after new-link creation is disabled. See
+    // the shortenerEnabled gating note on ShortLinkViewController#newLinkForm.
 
     // Domain rules textarea only matters once a mode other than "OFF" is selected.
     const domainRulesRow = document.getElementById("shortenerDomainRulesRow");
@@ -571,7 +567,6 @@ function validateSettingsForm() {
     }
 
     if (firstInvalid) {
-        // Navigate to the panel that contains the first invalid field
         const panel = firstInvalid.closest('.settings-panel');
         if (panel && typeof window.switchPanel === 'function') {
             window.switchPanel(panel.id.replace('panel-', ''));
@@ -686,13 +681,11 @@ document.addEventListener("DOMContentLoaded", function () {
         'form[method="post"][action="/admin/save"]'
     );
     if (form) {
-        // Settings commits explicitly — never on change. The guard warns before the
-        // page is left with pending edits and clears itself once a save succeeds.
+        // Settings commits explicitly, never on change, so it needs the unsaved-changes guard.
         const dirtyGuard = window.QDDirty?.watch(form) || null;
 
-        // Other settings-page scripts (reputation provider enable) navigate away on
-        // their own. They need to be able to ask whether the form has pending edits,
-        // commit them, and stand down the guard before reloading.
+        // Other settings-page scripts (reputation provider enable) navigate away on their
+        // own and need to check/commit pending edits and stand the guard down first.
         window.QDSettings = {
             isDirty: () => !!dirtyGuard && dirtyGuard.isDirty(),
             save: async () => {
@@ -724,9 +717,7 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    // Wires one cron field's preset buttons + live cronstrue feedback. presetsId is scoped
-    // per field (not a shared #cronPresets id) so the file-deletion and backup cron fields'
-    // preset buttons don't cross-wire into each other's input.
+    // presetsId is scoped per field so multiple cron fields' preset buttons don't cross-wire.
     function wireCronField(presetsId, inputId, feedbackId) {
         const input = document.getElementById(inputId);
         const feedback = document.getElementById(feedbackId);

@@ -42,9 +42,6 @@ public abstract class Upload {
      */
     public String uuid;
 
-    /**
-     * Optional human-readable description provided at upload time.
-     */
     public String description;
 
     /**
@@ -90,47 +87,30 @@ public abstract class Upload {
     public boolean encrypted;
 
     /**
-     * Returns {@code true} if this upload is a text paste, {@code false} if it is a
-     * stored file.
-     *
-     * <p>Exposed as a Java bean getter so that Spring EL / Thymeleaf can resolve the
-     * {@code file.paste} property expression without requiring a plain {@code paste}
-     * field on every subtype.  Subclasses override this as needed.
-     *
-     * @return {@code false} by default; {@link Paste} overrides to return {@code true}
+     * Bean getter (not a field) so Thymeleaf/Spring EL can resolve {@code file.paste} on any
+     * subtype without a cast. False by default; {@link Paste} overrides to return true.
      */
     public boolean isPaste() {
         return false;
     }
 
     /**
-     * Returns {@code true} if this upload is a permanently immutable paste.
-     *
-     * <p>Exposed as a Java bean getter so Thymeleaf can resolve {@code file.immutable}
-     * on any {@code Upload} subtype without a cast.
-     *
-     * @return {@code false} by default; {@link Paste} overrides to return the stored flag
+     * True for a paste that's permanently locked from editing. Bean getter for Thymeleaf's
+     * {@code file.immutable}; false by default, {@link Paste} overrides.
      */
     public boolean isImmutable() {
         return false;
     }
 
     /**
-     * Returns {@code true} if this upload is a paste whose password protects editing only
-     * (the content is viewable without a password).
-     *
-     * <p>Exposed as a Java bean getter so Thymeleaf can resolve {@code file.editOnly}
-     * on any {@code Upload} subtype without a cast.
-     *
-     * @return {@code false} by default; {@link Paste} overrides to return the stored flag
+     * True for a paste whose password protects editing only (content stays viewable without
+     * one). Bean getter for Thymeleaf's {@code file.editOnly}; false by default, {@link Paste}
+     * overrides.
      */
     public boolean isEditOnly() {
         return false;
     }
 
-    /**
-     * Sets {@link #uploadDate} to today before the first database INSERT.
-     */
     @PrePersist
     public void prePersist() {
         uploadDate = LocalDate.now();

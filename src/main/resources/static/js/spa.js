@@ -18,9 +18,8 @@
         const container = document.getElementById(containerId);
         if (!container) return;
 
-        // Height-stable busy state: the container keeps its size and gets a shimmer
-        // bar, instead of the old blunt opacity dip that let the layout jump when the
-        // replacement differed in height.
+        // Keeps its size and shows a shimmer bar instead of an opacity dip, so the
+        // layout doesn't jump when the replacement differs in height.
         container.style.minHeight = container.offsetHeight + 'px';
         container.classList.add('is-loading');
         container.setAttribute('aria-busy', 'true');
@@ -46,11 +45,8 @@
                 refreshCounters(next);
             };
 
-            // Cross-fade the swap where the browser supports it, so filtering and
-            // paging read as a transition rather than a blink. The animation is
-            // best-effort: a transition that gets skipped, or never runs at all
-            // because the tab is in the background, must not swallow the swap --
-            // that leaves the filter controls describing results still on screen.
+            // Best-effort cross-fade: a transition that's skipped or never runs (backgrounded
+            // tab) must not swallow the swap, so commit() always fires below regardless.
             if (document.startViewTransition && !prefersReducedMotion()) {
                 const transition = document.startViewTransition(commit);
                 transition.ready.catch(() => {});
@@ -164,8 +160,7 @@
         });
     }
 
-    // Handle browser Back/Forward so the DOM reflects the new URL.
-    // Probes known container IDs used by each SPA section to find the live one.
+    // Handle browser Back/Forward by probing known container IDs for the live one.
     window.addEventListener('popstate', function () {
         const knownContainers = [
             'listDynamicContent',    // file list page

@@ -2,25 +2,13 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <body>
 <!--
-  Shared page shell. Before this fragment existed every template hand-copied the same
-  ~13-line <head>, its own orb-field block (some with two orbs, some with three) and,
-  on admin pages, its own inlined "Back to Admin" link. Those three things now live
-  here exactly once.
+  Shared page shell: head(pageTitle, extra), chrome(isAdminNav), backLink(href, label),
+  pageScripts. `pageTitle` and `extra` take fragment expressions (~{::title}, ~{} if none).
 
-  Fragments:
-    head(pageTitle, extra) — the whole <head>. `pageTitle` is a fragment expression for
-                             the page's own <title> element (pass ~{::title}); `extra` is
-                             a fragment expression for page-specific assets, or ~{} for none.
-    chrome(isAdminNav)     — skip link + nav header + background orbs, in that order.
-    backLink(href, label)  — the "← <label>" button admin sub-pages put above their title.
-    pageScripts            — the site-wide end-of-body scripts every page loads.
-
-  Alpine and htmx ship in the base head for every page rather than being opt-in per page,
-  so a page cannot silently lose its behaviour by forgetting the include.
-
-  `extra` is emitted BEFORE Alpine core on purpose: Alpine plugins have to register
-  before the core script initialises, and upload.html's head-extra carries
-  @alpinejs/collapse. Both are deferred, so they execute in document order.
+  Alpine and htmx load here for every page rather than being opt-in, so a page can't
+  silently lose behavior by forgetting the include. `extra` renders before Alpine core
+  so plugins (e.g. upload.html's @alpinejs/collapse) register before it initializes --
+  both scripts are deferred, so document order is what decides this.
 -->
 
 <head th:fragment="head(pageTitle, extra)">
@@ -58,8 +46,7 @@
             title: /*[[#{confirm.defaultTitle}]]*/ 'Are you sure?',
             confirm: /*[[#{button.confirm}]]*/ 'Confirm',
             cancel: /*[[#{button.cancel}]]*/ 'Cancel',
-            // Action verbs reused by several pages' confirm buttons, translated once here
-            // instead of in each page's own i18n blob.
+            // Action verbs reused by several pages' confirm buttons.
             'delete': /*[[#{button.delete}]]*/ 'Delete',
             revoke: /*[[#{page.adminShareLinks.revoke}]]*/ 'Revoke'
         };
@@ -74,8 +61,7 @@
     <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.3/dist/htmx.min.js"></script>
 </head>
 
-<!-- Skip link must precede header (first focusable element) -- previously lived outside the
-     fragment boundary, so th:replace never rendered it and no page had a working skip link. -->
+<!-- Must precede header (first focusable element), or the skip link doesn't work. -->
 <th:block th:fragment="chrome(isAdminNav)">
     <a class="skip-link" href="#main-content" th:text="#{nav.skipToContent}">Skip to main content</a>
     <div th:replace="~{fragments/header :: header(${isAdminNav})}"></div>

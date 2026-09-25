@@ -124,7 +124,6 @@ public class RateLimitInterceptor implements HandlerInterceptor {
         return null;
     }
 
-    /** Holds the mutable state for a single rate-limit bucket. */
     private static class RateLimitEntry {
         final AtomicInteger count = new AtomicInteger(0);
         final AtomicLong windowStart;

@@ -72,7 +72,6 @@ public abstract class AbstractHashFeedProvider {
         this.rawFeedFile = rawFeedFile;
     }
 
-    /** @return the feed's download URL */
     protected abstract String feedUrl();
 
     /** @return minimum milliseconds between real downloads, regardless of how often {@link #refresh()} is called */
@@ -141,9 +140,8 @@ public abstract class AbstractHashFeedProvider {
      *         {@link ReputationSyncService}); never {@code null}
      */
     public synchronized RefreshOutcome refresh() {
-        // Seed from the last downloaded copy first. Without this, every JVM start began with
-        // lastSyncAttemptEpochMillis = 0 and no cached validators, so the interval floor never
-        // applied on boot and the whole feed was re-downloaded on every restart.
+        // Seed from disk first, or lastSyncAttemptEpochMillis starts at 0 every boot and the
+        // interval floor never applies, re-downloading the whole feed on every restart.
         hydrateFromDisk();
         long now = System.currentTimeMillis();
         if (now - lastSyncAttemptEpochMillis < minSyncIntervalMillis()) {
@@ -184,7 +182,6 @@ public abstract class AbstractHashFeedProvider {
      */
     public record RefreshOutcome(Status status, int entryCount, String failureReason) {
         public enum Status {
-            /** New content downloaded and loaded. */
             UPDATED,
             /** Upstream answered 304 — the copy already held is current. */
             UNCHANGED,
@@ -224,11 +221,9 @@ public abstract class AbstractHashFeedProvider {
      *                make a cached feed look newly fetched
      */
     private void loadFromBytes(byte[] body, boolean persist) throws IOException {
-        // Accumulate into a growable primitive array, then sort-and-dedupe in place, rather
-        // than collecting into a Set<Long> first. At Phishing Army's scale a HashSet<Long>
-        // costs ~21 MB transient (boxed Long + HashMap.Node + table slot per entry) to build
-        // a ~3 MB array -- which would undercut the whole reason this class stores hashes as
-        // primitives in the first place, just moved from steady state into a load-time spike.
+        // Grow a primitive array and sort-dedupe in place instead of collecting into a
+        // Set<Long> first -- at this scale a HashSet<Long> costs ~21 MB transient to build a
+        // ~3 MB array, undercutting the reason this class stores hashes as primitives at all.
         long[] hashes = new long[4096];
         int count = 0;
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(

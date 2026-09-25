@@ -119,13 +119,8 @@ public class StorageMigrationService {
     }
 
     /**
-     * Returns the number of objects that would be attempted in a migration run.
-     *
-     * <p>The count is derived entirely from the database (non-deleted upload UUIDs plus
-     * share sidecar keys) and performs no storage I/O, making it safe to call as a
-     * lightweight pre-flight check.
-     *
-     * @return total number of keys that would be queued for copying
+     * Derived entirely from the database (non-deleted upload UUIDs plus share sidecar keys)
+     * with no storage I/O, so it's safe to call as a lightweight pre-flight check.
      */
     public int countObjects() {
         return buildKeyList().size();

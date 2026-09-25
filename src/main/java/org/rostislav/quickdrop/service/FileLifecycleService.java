@@ -211,22 +211,14 @@ public class FileLifecycleService {
     }
 
     /**
-     * Returns {@code true} when the caller may mutate (extend/keep-indefinitely/hide) an
-     * upload that has <em>no password set</em> — an admin session, or nobody else, since a
-     * no-password upload has no credential to check a session token against. This matches
-     * the precedent {@link org.rostislav.quickdrop.controller.FileViewController}'s
-     * delete-authorization check and {@link FileQueryService#isAuthorizedToEdit} already set
-     * for the same "no password = no owner proof" case, and is exactly what the fileView.html
-     * template's existing {@code keepDisabled}/{@code hiddenDisabled} logic already visually
-     * enforces — this brings the server in line with what the UI already implied.
+     * For a no-password upload, only an admin session may mutate it (extend/keep/hide) —
+     * there's no credential to check otherwise. Matches the same "no password = no owner
+     * proof" precedent as {@link org.rostislav.quickdrop.controller.FileViewController}'s
+     * delete check and {@link FileQueryService#isAuthorizedToEdit}.
      *
-     * <p>Password-protected uploads are unaffected and always return {@code true} here:
-     * {@link org.rostislav.quickdrop.interceptor.FilePasswordInterceptor} already gates every
-     * {@code /file/**} request for them before the controller runs, so by the time this method
-     * is reached (from a {@code /file/**} route) the caller has already proven a valid
-     * file-session token. {@code /admin/**} routes are separately gated by
-     * {@code AdminPasswordInterceptor}, so the admin-session check below is trivially satisfied
-     * there too.
+     * <p>Password-protected uploads always return {@code true} here: {@link
+     * org.rostislav.quickdrop.interceptor.FilePasswordInterceptor} already gated the request
+     * for a valid file-session token before the controller ran.
      */
     private boolean canMutateNoPasswordUpload(Upload upload, HttpServletRequest request) {
         if (upload.passwordHash != null && !upload.passwordHash.isBlank()) {

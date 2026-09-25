@@ -24,9 +24,6 @@ import java.time.LocalDateTime;
 @Entity
 @DiscriminatorValue("UPLOAD")
 public class UploadShareLink extends ShortLink {
-    /**
-     * The upload (file or paste) this link grants access to.
-     */
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "upload_id")
     public Upload upload;
@@ -47,12 +44,6 @@ public class UploadShareLink extends ShortLink {
     @Column(name = "sidecar_ready", nullable = false)
     public boolean sidecarReady = true;
 
-    /**
-     * @param code           the short link code string
-     * @param upload         the upload being shared
-     * @param expirationDate optional expiry date ({@code null} = no expiry)
-     * @param remainingUses  optional use limit ({@code null} = unlimited)
-     */
     public UploadShareLink(String code, Upload upload, LocalDate expirationDate, Integer remainingUses) {
         this.code = code;
         this.upload = upload;

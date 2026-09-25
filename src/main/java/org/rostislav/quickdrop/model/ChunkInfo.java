@@ -10,19 +10,11 @@ import java.io.File;
  * these in order and streams each chunk file into the final output.
  */
 public class ChunkInfo {
-    /**
-     * Zero-based index of this chunk within the overall upload.
-     */
+    /** Zero-based. */
     public int chunkNumber;
 
-    /**
-     * Temporary file on disk containing this chunk's raw bytes.
-     */
     public File chunkFile;
 
-    /**
-     * {@code true} when this is the final chunk of the upload.
-     */
     public boolean isLastChunk;
 
     public ChunkInfo(int chunkNumber, File chunkFile, boolean isLastChunk) {

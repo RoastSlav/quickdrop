@@ -23,7 +23,7 @@ function addPathToTree(root, path, rootName, isDir = false) {
     const parts = path.split(/[\\/]/).filter(Boolean);
     let idx = 0;
     if (parts[0] === rootName) {
-        idx = 1; // skip duplicated root segment
+        idx = 1;
     }
 
     const leafIsDir = isDir || Boolean(path && path.endsWith("/"));
@@ -100,8 +100,7 @@ const SEGMENT_CLASS = {
     connector: "folder-tree-connector",
 };
 
-// One DOM node per line, rebuilt on every page view, so a large archive is not drawn in
-// full until the reader asks for it.
+// So a large archive isn't rendered in full until the reader asks for it.
 export const INITIAL_TREE_LINES = 500;
 
 function lineElement(segments) {

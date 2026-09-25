@@ -28,46 +28,21 @@ import java.util.Optional;
  */
 public interface FileRepository extends JpaRepository<StoredFile, Long> {
 
-    /**
-     * Looks up a stored file by its UUID path segment.
-     * Returns soft-deleted records so admin controllers can still find them.
-     *
-     * @param uuid the file's unique identifier
-     * @return the matching entity, or empty if not found (or if the UUID belongs to a paste)
-     */
+    /** Returns soft-deleted records too, so admin controllers can still find them. */
     @Query("SELECT f FROM StoredFile f WHERE f.uuid = :uuid")
     Optional<StoredFile> findByUUID(@Param("uuid") String uuid);
 
-    /**
-     * Returns a paginated list of visible (non-hidden, non-deleted) files, newest first.
-     *
-     * @param pageable pagination and sort parameters
-     * @return page of visible files
-     */
     @Query("SELECT f FROM StoredFile f WHERE f.hidden = false AND f.deleted = false ORDER BY f.uploadDate DESC")
     Page<StoredFile> findAllNotHiddenFiles(Pageable pageable);
 
-    /**
-     * Returns the total storage consumed by live (non-deleted) file entries in bytes.
-     *
-     * @return sum of file sizes, or {@code null} if there are no files
-     */
+    /** {@code null} if there are no files. */
     @Query("SELECT SUM(f.size) FROM StoredFile f WHERE f.deleted = false")
     Long totalFileSizeForFilesOnly();
 
-    /**
-     * Returns the total number of live (non-deleted) file entries.
-     */
     @Query("SELECT COUNT(f) FROM StoredFile f WHERE f.deleted = false")
     long countFiles();
 
-    /**
-     * Full-text search over visible, live files (name, description, UUID), newest first.
-     *
-     * @param query    search string (case-insensitive, partial-match)
-     * @param pageable pagination parameters
-     * @return matching page of visible files
-     */
+    /** Case-insensitive partial match on name, description, or UUID. */
     @Query(value = "SELECT f FROM StoredFile f WHERE f.hidden = false AND f.deleted = false " +
             "AND (LOWER(f.name) LIKE LOWER(CONCAT('%', :searchString, '%')) " +
             "OR LOWER(f.description) LIKE LOWER(CONCAT('%', :searchString, '%')) " +
@@ -78,13 +53,7 @@ public interface FileRepository extends JpaRepository<StoredFile, Long> {
                     "OR LOWER(f.uuid) LIKE LOWER(CONCAT('%', :searchString, '%')))")
     Page<StoredFile> searchNotHiddenFiles(@Param("searchString") String query, Pageable pageable);
 
-    /**
-     * Returns a paginated list of live files (admin view) with their total download
-     * counts computed in a single JOIN query.
-     *
-     * @param pageable pagination parameters
-     * @return page of {@link FileEntityView} projections
-     */
+    /** Admin view: live files with total download counts computed in a single JOIN query. */
     @Query(value = """
                 SELECT new org.rostislav.quickdrop.model.FileEntityView(
                     f,
@@ -99,13 +68,7 @@ public interface FileRepository extends JpaRepository<StoredFile, Long> {
             countQuery = "SELECT COUNT(f) FROM StoredFile f WHERE f.deleted = false")
     Page<FileEntityView> findFilesWithDownloadCounts(Pageable pageable);
 
-    /**
-     * Search variant of {@link #findFilesWithDownloadCounts} filtered by a query string.
-     *
-     * @param query    search string (case-insensitive, partial-match on name, description, UUID)
-     * @param pageable pagination parameters
-     * @return matching page of {@link FileEntityView} projections
-     */
+    /** Search variant of {@link #findFilesWithDownloadCounts}. */
     @Query(value = """
                 SELECT new org.rostislav.quickdrop.model.FileEntityView(
                     f,
@@ -126,13 +89,7 @@ public interface FileRepository extends JpaRepository<StoredFile, Long> {
                     "OR LOWER(f.uuid) LIKE LOWER(CONCAT('%', :searchString, '%')))")
     Page<FileEntityView> searchFilesWithDownloadCounts(@Param("searchString") String query, Pageable pageable);
 
-    /**
-     * Returns a paginated list of soft-deleted files (admin deleted tab) with their
-     * total download counts.
-     *
-     * @param pageable pagination parameters
-     * @return page of {@link FileEntityView} projections for deleted files
-     */
+    /** Admin "deleted" tab: soft-deleted files with their total download counts. */
     @Query(value = """
                 SELECT new org.rostislav.quickdrop.model.FileEntityView(
                     f,
@@ -147,13 +104,7 @@ public interface FileRepository extends JpaRepository<StoredFile, Long> {
             countQuery = "SELECT COUNT(f) FROM StoredFile f WHERE f.deleted = true")
     Page<FileEntityView> findDeletedFilesWithDownloadCounts(Pageable pageable);
 
-    /**
-     * Search variant of {@link #findDeletedFilesWithDownloadCounts}.
-     *
-     * @param query    search string (case-insensitive, partial-match on name, description, UUID)
-     * @param pageable pagination parameters
-     * @return matching page of deleted {@link FileEntityView} projections
-     */
+    /** Search variant of {@link #findDeletedFilesWithDownloadCounts}. */
     @Query(value = """
                 SELECT new org.rostislav.quickdrop.model.FileEntityView(
                     f,

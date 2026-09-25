@@ -88,8 +88,7 @@ test("buildTreeLines: a large archive still produces one line per entry to slice
     const entries = Array.from({length: INITIAL_TREE_LINES + 120}, (_, i) => file(`f${i}.txt`));
     const lines = buildTreeLines(entries, "files");
 
-    // Root plus every file; renderArchiveTree shows the first INITIAL_TREE_LINES of these
-    // and puts the rest behind a "show more" button.
+    // Root plus every file; renderArchiveTree slices this for the "show more" button.
     assert.equal(lines.length, entries.length + 1);
     assert.ok(lines.length > INITIAL_TREE_LINES);
 });

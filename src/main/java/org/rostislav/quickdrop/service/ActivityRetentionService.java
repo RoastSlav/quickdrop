@@ -41,7 +41,6 @@ import java.util.concurrent.ScheduledFuture;
 public class ActivityRetentionService {
     private static final Logger logger = LoggerFactory.getLogger(ActivityRetentionService.class);
 
-    /** Storage key prefix for archive objects. */
     static final String ARCHIVE_KEY_PREFIX = "activity-archive/";
 
     private static final int BATCH_SIZE = 1000;

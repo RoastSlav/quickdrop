@@ -54,7 +54,6 @@ class RateLimitInterceptorTest {
     @Test
     void groupsAreCountedIndependently() throws Exception {
         String remoteAddr = "10.0.0.2";
-        // Exhaust file-password for this address.
         for (int i = 1; i <= 10; i++) {
             interceptor.preHandle(requestFor("/file/password", remoteAddr), new MockHttpServletResponse(), new Object());
         }
@@ -129,9 +128,8 @@ class RateLimitInterceptorTest {
     }
 
     /**
-     * The 60s window reset path is not exercised via a real {@code Thread.sleep(60000)} --
-     * impractical for a unit test -- but via reflection to backdate the internal
-     * {@code windowStart} timestamp, per the test plan's suggested workaround.
+     * Backdates the internal {@code windowStart} via reflection instead of a real
+     * {@code Thread.sleep(60000)}.
      */
     @Test
     void windowResetsAfterSixtySeconds_viaBackdatedWindowStart() throws Exception {

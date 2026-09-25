@@ -173,8 +173,7 @@
             document.body.appendChild(overlay);
             openDialog = {close: close};
 
-            // Focus Cancel, not Confirm — a stray Enter should not perform a destructive
-            // action just because the dialog appeared.
+            // Focus Cancel: a stray Enter must not trigger a destructive action.
             cancelBtn.focus();
         });
     }
@@ -191,8 +190,7 @@
         };
     }
 
-    // Declarative wiring. Delegated from the document so markup swapped in later
-    // (htmx, the SPA-style partial loads in spa.js) keeps working without re-binding.
+    // Delegated from the document so markup swapped in later (htmx, spa.js) keeps working.
     document.addEventListener('submit', function (e) {
         const form = e.target.closest('form[data-confirm]');
         if (!form || form.dataset.confirmed === 'true') return;

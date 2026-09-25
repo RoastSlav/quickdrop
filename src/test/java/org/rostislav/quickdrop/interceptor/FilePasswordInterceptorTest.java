@@ -68,12 +68,9 @@ class FilePasswordInterceptorTest extends InterceptorTestSupport {
     }
 
     /**
-     * No route currently wired through this interceptor omits the {@code {uuid}} path
-     * variable (every non-excluded pattern under {@code /file/**} and
-     * {@code /api/file/share/**} carries one), so this branch can't be reached through a
-     * real request today -- it's a defensive guard against a future route addition, not
-     * exercised via {@code mockMvc}. Calling {@code preHandle} directly against the real
-     * bean is the only way to exercise it.
+     * No wired route omits the {@code {uuid}} path variable, so this branch is unreachable
+     * via {@code mockMvc} -- it's a defensive guard, exercised here by calling
+     * {@code preHandle} directly.
      */
     @Test
     void preHandle_noUuidPathVariableResolved_sendsBadRequestAndHaltsChain() throws Exception {

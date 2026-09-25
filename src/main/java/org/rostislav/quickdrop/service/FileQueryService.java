@@ -61,9 +61,6 @@ public class FileQueryService {
         this.storageService = storageService;
     }
 
-    /**
-     * Returns the upload (file or paste) with the given UUID, or empty if not found.
-     */
     public Optional<Upload> getFile(String uuid) {
         return uploadRepository.findByUUID(uuid);
     }

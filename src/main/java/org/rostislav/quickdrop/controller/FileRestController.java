@@ -198,10 +198,9 @@ public class FileRestController {
             String effectiveUploadId = (uploadId != null && !uploadId.isBlank())
                     ? uploadId
                     : UUID.randomUUID().toString();
-            // Binds status/abort access to whichever HTTP session sent this chunk, so a caller
-            // who merely knows/guesses another session's uploadId can't poll its status or
-            // abort it. Set on every chunk (idempotent) rather than only chunk 0, since chunk
-            // arrival order isn't guaranteed.
+            // Binds status/abort access to the session that sent this chunk, so guessing another
+            // session's uploadId can't poll or abort it. Set on every chunk (idempotent), not
+            // just chunk 0, since arrival order isn't guaranteed.
             request.getSession(true).setAttribute(uploadOwnerSessionAttribute(effectiveUploadId), Boolean.TRUE);
 
             UploadRequest fileUploadRequest = new UploadRequest(description, keepIndefinitelyValue, effectivePassword, hiddenValue, fileName, totalChunks, fileSize, uploaderIp, uploaderUserAgent, Boolean.TRUE.equals(archiveUpload), archiveName, safeManifest, false);
@@ -214,9 +213,8 @@ public class FileRestController {
             }
             return ResponseEntity.ok(upload);
         } catch (UploadAbortedException e) {
-            // Deliberate, expected condition (the client called upload-abort, or the task was
-            // TTL-evicted) -- not a server error, so it must not map to the same 500 a genuine
-            // I/O failure below gets.
+            // Expected condition (client called upload-abort, or the task was TTL-evicted) --
+            // not a server error, so it can't map to the same 500 as a genuine I/O failure below.
             logger.info("Chunk {} for file {} rejected: upload was aborted", chunkNumber, fileName);
             return ResponseEntity.status(HttpStatus.CONFLICT)
                     .body(Map.of(ERROR_KEY, "This upload was aborted."));
@@ -277,10 +275,7 @@ public class FileRestController {
      * background, and the file is at least 50 MB (large enough that the delay is
      * noticeable). The frontend uses this flag to show a transient notice to the creator.
      *
-     * @param uuid              the file UUID
-     * @param expirationDate    optional expiry date for the token
      * @param numberOfDownloads optional download limit; {@code null} means unlimited
-     * @param request           the HTTP request (for session and audit logging)
      * @return 200 with token/sharePath/preparingMessage, 400 on bad input, 403 when
      * share links are disabled or the file session is invalid
      */
@@ -349,7 +344,6 @@ public class FileRestController {
      * files are served: for a gated one it would answer for a page the caller can't open,
      * turning this into an existence oracle.
      *
-     * @param uuid the file's uuid
      * @param size rendered width/height in pixels; clamped by {@link QrCodeService}
      * @return 200 with the SVG body, or 404 when the file is unknown, deleted, or gated
      */

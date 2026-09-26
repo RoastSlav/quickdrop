@@ -331,6 +331,12 @@ from — see [Data directories](#data-directories).
 
 ---
 
+## ☁️ One-Click Deploy
+
+[![Deploy on RepoCloud](https://d16t0pc4846x52.cloudfront.net/deploylobe.svg)](https://repocloud.io/details/QuickDrop/)
+
+---
+
 ## Configuration
 
 Configuration is split in two. A small set of startup properties lives in

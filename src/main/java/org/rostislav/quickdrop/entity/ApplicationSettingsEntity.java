@@ -264,6 +264,12 @@ public class ApplicationSettingsEntity {
     private boolean reputationSafeBrowsingEnabled;
 
     /**
+     * When {@code true} (and its licence has been accepted, see {@link #netApiTermsAcceptedAt}),
+     * destinations are checked against the NetAPI compromised-domain list (CC BY 4.0).
+     */
+    private boolean reputationNetApiEnabled;
+
+    /**
      * When {@code true}, a reputation-provider failure (feed stale/unreachable, API error)
      * blocks link creation/resolution instead of allowing it. Defaults to {@code false}
      * (fail open) so a third-party outage cannot take down the whole shortener feature.
@@ -271,7 +277,7 @@ public class ApplicationSettingsEntity {
     private boolean reputationFailClosed;
 
     /**
-     * Cron expression for the scheduled Phishing Army / URLhaus feed refresh. Google Safe
+     * Cron expression for the scheduled Phishing Army / URLhaus / NetAPI feed refresh. Google Safe
      * Browsing has no feed to refresh — it is queried live per lookup, with its own
      * response-cache duration honoured separately.
      */
@@ -333,6 +339,12 @@ public class ApplicationSettingsEntity {
      * never accepted.
      */
     private LocalDateTime safeBrowsingTermsAcceptedAt;
+
+    /**
+     * When the admin last accepted the NetAPI list's licence terms, or {@code null} if never
+     * accepted.
+     */
+    private LocalDateTime netApiTermsAcceptedAt;
 
     /**
      * Custom application name displayed in the UI (defaults to "QuickDrop").
@@ -983,6 +995,14 @@ public class ApplicationSettingsEntity {
         this.reputationSafeBrowsingEnabled = reputationSafeBrowsingEnabled;
     }
 
+    public boolean isReputationNetApiEnabled() {
+        return reputationNetApiEnabled;
+    }
+
+    public void setReputationNetApiEnabled(boolean reputationNetApiEnabled) {
+        this.reputationNetApiEnabled = reputationNetApiEnabled;
+    }
+
     public boolean isReputationFailClosed() {
         return reputationFailClosed;
     }
@@ -1101,6 +1121,14 @@ public class ApplicationSettingsEntity {
 
     public void setSafeBrowsingTermsAcceptedAt(LocalDateTime safeBrowsingTermsAcceptedAt) {
         this.safeBrowsingTermsAcceptedAt = safeBrowsingTermsAcceptedAt;
+    }
+
+    public LocalDateTime getNetApiTermsAcceptedAt() {
+        return netApiTermsAcceptedAt;
+    }
+
+    public void setNetApiTermsAcceptedAt(LocalDateTime netApiTermsAcceptedAt) {
+        this.netApiTermsAcceptedAt = netApiTermsAcceptedAt;
     }
 
     public boolean isNotifyOnUpload() {

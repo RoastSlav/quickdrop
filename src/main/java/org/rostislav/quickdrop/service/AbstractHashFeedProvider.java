@@ -25,9 +25,9 @@ import java.util.Map;
 
 /**
  * Shared download/parse/hash/match machinery for a text-based threat-intelligence feed
- * ({@link PhishingArmyProvider}, {@link UrlhausProvider}). Google Safe Browsing has no feed
- * of its own ({@link SafeBrowsingProvider} queries an API live per lookup instead) so it does
- * not extend this class.
+ * ({@link PhishingArmyProvider}, {@link UrlhausProvider}, {@link NetApiProvider}). Google Safe
+ * Browsing has no feed of its own ({@link SafeBrowsingProvider} queries an API live per lookup
+ * instead) so it does not extend this class.
  *
  * <p><strong>Two-tier matching.</strong> Feed entries are stored as a sorted {@code long[]} of
  * {@link Fnv1aHash} values rather than a {@code Set<String>} — at Phishing Army's scale

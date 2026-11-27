@@ -17,7 +17,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledFuture;
 
 /**
- * Keeps the Phishing Army and URLhaus feeds refreshed on a schedule. Mirrors
+ * Keeps the Phishing Army, URLhaus and NetAPI feeds refreshed on a schedule. Mirrors
  * {@link BackupService}'s dynamic-cron pattern (own {@link ThreadPoolTaskScheduler},
  * reschedules on {@link SettingsChangedEvent}) rather than a fixed {@code @Scheduled} cron,
  * since the interval is admin-configurable ({@code reputationFeedCron}).
@@ -36,10 +36,12 @@ public class ReputationSyncService {
 
     private static final String PHISHING_ARMY_LABEL = "Phishing Army";
     private static final String URLHAUS_LABEL = "URLhaus";
+    private static final String NETAPI_LABEL = "NetAPI";
 
     private final ApplicationSettingsService applicationSettingsService;
     private final PhishingArmyProvider phishingArmyProvider;
     private final UrlhausProvider urlhausProvider;
+    private final NetApiProvider netApiProvider;
     private final AnalyticsService analyticsService;
     private final ThreadPoolTaskScheduler taskScheduler = new ThreadPoolTaskScheduler();
 
@@ -49,10 +51,12 @@ public class ReputationSyncService {
     public ReputationSyncService(ApplicationSettingsService applicationSettingsService,
                                  PhishingArmyProvider phishingArmyProvider,
                                  UrlhausProvider urlhausProvider,
+                                 NetApiProvider netApiProvider,
                                  @Lazy AnalyticsService analyticsService) {
         this.applicationSettingsService = applicationSettingsService;
         this.phishingArmyProvider = phishingArmyProvider;
         this.urlhausProvider = urlhausProvider;
+        this.netApiProvider = netApiProvider;
         this.analyticsService = analyticsService;
         taskScheduler.setPoolSize(1);
         taskScheduler.initialize();
@@ -83,6 +87,9 @@ public class ReputationSyncService {
         }
         if (applicationSettingsService.isReputationUrlhausEnabled() && !urlhausProvider.isLoaded()) {
             CompletableFuture.runAsync(() -> refreshAndLog(URLHAUS_LABEL, urlhausProvider));
+        }
+        if (applicationSettingsService.isReputationNetApiEnabled() && !netApiProvider.isLoaded()) {
+            CompletableFuture.runAsync(() -> refreshAndLog(NETAPI_LABEL, netApiProvider));
         }
     }
 
@@ -139,6 +146,9 @@ public class ReputationSyncService {
         }
         if (applicationSettingsService.isReputationUrlhausEnabled()) {
             refreshAndLog(URLHAUS_LABEL, urlhausProvider);
+        }
+        if (applicationSettingsService.isReputationNetApiEnabled()) {
+            refreshAndLog(NETAPI_LABEL, netApiProvider);
         }
     }
 

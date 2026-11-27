@@ -411,6 +411,16 @@ class ApplicationSettingsServiceTest extends QuickdropIntegrationTest {
     }
 
     @Test
+    void settingsSaveCannotEnableNetApiWithoutPriorAcceptance() {
+        ApplicationSettingsViewModel vm = new ApplicationSettingsViewModel(applicationSettingsService.getApplicationSettings());
+        vm.setReputationNetApiEnabled(true);
+
+        applicationSettingsService.updateApplicationSettings(vm, null, null, false);
+
+        assertFalse(applicationSettingsService.isReputationNetApiEnabled());
+    }
+
+    @Test
     void disablingAProviderViaSettingsSaveClearsItsAcceptedTimestampSoReEnablingReprompts() {
         try {
             applicationSettingsService.acceptReputationProviderTerms("phishing_army");

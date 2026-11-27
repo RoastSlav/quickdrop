@@ -66,8 +66,9 @@ sits above the Maven resource root, so it is not packaged into the jar.
   itself, it will hide bugs — see `CsrfTokenHandlingTest` for how to exercise the real
   masked-token/raw-cookie-token resolution path instead (load a real page, scrape the
   rendered token, submit it back through the actual header/cookie a browser would use).
-- **Never hit a live reputation feed or API from a test.** `PhishingArmyProviderTest` and
-  `UrlhausProviderTest` exercise the real parse/hash/tier-1/tier-2 matching pipeline via
+- **Never hit a live reputation feed or API from a test.** `PhishingArmyProviderTest`,
+  `UrlhausProviderTest` and `NetApiProviderTest` exercise the real parse/hash/tier-1/tier-2
+  matching pipeline via
   `AbstractHashFeedProvider#loadForTest(byte[])` — a package-private hook that runs the same
   code `refresh()` does, minus the network call — against known content written inline in the
   test. `ReputationCheckServiceTest` mocks `ReputationProvider` directly. `SafeBrowsingProvider`

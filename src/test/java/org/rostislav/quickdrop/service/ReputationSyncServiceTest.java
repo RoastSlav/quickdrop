@@ -1,7 +1,9 @@
 package org.rostislav.quickdrop.service;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.rostislav.quickdrop.entity.ApplicationSettingsEntity;
 import org.rostislav.quickdrop.model.EventType;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -10,6 +12,7 @@ import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -18,15 +21,24 @@ import org.rostislav.quickdrop.service.AbstractHashFeedProvider.RefreshOutcome;
 class ReputationSyncServiceTest {
 
     private PhishingArmyProvider provider;
+    private NetApiProvider netApiProvider;
+    private ApplicationSettingsService applicationSettingsService;
     private AnalyticsService analyticsService;
     private ReputationSyncService syncService;
 
     @BeforeEach
     void setUp() {
         provider = mock(PhishingArmyProvider.class);
+        netApiProvider = mock(NetApiProvider.class);
+        applicationSettingsService = mock(ApplicationSettingsService.class);
         analyticsService = mock(AnalyticsService.class);
-        syncService = new ReputationSyncService(mock(ApplicationSettingsService.class), provider,
-                mock(UrlhausProvider.class), analyticsService);
+        syncService = new ReputationSyncService(applicationSettingsService, provider,
+                mock(UrlhausProvider.class), netApiProvider, analyticsService);
+    }
+
+    @AfterEach
+    void tearDown() {
+        syncService.shutdown();
     }
 
     @Test
@@ -37,6 +49,19 @@ class ReputationSyncServiceTest {
 
         verify(analyticsService).logEvent(eq(EventType.REPUTATION_FEED_UPDATED), isNull(), isNull(),
                 eq("Phishing Army: 156,264 entries"));
+    }
+
+    @Test
+    void enabledNetApiFeedIsLoadedOnSettingsChange() {
+        when(applicationSettingsService.isReputationNetApiEnabled()).thenReturn(true);
+        when(netApiProvider.isLoaded()).thenReturn(false);
+        when(netApiProvider.refresh()).thenReturn(RefreshOutcome.updated(284855));
+
+        syncService.onSettingsChanged(new SettingsChangedEvent(new ApplicationSettingsEntity()));
+
+        verify(analyticsService, timeout(5000)).logEvent(eq(EventType.REPUTATION_FEED_UPDATED), isNull(), isNull(),
+                eq("NetAPI: 284,855 entries"));
+        verify(provider, never()).refresh();
     }
 
     @Test

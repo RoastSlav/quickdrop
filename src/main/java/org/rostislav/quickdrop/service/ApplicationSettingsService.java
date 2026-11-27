@@ -170,6 +170,7 @@ public class ApplicationSettingsService {
             defaults.setReputationPhishingArmyEnabled(false);
             defaults.setReputationUrlhausEnabled(false);
             defaults.setReputationSafeBrowsingEnabled(false);
+            defaults.setReputationNetApiEnabled(false);
             defaults.setReputationFailClosed(false);
             defaults.setReputationFeedCron("0 0 4 * * *");
             defaults.setActivityRetentionEnabled(false);
@@ -440,6 +441,10 @@ public class ApplicationSettingsService {
         entity.setReputationSafeBrowsingEnabled(settings.isReputationSafeBrowsingEnabled() && entity.getSafeBrowsingTermsAcceptedAt() != null);
         if (!entity.isReputationSafeBrowsingEnabled()) {
             entity.setSafeBrowsingTermsAcceptedAt(null);
+        }
+        entity.setReputationNetApiEnabled(settings.isReputationNetApiEnabled() && entity.getNetApiTermsAcceptedAt() != null);
+        if (!entity.isReputationNetApiEnabled()) {
+            entity.setNetApiTermsAcceptedAt(null);
         }
         String requestedAppName = settings.getAppName();
         entity.setAppName((requestedAppName == null || requestedAppName.isBlank()) ? DEFAULT_APP_NAME : requestedAppName.trim());
@@ -915,6 +920,10 @@ public class ApplicationSettingsService {
         return self.getApplicationSettings().isReputationSafeBrowsingEnabled();
     }
 
+    public boolean isReputationNetApiEnabled() {
+        return self.getApplicationSettings().isReputationNetApiEnabled();
+    }
+
     /**
      * @return {@code true} if a reputation-provider failure should block link
      *         creation/resolution instead of allowing it (fail closed instead of fail open)
@@ -971,7 +980,7 @@ public class ApplicationSettingsService {
      * {@link #updateApplicationSettings}) can only turn one off (which also clears the
      * acceptance timestamp, forcing this method to run again before it can be re-enabled).
      *
-     * @param providerId one of {@code "phishing_army"}, {@code "urlhaus"}, {@code "safe_browsing"}
+     * @param providerId one of {@code "phishing_army"}, {@code "urlhaus"}, {@code "safe_browsing"}, {@code "netapi"}
      * @return {@code true} if {@code providerId} was recognised and the provider is now enabled
      */
     @Caching(evict = {
@@ -993,6 +1002,10 @@ public class ApplicationSettingsService {
             case "safe_browsing" -> {
                 entity.setReputationSafeBrowsingEnabled(true);
                 entity.setSafeBrowsingTermsAcceptedAt(now);
+            }
+            case "netapi" -> {
+                entity.setReputationNetApiEnabled(true);
+                entity.setNetApiTermsAcceptedAt(now);
             }
             default -> {
                 return false;

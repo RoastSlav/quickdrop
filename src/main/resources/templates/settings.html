@@ -500,6 +500,30 @@
                                         </div>
                                     </div>
 
+                                    <div class="rounded-2xl p-4" id="reputationNetApiRow" style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
+                                        <div class="flex flex-wrap items-center justify-between gap-3">
+                                            <label class="form-check" th:if="${settings.netApiTermsAcceptedAt != null}">
+                                                <input id="reputationNetApiEnabled"
+                                                       th:field="*{reputationNetApiEnabled}" type="checkbox"/>
+                                                <span>
+                          <span class="text-sm font-semibold" th:text="#{page.settings.features.reputation.netApi.name}">NetAPI</span>
+                          <span class="form-hint block mt-0.5" th:text="#{page.settings.features.reputation.netApi.description}">Compromised-domain list, checked locally.</span>
+                        </span>
+                                            </label>
+                                            <div th:unless="${settings.netApiTermsAcceptedAt != null}">
+                                                <span class="text-sm font-semibold" th:text="#{page.settings.features.reputation.netApi.name}">NetAPI</span>
+                                                <span class="form-hint block mt-0.5" th:text="#{page.settings.features.reputation.netApi.description}">Compromised-domain list, checked locally.</span>
+                                            </div>
+                                            <span class="text-xs font-mono" style="color:var(--c-text-faint)"
+                                                  th:if="${settings.netApiTermsAcceptedAt != null}"
+                                                  th:text="#{page.settings.features.reputation.accepted(${#temporals.format(settings.netApiTermsAcceptedAt, 'dd.MM.yyyy')})}">Terms accepted 01.01.2025</span>
+                                            <button class="btn btn-secondary btn-sm" data-open-reputation-modal="netApi"
+                                                    th:unless="${settings.netApiTermsAcceptedAt != null}" type="button"
+                                                    th:text="#{page.settings.features.reputation.enableButton}">Enable…
+                                            </button>
+                                        </div>
+                                    </div>
+
                                     <div class="rounded-2xl p-4" id="reputationSafeBrowsingRow" style="background:var(--c-surface-raised);border:1px solid var(--c-border)">
                                         <div class="flex flex-wrap items-center justify-between gap-3">
                                             <label class="form-check" th:if="${settings.safeBrowsingTermsAcceptedAt != null}">
@@ -566,13 +590,13 @@
                                                    th:field="*{reputationFeedCron}" type="text"/>
                                             <p class="text-xs mt-1.5 min-h-[1.25rem]" id="reputationFeedCronFeedback"></p>
                                             <p class="form-hint" th:text="#{page.settings.features.reputation.feedCron.help}">
-                                                Cron expression for the Phishing Army / URLhaus feed refresh. Google Safe Browsing is queried live and has no feed.</p>
+                                                Cron expression for the Phishing Army / URLhaus / NetAPI feed refresh. Google Safe Browsing is queried live and has no feed.</p>
                                         </div>
                                     </div>
                                 </div>
                             </section>
 
-                            <!-- One parameterised fragment reused for all three provider modals -->
+                            <!-- One parameterised fragment reused for every provider modal -->
                             <div th:replace="~{fragments/reputation :: licenceModal('phishingArmy', 'phishing_army',
                                  'page.settings.features.reputation.phishingArmy.name',
                                  'page.settings.features.reputation.phishingArmy.licence',
@@ -581,6 +605,10 @@
                                  'page.settings.features.reputation.urlhaus.name',
                                  'page.settings.features.reputation.urlhaus.licence',
                                  'page.settings.features.reputation.urlhaus.description')}"></div>
+                            <div th:replace="~{fragments/reputation :: licenceModal('netApi', 'netapi',
+                                 'page.settings.features.reputation.netApi.name',
+                                 'page.settings.features.reputation.netApi.licence',
+                                 'page.settings.features.reputation.netApi.description')}"></div>
                             <div th:replace="~{fragments/reputation :: licenceModal('safeBrowsing', 'safe_browsing',
                                  'page.settings.features.reputation.safeBrowsing.name',
                                  'page.settings.features.reputation.safeBrowsing.licence',

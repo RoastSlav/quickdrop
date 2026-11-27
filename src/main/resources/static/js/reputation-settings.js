@@ -8,7 +8,7 @@ function syncReputationSettings() {
     const masterEnabledCb = document.getElementById("reputationCheckEnabled");
     const enabled = Boolean(masterEnabledCb?.checked);
 
-    ["reputationPhishingArmyRow", "reputationUrlhausRow", "reputationSafeBrowsingRow",
+    ["reputationPhishingArmyRow", "reputationUrlhausRow", "reputationNetApiRow", "reputationSafeBrowsingRow",
         "reputationFailClosedRow", "reputationFeedCronRow"].forEach((rowId) => {
         const row = document.getElementById(rowId);
         if (row) {

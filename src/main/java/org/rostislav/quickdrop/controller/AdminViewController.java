@@ -267,7 +267,7 @@ public class AdminViewController {
      * Called by the licence-acceptance modal on the settings page, not by the general
      * settings-save form.
      *
-     * @param provider one of {@code "phishing_army"}, {@code "urlhaus"}, {@code "safe_browsing"}
+     * @param provider one of {@code "phishing_army"}, {@code "urlhaus"}, {@code "safe_browsing"}, {@code "netapi"}
      * @return 200 on success, 400 if {@code provider} isn't recognised
      */
     @PostMapping("/settings/accept-reputation-terms")

@@ -8,14 +8,15 @@ import java.net.URI;
  * {@code List<ReputationProvider>} constructor injection, the same auto-collection pattern
  * {@code DelegatingStorageService} uses for storage backends.
  *
- * <p>All three implementations ({@link PhishingArmyProvider}, {@link UrlhausProvider},
- * {@link SafeBrowsingProvider}) ship disabled — see {@link ApplicationSettingsService#acceptReputationProviderTerms}
+ * <p>All four implementations ({@link PhishingArmyProvider}, {@link UrlhausProvider},
+ * {@link NetApiProvider}, {@link SafeBrowsingProvider}) ship disabled — see {@link ApplicationSettingsService#acceptReputationProviderTerms}
  * for the licence-acceptance gate that is the only way to turn one on.
  */
 public interface ReputationProvider {
     /**
      * @return a stable identifier matching {@link ApplicationSettingsService#acceptReputationProviderTerms}'s
-     *         {@code providerId} values ({@code "phishing_army"}, {@code "urlhaus"}, {@code "safe_browsing"})
+     *         {@code providerId} values ({@code "phishing_army"}, {@code "urlhaus"}, {@code "safe_browsing"},
+     *         {@code "netapi"})
      */
     String id();
 

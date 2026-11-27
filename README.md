@@ -100,7 +100,7 @@ A general-purpose URL shortener at `/link/new`, sharing the short-code table wit
 - Optional expiry date and use-count cap.
 - Destinations are validated on creation and re-validated on every visit: `http`/`https` only, and never loopback,
   link-local or private-network addresses. Admins can add a domain allowlist or blocklist.
-- Optional threat-intelligence checks against Phishing Army, URLhaus and Google Safe Browsing. All three ship disabled
+- Optional threat-intelligence checks against Phishing Army, URLhaus, NetAPI and Google Safe Browsing. All four ship disabled
   and each requires the admin to accept its licence terms in the settings UI first. Safe Browsing only ever receives a
   truncated hash of the destination.
 - Interstitial preview page showing the destination before continuing — always, never, or non-admins only (default).
@@ -370,7 +370,7 @@ All paths are relative to the process working directory (`/app` in the image).
 | Path                | Contents                                                                                                                | Declared as a Docker volume |
 |---------------------|-------------------------------------------------------------------------------------------------------------------------|-----------------------------|
 | `db/`               | SQLite database `quickdrop.db`, plus `backups/` (database backups) and `branding/` (custom logo)                                                                                          | Yes                         |
-| `files/`            | `reputation-feeds/` (cached Phishing Army and URLhaus feeds), plus — when the storage backend is Local disk — the uploaded files themselves and `.upload-chunks/` staging during chunked uploads | Yes                         |
+| `files/`            | `reputation-feeds/` (cached Phishing Army, URLhaus and NetAPI feeds), plus — when the storage backend is Local disk — the uploaded files themselves and `.upload-chunks/` staging during chunked uploads | Yes                         |
 | `log/`              | `quickdrop.log`. Relocatable via the **Log storage path** runtime setting, which takes effect on the next restart       | Yes                         |
 
 The `db/`, `files/` and `log/` mounts are unchanged. Up to v1.5.3 the custom logo lived in a
@@ -415,7 +415,7 @@ they appear in the settings tabs.
 | Domain rule mode / rules                | `OFF` / empty | `OFF`, allowlist or blocklist for link destinations                        |
 | Link visit logging                      | on            | Record each short-link visit. Use counters always update                   |
 | Reputation checking                     | off           | Master switch for threat-intelligence checks                               |
-| Phishing Army / URLhaus / Safe Browsing | off           | Per-provider, each gated behind licence acceptance                         |
+| Phishing Army / URLhaus / NetAPI / Safe Browsing | off  | Per-provider, each gated behind licence acceptance                         |
 | Reputation fail-closed                  | off           | Block a link when a provider check cannot complete, instead of allowing it |
 | Reputation feed cron                    | `0 0 4 * * *` | Feed refresh schedule. Safe Browsing is queried live                       |
 | URLhaus Auth-Key, Safe Browsing API key | empty         | Provider credentials                                                       |
@@ -537,7 +537,7 @@ deletion, share creation, expiry and revocation — with timestamp, IP address a
 | Share token cleanup     | Daily 03:30                                     | Deletes expired or exhausted share tokens                                               |
 | Activity retention      | `activityRetentionCron`, default `0 30 3 * * *` | Archives and purges old activity rows. Off by default                                   |
 | Database backup         | `backupCron`, default `0 0 4 * * *`             | Creates a backup and prunes to `maxBackups`. Off by default                             |
-| Reputation feed refresh | `reputationFeedCron`, default `0 0 4 * * *`     | Re-downloads the Phishing Army and URLhaus feeds. Only runs when those providers are on |
+| Reputation feed refresh | `reputationFeedCron`, default `0 0 4 * * *`     | Re-downloads the Phishing Army, URLhaus and NetAPI feeds. Only runs when those providers are on |
 
 ---
 

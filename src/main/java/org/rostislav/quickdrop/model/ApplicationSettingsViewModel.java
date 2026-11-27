@@ -81,6 +81,7 @@ public class ApplicationSettingsViewModel {
     private boolean reputationPhishingArmyEnabled;
     private boolean reputationUrlhausEnabled;
     private boolean reputationSafeBrowsingEnabled;
+    private boolean reputationNetApiEnabled;
     private boolean reputationFailClosed;
     private String reputationFeedCron;
     private boolean activityRetentionEnabled;
@@ -96,6 +97,7 @@ public class ApplicationSettingsViewModel {
     private LocalDateTime phishingArmyTermsAcceptedAt;
     private LocalDateTime urlhausTermsAcceptedAt;
     private LocalDateTime safeBrowsingTermsAcceptedAt;
+    private LocalDateTime netApiTermsAcceptedAt;
     private String appName;
     private String logoFileName;
     private String defaultLanguage;
@@ -198,6 +200,7 @@ public class ApplicationSettingsViewModel {
         this.reputationPhishingArmyEnabled = settings.isReputationPhishingArmyEnabled();
         this.reputationUrlhausEnabled = settings.isReputationUrlhausEnabled();
         this.reputationSafeBrowsingEnabled = settings.isReputationSafeBrowsingEnabled();
+        this.reputationNetApiEnabled = settings.isReputationNetApiEnabled();
         this.reputationFailClosed = settings.isReputationFailClosed();
         this.reputationFeedCron = settings.getReputationFeedCron();
         this.activityRetentionEnabled = settings.isActivityRetentionEnabled();
@@ -213,6 +216,7 @@ public class ApplicationSettingsViewModel {
         this.phishingArmyTermsAcceptedAt = settings.getPhishingArmyTermsAcceptedAt();
         this.urlhausTermsAcceptedAt = settings.getUrlhausTermsAcceptedAt();
         this.safeBrowsingTermsAcceptedAt = settings.getSafeBrowsingTermsAcceptedAt();
+        this.netApiTermsAcceptedAt = settings.getNetApiTermsAcceptedAt();
         this.appName = settings.getAppName();
         this.logoFileName = settings.getLogoFileName();
         this.defaultLanguage = settings.getDefaultLanguage();
@@ -678,6 +682,14 @@ public class ApplicationSettingsViewModel {
         this.reputationSafeBrowsingEnabled = reputationSafeBrowsingEnabled;
     }
 
+    public boolean isReputationNetApiEnabled() {
+        return reputationNetApiEnabled;
+    }
+
+    public void setReputationNetApiEnabled(boolean reputationNetApiEnabled) {
+        this.reputationNetApiEnabled = reputationNetApiEnabled;
+    }
+
     public boolean isReputationFailClosed() {
         return reputationFailClosed;
     }
@@ -789,6 +801,10 @@ public class ApplicationSettingsViewModel {
 
     public LocalDateTime getSafeBrowsingTermsAcceptedAt() {
         return safeBrowsingTermsAcceptedAt;
+    }
+
+    public LocalDateTime getNetApiTermsAcceptedAt() {
+        return netApiTermsAcceptedAt;
     }
 
     public String getAppName() {
